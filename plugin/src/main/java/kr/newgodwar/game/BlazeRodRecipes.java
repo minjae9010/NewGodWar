@@ -13,10 +13,10 @@ public final class BlazeRodRecipes {
     }
 
     public static void register(JavaPlugin plugin) {
-        add(plugin, "blaze_rod_sticks_vertical", "S", "S");
-        add(plugin, "blaze_rod_sticks_horizontal", "SS");
-        add(plugin, "blaze_rod_sticks_diagonal_right", "S ", " S");
-        add(plugin, "blaze_rod_sticks_diagonal_left", " S", "S ");
+        add(plugin, "blaze_rod_sticks_vertical", "S", "S", "S");
+        add(plugin, "blaze_rod_sticks_horizontal", "SSS");
+        add(plugin, "blaze_rod_sticks_diagonal_right", "S  ", " S ", "  S");
+        add(plugin, "blaze_rod_sticks_diagonal_left", "  S", " S ", "S  ");
     }
 
     private static void add(JavaPlugin plugin, String key, String... shape) {

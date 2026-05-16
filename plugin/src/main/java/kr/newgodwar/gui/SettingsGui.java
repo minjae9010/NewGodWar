@@ -584,11 +584,13 @@ public final class SettingsGui implements Listener {
             ChatColor.AQUA + "일반 상품 편집",
             ChatColor.GRAY + "좌/우클릭으로 확률 가중치 조정",
             ChatColor.GRAY + "손에 아이템을 들고 상품 슬롯에서 Q",
+            ChatColor.GRAY + "멘트: /gw gamblereward normal <번호> message <문구>",
             ChatColor.DARK_GRAY + "/gw gamblereward normal <번호> hand"));
         inventory.setItem(16, item("GOLD_INGOT", "GOLD_INGOT", 1, (short) 0,
             ChatColor.GOLD + "타짜 상품 편집",
             ChatColor.GRAY + "좌/우클릭으로 확률 가중치 조정",
             ChatColor.GRAY + "손에 아이템을 들고 상품 슬롯에서 Q",
+            ChatColor.GRAY + "멘트: /gw gamblereward tajja <번호> message <문구>",
             ChatColor.DARK_GRAY + "/gw gamblereward tajja <번호> hand"));
         inventory.setItem(17, item("BOOK", "BOOK", 1, (short) 0,
             ChatColor.YELLOW + "상품 설정 다시 불러오기",
@@ -600,7 +602,7 @@ public final class SettingsGui implements Listener {
         int total = totalChance(path);
         int limit = Math.min(18, rewards.size());
         for (int i = 0; i < limit; i++) {
-            inventory.setItem(i, rewardItem(rewards.get(i), i, total));
+            inventory.setItem(i, rewardItem(path, rewards.get(i), i, total));
         }
         for (int i = limit; i < 18; i++) {
             inventory.setItem(i, addRewardItem(i));
@@ -613,6 +615,7 @@ public final class SettingsGui implements Listener {
             ChatColor.GRAY + "손에 아이템을 들고 상품 슬롯에서 Q",
             ChatColor.GRAY + "또는 가운데 클릭: 손 아이템으로 변경",
             ChatColor.GRAY + "빈 슬롯에서 Q/가운데 클릭: 상품 추가",
+            ChatColor.GRAY + "멘트 수정: /gw gamblereward " + rewardType(path) + " <번호> message <문구>",
             ChatColor.DARK_GRAY + "확률은 chance 가중치 기준입니다."));
     }
 
@@ -1082,7 +1085,7 @@ public final class SettingsGui implements Listener {
         return stack;
     }
 
-    private ItemStack rewardItem(Map<?, ?> reward, int index, int totalChance) {
+    private ItemStack rewardItem(String path, Map<?, ?> reward, int index, int totalChance) {
         ItemStack preview = rewardStack(reward);
         int amount = Math.max(1, intValue(reward.get("amount"), 1));
         int chance = Math.max(0, intValue(reward.get("chance"), 0));
@@ -1094,7 +1097,8 @@ public final class SettingsGui implements Listener {
             ChatColor.GRAY + "수량: " + ChatColor.WHITE + amount,
             ChatColor.GRAY + "좌클릭 +1 / 우클릭 -1",
             ChatColor.GRAY + "쉬프트 좌클릭 +5 / 쉬프트 우클릭 -5",
-            ChatColor.GRAY + "Q/가운데 클릭: 손 아이템으로 변경");
+            ChatColor.GRAY + "Q/가운데 클릭: 손 아이템으로 변경",
+            ChatColor.GRAY + "멘트: /gw gamblereward " + rewardType(path) + " " + (index + 1) + " message <문구>");
     }
 
     private ItemStack addRewardItem(int index) {
@@ -1103,6 +1107,10 @@ public final class SettingsGui implements Listener {
             ChatColor.GRAY + "손에 아이템을 들고 이 슬롯에서 Q",
             ChatColor.GRAY + "또는 가운데 클릭으로 새 상품 추가",
             ChatColor.GRAY + "기본 확률 가중치: " + ChatColor.WHITE + "1");
+    }
+
+    private String rewardType(String path) {
+        return path.endsWith(".tajja") ? "tajja" : "normal";
     }
 
     private ItemStack rewardStack(Map<?, ?> reward) {
