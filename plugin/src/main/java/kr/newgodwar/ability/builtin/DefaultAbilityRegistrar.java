@@ -58,14 +58,20 @@ public final class DefaultAbilityRegistrar implements AbilityRegistrar {
 
     private void scanDirectory(ClassLoader loader, List<Class<? extends GodAbility>> classes, URL resource) throws IOException {
         File directory = new File(URLDecoder.decode(resource.getPath(), "UTF-8"));
+        scanDirectory(loader, classes, directory, PACKAGE_NAME);
+    }
+
+    private void scanDirectory(ClassLoader loader, List<Class<? extends GodAbility>> classes, File directory, String packageName) {
         File[] files = directory.listFiles();
         if (files == null) {
             return;
         }
         for (File file : files) {
             String name = file.getName();
-            if (file.isFile() && name.endsWith(".class")) {
-                addIfAbility(loader, classes, PACKAGE_NAME + "." + name.substring(0, name.length() - ".class".length()));
+            if (file.isDirectory()) {
+                scanDirectory(loader, classes, file, packageName + "." + name);
+            } else if (file.isFile() && name.endsWith(".class") && name.indexOf('$') < 0) {
+                addIfAbility(loader, classes, packageName + "." + name.substring(0, name.length() - ".class".length()));
             }
         }
     }
@@ -80,8 +86,7 @@ public final class DefaultAbilityRegistrar implements AbilityRegistrar {
             if (!entry.isDirectory()
                 && name.startsWith(PACKAGE_PATH + "/")
                 && name.endsWith(".class")
-                && name.indexOf('$') < 0
-                && name.substring(PACKAGE_PATH.length() + 1).indexOf('/') < 0) {
+                && name.indexOf('$') < 0) {
                 String className = name.substring(0, name.length() - ".class".length()).replace('/', '.');
                 addIfAbility(loader, classes, className);
             }

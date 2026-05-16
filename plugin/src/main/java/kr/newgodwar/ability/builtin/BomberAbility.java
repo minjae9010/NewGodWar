@@ -34,9 +34,14 @@ final class BomberAbility extends BaseAbility {
 
     @Override
     protected void onStaffRight(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
-        if (use(context, player, 0, COBBLESTONE, 25, 30) && bombLocation != null) {
+        if (bombLocation == null) {
+            player.sendMessage("TNT가 설치되지 않았습니다.");
+            return;
+        }
+        if (use(context, player, 0, COBBLESTONE, 25, 30)) {
             player.getWorld().createExplosion(bombLocation, 2.0F, true);
             bombLocation = null;
+            player.sendMessage("TNT가 폭발했습니다!");
         }
     }
 }

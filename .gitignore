@@ -40,3 +40,4 @@ logs/
 run/
 server/
 servers/
+.paper-smoke/

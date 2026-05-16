@@ -1,5 +1,5 @@
 plugins {
-    id "xyz.jpenilla.run-paper" version "2.3.1"
+    id "xyz.jpenilla.run-paper" version "3.0.2"
 }
 
 dependencies {
@@ -7,11 +7,26 @@ dependencies {
     runtimeOnly project(":compatibility:reflection")
 }
 
-def testServerVersion = providers.gradleProperty("newGodWarMinecraftVersion").orElse("1.21.10")
+def testServerVersion = providers.gradleProperty("newGodWarMinecraftVersion").orElse("26.1.2")
+def testServerJavaVersion = providers.gradleProperty("newGodWarServerJavaVersion")
+    .map { Integer.parseInt(it) }
+    .orElse(25)
+def testServerDirectory = rootProject.layout.projectDirectory.dir("run")
 
 tasks.named("runServer") {
     minecraftVersion(testServerVersion.get())
-    runDirectory.set(rootProject.layout.projectDirectory.dir("run"))
+    runDirectory.set(testServerDirectory)
+    jvmArgs("-Xmx2G")
+
+    javaLauncher.set(javaToolchains.launcherFor {
+        languageVersion = JavaLanguageVersion.of(testServerJavaVersion.get())
+    })
+
+    doFirst {
+        def eulaFile = testServerDirectory.file("eula.txt").asFile
+        eulaFile.parentFile.mkdirs()
+        eulaFile.text = "# Local NewGodWar test server\n# https://aka.ms/MinecraftEULA\neula=true\n"
+    }
 }
 
 tasks.processResources {

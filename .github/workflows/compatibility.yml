@@ -1,0 +1,77 @@
+name: Compatibility
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build plugin
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Build
+        run: ./gradlew --no-daemon clean build
+
+      - name: Upload plugin jar
+        uses: actions/upload-artifact@v4
+        with:
+          name: newgodwar-plugin
+          path: build/libs/NewGodWar-*.jar
+          if-no-files-found: error
+
+  smoke:
+    name: Paper ${{ matrix.minecraft }} / Java ${{ matrix.java }}
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - minecraft: "1.12.2"
+            java: "8"
+          - minecraft: "1.16.5"
+            java: "11"
+          - minecraft: "1.17.1"
+            java: "17"
+          - minecraft: "1.18.2"
+            java: "17"
+          - minecraft: "1.19.4"
+            java: "17"
+          - minecraft: "1.20.6"
+            java: "21"
+          - minecraft: "1.21.1"
+            java: "21"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download plugin jar
+        uses: actions/download-artifact@v4
+        with:
+          name: newgodwar-plugin
+          path: build/libs
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.java }}
+
+      - name: Smoke test plugin startup
+        shell: pwsh
+        run: |
+          $jar = (Get-ChildItem -Path build/libs -Filter 'NewGodWar-*.jar' | Select-Object -First 1).FullName
+          ./scripts/Test-PaperMatrix.ps1 -SkipBuild -Versions "${{ matrix.minecraft }}" -PluginJar $jar -TimeoutSeconds 180
