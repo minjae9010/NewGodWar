@@ -11,7 +11,7 @@ public final class NmsAdapters {
 
     public static NmsAdapter create(Plugin plugin) {
         NmsAdapterProvider selected = null;
-        for (NmsAdapterProvider provider : ServiceLoader.load(NmsAdapterProvider.class)) {
+        for (NmsAdapterProvider provider : ServiceLoader.load(NmsAdapterProvider.class, plugin.getClass().getClassLoader())) {
             if (!provider.supports()) {
                 continue;
             }

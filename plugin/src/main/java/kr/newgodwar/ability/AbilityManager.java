@@ -366,7 +366,7 @@ public final class AbilityManager {
 
     private void loadRegistrars() {
         int count = 0;
-        for (AbilityRegistrar registrar : ServiceLoader.load(AbilityRegistrar.class)) {
+        for (AbilityRegistrar registrar : ServiceLoader.load(AbilityRegistrar.class, plugin.getClass().getClassLoader())) {
             registrar.registerAbilities(registry);
             count++;
         }
