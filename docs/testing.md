@@ -41,7 +41,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\Test-PaperMatrix.ps1
 
 ## GitHub Actions
 
-`.github/workflows/compatibility.yml` 워크플로가 push, pull request, 수동 실행에서 동작합니다.
+`.github/workflows/compatibility.yml` 워크플로가 브랜치 push, pull request, 수동 실행에서 동작합니다.
 
 기본 매트릭스는 대표 Paper 버전들을 대상으로 합니다.
 
@@ -56,3 +56,20 @@ powershell -ExecutionPolicy Bypass -File .\scripts\Test-PaperMatrix.ps1
 | 1.21.1 | 21 |
 
 더 촘촘하게 확인해야 하면 워크플로의 `matrix.include`에 버전을 추가하거나, 로컬 스크립트의 `-Versions`에 원하는 Paper 버전을 넘겨 실행하면 됩니다.
+
+## 자동 릴리즈
+
+`v*` 형식의 태그를 GitHub에 push하면 `.github/workflows/release.yml` 워크플로가 실행됩니다.
+
+1. 플러그인 jar를 빌드합니다.
+2. 위 Paper 매트릭스에서 서버 기동 스모크 테스트를 모두 통과해야 합니다.
+3. 테스트가 성공하면 해당 태그의 GitHub Release를 만들고 `NewGodWar-*.jar`를 첨부합니다.
+
+예시는 다음과 같습니다.
+
+```bash
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+GitHub Actions 화면에서 `Release` 워크플로를 수동 실행하고 태그를 입력해도 같은 릴리즈 작업을 다시 실행할 수 있습니다.

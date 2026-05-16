@@ -1,20 +1,33 @@
-name: Compatibility
+name: Release
 
 on:
   push:
-    branches:
-      - "**"
-  pull_request:
+    tags:
+      - "v*"
   workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag, for example v0.1.0"
+        required: true
+        type: string
+
+permissions:
+  contents: write
 
 jobs:
   build:
     name: Build plugin
     runs-on: ubuntu-latest
 
+    outputs:
+      artifact-name: newgodwar-plugin
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
 
       - name: Set up Java
         uses: actions/setup-java@v4
@@ -60,6 +73,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
 
       - name: Download plugin jar
         uses: actions/download-artifact@v4
@@ -86,3 +101,47 @@ jobs:
           name: paper-smoke-${{ matrix.minecraft }}-java-${{ matrix.java }}
           path: .paper-smoke/**
           if-no-files-found: ignore
+
+  release:
+    name: Create GitHub release
+    needs:
+      - build
+      - smoke
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
+
+      - name: Resolve release tag
+        id: release_tag
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "tag=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Download plugin jar
+        uses: actions/download-artifact@v4
+        with:
+          name: newgodwar-plugin
+          path: release-artifacts
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.release_tag.outputs.tag }}
+        shell: bash
+        run: |
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release upload "$RELEASE_TAG" release-artifacts/NewGodWar-*.jar --clobber
+          else
+            gh release create "$RELEASE_TAG" release-artifacts/NewGodWar-*.jar \
+              --title "NewGodWar $RELEASE_TAG" \
+              --generate-notes
+          fi
