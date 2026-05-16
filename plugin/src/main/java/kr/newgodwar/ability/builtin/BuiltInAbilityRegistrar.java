@@ -8,7 +8,7 @@ public final class BuiltInAbilityRegistrar implements AbilityRegistrar {
 
     @Override
     public void registerAbilities(AbilityRegistry registry) {
-        for (AbilityDefinition definition : TheomachyAbilities.definitions()) {
+        for (AbilityDefinition definition : BuiltInAbilities.definitions()) {
             registry.register(definition);
         }
     }
