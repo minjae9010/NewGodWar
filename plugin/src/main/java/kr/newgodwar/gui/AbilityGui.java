@@ -165,7 +165,7 @@ public final class AbilityGui implements Listener {
                 ChatColor.GOLD + "" + ChatColor.BOLD + "세부 정보",
                 ChatColor.GRAY + "ID: " + ChatColor.WHITE + current.id(),
                 ChatColor.GRAY + "제작자: " + ChatColor.WHITE + current.author(),
-                ChatColor.GRAY + "공용 쿨타임: " + currentCooldownText(shown, 0)));
+                ChatColor.GRAY + "타이머: " + currentTimerText(shown)));
         }
 
         inventory.setItem(CURRENT_CLOSE_SLOT, closeItem());
@@ -306,12 +306,12 @@ public final class AbilityGui implements Listener {
         return ChatColor.WHITE + "상태: " + ChatColor.YELLOW + "쿨타임 " + ((millis + 999L) / 1000L) + "초";
     }
 
-    private String currentCooldownText(Player player, int slot) {
-        long millis = abilityManager.cooldownRemainingMillis(player, slot);
-        if (millis <= 0L) {
+    private String currentTimerText(Player player) {
+        List<String> timers = abilityManager.activeTimerLines(player);
+        if (timers.isEmpty()) {
             return ChatColor.GREEN + "없음";
         }
-        return ChatColor.YELLOW + String.valueOf((millis + 999L) / 1000L) + "초";
+        return timers.get(0);
     }
 
     private long semanticCooldownMillis(Player player, AbilityDefinition ability, int slot) {

@@ -512,17 +512,27 @@ public final class GameManager {
 
         AbilityDefinition ability = abilityManager.get(player);
         GodTeam team = teamOf(player);
-        setLine(objective, 10, ChatColor.YELLOW + "상태 " + ChatColor.WHITE + stateLabel());
-        setLine(objective, 9, ChatColor.YELLOW + "팀 " + (team == null ? ChatColor.GRAY + "미참가" : team.coloredName()));
-        setLine(objective, 8, ChatColor.YELLOW + "능력 " + ChatColor.WHITE + (ability == null ? "없음" : ability.name()));
-        setLine(objective, 7, ChatColor.DARK_GRAY + " ");
-        setLine(objective, 6, ChatColor.AQUA + "일반 " + cooldownStatus(player, ability, 1));
-        setLine(objective, 5, ChatColor.RED + "고급 " + cooldownStatus(player, ability, 2));
-        setLine(objective, 4, ChatColor.GOLD + "능력 " + cooldownStatus(player, 0));
-        setLine(objective, 3, ChatColor.DARK_GRAY + "  ");
-        setLine(objective, 2, ChatColor.YELLOW + "킬 " + ChatColor.WHITE + killsOf(player));
-        setLine(objective, 1, ChatColor.YELLOW + "우르프 " + state(abilityManager.urfEnabled())
-            + ChatColor.GRAY + " " + abilityManager.urfCooldownPercent() + "%");
+        int score = 15;
+        setLine(objective, score--, ChatColor.YELLOW + "상태 " + ChatColor.WHITE + stateLabel());
+        setLine(objective, score--, ChatColor.YELLOW + "팀 " + (team == null ? ChatColor.GRAY + "미참가" : team.coloredName()));
+        setLine(objective, score--, ChatColor.YELLOW + "능력 " + ChatColor.WHITE + (ability == null ? "없음" : ability.name()));
+        if (hasSkill(ability == null ? null : ability.normalSkill())) {
+            setLine(objective, score--, ChatColor.AQUA + "일반 " + cooldownStatus(player, ability, 1));
+        }
+        if (hasSkill(ability == null ? null : ability.advancedSkill())) {
+            setLine(objective, score--, ChatColor.RED + "고급 " + cooldownStatus(player, ability, 2));
+        }
+        List<String> timers = abilityManager.activeTimerLines(player);
+        if (!timers.isEmpty()) {
+            setLine(objective, score--, ChatColor.LIGHT_PURPLE + "타이머 " + timers.get(0));
+        }
+        if (timers.size() > 1) {
+            setLine(objective, score--, ChatColor.LIGHT_PURPLE + "타이머 " + timers.get(1));
+        }
+        setLine(objective, score--, ChatColor.YELLOW + "킬 " + ChatColor.WHITE + killsOf(player));
+        setLine(objective, score--, ChatColor.YELLOW + "도박 " + state(plugin.getConfig().getBoolean("gambling.enabled", true)));
+        setLine(objective, score, ChatColor.YELLOW + "우르프 " + state(abilityManager.urfEnabled())
+            + ChatColor.GRAY + " 감소 " + abilityManager.urfCooldownPercent() + "%");
     }
 
     private void setLine(Objective objective, int score, String text) {
@@ -606,6 +616,10 @@ public final class GameManager {
 
     private boolean hasCooldown(String cooldown) {
         return cooldown != null && cooldown.trim().length() > 0 && !"없음".equals(cooldown.trim());
+    }
+
+    private boolean hasSkill(String skill) {
+        return skill != null && skill.trim().length() > 0 && !"없음".equals(skill.trim());
     }
 
     private String state(boolean enabled) {

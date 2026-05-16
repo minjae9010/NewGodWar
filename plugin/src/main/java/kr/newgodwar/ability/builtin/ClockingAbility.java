@@ -37,7 +37,7 @@ final class ClockingAbility extends BaseAbility {
         if (useNormal(context, player, 0)) {
             invisible = true;
             effect(player, PotionEffectType.INVISIBILITY, 7, 0);
-            later(context, 7, new Runnable() {
+            later(context, 7, "클로킹 종료", "클로킹 종료", new Runnable() {
                 @Override
                 public void run() {
                     invisible = false;

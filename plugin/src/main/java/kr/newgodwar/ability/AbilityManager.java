@@ -119,6 +119,11 @@ public final class AbilityManager {
         return session == null ? 0L : session.ability().cooldownRemainingMillis(slot);
     }
 
+    public List<String> activeTimerLines(Player player) {
+        AbilitySession session = session(player);
+        return session == null ? Collections.<String>emptyList() : session.ability().activeTimerLines();
+    }
+
     public void clearCooldowns(Player player) {
         AbilitySession session = session(player);
         if (session != null) {
@@ -195,12 +200,12 @@ public final class AbilityManager {
     }
 
     public int urfCooldownPercent() {
-        return (int) Math.round(urfCooldownMultiplier() * 100.0D);
+        return (int) Math.round((1.0D - urfCooldownMultiplier()) * 100.0D);
     }
 
     public void setUrfCooldownPercent(int percent) {
-        int clamped = Math.max(0, Math.min(500, percent));
-        plugin.getConfig().set("game.urf.cooldown-multiplier", clamped / 100.0D);
+        int clamped = Math.max(0, Math.min(100, percent));
+        plugin.getConfig().set("game.urf.cooldown-multiplier", (100 - clamped) / 100.0D);
         plugin.saveConfig();
     }
 

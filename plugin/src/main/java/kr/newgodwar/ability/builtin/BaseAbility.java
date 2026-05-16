@@ -39,6 +39,7 @@ abstract class BaseAbility implements GodAbility {
     protected static final Set<String> SCROOGE_TEAMS = new HashSet<String>();
 
     private final Map<Integer, Long> cooldowns = new LinkedHashMap<Integer, Long>();
+    private final Map<String, Long> timers = new LinkedHashMap<String, Long>();
     protected String targetName;
     protected boolean ready;
     protected boolean invincible;
@@ -335,7 +336,45 @@ abstract class BaseAbility implements GodAbility {
     }
 
     protected void later(AbilityPlayerContext context, int seconds, Runnable runnable) {
-        Bukkit.getScheduler().scheduleSyncDelayedTask(context.plugin(), runnable, seconds * 20L);
+        later(context, seconds, "능력 타이머", "능력 효과", runnable);
+    }
+
+    protected void later(final AbilityPlayerContext context, final int seconds, final String timerName, final String triggerText, final Runnable runnable) {
+        final String name = timerName == null || timerName.trim().length() == 0 ? "능력 타이머" : timerName;
+        final String text = triggerText == null || triggerText.trim().length() == 0 ? "능력 효과" : triggerText;
+        timers.put(name, System.currentTimeMillis() + seconds * 1000L);
+        context.player().sendMessage(ChatColor.YELLOW + text + ChatColor.WHITE + " : "
+            + ChatColor.AQUA + seconds + "초 후");
+        refreshDisplay(context);
+        Bukkit.getScheduler().scheduleSyncDelayedTask(context.plugin(), new Runnable() {
+            @Override
+            public void run() {
+                timers.remove(name);
+                refreshDisplay(context);
+                runnable.run();
+                refreshDisplay(context);
+            }
+        }, seconds * 20L);
+    }
+
+    @Override
+    public List<String> activeTimerLines() {
+        long now = System.currentTimeMillis();
+        List<String> lines = new ArrayList<String>();
+        List<String> expired = new ArrayList<String>();
+        for (Map.Entry<String, Long> entry : timers.entrySet()) {
+            long remaining = entry.getValue() - now;
+            if (remaining <= 0L) {
+                expired.add(entry.getKey());
+                continue;
+            }
+            lines.add(ChatColor.WHITE + entry.getKey() + ChatColor.GRAY + " "
+                + ChatColor.YELLOW + ((remaining + 999L) / 1000L) + "초");
+        }
+        for (String key : expired) {
+            timers.remove(key);
+        }
+        return lines;
     }
 
     protected void abyss(Player player, int radius, boolean includeSelf) {
@@ -356,7 +395,7 @@ abstract class BaseAbility implements GodAbility {
         final Block block = base.getLocation().add(0, 1, 0).getBlock();
         if (block.getType() == Material.AIR && useNormal(context, player, 0)) {
             block.setType(Material.LAVA);
-            later(context, 2, new Runnable() {
+            later(context, 2, "용암 제거", "용암 제거", new Runnable() {
                 @Override
                 public void run() {
                     if (block.getType() == Material.LAVA) {
@@ -370,7 +409,7 @@ abstract class BaseAbility implements GodAbility {
     protected void fly(final AbilityPlayerContext context, final Player player, int seconds) {
         player.setAllowFlight(true);
         player.setFlying(true);
-        later(context, seconds, new Runnable() {
+        later(context, seconds, "비행 종료", "비행 종료", new Runnable() {
             @Override
             public void run() {
                 player.setFlying(false);
@@ -407,7 +446,7 @@ abstract class BaseAbility implements GodAbility {
 
     protected void recall(final AbilityPlayerContext context, final Player player) {
         final Location location = player.getLocation();
-        later(context, 10, new Runnable() {
+        later(context, 10, "귀환 발동", "귀환 발동", new Runnable() {
             @Override
             public void run() {
                 player.teleport(location);
@@ -425,7 +464,7 @@ abstract class BaseAbility implements GodAbility {
                 block.setType(Material.ICE);
             }
         }
-        later(context, seconds, new Runnable() {
+        later(context, seconds, "얼음 구체 복구", "얼음 구체 복구", new Runnable() {
             @Override
             public void run() {
                 for (Map.Entry<Location, Material> entry : oldBlocks.entrySet()) {
@@ -508,7 +547,7 @@ abstract class BaseAbility implements GodAbility {
         for (Player target : targets) {
             target.setVelocity(new Vector(0, 1.6D, 0));
         }
-        later(context, 1, new Runnable() {
+        later(context, 1, "심판 발동", "심판 발동", new Runnable() {
             @Override
             public void run() {
                 for (Player target : targets) {
@@ -585,7 +624,7 @@ abstract class BaseAbility implements GodAbility {
         } else if (spell.equals("익스펙토 패트로눔") || spell.equalsIgnoreCase("Expecto Patronum")) {
             if (useAdvanced(context, player) && RANDOM.nextInt(4) < (harry ? 3 : 2)) {
                 invincible = true;
-                later(context, 5, new Runnable() {
+                later(context, 5, "보호 주문 종료", "보호 주문 종료", new Runnable() {
                     @Override
                     public void run() {
                         invincible = false;

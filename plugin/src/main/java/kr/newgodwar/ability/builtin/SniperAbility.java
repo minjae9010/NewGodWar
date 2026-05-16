@@ -36,7 +36,7 @@ final class SniperAbility extends BaseAbility {
         if (isLeft(event.getAction()) && holding(player, Material.BOW) && player.isSneaking() && !ready) {
             ready = true;
             player.sendMessage("스나이핑 모드를 준비합니다.");
-            later(context, 4, new Runnable() {
+            later(context, 4, "저격 준비", "저격 모드 활성화", new Runnable() {
                 @Override
                 public void run() {
                     if (ready) {

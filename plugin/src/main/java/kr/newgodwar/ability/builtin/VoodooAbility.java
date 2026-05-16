@@ -60,7 +60,7 @@ final class VoodooAbility extends BaseAbility {
             final Block sign = postSign;
             context.player().sendMessage(ChatColor.RED + targetName + ChatColor.WHITE + " 를(을) 팻말과 연결시켰습니다.");
             target.sendMessage(ChatColor.RED + "부두술사가 당신을 위협합니다.");
-            later(context, 7, new Runnable() {
+            later(context, 7, "부두 연결 해제", "부두 연결 해제", new Runnable() {
                 @Override
                 public void run() {
                     targetName = null;

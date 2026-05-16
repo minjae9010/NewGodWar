@@ -31,6 +31,63 @@ core:
 
 gambling:
   enabled: true
+  cost:
+    cobblestone: 32
+  rewards:
+    normal:
+      - chance: 5
+        material: DIAMOND
+        amount: 3
+        message: "&b와우! 축하합니다! 다이아몬드 3개입니다!"
+      - chance: 15
+        material: OAK_LOG
+        legacy-material: LOG
+        amount: 3
+        message: "&6대박! 짜잔! 원목 3개 당첨 축하드립니다!"
+      - chance: 15
+        material: BLAZE_ROD
+        amount: 1
+        messages:
+          - "&c꽝!"
+          - "&9서버의 신의 자비로 능력의 막대를 드립니다."
+      - chance: 45
+        material: IRON_INGOT
+        amount: 3
+        message: "평범하군요! 철괴 3개를 드립니다."
+      - chance: 19
+        material: IRON_INGOT
+        amount: 4
+        message: "평범하군요! 철괴 4개를 드립니다."
+      - chance: 1
+        material: DIAMOND
+        amount: 22
+        messages:
+          - "&e헐... 대박, 당신의 운은 미쳤군요!"
+          - "&b다이아몬드 22개에 당첨되셨습니다."
+    tajja:
+      - chance: 10
+        material: DIAMOND
+        amount: 3
+        message: "&b와우! 축하합니다! 다이아몬드 3개입니다!"
+      - chance: 10
+        material: OAK_LOG
+        legacy-material: LOG
+        amount: 3
+        message: "&6대박! 짜잔! 원목 3개 당첨 축하드립니다!"
+      - chance: 65
+        material: IRON_INGOT
+        amount: 3
+        message: "평범하군요! 철괴 3개를 드립니다."
+      - chance: 10
+        material: IRON_INGOT
+        amount: 4
+        message: "평범하군요! 철괴 4개를 드립니다."
+      - chance: 5
+        material: DIAMOND
+        amount: 22
+        messages:
+          - "&e헐... 대박, 당신의 운은 미쳤군요!"
+          - "&b다이아몬드 22개에 당첨되셨습니다."
 
 scoreboard:
   enabled: true

@@ -18,6 +18,9 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 
+import java.util.Collections;
+import java.util.List;
+
 public interface GodAbility {
 
     default void onAssign(AbilityPlayerContext context) {
@@ -92,6 +95,10 @@ public interface GodAbility {
     }
 
     default void clearCooldowns() {
+    }
+
+    default List<String> activeTimerLines() {
+        return Collections.emptyList();
     }
 
     default boolean supports(Player player) {

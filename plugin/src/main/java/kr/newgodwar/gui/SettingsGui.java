@@ -112,7 +112,14 @@ public final class SettingsGui implements Listener {
         } else if (slot == 11) {
             toggle("world.spawn-monsters");
         } else if (slot == 12) {
-            toggle("gambling.enabled");
+            if (click == ClickType.RIGHT) {
+                changeInt("gambling.cost.cobblestone", 1, 1, 2304);
+            } else if (click == ClickType.SHIFT_RIGHT) {
+                changeInt("gambling.cost.cobblestone", -1, 1, 2304);
+            } else {
+                toggle("gambling.enabled");
+            }
+            gameManager.refreshAllPlayerDisplays();
         } else if (slot == 13) {
             toggle("core.protect-diamond-from-explosion");
         } else if (slot == 14) {
@@ -198,7 +205,7 @@ public final class SettingsGui implements Listener {
         inventory.setItem(9, toggleItem("world.autosave", "서버 자동 저장", "BOOK"));
         inventory.setItem(10, toggleItem("world.spawn-animals", "동물 스폰", "WHEAT"));
         inventory.setItem(11, toggleItem("world.spawn-monsters", "몬스터 스폰", "BONE"));
-        inventory.setItem(12, toggleItem("gambling.enabled", "도박 허용", "GOLD_INGOT"));
+        inventory.setItem(12, gamblingItem(config));
         inventory.setItem(13, toggleItem("core.protect-diamond-from-explosion", "코어 폭파 보호", "DIAMOND_BLOCK"));
         inventory.setItem(14, toggleItem("core.forbid-diamond-pickaxe", "다이아 곡괭이 금지", "DIAMOND_PICKAXE"));
         inventory.setItem(15, toggleItem("scoreboard.enabled", "스코어보드 안내 사용", "ITEM_FRAME"));
@@ -231,11 +238,29 @@ public final class SettingsGui implements Listener {
         int percent = plugin.abilities().urfCooldownPercent();
         return item("BLAZE_POWDER", "BLAZE_POWDER", 1, (short) 0,
             color + "우르프 모드: " + state,
-            ChatColor.GRAY + "능력 쿨타임 배율: " + ChatColor.YELLOW + percent + "%",
+            ChatColor.GRAY + "능력 쿨타임 감소율: " + ChatColor.YELLOW + percent + "%",
             ChatColor.GRAY + "좌클릭: 우르프 켜기/끄기",
-            ChatColor.GRAY + "우클릭: 배율 +5%",
-            ChatColor.GRAY + "쉬프트+우클릭: 배율 -5%",
+            ChatColor.GRAY + "우클릭: 감소율 +5%",
+            ChatColor.GRAY + "쉬프트+우클릭: 감소율 -5%",
             ChatColor.DARK_GRAY + "game.urf.enabled");
+    }
+
+    private ItemStack gamblingItem(FileConfiguration config) {
+        boolean enabled = config.getBoolean("gambling.enabled", true);
+        ChatColor color = enabled ? ChatColor.GREEN : ChatColor.RED;
+        String state = enabled ? "켜짐" : "꺼짐";
+        int cost = Math.max(1, config.getInt("gambling.cost.cobblestone", 32));
+        int normalRewards = config.getMapList("gambling.rewards.normal").size();
+        int tajjaRewards = config.getMapList("gambling.rewards.tajja").size();
+        return item("GOLD_INGOT", "GOLD_INGOT", 1, (short) 0,
+            color + "도박 허용: " + state,
+            ChatColor.GRAY + "가격: " + ChatColor.YELLOW + "조약돌 " + cost + "개",
+            ChatColor.GRAY + "일반 상품: " + ChatColor.WHITE + normalRewards + "개",
+            ChatColor.GRAY + "타짜 상품: " + ChatColor.WHITE + tajjaRewards + "개",
+            ChatColor.GRAY + "좌클릭: 도박 켜기/끄기",
+            ChatColor.GRAY + "우클릭: 가격 +1",
+            ChatColor.GRAY + "쉬프트+우클릭: 가격 -1",
+            ChatColor.DARK_GRAY + "상품은 config.yml에서 편집");
     }
 
     private ItemStack toggleItem(String path, String title, String icon) {

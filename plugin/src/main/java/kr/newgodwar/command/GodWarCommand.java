@@ -249,7 +249,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         }
         if (sender.hasPermission("newgodwar.admin")) {
             section(sender, "운영 설정");
-            command(sender, label, "urf <on|off|toggle|20%>", "우르프 모드 및 쿨타임 배율 설정");
+            command(sender, label, "urf <on|off|toggle|80%>", "우르프 모드 및 쿨타임 감소율 설정");
             command(sender, label, "blacklist <list|add|remove|toggle> [ability]", "랜덤 제외 능력 관리");
             command(sender, label, "gamerule <apply|restore>", "게임룰 수동 적용 / 복구");
             command(sender, label, "reload", "config.yml 다시 불러오기");
@@ -290,7 +290,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
     }
 
     private String urfStatus() {
-        return state(abilityManager.urfEnabled()) + ChatColor.GRAY + " / 쿨타임 "
+        return state(abilityManager.urfEnabled()) + ChatColor.GRAY + " / 쿨타임 감소 "
             + ChatColor.YELLOW + abilityManager.urfCooldownPercent() + "%";
     }
 
