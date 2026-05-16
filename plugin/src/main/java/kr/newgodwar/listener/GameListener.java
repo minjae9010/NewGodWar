@@ -107,7 +107,7 @@ public final class GameListener implements Listener {
         }
     }
 
-    @EventHandler(ignoreCancelled = true)
+    @EventHandler
     public void onInteract(PlayerInteractEvent event) {
         if (gameManager.isRunning()) {
             abilityManager.handleInteract(event.getPlayer(), event);

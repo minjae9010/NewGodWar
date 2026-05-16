@@ -56,7 +56,8 @@
 - `game.auto-balance-teams`: 팀이 비어 있을 때 시작 시 자동 팀 배정
 - `game.allow-mid-join`: 진행 중인 게임의 중간 참여 허용 여부
 - `game.ability-roll-message`: 능력 배정 타이틀 표시 여부
-- `game.urf`: 우르프 모드 설정, 능력 쿨타임과 일부 능력 보정에 적용
+- `game.ability-tick-interval-seconds`: 능력 반복 처리 주기
+- `game.urf`: 우르프 모드 사용 여부와 능력 쿨타임 배율
 - `scoreboard.enabled`: 우측 스코어보드에 내 팀, 능력, 킬 상태 표시
 - `scoreboard.team-prefixes`: 탭 목록과 머리 위 이름에 팀 Prefix 표시
 - `blacklist.abilities`: 랜덤 배정에서 제외할 능력 ID 목록

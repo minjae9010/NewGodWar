@@ -506,7 +506,7 @@ public final class GameManager {
         if (waterHealTask != -1) {
             Bukkit.getScheduler().cancelTask(waterHealTask);
         }
-        long interval = Math.max(1L, plugin.getConfig().getLong("abilities.poseidon.water-heal-interval-seconds", 5L)) * 20L;
+        long interval = Math.max(1L, plugin.getConfig().getLong("game.ability-tick-interval-seconds", 1L)) * 20L;
         waterHealTask = Bukkit.getScheduler().scheduleSyncRepeatingTask(plugin, new Runnable() {
             @Override
             public void run() {

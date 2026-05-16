@@ -7,6 +7,7 @@ import org.bukkit.GameMode;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.ChatColor;
+import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scoreboard.Team;
@@ -37,6 +38,16 @@ public final class BukkitCompat {
             } catch (Throwable ignoredToo) {
                 return player.getTargetBlock((Set<Material>) null, maxDistance);
             }
+        }
+    }
+
+    public static boolean isMainHandInteract(PlayerInteractEvent event) {
+        try {
+            Method method = event.getClass().getMethod("getHand");
+            Object hand = method.invoke(event);
+            return hand == null || !"OFF_HAND".equals(String.valueOf(hand));
+        } catch (Throwable ignored) {
+            return true;
         }
     }
 

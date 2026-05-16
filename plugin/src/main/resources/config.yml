@@ -5,11 +5,10 @@ game:
   allow-mid-join: true
   announce-radius: 0
   ability-roll-message: true
+  ability-tick-interval-seconds: 1
   urf:
     enabled: false
     cooldown-multiplier: 0.2
-    speed-amplifier-bonus: 1
-    damage-multiplier: 1.0
 
 scoreboard:
   enabled: true
@@ -38,22 +37,6 @@ teams:
   green:
     display-name: "초록"
     color: GREEN
-
-abilities:
-  zeus:
-    enabled: true
-    lightning-chance: 0.18
-    cooldown-seconds: 8
-  ares:
-    enabled: true
-    damage-bonus: 1.25
-  hermes:
-    enabled: true
-    speed-amplifier: 1
-  poseidon:
-    enabled: true
-    water-heal-interval-seconds: 5
-    water-heal-amount: 1.0
 
 messages:
   prefix: "&6[신들의 전쟁]&r "

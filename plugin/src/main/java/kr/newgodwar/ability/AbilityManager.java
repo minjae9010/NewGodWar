@@ -6,11 +6,13 @@ import kr.newgodwar.ability.api.AbilityDefinition;
 import kr.newgodwar.ability.api.AbilityKillContext;
 import kr.newgodwar.ability.api.AbilityPlayerContext;
 import kr.newgodwar.ability.api.AbilityRegistrar;
+import kr.newgodwar.util.BukkitCompat;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
 import org.bukkit.entity.Snowball;
+import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockExplodeEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
@@ -168,14 +170,6 @@ public final class AbilityManager {
         return Math.max(0L, Math.round(baseMillis * Math.max(0.0D, multiplier)));
     }
 
-    public int urfSpeedAmplifierBonus() {
-        return urfEnabled() ? plugin.getConfig().getInt("game.urf.speed-amplifier-bonus", 1) : 0;
-    }
-
-    public double urfDamageMultiplier() {
-        return urfEnabled() ? plugin.getConfig().getDouble("game.urf.damage-multiplier", 1.0D) : 1.0D;
-    }
-
     public void handleDamage(Player damager, Player victim, EntityDamageByEntityEvent event) {
         AbilitySession session = session(damager);
         if (session != null) {
@@ -228,10 +222,20 @@ public final class AbilityManager {
     }
 
     public void handleInteract(Player player, PlayerInteractEvent event) {
+        if (!BukkitCompat.isMainHandInteract(event)) {
+            return;
+        }
+        if (event.isCancelled() && !isAirInteract(event.getAction())) {
+            return;
+        }
         AbilitySession session = session(player);
         if (session != null) {
             session.ability().onInteract(playerContext(player, session.definition()), event);
         }
+    }
+
+    private boolean isAirInteract(Action action) {
+        return action == Action.LEFT_CLICK_AIR || action == Action.RIGHT_CLICK_AIR;
     }
 
     public void handleGenericDamage(Player player, EntityDamageEvent event) {

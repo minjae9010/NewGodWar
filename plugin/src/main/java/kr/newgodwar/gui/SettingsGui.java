@@ -1,8 +1,6 @@
 package kr.newgodwar.gui;
 
 import kr.newgodwar.NewGodWarPlugin;
-import kr.newgodwar.ability.AbilityManager;
-import kr.newgodwar.ability.api.AbilityDefinition;
 import kr.newgodwar.game.GameManager;
 import kr.newgodwar.util.BukkitCompat;
 import org.bukkit.Bukkit;
@@ -22,24 +20,21 @@ import org.bukkit.inventory.meta.ItemMeta;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
 public final class SettingsGui implements Listener {
 
-    private static final String TITLE = ChatColor.DARK_PURPLE + "신들의 전쟁 설정";
-    private static final int SIZE = 54;
+    private static final String TITLE = ChatColor.BLACK + ":::::: 설정 ::::::";
+    private static final int SIZE = 27;
 
     private final NewGodWarPlugin plugin;
     private final GameManager gameManager;
-    private final AbilityManager abilityManager;
     private final Set<UUID> openViewers = new HashSet<UUID>();
 
-    public SettingsGui(NewGodWarPlugin plugin, GameManager gameManager, AbilityManager abilityManager) {
+    public SettingsGui(NewGodWarPlugin plugin, GameManager gameManager) {
         this.plugin = plugin;
         this.gameManager = gameManager;
-        this.abilityManager = abilityManager;
     }
 
     public void open(Player player) {
@@ -63,7 +58,7 @@ public final class SettingsGui implements Listener {
             return;
         }
 
-        handle(player, event.getRawSlot(), event.isRightClick(), event.isShiftClick());
+        handle(player, event.getRawSlot());
     }
 
     @EventHandler
@@ -82,6 +77,7 @@ public final class SettingsGui implements Listener {
         return openViewers.contains(event.getWhoClicked().getUniqueId())
             && event.getView() != null
             && TITLE.equals(event.getView().getTitle())
+            && event.getRawSlot() >= 0
             && event.getRawSlot() < SIZE;
     }
 
@@ -91,81 +87,63 @@ public final class SettingsGui implements Listener {
             && TITLE.equals(event.getView().getTitle());
     }
 
-    private void handle(Player player, int slot, boolean rightClick, boolean shiftClick) {
-        if (slot < 0 || slot >= SIZE) {
-            return;
-        }
-
-        if (slot == 10) {
-            changeInt("game.min-players", -1, 1, 100, false);
+    private void handle(Player player, int slot) {
+        if (slot == 0) {
+            changeInt("game.min-players", -1, 1, 100);
             reopen(player);
             return;
         }
-        if (slot == 12) {
-            changeInt("game.min-players", 1, 1, 100, false);
+        if (slot == 2) {
+            changeInt("game.min-players", 1, 1, 100);
             reopen(player);
             return;
         }
-        if (slot == 14) {
+        if (slot == 4) {
             toggle("game.friendly-fire");
             gameManager.reloadSettings();
             reopen(player);
             return;
         }
-        if (slot == 15) {
+        if (slot == 6) {
             toggle("game.auto-balance-teams");
             reopen(player);
             return;
         }
-        if (slot == 16) {
+        if (slot == 8) {
             toggle("game.ability-roll-message");
             reopen(player);
             return;
         }
-        if (slot == 17) {
+        if (slot == 10) {
             toggle("game.allow-mid-join");
             gameManager.refreshAllPlayerDisplays();
             reopen(player);
             return;
         }
-        if (slot == 19) {
-            changeInt("game.announce-radius", -10, 0, 10000, false);
-            reopen(player);
-            return;
-        }
-        if (slot == 21) {
-            changeInt("game.announce-radius", 10, 0, 10000, false);
-            reopen(player);
-            return;
-        }
-        if (slot == 22) {
+        if (slot == 11) {
             toggle("game.urf.enabled");
+            gameManager.refreshAllPlayerDisplays();
             reopen(player);
             return;
         }
-        if (slot == 23) {
-            changeDouble("game.urf.cooldown-multiplier", rightClick ? 0.05D : -0.05D, 0.0D, 1.0D, shiftClick);
-            reopen(player);
-            return;
-        }
-        if (slot == 24) {
+        if (slot == 12) {
             toggle("gamerules.enabled");
             reopen(player);
             return;
         }
-        if (slot == 25) {
+        if (slot == 14) {
             toggle("scoreboard.enabled");
             gameManager.refreshAllPlayerDisplays();
             reopen(player);
             return;
         }
-        if (slot == 26) {
+        if (slot == 16) {
             toggle("scoreboard.team-prefixes");
             gameManager.refreshAllPlayerDisplays();
             reopen(player);
             return;
         }
-        if (slot == 28) {
+        if (slot == 18) {
             try {
                 gameManager.start();
             } catch (IllegalStateException ex) {
@@ -174,71 +152,26 @@ public final class SettingsGui implements Listener {
             reopen(player);
             return;
         }
-        if (slot == 29) {
+        if (slot == 20) {
             gameManager.stop(true);
             reopen(player);
             return;
         }
-        if (slot == 30) {
+        if (slot == 22) {
             gameManager.autoBalance();
             plugin.messages().send(player, "&a온라인 플레이어를 자동으로 팀 배정했습니다.");
             reopen(player);
             return;
         }
-        if (slot == 31) {
+        if (slot == 24) {
             plugin.reloadConfig();
             gameManager.reloadSettings();
             plugin.messages().send(player, "&a설정을 다시 불러왔습니다.");
             reopen(player);
             return;
         }
-        if (slot == 32) {
-            AbilityDefinition ability = gameManager.startTest(player, null);
-            plugin.messages().send(player, "&a테스트 모드를 시작했습니다. 능력: &f" + ability.name());
-            reopen(player);
-            return;
-        }
-        if (slot == 33) {
+        if (slot == 26) {
             player.closeInventory();
-            return;
-        }
-        if (slot == 45) {
-            changeDouble("abilities.zeus.lightning-chance", rightClick ? -0.01D : 0.01D, 0.0D, 1.0D, shiftClick);
-            reopen(player);
-            return;
-        }
-        if (slot == 46) {
-            changeInt("abilities.zeus.cooldown-seconds", rightClick ? -1 : 1, 0, 300, shiftClick);
-            reopen(player);
-            return;
-        }
-        if (slot == 47) {
-            changeDouble("abilities.ares.damage-bonus", rightClick ? -0.05D : 0.05D, 0.0D, 10.0D, shiftClick);
-            reopen(player);
-            return;
-        }
-        if (slot == 48) {
-            changeInt("abilities.hermes.speed-amplifier", rightClick ? -1 : 1, 0, 10, shiftClick);
-            reopen(player);
-            return;
-        }
-        if (slot == 49) {
-            changeInt("abilities.poseidon.water-heal-interval-seconds", rightClick ? -1 : 1, 1, 300, shiftClick);
-            reopen(player);
-            return;
-        }
-        if (slot == 50) {
-            changeDouble("abilities.poseidon.water-heal-amount", rightClick ? -0.5D : 0.5D, 0.0D, 20.0D, shiftClick);
-            reopen(player);
-            return;
-        }
-
-        AbilityDefinition ability = abilityAtSlot(slot);
-        if (ability != null) {
-            String path = "abilities." + ability.id() + ".enabled";
-            plugin.getConfig().set(path, !abilityManager.isEnabled(ability));
-            plugin.saveConfig();
-            reopen(player);
         }
     }
 
@@ -259,90 +192,51 @@ public final class SettingsGui implements Listener {
         }
 
         FileConfiguration config = plugin.getConfig();
-        inventory.setItem(4, item("NETHER_STAR", "NETHER_STAR", 1, (short) 0,
-            ChatColor.GOLD + "" + ChatColor.BOLD + "신들의 전쟁 관리",
-            ChatColor.GRAY + "상태: " + ChatColor.YELLOW + gameManager.state(),
-            ChatColor.GRAY + "참가자: " + ChatColor.YELLOW + participantCount(),
-            ChatColor.GRAY + "마인크래프트: " + ChatColor.YELLOW + plugin.versionSupport().minecraftVersion(),
-            ChatColor.DARK_GRAY + "/gw 로 채팅 도움말을 볼 수 있습니다."));
-
-        inventory.setItem(0, sectionItem("코어 설정", "최소 인원과 게임 기본 옵션"));
-        inventory.setItem(18, sectionItem("알림 / 모드", "방송 반경, 우르프, 스코어보드"));
-        inventory.setItem(27, sectionItem("빠른 실행", "시작, 종료, 자동 팀 배정"));
-        inventory.setItem(35, sectionItem("능력 ON/OFF", "능력별 사용 여부"));
-        inventory.setItem(44, sectionItem("능력 세부값", "쿨타임과 수치 조절"));
-        inventory.setItem(53, item("NAME_TAG", "NAME_TAG", 1, (short) 0,
-            ChatColor.AQUA + "조작 안내",
-            ChatColor.GRAY + "왼쪽 클릭: 증가 또는 실행",
-            ChatColor.GRAY + "오른쪽 클릭: 감소",
-            ChatColor.GRAY + "Shift 클릭: 큰 폭 조정"));
-
-        inventory.setItem(10, item("REDSTONE_TORCH", "REDSTONE_TORCH_ON", 1, (short) 0,
+        inventory.setItem(0, item("REDSTONE_TORCH", "REDSTONE_TORCH_ON", 1, (short) 0,
             ChatColor.RED + "최소 인원 -1",
             ChatColor.GRAY + "현재: " + ChatColor.YELLOW + config.getInt("game.min-players", 2)));
-        inventory.setItem(11, item("PLAYER_HEAD", "SKULL_ITEM", config.getInt("game.min-players", 2), (short) 3,
+        inventory.setItem(1, item("PLAYER_HEAD", "SKULL_ITEM", config.getInt("game.min-players", 2), (short) 3,
             ChatColor.YELLOW + "최소 시작 인원",
-            ChatColor.GRAY + "게임 시작에 필요한 팀 배정 인원입니다."));
-        inventory.setItem(12, item("TORCH", "TORCH", 1, (short) 0,
+            ChatColor.GRAY + "참가자: " + ChatColor.YELLOW + participantCount()));
+        inventory.setItem(2, item("TORCH", "TORCH", 1, (short) 0,
             ChatColor.GREEN + "최소 인원 +1",
             ChatColor.GRAY + "현재: " + ChatColor.YELLOW + config.getInt("game.min-players", 2)));
 
-        inventory.setItem(14, toggleItem("game.friendly-fire", "팀킬 허용", "IRON_SWORD"));
-        inventory.setItem(15, toggleItem("game.auto-balance-teams", "빈 팀이면 자동 배정", "COMPASS"));
-        inventory.setItem(16, toggleItem("game.ability-roll-message", "능력 배정 안내", "PAPER"));
-        inventory.setItem(17, toggleItem("game.allow-mid-join", "중간 참여 허용", "ENDER_PEARL"));
+        inventory.setItem(4, toggleItem("game.friendly-fire", "팀킬 허용", "IRON_SWORD"));
+        inventory.setItem(6, toggleItem("game.auto-balance-teams", "팀 자동 배정", "COMPASS"));
+        inventory.setItem(8, toggleItem("game.ability-roll-message", "능력 배정 안내", "PAPER"));
+        inventory.setItem(10, toggleItem("game.allow-mid-join", "중간 참여 허용", "ENDER_PEARL"));
+        inventory.setItem(11, urfItem());
+        inventory.setItem(12, toggleItem("gamerules.enabled", "게임룰 자동 적용", "COMMAND"));
+        inventory.setItem(14, toggleItem("scoreboard.enabled", "스코어보드 안내 사용", "ITEM_FRAME"));
+        inventory.setItem(16, toggleItem("scoreboard.team-prefixes", "팀 Prefix 표시", "NAME_TAG"));
 
-        inventory.setItem(19, item("REDSTONE", "REDSTONE", 1, (short) 0,
-            ChatColor.RED + "알림 반경 -10",
-            ChatColor.GRAY + "현재: " + ChatColor.YELLOW + config.getInt("game.announce-radius", 0)));
-        inventory.setItem(20, item("MAP", "MAP", 1, (short) 0,
-            ChatColor.YELLOW + "알림 반경",
-            ChatColor.GRAY + "0이면 전체 방송으로 취급합니다.",
-            ChatColor.GRAY + "현재: " + ChatColor.YELLOW + config.getInt("game.announce-radius", 0)));
-        inventory.setItem(21, item("GLOWSTONE_DUST", "GLOWSTONE_DUST", 1, (short) 0,
-            ChatColor.GREEN + "알림 반경 +10",
-            ChatColor.GRAY + "현재: " + ChatColor.YELLOW + config.getInt("game.announce-radius", 0)));
-        inventory.setItem(22, toggleItem("game.urf.enabled", "우르프 모드", "BLAZE_POWDER"));
-        inventory.setItem(23, numberItem("우르프 쿨타임 배율", "game.urf.cooldown-multiplier", 0.2D, "왼쪽 -0.05 / 오른쪽 +0.05"));
-        inventory.setItem(24, toggleItem("gamerules.enabled", "게임룰 자동 적용", "COMMAND"));
-        inventory.setItem(25, toggleItem("scoreboard.enabled", "능력 스코어보드", "ITEM_FRAME"));
-        inventory.setItem(26, toggleItem("scoreboard.team-prefixes", "팀 Prefix 표시", "NAME_TAG"));
-
-        inventory.setItem(28, item("EMERALD_BLOCK", "EMERALD_BLOCK", 1, (short) 0,
+        inventory.setItem(18, item("EMERALD_BLOCK", "EMERALD_BLOCK", 1, (short) 0,
             ChatColor.GREEN + "게임 시작",
-            ChatColor.GRAY + "/godwar start"));
-        inventory.setItem(29, item("REDSTONE_BLOCK", "REDSTONE_BLOCK", 1, (short) 0,
+            ChatColor.GRAY + "/t start"));
+        inventory.setItem(20, item("REDSTONE_BLOCK", "REDSTONE_BLOCK", 1, (short) 0,
             ChatColor.RED + "게임 종료",
-            ChatColor.GRAY + "/godwar stop"));
-        inventory.setItem(30, item("COMPASS", "COMPASS", 1, (short) 0,
+            ChatColor.GRAY + "/t stop"));
+        inventory.setItem(22, item("COMPASS", "COMPASS", 1, (short) 0,
             ChatColor.AQUA + "팀 자동 배정",
-            ChatColor.GRAY + "/godwar autoteam"));
-        inventory.setItem(31, item("BOOK", "BOOK", 1, (short) 0,
+            ChatColor.GRAY + "/gw autoteam"));
+        inventory.setItem(24, item("BOOK", "BOOK", 1, (short) 0,
             ChatColor.YELLOW + "설정 다시 불러오기",
-            ChatColor.GRAY + "config.yml을 다시 읽고 GUI를 갱신합니다."));
-        inventory.setItem(32, item("EXPERIENCE_BOTTLE", "EXP_BOTTLE", 1, (short) 0,
-            ChatColor.LIGHT_PURPLE + "혼자 능력 테스트",
-            ChatColor.GRAY + "최소 인원 조건 없이",
-            ChatColor.GRAY + "나에게 랜덤 능력을 바로 부여합니다."));
-        inventory.setItem(33, item("BARRIER", "BARRIER", 1, (short) 0,
+            ChatColor.GRAY + "config.yml을 다시 읽습니다."));
+        inventory.setItem(26, item("BARRIER", "BARRIER", 1, (short) 0,
             ChatColor.RED + "닫기"));
+    }
 
-        int[] slots = new int[] {36, 37, 38, 39, 40, 41, 42, 43};
-        int index = 0;
-        for (AbilityDefinition ability : abilityManager.registry().all()) {
-            if (index >= slots.length) {
-                break;
-            }
-            inventory.setItem(slots[index], abilityItem(ability));
-            index++;
-        }
-
-        inventory.setItem(45, numberItem("제우스 번개 확률", "abilities.zeus.lightning-chance", 0.18D, "왼쪽 +0.01 / 오른쪽 -0.01"));
-        inventory.setItem(46, numberItem("제우스 쿨타임", "abilities.zeus.cooldown-seconds", 8, "왼쪽 +1초 / 오른쪽 -1초"));
-        inventory.setItem(47, numberItem("아레스 피해 배율", "abilities.ares.damage-bonus", 1.25D, "왼쪽 +0.05 / 오른쪽 -0.05"));
-        inventory.setItem(48, numberItem("헤르메스 속도 증폭", "abilities.hermes.speed-amplifier", 1, "왼쪽 +1 / 오른쪽 -1"));
-        inventory.setItem(49, numberItem("포세이돈 회복 간격", "abilities.poseidon.water-heal-interval-seconds", 5, "왼쪽 +1초 / 오른쪽 -1초"));
-        inventory.setItem(50, numberItem("포세이돈 회복량", "abilities.poseidon.water-heal-amount", 1.0D, "왼쪽 +0.5 / 오른쪽 -0.5"));
+    private ItemStack urfItem() {
+        boolean enabled = plugin.getConfig().getBoolean("game.urf.enabled", false);
+        ChatColor color = enabled ? ChatColor.GREEN : ChatColor.RED;
+        String state = enabled ? "켜짐" : "꺼짐";
+        double multiplier = plugin.getConfig().getDouble("game.urf.cooldown-multiplier", 0.2D);
+        return item("BLAZE_POWDER", "BLAZE_POWDER", 1, (short) 0,
+            color + "우르프 모드: " + state,
+            ChatColor.GRAY + "능력 쿨타임 배율: " + ChatColor.YELLOW + multiplier,
+            ChatColor.GRAY + "클릭하면 설정이 전환됩니다.",
+            ChatColor.DARK_GRAY + "game.urf.enabled");
     }
 
     private ItemStack toggleItem(String path, String title, String icon) {
@@ -355,107 +249,18 @@ public final class SettingsGui implements Listener {
             ChatColor.DARK_GRAY + path);
     }
 
-    private ItemStack sectionItem(String title, String description) {
-        return item("OAK_SIGN", "SIGN", 1, (short) 0,
-            ChatColor.YELLOW + "" + ChatColor.BOLD + title,
-            ChatColor.GRAY + description);
-    }
-
-    private ItemStack abilityItem(AbilityDefinition ability) {
-        boolean enabled = abilityManager.isEnabled(ability);
-        ChatColor color = enabled ? ChatColor.GREEN : ChatColor.RED;
-        String state = enabled ? "활성" : "비활성";
-        return item(enabled ? "ENCHANTED_BOOK" : "BOOK", enabled ? "ENCHANTED_BOOK" : "BOOK", 1, (short) 0,
-            color + ability.name() + ChatColor.GRAY + " (" + ability.id() + ")",
-            ChatColor.GRAY + "상태: " + color + state,
-            ChatColor.GRAY + ability.description(),
-            ChatColor.YELLOW + "일반: " + ChatColor.GRAY + ability.normalSkill(),
-            ChatColor.YELLOW + "일반 돌 소모: " + ChatColor.GRAY + stoneCost(ability.normalStoneCost()),
-            ChatColor.GOLD + "고급: " + ChatColor.GRAY + ability.advancedSkill(),
-            ChatColor.GOLD + "고급 돌 소모: " + ChatColor.GRAY + stoneCost(ability.advancedStoneCost()),
-            ChatColor.AQUA + "패시브: " + ChatColor.GRAY + ability.passiveSkill(),
-            ChatColor.DARK_GRAY + "클릭하면 능력 사용 여부가 전환됩니다.");
-    }
-
-    private String stoneCost(int cost) {
-        return cost <= 0 ? "없음" : cost + "개";
-    }
-
-    private ItemStack numberItem(String title, String path, int fallback, String clickHint) {
-        int value = plugin.getConfig().getInt(path, fallback);
-        return item("COMPARATOR", "REDSTONE_COMPARATOR", 1, (short) 0,
-            ChatColor.AQUA + title,
-            ChatColor.GRAY + "현재: " + ChatColor.YELLOW + value,
-            ChatColor.GRAY + clickHint,
-            ChatColor.DARK_GRAY + "Shift 클릭은 5배로 조정됩니다.");
-    }
-
-    private ItemStack numberItem(String title, String path, double fallback, String clickHint) {
-        double value = plugin.getConfig().getDouble(path, fallback);
-        return item("COMPARATOR", "REDSTONE_COMPARATOR", 1, (short) 0,
-            ChatColor.AQUA + title,
-            ChatColor.GRAY + "현재: " + ChatColor.YELLOW + trim(value),
-            ChatColor.GRAY + clickHint,
-            ChatColor.DARK_GRAY + "Shift 클릭은 5배로 조정됩니다.");
-    }
-
-    private AbilityDefinition abilityAtSlot(int slot) {
-        int[] slots = new int[] {36, 37, 38, 39, 40, 41, 42, 43};
-        int index = -1;
-        for (int i = 0; i < slots.length; i++) {
-            if (slots[i] == slot) {
-                index = i;
-                break;
-            }
-        }
-        if (index < 0) {
-            return null;
-        }
-
-        int current = 0;
-        for (AbilityDefinition ability : abilityManager.registry().all()) {
-            if (current == index) {
-                return ability;
-            }
-            current++;
-        }
-        return null;
-    }
-
     private void toggle(String path) {
         FileConfiguration config = plugin.getConfig();
         config.set(path, !config.getBoolean(path, false));
         plugin.saveConfig();
     }
 
-    private void changeInt(String path, int delta, int min, int max, boolean multiply) {
+    private void changeInt(String path, int delta, int min, int max) {
         FileConfiguration config = plugin.getConfig();
         int value = config.getInt(path, min);
-        if (multiply) {
-            delta *= 5;
-        }
         value = Math.max(min, Math.min(max, value + delta));
         config.set(path, value);
         plugin.saveConfig();
-    }
-
-    private void changeDouble(String path, double delta, double min, double max, boolean multiply) {
-        FileConfiguration config = plugin.getConfig();
-        double value = config.getDouble(path, min);
-        if (multiply) {
-            delta *= 5.0D;
-        }
-        value = Math.max(min, Math.min(max, value + delta));
-        config.set(path, Math.round(value * 100.0D) / 100.0D);
-        plugin.saveConfig();
-    }
-
-    private String trim(double value) {
-        double rounded = Math.round(value * 100.0D) / 100.0D;
-        if (rounded == Math.rint(rounded)) {
-            return String.valueOf((int) rounded);
-        }
-        return String.valueOf(rounded);
     }
 
     private int participantCount() {

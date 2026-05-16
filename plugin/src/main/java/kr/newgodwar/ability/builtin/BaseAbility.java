@@ -163,7 +163,11 @@ abstract class BaseAbility implements GodAbility {
     }
 
     protected Block targetBlock(Player player, int range) {
-        return BukkitCompat.getTargetBlock(player, range);
+        Block block = firstSightBlock(player, range);
+        if (block != null) {
+            return block;
+        }
+        return fallbackTargetLocation(player, range).getBlock();
     }
 
     protected Location targetLocation(Player player, int range) {
@@ -171,7 +175,16 @@ abstract class BaseAbility implements GodAbility {
         if (block != null) {
             return block.getLocation();
         }
-        return player.getEyeLocation().add(player.getEyeLocation().getDirection().normalize().multiply(range));
+        return fallbackTargetLocation(player, range);
+    }
+
+    private Location fallbackTargetLocation(Player player, int range) {
+        Location eye = player.getEyeLocation();
+        Vector direction = eye.getDirection();
+        if (direction.lengthSquared() == 0.0D) {
+            return eye;
+        }
+        return eye.add(direction.normalize().multiply(range));
     }
 
     private Block firstSightBlock(Player player, int range) {

@@ -35,7 +35,7 @@ public final class NewGodWarPlugin extends JavaPlugin {
         this.abilityManager = new AbilityManager(this);
         this.gameManager = new GameManager(this, abilityManager, nmsAdapter);
 
-        this.settingsGui = new SettingsGui(this, gameManager, abilityManager);
+        this.settingsGui = new SettingsGui(this, gameManager);
         this.abilityGui = new AbilityGui(this, abilityManager);
 
         GodWarCommand godWarCommand = new GodWarCommand(this, gameManager, abilityManager, settingsGui, abilityGui);
