@@ -32,8 +32,10 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.projectiles.ProjectileSource;
 
+import java.lang.reflect.Method;
 import java.util.Iterator;
 
 public final class GameListener implements Listener {
@@ -225,7 +227,9 @@ public final class GameListener implements Listener {
     @EventHandler(ignoreCancelled = true)
     public void onChat(AsyncPlayerChatEvent event) {
         if (gameManager.isRunning()) {
-            abilityManager.handleChat(event.getPlayer(), event);
+            final Player player = event.getPlayer();
+            final String message = event.getMessage();
+            Bukkit.getScheduler().runTask(plugin, () -> abilityManager.handleChatMessage(player, message));
         }
     }
 
@@ -239,6 +243,7 @@ public final class GameListener implements Listener {
     @EventHandler
     public void onDeath(PlayerDeathEvent event) {
         if (gameManager.isRunning()) {
+            forceInventoryDrop(event);
             abilityManager.handleDeath(event);
         }
         Player killer = event.getEntity().getKiller();
@@ -260,6 +265,46 @@ public final class GameListener implements Listener {
             if (block.getType() == Material.DIAMOND_BLOCK && gameManager.templeTeam(block) != null) {
                 iterator.remove();
             }
+        }
+    }
+
+    private void forceInventoryDrop(PlayerDeathEvent event) {
+        boolean wasKeepingInventory = event.getKeepInventory();
+        event.setKeepInventory(false);
+        if (!wasKeepingInventory || !event.getDrops().isEmpty()) {
+            return;
+        }
+
+        Player player = event.getEntity();
+        addDrops(event, player.getInventory().getContents());
+        addDrops(event, player.getInventory().getArmorContents());
+        addDrop(event, offHandItem(player));
+    }
+
+    private void addDrops(PlayerDeathEvent event, ItemStack[] items) {
+        if (items == null) {
+            return;
+        }
+        for (ItemStack item : items) {
+            addDrop(event, item);
+        }
+    }
+
+    private void addDrop(PlayerDeathEvent event, ItemStack item) {
+        if (item != null && item.getType() != Material.AIR && item.getAmount() > 0) {
+            event.getDrops().add(item.clone());
+        }
+    }
+
+    private ItemStack offHandItem(Player player) {
+        try {
+            Method method = player.getInventory().getClass().getMethod("getItemInOffHand");
+            Object result = method.invoke(player.getInventory());
+            return result instanceof ItemStack ? (ItemStack) result : null;
+        } catch (ReflectiveOperationException ex) {
+            return null;
+        } catch (NoClassDefFoundError ex) {
+            return null;
         }
     }
 }

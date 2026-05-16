@@ -29,15 +29,16 @@ final class ApollonAbility extends BaseAbility {
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
         if (useNormal(context, player)) {
-            player.getWorld().setTime(6000);
-            Bukkit.broadcastMessage(ChatColor.YELLOW + "태양의 신이 해를 띄웠습니다.");
+            if (setWorldTime(context, player, 6000)) {
+                Bukkit.broadcastMessage(ChatColor.YELLOW + "태양의 신이 해를 띄웠습니다.");
+            }
         }
     }
 
     @Override
     protected void onStaffRight(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
         if (useAdvanced(context, player)) {
-            player.getWorld().setTime(6000);
+            setWorldTime(context, player, 6000);
             for (Player target : nearbyPlayers(context, player, 15, false)) {
                 if (target.getLocation().getBlock().getLightFromSky() > 10) {
                     target.setFireTicks(80);

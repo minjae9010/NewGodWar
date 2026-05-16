@@ -112,14 +112,11 @@ public final class AbilityRegistry {
     }
 
     private AbilityFactory reflectionFactory(final Class<? extends GodAbility> abilityClass, final Constructor<? extends GodAbility> constructor) {
-        return new AbilityFactory() {
-            @Override
-            public GodAbility create() {
-                try {
-                    return constructor.newInstance();
-                } catch (Exception ex) {
-                    throw new IllegalStateException("Cannot create ability: " + abilityClass.getName(), ex);
-                }
+        return () -> {
+            try {
+                return constructor.newInstance();
+            } catch (Exception ex) {
+                throw new IllegalStateException("Cannot create ability: " + abilityClass.getName(), ex);
             }
         };
     }

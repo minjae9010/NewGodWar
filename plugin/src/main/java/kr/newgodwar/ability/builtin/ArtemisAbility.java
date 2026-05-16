@@ -42,7 +42,7 @@ final class ArtemisAbility extends BaseAbility {
 
     @Override
     public void onProjectileHit(AbilityPlayerContext context, EntityDamageByEntityEvent event, Player victim) {
-        if (RANDOM.nextInt(20) <= 2) {
+        if (rollChance(2, 20)) {
             event.setDamage(100.0D);
         }
     }

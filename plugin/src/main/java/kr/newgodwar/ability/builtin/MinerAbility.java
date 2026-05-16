@@ -33,7 +33,7 @@ final class MinerAbility extends BaseAbility {
 
     @Override
     public void onBlockBreak(AbilityPlayerContext context, BlockBreakEvent event) {
-        if (event.getBlock().getType() == Material.COBBLESTONE && RANDOM.nextInt(33) == 0) {
+        if (event.getBlock().getType() == Material.COBBLESTONE && oneIn(33)) {
             event.getBlock().getWorld().dropItemNaturally(event.getBlock().getLocation(), new ItemStack(Material.COBBLESTONE, 9));
         }
     }

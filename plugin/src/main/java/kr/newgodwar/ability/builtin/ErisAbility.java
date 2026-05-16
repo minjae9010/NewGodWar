@@ -26,7 +26,7 @@ import java.util.List;
 final class ErisAbility extends BaseAbility {
     @Override
     public void onDamageByEntity(AbilityPlayerContext context, EntityDamageByEntityEvent event, Player opponent, boolean attacker) {
-        if (!attacker && RANDOM.nextInt(5) == 0) {
+        if (!attacker && oneIn(5)) {
             opponent.teleport(context.player().getLocation().add(5, 0, 5));
         }
     }

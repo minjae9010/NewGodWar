@@ -24,16 +24,15 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 
 public final class GamblingGui implements Listener, CommandExecutor {
 
     private static final String TITLE = ChatColor.BLACK + ":::::::: 카지노 ::::::::";
     private final NewGodWarPlugin plugin;
     private final Set<UUID> openViewers = new HashSet<UUID>();
-    private final Random random = new Random();
 
     public GamblingGui(NewGodWarPlugin plugin) {
         this.plugin = plugin;
@@ -118,12 +117,12 @@ public final class GamblingGui implements Listener, CommandExecutor {
 
     private Reward chooseReward(boolean tajja) {
         List<Reward> rewards = rewards(tajja ? "gambling.rewards.tajja" : "gambling.rewards.normal", tajja);
-        int total = 0;
+        long total = 0L;
         for (Reward reward : rewards) {
             total += reward.chance;
         }
-        int roll = random.nextInt(Math.max(1, total));
-        int cursor = 0;
+        long roll = ThreadLocalRandom.current().nextLong(total);
+        long cursor = 0L;
         for (Reward reward : rewards) {
             cursor += reward.chance;
             if (roll < cursor) {

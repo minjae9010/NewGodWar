@@ -28,7 +28,7 @@ final class AresAbility extends BaseAbility {
     public void onDamageByEntity(AbilityPlayerContext context, EntityDamageByEntityEvent event, Player opponent, boolean attacker) {
         if (attacker) {
             event.setDamage(event.getDamage() * 1.5D);
-        } else if (RANDOM.nextInt(10) == 0) {
+        } else if (oneIn(10)) {
             event.setCancelled(true);
             context.player().sendMessage("회피했습니다!");
         }

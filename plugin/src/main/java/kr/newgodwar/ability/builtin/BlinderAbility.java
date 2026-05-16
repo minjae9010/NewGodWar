@@ -36,7 +36,7 @@ final class BlinderAbility extends BaseAbility {
 
     @Override
     public void onDamageByEntity(AbilityPlayerContext context, EntityDamageByEntityEvent event, Player opponent, boolean attacker) {
-        if (!attacker && RANDOM.nextInt(10) == 0) {
+        if (!attacker && oneIn(10)) {
             effect(opponent, PotionEffectType.BLINDNESS, 4, 0);
         }
     }

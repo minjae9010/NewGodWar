@@ -33,7 +33,7 @@ final class ExamineeAbility extends BaseAbility {
     }
 
     @Override
-    public void onChat(AbilityPlayerContext context, AsyncPlayerChatEvent event) {
-        answerQuestion(context, event);
+    public void onChatMessage(AbilityPlayerContext context, String message) {
+        answerQuestion(context, message);
     }
 }

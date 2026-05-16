@@ -26,7 +26,7 @@ import java.util.List;
 final class DionysusAbility extends BaseAbility {
     @Override
     public void onDamageByEntity(AbilityPlayerContext context, EntityDamageByEntityEvent event, Player opponent, boolean attacker) {
-        if (!attacker && RANDOM.nextInt(20) <= 2) {
+        if (!attacker && rollChance(2, 20)) {
             effect(opponent, PotionEffectType.SLOW, 10, 0);
             effect(opponent, PotionEffectType.WEAKNESS, 10, 0);
             effect(opponent, PotionEffectType.CONFUSION, 12, 0);

@@ -32,8 +32,8 @@ final class HarryAbility extends BaseAbility {
     }
 
     @Override
-    public void onChat(AbilityPlayerContext context, AsyncPlayerChatEvent event) {
-        castSpell(context, event.getMessage(), true);
+    public void onChatMessage(AbilityPlayerContext context, String message) {
+        castSpell(context, message, true);
     }
 
     @Override

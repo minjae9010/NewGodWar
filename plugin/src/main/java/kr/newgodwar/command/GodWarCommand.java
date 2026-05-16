@@ -11,6 +11,7 @@ import kr.newgodwar.util.BukkitCompat;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.block.Block;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -22,14 +23,18 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.UUID;
 
 public final class GodWarCommand implements CommandExecutor, TabCompleter {
 
     private static final List<String> SUBCOMMANDS = Arrays.asList(
         "help", "autoteam", "join", "leave", "settemple", "setspawn", "start", "stop", "status",
-        "ability", "abilities", "blacklist", "gamerule", "target", "setability", "spectate", "unspectate", "observer",
+        "ability", "abilities", "assignedabilities", "assignments", "blacklist", "gamerule", "target", "setability", "spectate", "unspectate", "observer",
         "reload", "gui", "settings", "test", "midjoin", "info", "yes", "no", "clear", "gamble", "urf"
     );
+    private static final int HELP_LINES_PER_PAGE = 7;
 
     private final NewGodWarPlugin plugin;
     private final GameManager gameManager;
@@ -57,17 +62,17 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         }
 
         if (args.length == 0) {
-            help(sender, label);
+            help(sender, label, args);
             return true;
         }
 
         boolean themachyLabel = label.equalsIgnoreCase("t");
         if (themachyLabel && args[0].equalsIgnoreCase("help")) {
-            abilityShortcut(sender);
+            help(sender, label, args);
             return true;
         }
         if (!themachyLabel && args[0].equalsIgnoreCase("help")) {
-            help(sender, label);
+            help(sender, label, args);
             return true;
         }
         if (themachyLabel && (args[0].equalsIgnoreCase("ability") || args[0].equalsIgnoreCase("a"))) {
@@ -151,11 +156,11 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             return true;
         }
         if (sub.equals("abilities")) {
-            listAbilities(sender);
+            listAbilities(sender, joinArguments(args, 1));
             return true;
         }
         if (sub.equals("assignedabilities")) {
-            listAssignedAbilities(sender);
+            listAssignedAbilities(sender, joinArguments(args, 1));
             return true;
         }
         if (sub.equals("blacklist")) {
@@ -201,61 +206,99 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         return true;
     }
 
-    private void help(CommandSender sender, String label) {
+    private void help(CommandSender sender, String label, String[] args) {
+        int requestedPage = parseHelpPage(args);
+        List<HelpEntry> entries = helpEntries(label, sender.hasPermission("newgodwar.admin"));
+        int maxPage = Math.max(1, ((entries.size() - 1) / HELP_LINES_PER_PAGE) + 1);
+        int page = Math.max(1, Math.min(maxPage, requestedPage));
+        int start = (page - 1) * HELP_LINES_PER_PAGE;
+        int end = Math.min(entries.size(), start + HELP_LINES_PER_PAGE);
+
         sender.sendMessage("");
         line(sender);
         sender.sendMessage(ChatColor.GOLD + "" + ChatColor.BOLD + " NewGodWar"
             + ChatColor.DARK_GRAY + " | " + ChatColor.YELLOW + "신들의 전쟁 운영 메뉴"
-            + ChatColor.DARK_GRAY + " | " + ChatColor.GRAY + plugin.versionSupport().minecraftVersion());
-        sender.sendMessage(ChatColor.GRAY + "  자주 쓰는 기능은 " + ChatColor.AQUA + "/" + label + " gui"
-            + ChatColor.GRAY + " 에서 상자로 조작할 수 있습니다.");
+            + ChatColor.DARK_GRAY + " | " + ChatColor.GRAY + page + "/" + maxPage);
+        sender.sendMessage(ChatColor.GRAY + "  능력 확인: " + ChatColor.AQUA + "/a"
+            + ChatColor.DARK_GRAY + " | " + ChatColor.GRAY + "설정: " + ChatColor.AQUA + "/" + label + " gui"
+            + ChatColor.DARK_GRAY + " | " + ChatColor.GRAY + "다음: " + ChatColor.AQUA + "/" + label + " help " + nextPage(page, maxPage));
         line(sender);
-        section(sender, "게임 진행");
-        command(sender, label, "gui", "관리자 설정 GUI 열기");
-        command(sender, label, "start", "게임 시작 및 능력 배정");
-        command(sender, label, "test [ability]", "혼자 능력 테스트 시작");
-        command(sender, label, "stop", "게임 종료");
-        command(sender, label, "status", "현재 상태 보기");
-        command(sender, label, "autoteam", "온라인 플레이어 자동 팀 배정");
-        section(sender, "팀 / 신전");
-        command(sender, label, "join <red|blue|green> [player]", "팀 수동 배정");
-        command(sender, label, "midjoin [red|blue|green]", "진행 중인 게임에 중간 참여");
-        command(sender, label, "leave [player]", "팀 배정 해제");
-        command(sender, label, "setspawn <red|blue|green>", "현재 위치를 팀 스폰으로 등록");
-        command(sender, label, "settemple <red|blue|green>", "바라보는 다이아 블록을 심장으로 등록");
-        command(sender, label, "info [red|blue|green]", "팀원 목록 확인");
-        section(sender, "능력");
-        sender.sendMessage(ChatColor.DARK_GRAY + "  /a" + ChatColor.GRAY + " 로 내 능력을 빠르게 확인할 수 있습니다.");
-        sender.sendMessage(ChatColor.DARK_GRAY + "  /t help" + ChatColor.GRAY + " 도 Themachy처럼 내 능력을 보여줍니다.");
-        command(sender, label, "yes|no", "능력 재추첨 확정 / 다시 뽑기");
-        command(sender, label, "abilities", "능력 도감 GUI");
-        command(sender, label, "ability [player]", "현재 능력만 보기");
-        command(sender, label, "setability <player> <ability>", "능력 수동 지정");
-        command(sender, label, "target <player>", "타깃형 능력 대상 지정");
-        sender.sendMessage(ChatColor.DARK_GRAY + "  /x <player>" + ChatColor.GRAY + " 로도 타깃을 빠르게 지정할 수 있습니다.");
+        String section = "";
+        for (int i = start; i < end; i++) {
+            HelpEntry entry = entries.get(i);
+            if (!entry.section.equals(section)) {
+                section = entry.section;
+                section(sender, section);
+            }
+            command(sender, label, entry.usage, entry.description);
+        }
+        line(sender);
+        sender.sendMessage(ChatColor.GRAY + "  페이지 이동: " + ChatColor.AQUA + "/" + label + " help <1-" + maxPage + ">");
+        line(sender);
+    }
+
+    private int parseHelpPage(String[] args) {
+        if (args.length < 2) {
+            return 1;
+        }
+        try {
+            return Integer.parseInt(args[1]);
+        } catch (NumberFormatException ignored) {
+            String section = args[1].toLowerCase();
+            if (section.equals("game") || section.equals("게임")) return 1;
+            if (section.equals("team") || section.equals("팀")) return 2;
+            if (section.equals("ability") || section.equals("능력")) return 3;
+            if (section.equals("admin") || section.equals("관리")) return 4;
+            return 1;
+        }
+    }
+
+    private int nextPage(int page, int maxPage) {
+        return page >= maxPage ? 1 : page + 1;
+    }
+
+    private List<HelpEntry> helpEntries(String label, boolean admin) {
+        List<HelpEntry> entries = new ArrayList<HelpEntry>();
+        entries.add(new HelpEntry("게임 진행", "gui", "관리자 설정 GUI 열기"));
+        entries.add(new HelpEntry("게임 진행", "start", "게임 시작 및 능력 배정"));
+        entries.add(new HelpEntry("게임 진행", "test [ability]", "혼자 능력 테스트 시작"));
+        entries.add(new HelpEntry("게임 진행", "stop", "게임 종료"));
+        entries.add(new HelpEntry("게임 진행", "status", "현재 상태 보기"));
+        entries.add(new HelpEntry("게임 진행", "autoteam", "온라인 플레이어 자동 팀 배정"));
+        entries.add(new HelpEntry("팀 / 신전", "join <red|blue|green> [player]", "팀 수동 배정"));
+        entries.add(new HelpEntry("팀 / 신전", "midjoin [red|blue|green]", "진행 중인 게임에 중간 참여"));
+        entries.add(new HelpEntry("팀 / 신전", "leave [player]", "팀 배정 해제"));
+        entries.add(new HelpEntry("팀 / 신전", "setspawn <red|blue|green>", "현재 위치를 팀 스폰으로 등록"));
+        entries.add(new HelpEntry("팀 / 신전", "settemple <red|blue|green>", "바라보는 다이아 블록을 심장으로 등록"));
+        entries.add(new HelpEntry("팀 / 신전", "info [red|blue|green]", "팀원 목록 확인"));
+        entries.add(new HelpEntry("능력", "yes|no", "능력 재추첨 확정 / 다시 뽑기"));
+        entries.add(new HelpEntry("능력", "abilities [검색어]", "능력 도감 검색"));
+        entries.add(new HelpEntry("능력", "ability [player]", "현재 능력만 보기"));
+        entries.add(new HelpEntry("능력", "target <player>", "타깃형 능력 대상 지정"));
+        entries.add(new HelpEntry("능력", "clear [player]", "쿨타임 초기화"));
+        entries.add(new HelpEntry("능력", "gamble", "도박 GUI 열기"));
         if (label.equalsIgnoreCase("t")) {
-            section(sender, "Themachy 호환");
-            command(sender, label, "t <red|blue|green> [player]", "팀 수동 배정");
-            command(sender, label, "spawn|s <red|blue|green>", "팀 스폰 등록");
-            command(sender, label, "info|i [red|blue|green]", "팀원 목록 확인");
-            command(sender, label, "dia|d <red|blue|green>", "다이아 심장 등록");
-            command(sender, label, "set", "설정 GUI 열기");
-            command(sender, label, "black ...", "블랙리스트 관리");
-            command(sender, label, "alist", "능력 도감 보기");
-            command(sender, label, "a <ability> <player>", "능력 수동 지정");
-            command(sender, label, "clear|c [player]", "쿨타임 초기화");
-            command(sender, label, "observer [list]", "옵저버 전환 / 목록");
-            command(sender, label, "con", "도박 GUI 열기");
+            entries.add(new HelpEntry("Themachy 호환", "t <red|blue|green> [player]", "팀 수동 배정"));
+            entries.add(new HelpEntry("Themachy 호환", "spawn|s <red|blue|green>", "팀 스폰 등록"));
+            entries.add(new HelpEntry("Themachy 호환", "dia|d <red|blue|green>", "다이아 심장 등록"));
+            entries.add(new HelpEntry("Themachy 호환", "set", "설정 GUI 열기"));
+            entries.add(new HelpEntry("Themachy 호환", "alist [검색어]", "플레이어별 배정 능력 확인"));
+            entries.add(new HelpEntry("Themachy 호환", "a <ability> <player>", "능력 수동 지정"));
+            entries.add(new HelpEntry("Themachy 호환", "observer [list]", "옵저버 전환 / 목록"));
+            entries.add(new HelpEntry("Themachy 호환", "con", "도박 GUI 열기"));
         }
-        if (sender.hasPermission("newgodwar.admin")) {
-            section(sender, "운영 설정");
-            command(sender, label, "urf <on|off|toggle|80%>", "우르프 모드 및 쿨타임 감소율 설정");
-            command(sender, label, "blacklist <list|add|remove|toggle> [ability]", "랜덤 제외 능력 관리");
-            command(sender, label, "gamerule <apply|restore>", "게임룰 수동 적용 / 복구");
-            command(sender, label, "reload", "config.yml 다시 불러오기");
-            command(sender, label, "spectate|unspectate <player>", "관전 모드 전환");
+        if (admin) {
+            entries.add(new HelpEntry("운영 설정", "setability <player> <ability>", "능력 수동 지정"));
+            entries.add(new HelpEntry("운영 설정", "assignedabilities [검색어]", "플레이어별 배정 능력 확인"));
+            entries.add(new HelpEntry("운영 설정", "urf <on|off|toggle|80%>", "우르프 모드 및 쿨타임 감소율 설정"));
+            entries.add(new HelpEntry("운영 설정", "blacklist <list|add|remove|toggle> [ability]", "랜덤 제외 능력 관리"));
+            entries.add(new HelpEntry("운영 설정", "gamerule <apply|restore>", "게임룰 수동 적용 / 복구"));
+            entries.add(new HelpEntry("운영 설정", "reload", "config.yml 다시 불러오기"));
+            entries.add(new HelpEntry("운영 설정", "spectate|unspectate <player>", "관전 모드 전환"));
         }
-        line(sender);
+        entries.add(new HelpEntry("단축 명령어", "/a", "내 능력 GUI 열기"));
+        entries.add(new HelpEntry("단축 명령어", "/x <player>", "타깃형 능력 대상 빠른 지정"));
+        return entries;
     }
 
     private void status(CommandSender sender) {
@@ -281,7 +324,8 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
     }
 
     private void command(CommandSender sender, String label, String usage, String description) {
-        sender.sendMessage(ChatColor.AQUA + "  /" + label + " " + usage
+        String command = usage.startsWith("/") ? usage : "/" + label + " " + usage;
+        sender.sendMessage(ChatColor.AQUA + "  " + command
             + ChatColor.DARK_GRAY + " - " + ChatColor.GRAY + description);
     }
 
@@ -475,7 +519,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
 
     private void ability(CommandSender sender, String[] args) {
         if (args.length >= 2 && args[1].equalsIgnoreCase("list")) {
-            listAbilities(sender);
+            listAbilities(sender, joinArguments(args, 2));
             return;
         }
         Player target = args.length >= 2 ? Bukkit.getPlayer(args[1]) : asPlayer(sender);
@@ -588,33 +632,36 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         plugin.messages().send(sender, "&a쿨타임을 초기화했습니다.");
     }
 
-    private void listAssignedAbilities(CommandSender sender) {
-        boolean found = false;
-        for (Player player : BukkitCompat.onlinePlayers()) {
-            AbilityDefinition ability = abilityManager.get(player);
-            if (ability == null) {
-                continue;
-            }
-            if (!found) {
-                sender.sendMessage(plugin.messages().prefix() + ChatColor.YELLOW + "적용된 능력");
-                found = true;
-            }
-            sender.sendMessage(ChatColor.WHITE + player.getName() + ChatColor.GRAY + " : "
-                + ChatColor.YELLOW + ability.name() + ChatColor.DARK_GRAY + " (" + ability.id() + ")");
+    private void listAssignedAbilities(CommandSender sender, String query) {
+        List<AssignedAbilityView> assigned = assignedAbilityViews(query);
+        if (assigned.isEmpty()) {
+            plugin.messages().send(sender, hasQuery(query) ? "&e검색 결과에 맞는 배정 능력이 없습니다." : "&e능력이 있는 플레이어가 없습니다.");
+            return;
         }
-        if (!found) {
-            plugin.messages().send(sender, "&e능력이 있는 플레이어가 없습니다.");
+
+        sender.sendMessage(plugin.messages().prefix() + ChatColor.YELLOW + "배정된 능력"
+            + (hasQuery(query) ? ChatColor.GRAY + " | 검색: " + ChatColor.WHITE + query : ""));
+        for (AssignedAbilityView view : assigned) {
+            sender.sendMessage(ChatColor.WHITE + view.playerName + ChatColor.GRAY + " : "
+                + ChatColor.YELLOW + view.ability.name() + ChatColor.DARK_GRAY + " (" + view.ability.id() + ")"
+                + (view.online ? "" : ChatColor.DARK_GRAY + " [오프라인]"));
         }
     }
 
-    private void listAbilities(CommandSender sender) {
+    private void listAbilities(CommandSender sender, String query) {
         Player viewer = asPlayer(sender);
         if (viewer != null) {
-            abilityGui.openList(viewer);
+            abilityGui.openList(viewer, query);
             return;
         }
-        sender.sendMessage(plugin.messages().prefix() + ChatColor.YELLOW + "등록된 신의 능력");
-        for (AbilityDefinition ability : abilityManager.registry().all()) {
+        List<AbilityDefinition> abilities = filteredAbilities(query);
+        if (abilities.isEmpty()) {
+            plugin.messages().send(sender, "&e검색 결과에 맞는 능력이 없습니다.");
+            return;
+        }
+        sender.sendMessage(plugin.messages().prefix() + ChatColor.YELLOW + "등록된 신의 능력"
+            + (hasQuery(query) ? ChatColor.GRAY + " | 검색: " + ChatColor.WHITE + query : ""));
+        for (AbilityDefinition ability : abilities) {
             boolean enabled = abilityManager.isEnabled(ability);
             ChatColor stateColor = enabled ? ChatColor.GREEN : ChatColor.RED;
             String state = enabled ? "활성" : "비활성";
@@ -653,7 +700,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             sender.sendMessage(ChatColor.YELLOW + "/t a skip " + ChatColor.WHITE + "능력 확정을 강제로 넘깁니다.");
             sender.sendMessage(ChatColor.YELLOW + "/t a cutin " + ChatColor.WHITE + "진행 중 게임에 중간 참여합니다.");
             sender.sendMessage(ChatColor.YELLOW + "/t a <ability|number> <player> " + ChatColor.WHITE + "능력을 지정합니다.");
-            listAbilities(sender);
+            listAbilities(sender, null);
             return;
         }
         if (args[1].equalsIgnoreCase("random")) {
@@ -907,6 +954,9 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             return startsWith(values, args[0]);
         }
         String sub = normalizeSubcommand(args[0], alias.equalsIgnoreCase("t"));
+        if (args.length == 2 && sub.equals("help")) {
+            return startsWith(Arrays.asList("1", "2", "3", "4", "game", "team", "ability", "admin"), args[1]);
+        }
         if (alias.equalsIgnoreCase("t") && (args[0].equalsIgnoreCase("a") || args[0].equalsIgnoreCase("ability"))) {
             if (args.length == 2) {
                 List<String> abilities = new ArrayList<String>();
@@ -936,6 +986,12 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
                 values.add(player.getName());
             }
             return startsWith(values, args[1]);
+        }
+        if (args.length == 2 && sub.equals("abilities")) {
+            return startsWith(abilitySuggestions(), args[1]);
+        }
+        if (args.length == 2 && sub.equals("assignedabilities")) {
+            return startsWith(assignedAbilitySuggestions(), args[1]);
         }
         if (args.length == 2 && sub.equals("target")) {
             List<String> values = new ArrayList<String>();
@@ -1003,6 +1059,20 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         return builder.toString();
     }
 
+    private String joinArguments(String[] args, int start) {
+        if (args.length <= start) {
+            return null;
+        }
+        StringBuilder builder = new StringBuilder();
+        for (int i = start; i < args.length; i++) {
+            if (i > start) {
+                builder.append(' ');
+            }
+            builder.append(args[i]);
+        }
+        return builder.toString();
+    }
+
     private String stoneCost(int cost) {
         return cost <= 0 ? "없음" : cost + "개";
     }
@@ -1046,8 +1116,89 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         return null;
     }
 
+    private List<AbilityDefinition> filteredAbilities(String query) {
+        List<AbilityDefinition> abilities = new ArrayList<AbilityDefinition>();
+        for (AbilityDefinition ability : abilityManager.registry().all()) {
+            if (!hasQuery(query) || abilityMatches(ability, query)) {
+                abilities.add(ability);
+            }
+        }
+        return abilities;
+    }
+
+    private boolean abilityMatches(AbilityDefinition ability, String query) {
+        String normalized = query.toLowerCase(Locale.ROOT).trim();
+        return contains(ability.id(), normalized)
+            || contains(ability.name(), normalized)
+            || contains(ability.description(), normalized)
+            || contains(ability.normalSkill(), normalized)
+            || contains(ability.advancedSkill(), normalized)
+            || contains(ability.passiveSkill(), normalized)
+            || contains(ability.author(), normalized);
+    }
+
+    private boolean contains(String text, String query) {
+        return text != null && text.toLowerCase(Locale.ROOT).contains(query);
+    }
+
+    private boolean hasQuery(String query) {
+        return query != null && query.trim().length() > 0;
+    }
+
+    private List<String> abilitySuggestions() {
+        List<String> suggestions = new ArrayList<String>();
+        for (AbilityDefinition ability : abilityManager.registry().all()) {
+            suggestions.add(ability.id());
+            suggestions.add(ability.name());
+        }
+        return suggestions;
+    }
+
+    private List<String> assignedAbilitySuggestions() {
+        List<String> suggestions = abilitySuggestions();
+        for (Map.Entry<UUID, AbilityDefinition> entry : abilityManager.assignedAbilities().entrySet()) {
+            suggestions.add(playerName(entry.getKey()));
+        }
+        return suggestions;
+    }
+
+    private List<AssignedAbilityView> assignedAbilityViews(String query) {
+        List<AssignedAbilityView> views = new ArrayList<AssignedAbilityView>();
+        for (Map.Entry<UUID, AbilityDefinition> entry : abilityManager.assignedAbilities().entrySet()) {
+            String playerName = playerName(entry.getKey());
+            AbilityDefinition ability = entry.getValue();
+            if (hasQuery(query) && !contains(playerName, query.toLowerCase(Locale.ROOT).trim()) && !abilityMatches(ability, query)) {
+                continue;
+            }
+            views.add(new AssignedAbilityView(playerName, Bukkit.getPlayer(entry.getKey()) != null, ability));
+        }
+        for (int i = 1; i < views.size(); i++) {
+            AssignedAbilityView current = views.get(i);
+            int cursor = i - 1;
+            while (cursor >= 0 && views.get(cursor).playerName.compareToIgnoreCase(current.playerName) > 0) {
+                views.set(cursor + 1, views.get(cursor));
+                cursor--;
+            }
+            views.set(cursor + 1, current);
+        }
+        return views;
+    }
+
+    private String playerName(UUID uuid) {
+        Player online = Bukkit.getPlayer(uuid);
+        if (online != null) {
+            return online.getName();
+        }
+        OfflinePlayer offline = Bukkit.getOfflinePlayer(uuid);
+        String name = offline == null ? null : offline.getName();
+        return name == null ? uuid.toString() : name;
+    }
+
     private String normalizeSubcommand(String sub, boolean themachyLabel) {
         String lower = sub == null ? "" : sub.toLowerCase();
+        if (lower.equals("assignments") || lower.equals("assigned")) {
+            return "assignedabilities";
+        }
         if (!themachyLabel) {
             return lower;
         }
@@ -1079,5 +1230,29 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             return "join";
         }
         return lower;
+    }
+
+    private static final class HelpEntry {
+        private final String section;
+        private final String usage;
+        private final String description;
+
+        private HelpEntry(String section, String usage, String description) {
+            this.section = section;
+            this.usage = usage;
+            this.description = description;
+        }
+    }
+
+    private static final class AssignedAbilityView {
+        private final String playerName;
+        private final boolean online;
+        private final AbilityDefinition ability;
+
+        private AssignedAbilityView(String playerName, boolean online, AbilityDefinition ability) {
+            this.playerName = playerName;
+            this.online = online;
+            this.ability = ability;
+        }
     }
 }

@@ -14,7 +14,6 @@ import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.jar.JarEntry;
@@ -47,12 +46,8 @@ public final class DefaultAbilityRegistrar implements AbilityRegistrar {
         } catch (IOException ex) {
             throw new IllegalStateException("Cannot scan bundled abilities.", ex);
         }
-        Collections.sort(classes, new Comparator<Class<? extends GodAbility>>() {
-            @Override
-            public int compare(Class<? extends GodAbility> first, Class<? extends GodAbility> second) {
-                return first.getAnnotation(AbilityInfo.class).id().compareTo(second.getAnnotation(AbilityInfo.class).id());
-            }
-        });
+        Collections.sort(classes, (first, second) ->
+            first.getAnnotation(AbilityInfo.class).id().compareTo(second.getAnnotation(AbilityInfo.class).id()));
         return classes;
     }
 

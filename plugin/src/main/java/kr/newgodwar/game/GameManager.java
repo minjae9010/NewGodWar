@@ -52,6 +52,7 @@ public final class GameManager {
 
     private GameState state = GameState.WAITING;
     private int waterHealTask = -1;
+    private int abilityNoticeTask = -1;
     private int readyTask = -1;
     private int readySecondsRemaining = 0;
     private int readyReminder = 0;
@@ -317,6 +318,10 @@ public final class GameManager {
         if (waterHealTask != -1) {
             Bukkit.getScheduler().cancelTask(waterHealTask);
             waterHealTask = -1;
+        }
+        if (abilityNoticeTask != -1) {
+            Bukkit.getScheduler().cancelTask(abilityNoticeTask);
+            abilityNoticeTask = -1;
         }
         pendingSelection.clear();
         abilityManager.clear();
@@ -666,12 +671,7 @@ public final class GameManager {
             : plugin.getConfig().getInt("game.ready-countdown-seconds", 40);
         readySecondsRemaining = Math.max(1, readySecondsRemaining);
         readyReminder = 0;
-        readyTask = Bukkit.getScheduler().scheduleSyncRepeatingTask(plugin, new Runnable() {
-            @Override
-            public void run() {
-                tickReady();
-            }
-        }, 20L, 20L);
+        readyTask = Bukkit.getScheduler().scheduleSyncRepeatingTask(plugin, () -> tickReady(), 20L, 20L);
     }
 
     private void tickReady() {
@@ -805,7 +805,15 @@ public final class GameManager {
             world.setAutoSave(plugin.getConfig().getBoolean("world.autosave", true));
             world.setSpawnFlags(plugin.getConfig().getBoolean("world.spawn-monsters", false), plugin.getConfig().getBoolean("world.spawn-animals", false));
             world.setDifficulty(difficulty());
-            world.setTime(plugin.getConfig().getLong("world.start-time", 6000L));
+            setWorldTime(world, plugin.getConfig().getLong("world.start-time", 6000L));
+        }
+    }
+
+    private void setWorldTime(World world, long time) {
+        try {
+            world.setTime(time);
+        } catch (IllegalArgumentException ex) {
+            plugin.getLogger().warning("Skipping time change for world '" + world.getName() + "': " + ex.getMessage());
         }
     }
 
@@ -866,16 +874,25 @@ public final class GameManager {
         if (waterHealTask != -1) {
             Bukkit.getScheduler().cancelTask(waterHealTask);
         }
+        startAbilityNoticeTask();
         long interval = Math.max(1L, plugin.getConfig().getLong("game.ability-tick-interval-seconds", 1L)) * 20L;
-        waterHealTask = Bukkit.getScheduler().scheduleSyncRepeatingTask(plugin, new Runnable() {
-            @Override
-            public void run() {
-                if (state == GameState.RUNNING) {
-                    abilityManager.tick(BukkitCompat.onlinePlayers());
-                    refreshAllPlayerDisplays();
-                }
+        waterHealTask = Bukkit.getScheduler().scheduleSyncRepeatingTask(plugin, () -> {
+            if (state == GameState.RUNNING) {
+                abilityManager.tick(BukkitCompat.onlinePlayers());
+                refreshAllPlayerDisplays();
             }
         }, interval, interval);
+    }
+
+    private void startAbilityNoticeTask() {
+        if (abilityNoticeTask != -1) {
+            Bukkit.getScheduler().cancelTask(abilityNoticeTask);
+        }
+        abilityNoticeTask = Bukkit.getScheduler().scheduleSyncRepeatingTask(plugin, () -> {
+            if (state == GameState.RUNNING) {
+                abilityManager.tickCountdownAlerts(BukkitCompat.onlinePlayers());
+            }
+        }, 20L, 20L);
     }
 
     private static final class WorldSnapshot {

@@ -83,11 +83,21 @@ public interface GodAbility {
     default void onChat(AbilityPlayerContext context, AsyncPlayerChatEvent event) {
     }
 
+    default void onChatMessage(AbilityPlayerContext context, String message) {
+    }
+
     default void onFish(AbilityPlayerContext context, PlayerFishEvent event) {
     }
 
     default void setTarget(AbilityPlayerContext context, CommandSender sender, String targetName) {
         sender.sendMessage("타깃을 사용하는 능력이 아닙니다.");
+    }
+
+    default boolean requiresTarget() {
+        return false;
+    }
+
+    default void onCountdownTick(AbilityPlayerContext context) {
     }
 
     default long cooldownRemainingMillis(int slot) {

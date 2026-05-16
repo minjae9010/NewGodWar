@@ -45,23 +45,31 @@ final class HadesAbility extends BaseAbility {
 
     @Override
     public void onDeath(AbilityPlayerContext context, PlayerDeathEvent event) {
-        if (event.getEntity().equals(context.player()) && RANDOM.nextInt(10) <= 6) {
+        if (event.getEntity().equals(context.player()) && rollChance(6, 10)) {
             savedInventory = context.player().getInventory().getContents();
             savedArmor = context.player().getInventory().getArmorContents();
+            event.setKeepInventory(false);
             event.getDrops().clear();
+            context.player().sendMessage(ChatColor.DARK_PURPLE + "하데스의 권능으로 인벤토리가 보존되었습니다.");
         }
     }
 
     @Override
     public void onRespawn(AbilityPlayerContext context, PlayerRespawnEvent event) {
         Player player = context.player();
+        boolean restored = false;
         if (savedInventory != null) {
             player.getInventory().setContents(savedInventory);
             savedInventory = null;
+            restored = true;
         }
         if (savedArmor != null) {
             player.getInventory().setArmorContents(savedArmor);
             savedArmor = null;
+            restored = true;
+        }
+        if (restored) {
+            player.sendMessage(ChatColor.DARK_PURPLE + "보존된 인벤토리가 복원되었습니다.");
         }
     }
 }

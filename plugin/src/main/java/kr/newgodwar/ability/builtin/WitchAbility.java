@@ -34,7 +34,7 @@ final class WitchAbility extends BaseAbility {
 
     @Override
     public void onDamageByEntity(AbilityPlayerContext context, EntityDamageByEntityEvent event, Player opponent, boolean attacker) {
-        if (!attacker && RANDOM.nextInt(14) == 0) {
+        if (!attacker && oneIn(14)) {
             curse(opponent);
         }
     }

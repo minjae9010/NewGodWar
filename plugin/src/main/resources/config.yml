@@ -29,6 +29,16 @@ core:
   protect-diamond-from-explosion: true
   forbid-diamond-pickaxe: true
 
+abilities:
+  messages:
+    enabled: true
+    success: true
+    failure: true
+    timer: true
+  nasdaq:
+    iron-success-percent: 75
+    diamond-success-percent: 25
+
 gambling:
   enabled: true
   cost:
@@ -100,7 +110,7 @@ gamerules:
   enabled: true
   restore-on-stop: true
   rules:
-    keepInventory: true
+    keepInventory: false
     doImmediateRespawn: true
     doDaylightCycle: false
     doWeatherCycle: false

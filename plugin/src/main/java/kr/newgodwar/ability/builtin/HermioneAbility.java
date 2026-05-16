@@ -32,8 +32,8 @@ final class HermioneAbility extends BaseAbility {
     }
 
     @Override
-    public void onChat(AbilityPlayerContext context, AsyncPlayerChatEvent event) {
-        castSpell(context, event.getMessage(), false);
+    public void onChatMessage(AbilityPlayerContext context, String message) {
+        castSpell(context, message, false);
     }
 
     @Override

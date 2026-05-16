@@ -88,6 +88,9 @@ public final class AbilityManager {
         assignments.put(player.getUniqueId(), session);
         session.ability().onAssign(playerContext(player, definition));
         sendAbilityInfo(player, definition);
+        if (session.ability().requiresTarget()) {
+            sendTargetGuide(player);
+        }
         if (plugin.game() != null) {
             plugin.game().refreshPlayerDisplay(player);
         }
@@ -112,6 +115,14 @@ public final class AbilityManager {
     public AbilityDefinition get(Player player) {
         AbilitySession session = session(player);
         return session == null ? null : session.definition();
+    }
+
+    public Map<UUID, AbilityDefinition> assignedAbilities() {
+        Map<UUID, AbilityDefinition> result = new ConcurrentHashMap<UUID, AbilityDefinition>();
+        for (Map.Entry<UUID, AbilitySession> entry : assignments.entrySet()) {
+            result.put(entry.getKey(), entry.getValue().definition());
+        }
+        return Collections.unmodifiableMap(result);
     }
 
     public long cooldownRemainingMillis(Player player, int slot) {
@@ -231,6 +242,13 @@ public final class AbilityManager {
         player.sendMessage(ChatColor.DARK_GRAY + "/a 또는 /t help 로 다시 확인할 수 있습니다.");
     }
 
+    private void sendTargetGuide(Player player) {
+        player.sendMessage(ChatColor.AQUA + "이 능력은 타깃 지정이 필요합니다.");
+        player.sendMessage(ChatColor.GRAY + "사용 전 " + ChatColor.YELLOW + "/x <플레이어>"
+            + ChatColor.GRAY + " 또는 " + ChatColor.YELLOW + "/godwar target <플레이어>"
+            + ChatColor.GRAY + " 로 대상을 지정하세요.");
+    }
+
     private String skillLine(String skill, int stoneCost, String cooldown) {
         return emptySkill(skill) + ChatColor.DARK_GRAY + " / 조약돌 " + stoneCost(stoneCost)
             + ChatColor.DARK_GRAY + " / 쿨타임 " + cooldown(cooldown);
@@ -295,6 +313,15 @@ public final class AbilityManager {
             AbilitySession session = session(player);
             if (session != null) {
                 session.ability().onTick(playerContext(player, session.definition()));
+            }
+        }
+    }
+
+    public void tickCountdownAlerts(Iterable<? extends Player> players) {
+        for (Player player : players) {
+            AbilitySession session = session(player);
+            if (session != null) {
+                session.ability().onCountdownTick(playerContext(player, session.definition()));
             }
         }
     }
@@ -401,9 +428,13 @@ public final class AbilityManager {
     }
 
     public void handleChat(Player player, AsyncPlayerChatEvent event) {
+        handleChatMessage(player, event.getMessage());
+    }
+
+    public void handleChatMessage(Player player, String message) {
         AbilitySession session = session(player);
         if (session != null) {
-            session.ability().onChat(playerContext(player, session.definition()), event);
+            session.ability().onChatMessage(playerContext(player, session.definition()), message);
         }
     }
 
@@ -417,7 +448,7 @@ public final class AbilityManager {
     public void setTarget(Player player, CommandSender sender, String targetName) {
         AbilitySession session = session(player);
         if (session == null) {
-            plugin.messages().send(sender, "&c대상 플레이어에게 능력이 없습니다.");
+            plugin.messages().send(sender, "&c아직 능력이 없습니다.");
             return;
         }
         session.ability().setTarget(playerContext(player, session.definition()), sender, targetName);

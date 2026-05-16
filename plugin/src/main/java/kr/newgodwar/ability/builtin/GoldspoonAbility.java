@@ -26,6 +26,6 @@ import java.util.List;
 final class GoldspoonAbility extends BaseAbility {
     @Override
     public void onRespawn(AbilityPlayerContext context, PlayerRespawnEvent event) {
-        give(context.player(), RANDOM.nextInt(10) < 9 ? Material.GOLD_LEGGINGS : Material.DIAMOND_LEGGINGS, 1);
+        give(context.player(), rollChance(9, 10) ? Material.GOLD_LEGGINGS : Material.DIAMOND_LEGGINGS, 1);
     }
 }

@@ -36,14 +36,14 @@ final class FisherAbility extends BaseAbility {
                 event.getCaught().remove();
             }
             int roll = RANDOM.nextInt(100);
-            if (roll <= 4) {
+            if (roll < 5) {
                 give(context.player(), Material.DIAMOND, 1);
-            } else if (roll <= 19) {
+            } else if (roll < 20) {
                 give(context.player(), Material.LOG, 3);
-            } else if (roll <= 34) {
+            } else if (roll < 35) {
                 give(context.player(), STAFF, 1);
-            } else if (roll <= 98) {
-                give(context.player(), Material.IRON_INGOT, roll <= 79 ? 1 : 2);
+            } else if (roll < 99) {
+                give(context.player(), Material.IRON_INGOT, roll < 80 ? 1 : 2);
             } else {
                 give(context.player(), Material.DIAMOND, 2);
             }

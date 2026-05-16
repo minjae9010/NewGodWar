@@ -19,10 +19,10 @@ import org.bukkit.inventory.meta.ItemMeta;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -44,6 +44,7 @@ public final class AbilityGui implements Listener {
     private final AbilityManager abilityManager;
     private final Set<UUID> openViewers = new HashSet<UUID>();
     private final Map<UUID, Integer> listPages = new HashMap<UUID, Integer>();
+    private final Map<UUID, String> listQueries = new HashMap<UUID, String>();
 
     public AbilityGui(NewGodWarPlugin plugin, AbilityManager abilityManager) {
         this.plugin = plugin;
@@ -62,15 +63,24 @@ public final class AbilityGui implements Listener {
     }
 
     public void openList(Player viewer) {
-        openList(viewer, 1);
+        openList(viewer, null);
+    }
+
+    public void openList(Player viewer, String query) {
+        openList(viewer, 1, query);
     }
 
     private void openList(Player viewer, int page) {
+        openList(viewer, page, listQuery(viewer));
+    }
+
+    private void openList(Player viewer, int page, String query) {
         Inventory inventory = Bukkit.createInventory(viewer, LIST_SIZE, LIST_TITLE);
-        int currentPage = fillList(inventory, viewer, page);
+        int currentPage = fillList(inventory, viewer, page, query);
         viewer.openInventory(inventory);
         openViewers.add(viewer.getUniqueId());
         listPages.put(viewer.getUniqueId(), currentPage);
+        setListQuery(viewer, query);
     }
 
     @EventHandler
@@ -125,6 +135,7 @@ public final class AbilityGui implements Listener {
     public void onClose(InventoryCloseEvent event) {
         openViewers.remove(event.getPlayer().getUniqueId());
         listPages.remove(event.getPlayer().getUniqueId());
+        listQueries.remove(event.getPlayer().getUniqueId());
     }
 
     private boolean isAbilityInventory(InventoryClickEvent event) {
@@ -171,10 +182,10 @@ public final class AbilityGui implements Listener {
         inventory.setItem(CURRENT_CLOSE_SLOT, closeItem());
     }
 
-    private int fillList(Inventory inventory, Player viewer, int requestedPage) {
+    private int fillList(Inventory inventory, Player viewer, int requestedPage, String query) {
         fill(inventory, deco());
 
-        List<AbilityDefinition> abilities = sortedAbilities();
+        List<AbilityDefinition> abilities = filteredAbilities(query);
         int maxPage = Math.max(1, ((abilities.size() - 1) / LIST_PAGE_SIZE) + 1);
         int page = Math.max(1, Math.min(maxPage, requestedPage));
         int start = (page - 1) * LIST_PAGE_SIZE;
@@ -185,12 +196,19 @@ public final class AbilityGui implements Listener {
         }
 
         inventory.setItem(45, guideItem(viewer));
+        if (hasQuery(query)) {
+            inventory.setItem(46, item("COMPASS", "COMPASS", 1, (short) 0,
+                ChatColor.AQUA + "" + ChatColor.BOLD + "검색 결과",
+                ChatColor.GRAY + "검색어: " + ChatColor.WHITE + query,
+                ChatColor.GRAY + "일치한 능력: " + ChatColor.WHITE + abilities.size() + "개",
+                ChatColor.DARK_GRAY + "/gw abilities 로 전체 목록을 봅니다."));
+        }
         if (page > 1) {
             inventory.setItem(LIST_PREVIOUS_SLOT, item("ARROW", "ARROW", 1, (short) 0, ChatColor.AQUA + "이전 페이지"));
         }
         inventory.setItem(LIST_PAGE_SLOT, item("PAPER", "PAPER", 1, (short) 0,
             ChatColor.GOLD + "페이지 " + ChatColor.YELLOW + page + ChatColor.GOLD + " / " + ChatColor.YELLOW + maxPage,
-            ChatColor.GRAY + "등록된 능력: " + ChatColor.WHITE + abilities.size() + "개"));
+            ChatColor.GRAY + (hasQuery(query) ? "검색된 능력: " : "등록된 능력: ") + ChatColor.WHITE + abilities.size() + "개"));
         if (page < maxPage) {
             inventory.setItem(LIST_NEXT_SLOT, item("ARROW", "ARROW", 1, (short) 0, ChatColor.AQUA + "다음 페이지"));
         }
@@ -203,10 +221,12 @@ public final class AbilityGui implements Listener {
             return item("NAME_TAG", "NAME_TAG", 1, (short) 0,
                 ChatColor.GOLD + "" + ChatColor.BOLD + "관리자 조작",
                 ChatColor.GRAY + "우클릭: 능력 블랙리스트 전환",
+                ChatColor.GRAY + "/gw abilities <검색어>: 능력 검색",
                 ChatColor.GRAY + "/gw blacklist 로도 관리할 수 있습니다.");
         }
         return item("NAME_TAG", "NAME_TAG", 1, (short) 0,
             ChatColor.GOLD + "" + ChatColor.BOLD + "보기 안내",
+            ChatColor.GRAY + "/gw abilities <검색어>: 능력 검색",
             ChatColor.GRAY + "능력 이름, 설명, 돌 소모량을 확인하세요.");
     }
 
@@ -272,7 +292,7 @@ public final class AbilityGui implements Listener {
         }
 
         int index = (listPage(viewer) - 1) * LIST_PAGE_SIZE + slot;
-        List<AbilityDefinition> abilities = sortedAbilities();
+        List<AbilityDefinition> abilities = filteredAbilities(listQuery(viewer));
         if (index < 0 || index >= abilities.size()) {
             return null;
         }
@@ -284,17 +304,65 @@ public final class AbilityGui implements Listener {
         return page == null ? 1 : page;
     }
 
+    private String listQuery(Player viewer) {
+        return listQueries.get(viewer.getUniqueId());
+    }
+
+    private void setListQuery(Player viewer, String query) {
+        if (hasQuery(query)) {
+            listQueries.put(viewer.getUniqueId(), query.trim());
+            return;
+        }
+        listQueries.remove(viewer.getUniqueId());
+    }
+
+    private List<AbilityDefinition> filteredAbilities(String query) {
+        List<AbilityDefinition> abilities = sortedAbilities();
+        if (!hasQuery(query)) {
+            return abilities;
+        }
+        String normalized = query.toLowerCase(Locale.ROOT).trim();
+        ArrayList<AbilityDefinition> filtered = new ArrayList<AbilityDefinition>();
+        for (AbilityDefinition ability : abilities) {
+            if (matches(ability, normalized)) {
+                filtered.add(ability);
+            }
+        }
+        return filtered;
+    }
+
+    private boolean matches(AbilityDefinition ability, String query) {
+        return contains(ability.id(), query)
+            || contains(ability.name(), query)
+            || contains(ability.description(), query)
+            || contains(ability.normalSkill(), query)
+            || contains(ability.advancedSkill(), query)
+            || contains(ability.passiveSkill(), query)
+            || contains(ability.author(), query);
+    }
+
+    private boolean contains(String text, String query) {
+        return text != null && text.toLowerCase(Locale.ROOT).contains(query);
+    }
+
+    private boolean hasQuery(String query) {
+        return query != null && query.trim().length() > 0;
+    }
+
     private List<AbilityDefinition> sortedAbilities() {
         ArrayList<AbilityDefinition> abilities = new ArrayList<AbilityDefinition>();
         for (AbilityDefinition ability : abilityManager.registry().all()) {
             abilities.add(ability);
         }
-        Collections.sort(abilities, new Comparator<AbilityDefinition>() {
-            @Override
-            public int compare(AbilityDefinition first, AbilityDefinition second) {
-                return first.name().compareTo(second.name());
+        for (int i = 1; i < abilities.size(); i++) {
+            AbilityDefinition current = abilities.get(i);
+            int cursor = i - 1;
+            while (cursor >= 0 && abilities.get(cursor).name().compareTo(current.name()) > 0) {
+                abilities.set(cursor + 1, abilities.get(cursor));
+                cursor--;
             }
-        });
+            abilities.set(cursor + 1, current);
+        }
         return abilities;
     }
 

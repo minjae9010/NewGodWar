@@ -37,12 +37,7 @@ final class ClockingAbility extends BaseAbility {
         if (useNormal(context, player, 0)) {
             invisible = true;
             effect(player, PotionEffectType.INVISIBILITY, 7, 0);
-            later(context, 7, "클로킹 종료", "클로킹 종료", new Runnable() {
-                @Override
-                public void run() {
-                    invisible = false;
-                }
-            });
+            later(context, 7, "클로킹 종료", "클로킹 종료", () -> invisible = false);
         }
     }
 
@@ -51,7 +46,7 @@ final class ClockingAbility extends BaseAbility {
         if (attacker && invisible) {
             context.player().removePotionEffect(PotionEffectType.INVISIBILITY);
             invisible = false;
-            if (RANDOM.nextInt(5) == 0) {
+            if (oneIn(5)) {
                 event.setDamage(100.0D);
             }
         }

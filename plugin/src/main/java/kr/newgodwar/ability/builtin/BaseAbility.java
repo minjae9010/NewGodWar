@@ -40,6 +40,8 @@ abstract class BaseAbility implements GodAbility {
 
     private final Map<Integer, Long> cooldowns = new LinkedHashMap<Integer, Long>();
     private final Map<String, Long> timers = new LinkedHashMap<String, Long>();
+    private final Map<Integer, Long> cooldownAnnouncements = new LinkedHashMap<Integer, Long>();
+    private final Map<String, Long> timerAnnouncements = new LinkedHashMap<String, Long>();
     protected String targetName;
     protected boolean ready;
     protected boolean invincible;
@@ -76,6 +78,10 @@ abstract class BaseAbility implements GodAbility {
 
     @Override
     public void setTarget(AbilityPlayerContext context, CommandSender sender, String targetName) {
+        if (!requiresTarget()) {
+            sender.sendMessage(ChatColor.RED + "이 능력은 타깃 지정이 필요하지 않습니다.");
+            return;
+        }
         if (context.player().getName().equalsIgnoreCase(targetName)) {
             sender.sendMessage("자기 자신을 타깃으로 등록 할 수 없습니다.");
             return;
@@ -86,11 +92,11 @@ abstract class BaseAbility implements GodAbility {
 
     protected boolean use(AbilityPlayerContext context, Player player, int slot, Material material, int amount, int cooldownSeconds) {
         int realCost = material == COBBLESTONE ? cost(context, amount) : amount;
-        if (!readyCooldown(player, slot, cooldownSeconds)) {
+        if (!readyCooldown(context, player, slot, cooldownSeconds)) {
             refreshDisplay(context);
             return false;
         }
-        if (!has(player, material, realCost)) {
+        if (!has(context, player, material, realCost)) {
             refreshDisplay(context);
             return false;
         }
@@ -98,7 +104,7 @@ abstract class BaseAbility implements GodAbility {
             player.getInventory().removeItem(new ItemStack(material, realCost));
         }
         setCooldown(context, slot, cooldownSeconds);
-        player.sendMessage(ChatColor.GREEN + "능력을 사용했습니다.");
+        sendAbilityMessage(context, player, "success", ChatColor.GREEN + "능력을 사용했습니다.");
         return true;
     }
 
@@ -119,11 +125,11 @@ abstract class BaseAbility implements GodAbility {
     }
 
     protected boolean readyNormal(AbilityPlayerContext context, Player player, int slot) {
-        return readyCooldown(player, slot, context.ability().normalCooldownSeconds());
+        return readyCooldown(context, player, slot, context.ability().normalCooldownSeconds());
     }
 
     protected boolean hasNormalCost(AbilityPlayerContext context, Player player) {
-        return has(player, COBBLESTONE, cost(context, context.ability().normalStoneCost()));
+        return has(context, player, COBBLESTONE, cost(context, context.ability().normalStoneCost()));
     }
 
     protected void takeNormalCost(AbilityPlayerContext context, Player player) {
@@ -135,26 +141,23 @@ abstract class BaseAbility implements GodAbility {
 
     protected void setCooldown(AbilityPlayerContext context, int slot, int cooldownSeconds) {
         cooldowns.put(slot, System.currentTimeMillis() + context.plugin().abilities().scaleCooldownMillis(cooldownSeconds * 1000L));
+        cooldownAnnouncements.remove(slot);
         refreshDisplay(context);
     }
 
     protected void setRawCooldown(int slot, long millis) {
         cooldowns.put(slot, System.currentTimeMillis() + millis);
+        cooldownAnnouncements.remove(slot);
     }
 
     protected void setRawCooldown(AbilityPlayerContext context, int slot, long millis) {
         cooldowns.put(slot, System.currentTimeMillis() + millis);
+        cooldownAnnouncements.remove(slot);
         refreshDisplay(context);
     }
 
     private void refreshDisplay(final AbilityPlayerContext context) {
         context.plugin().game().refreshPlayerDisplay(context.player());
-        Bukkit.getScheduler().runTask(context.plugin(), new Runnable() {
-            @Override
-            public void run() {
-                context.plugin().game().refreshPlayerDisplay(context.player());
-            }
-        });
     }
 
     @Override
@@ -169,13 +172,14 @@ abstract class BaseAbility implements GodAbility {
     @Override
     public void clearCooldowns() {
         cooldowns.clear();
+        cooldownAnnouncements.clear();
     }
 
-    protected boolean readyCooldown(Player player, int slot, int cooldownSeconds) {
+    protected boolean readyCooldown(AbilityPlayerContext context, Player player, int slot, int cooldownSeconds) {
         Long until = cooldowns.get(slot);
         long now = System.currentTimeMillis();
         if (until != null && until > now) {
-            player.sendMessage(ChatColor.YELLOW + "아직 능력을 사용할 수 없습니다. 쿨타임 "
+            sendAbilityMessage(context, player, "failure", ChatColor.YELLOW + "아직 능력을 사용할 수 없습니다. 쿨타임 "
                 + ((until - now + 999L) / 1000L) + "초 남았습니다.");
             return false;
         }
@@ -190,12 +194,40 @@ abstract class BaseAbility implements GodAbility {
         return amount;
     }
 
-    protected boolean has(Player player, Material material, int amount) {
+    protected boolean has(AbilityPlayerContext context, Player player, Material material, int amount) {
         if (amount <= 0 || player.getInventory().contains(material, amount)) {
             return true;
         }
-        player.sendMessage(ChatColor.RED + materialDisplayName(material) + " " + amount + "개가 부족합니다.");
+        sendAbilityMessage(context, player, "failure", ChatColor.RED + materialDisplayName(material) + " " + amount + "개가 부족합니다.");
         return false;
+    }
+
+    protected void sendAbilityMessage(AbilityPlayerContext context, Player player, String type, String message) {
+        if (!context.plugin().getConfig().getBoolean("abilities.messages.enabled", true)) {
+            return;
+        }
+        if (!context.plugin().getConfig().getBoolean("abilities.messages." + type, true)) {
+            return;
+        }
+        player.sendMessage(message);
+    }
+
+    protected boolean rollChance(int successfulOutcomes, int totalOutcomes) {
+        if (successfulOutcomes <= 0 || totalOutcomes <= 0) {
+            return false;
+        }
+        if (successfulOutcomes >= totalOutcomes) {
+            return true;
+        }
+        return RANDOM.nextInt(totalOutcomes) < successfulOutcomes;
+    }
+
+    protected boolean rollPercent(int percent) {
+        return rollChance(Math.max(0, Math.min(100, percent)), 100);
+    }
+
+    protected boolean oneIn(int totalOutcomes) {
+        return rollChance(1, totalOutcomes);
     }
 
     private String materialDisplayName(Material material) {
@@ -220,6 +252,22 @@ abstract class BaseAbility implements GodAbility {
         player.getInventory().addItem(new ItemStack(material, amount));
     }
 
+    protected void dropNaturally(Player player, ItemStack item) {
+        if (item != null && item.getType() != Material.AIR && item.getAmount() > 0) {
+            player.getWorld().dropItemNaturally(player.getLocation(), item.clone());
+        }
+    }
+
+    protected void dropHeldAndArmor(Player player) {
+        dropNaturally(player, player.getItemInHand());
+        player.setItemInHand(new ItemStack(Material.AIR));
+
+        for (ItemStack armor : player.getInventory().getArmorContents()) {
+            dropNaturally(player, armor);
+        }
+        player.getInventory().setArmorContents(new ItemStack[] {null, null, null, null});
+    }
+
     protected void effect(Player player, PotionEffectType type, int seconds, int amplifier) {
         BukkitCompat.addPotionEffect(player, type, seconds * 20, amplifier, true, false);
     }
@@ -230,6 +278,16 @@ abstract class BaseAbility implements GodAbility {
 
     protected void damage(Player target, double amount, Player source) {
         target.damage(Math.min(target.getHealth(), amount), source);
+    }
+
+    protected boolean setWorldTime(AbilityPlayerContext context, Player player, long time) {
+        try {
+            player.getWorld().setTime(time);
+            return true;
+        } catch (IllegalArgumentException ex) {
+            sendAbilityMessage(context, player, "failure", ChatColor.RED + "이 월드는 시간을 변경할 수 없습니다.");
+            return false;
+        }
     }
 
     protected boolean fire(EntityDamageEvent.DamageCause cause) {
@@ -300,6 +358,32 @@ abstract class BaseAbility implements GodAbility {
     }
 
     protected Player targetPlayerInSight(AbilityPlayerContext context, Player player, int range, boolean sameTeam) {
+        Player target = null;
+        double nearestDistance = Double.MAX_VALUE;
+        for (Player candidate : BukkitCompat.onlinePlayers()) {
+            if (candidate.equals(player) || candidate.getWorld() != player.getWorld()) {
+                continue;
+            }
+            if (sameTeam(context, player, candidate) != sameTeam || !lookingAt(player, candidate, range)) {
+                continue;
+            }
+            double distance = player.getLocation().distanceSquared(candidate.getLocation());
+            if (distance < nearestDistance) {
+                nearestDistance = distance;
+                target = candidate;
+            }
+        }
+        if (target == null) {
+            player.sendMessage(ChatColor.RED + "타깃이 해당 구역에 없습니다.");
+        }
+        return target;
+    }
+
+    protected Player commandTargetPlayerInSight(AbilityPlayerContext context, Player player, int range, boolean sameTeam) {
+        if (targetName == null || targetName.trim().length() == 0) {
+            sendAbilityMessage(context, player, "failure", ChatColor.RED + "먼저 /x <플레이어>로 타깃을 지정하세요.");
+            return null;
+        }
         Player target = targetPlayer();
         if (target == null || !target.isOnline() || target.getWorld() != player.getWorld()) {
             player.sendMessage(ChatColor.RED + "타깃이 해당 구역에 없습니다.");
@@ -343,18 +427,82 @@ abstract class BaseAbility implements GodAbility {
         final String name = timerName == null || timerName.trim().length() == 0 ? "능력 타이머" : timerName;
         final String text = triggerText == null || triggerText.trim().length() == 0 ? "능력 효과" : triggerText;
         timers.put(name, System.currentTimeMillis() + seconds * 1000L);
-        context.player().sendMessage(ChatColor.YELLOW + text + ChatColor.WHITE + " : "
+        timerAnnouncements.remove(name);
+        sendAbilityMessage(context, context.player(), "timer", ChatColor.YELLOW + text + ChatColor.WHITE + " : "
             + ChatColor.AQUA + seconds + "초 후");
         refreshDisplay(context);
-        Bukkit.getScheduler().scheduleSyncDelayedTask(context.plugin(), new Runnable() {
-            @Override
-            public void run() {
-                timers.remove(name);
-                refreshDisplay(context);
-                runnable.run();
-                refreshDisplay(context);
-            }
+        Bukkit.getScheduler().scheduleSyncDelayedTask(context.plugin(), () -> {
+            timers.remove(name);
+            timerAnnouncements.remove(name);
+            refreshDisplay(context);
+            runnable.run();
+            refreshDisplay(context);
         }, seconds * 20L);
+    }
+
+    @Override
+    public void onCountdownTick(AbilityPlayerContext context) {
+        announceCooldowns(context);
+        announceTimers(context);
+    }
+
+    private void announceCooldowns(AbilityPlayerContext context) {
+        long now = System.currentTimeMillis();
+        List<Integer> expired = new ArrayList<Integer>();
+        for (Map.Entry<Integer, Long> entry : cooldowns.entrySet()) {
+            long remaining = entry.getValue() - now;
+            if (remaining <= 0L) {
+                expired.add(entry.getKey());
+                continue;
+            }
+            announceCountdown(context, cooldownAnnouncements, entry.getKey(), remaining,
+                cooldownLabel(entry.getKey()) + " 쿨타임");
+        }
+        for (Integer slot : expired) {
+            cooldowns.remove(slot);
+            cooldownAnnouncements.remove(slot);
+        }
+    }
+
+    private void announceTimers(AbilityPlayerContext context) {
+        long now = System.currentTimeMillis();
+        List<String> expired = new ArrayList<String>();
+        for (Map.Entry<String, Long> entry : timers.entrySet()) {
+            long remaining = entry.getValue() - now;
+            if (remaining <= 0L) {
+                expired.add(entry.getKey());
+                continue;
+            }
+            announceCountdown(context, timerAnnouncements, entry.getKey(), remaining, entry.getKey());
+        }
+        for (String key : expired) {
+            timers.remove(key);
+            timerAnnouncements.remove(key);
+        }
+    }
+
+    private <T> void announceCountdown(AbilityPlayerContext context, Map<T, Long> announcements, T key, long remaining, String label) {
+        if (remaining > 3000L) {
+            return;
+        }
+        long seconds = Math.max(1L, (remaining + 999L) / 1000L);
+        Long last = announcements.get(key);
+        if (last != null && last.longValue() == seconds) {
+            return;
+        }
+        announcements.put(key, seconds);
+        sendAbilityMessage(context, context.player(), "timer", ChatColor.YELLOW + label + " "
+            + ChatColor.AQUA + seconds + "초" + ChatColor.YELLOW + " 남았습니다.");
+    }
+
+    private String cooldownLabel(int slot) {
+        if (slot == 1) {
+            return "일반 능력";
+        }
+        if (slot == 2) {
+            return "고급 능력";
+        }
+        return "능력";
     }
 
     @Override
@@ -373,6 +521,7 @@ abstract class BaseAbility implements GodAbility {
         }
         for (String key : expired) {
             timers.remove(key);
+            timerAnnouncements.remove(key);
         }
         return lines;
     }
@@ -395,12 +544,9 @@ abstract class BaseAbility implements GodAbility {
         final Block block = base.getLocation().add(0, 1, 0).getBlock();
         if (block.getType() == Material.AIR && useNormal(context, player, 0)) {
             block.setType(Material.LAVA);
-            later(context, 2, "용암 제거", "용암 제거", new Runnable() {
-                @Override
-                public void run() {
-                    if (block.getType() == Material.LAVA) {
-                        block.setType(Material.AIR);
-                    }
+            later(context, 2, "용암 제거", "용암 제거", () -> {
+                if (block.getType() == Material.LAVA) {
+                    block.setType(Material.AIR);
                 }
             });
         }
@@ -409,12 +555,9 @@ abstract class BaseAbility implements GodAbility {
     protected void fly(final AbilityPlayerContext context, final Player player, int seconds) {
         player.setAllowFlight(true);
         player.setFlying(true);
-        later(context, seconds, "비행 종료", "비행 종료", new Runnable() {
-            @Override
-            public void run() {
-                player.setFlying(false);
-                player.setAllowFlight(false);
-            }
+        later(context, seconds, "비행 종료", "비행 종료", () -> {
+            player.setFlying(false);
+            player.setAllowFlight(false);
         });
     }
 
@@ -446,12 +589,9 @@ abstract class BaseAbility implements GodAbility {
 
     protected void recall(final AbilityPlayerContext context, final Player player) {
         final Location location = player.getLocation();
-        later(context, 10, "귀환 발동", "귀환 발동", new Runnable() {
-            @Override
-            public void run() {
-                player.teleport(location);
-                effect(player, PotionEffectType.INVISIBILITY, 3, 0);
-            }
+        later(context, 10, "귀환 발동", "귀환 발동", () -> {
+            player.teleport(location);
+            effect(player, PotionEffectType.INVISIBILITY, 3, 0);
         });
     }
 
@@ -464,12 +604,9 @@ abstract class BaseAbility implements GodAbility {
                 block.setType(Material.ICE);
             }
         }
-        later(context, seconds, "얼음 구체 복구", "얼음 구체 복구", new Runnable() {
-            @Override
-            public void run() {
-                for (Map.Entry<Location, Material> entry : oldBlocks.entrySet()) {
-                    entry.getKey().getBlock().setType(entry.getValue());
-                }
+        later(context, seconds, "얼음 구체 복구", "얼음 구체 복구", () -> {
+            for (Map.Entry<Location, Material> entry : oldBlocks.entrySet()) {
+                entry.getKey().getBlock().setType(entry.getValue());
             }
         });
     }
@@ -547,12 +684,9 @@ abstract class BaseAbility implements GodAbility {
         for (Player target : targets) {
             target.setVelocity(new Vector(0, 1.6D, 0));
         }
-        later(context, 1, "심판 발동", "심판 발동", new Runnable() {
-            @Override
-            public void run() {
-                for (Player target : targets) {
-                    target.getWorld().strikeLightning(target.getLocation());
-                }
+        later(context, 1, "심판 발동", "심판 발동", () -> {
+            for (Player target : targets) {
+                target.getWorld().strikeLightning(target.getLocation());
             }
         });
     }
@@ -601,13 +735,14 @@ abstract class BaseAbility implements GodAbility {
 
     protected void castSpell(AbilityPlayerContext context, String spell, boolean harry) {
         final Player player = context.player();
+        spell = normalizeSpell(spell);
         if (spell.equals("루모스") || spell.equalsIgnoreCase("Lumos")) {
             if (useNormal(context, player)) {
-                player.getWorld().setTime(1000);
+                setWorldTime(context, player, 1000);
             }
         } else if (spell.equals("녹스") || spell.equalsIgnoreCase("Nox")) {
             if (useNormal(context, player)) {
-                player.getWorld().setTime(18000);
+                setWorldTime(context, player, 18000);
             }
         } else if (spell.equals("봄바르다") || spell.equalsIgnoreCase("Bombarda")) {
             if (useNormal(context, player)) {
@@ -622,27 +757,32 @@ abstract class BaseAbility implements GodAbility {
                 }
             }
         } else if (spell.equals("익스펙토 패트로눔") || spell.equalsIgnoreCase("Expecto Patronum")) {
-            if (useAdvanced(context, player) && RANDOM.nextInt(4) < (harry ? 3 : 2)) {
+            if (useAdvanced(context, player) && rollChance(harry ? 3 : 2, 4)) {
                 invincible = true;
-                later(context, 5, "보호 주문 종료", "보호 주문 종료", new Runnable() {
-                    @Override
-                    public void run() {
-                        invincible = false;
-                    }
-                });
+                later(context, 5, "보호 주문 종료", "보호 주문 종료", () -> invincible = false);
             }
         } else if (spell.equals("엑스펠리아무스") || spell.equalsIgnoreCase("Expelliarmus")) {
             Player target = targetPlayerInSight(context, player, 20, false);
-            if (target != null && useAdvanced(context, player) && RANDOM.nextInt(100) < (harry ? 25 : 20)) {
-                target.getInventory().setArmorContents(new ItemStack[] {null, null, null, null});
-                target.setItemInHand(new ItemStack(Material.AIR));
+            if (target != null && useAdvanced(context, player) && rollPercent(harry ? 25 : 20)) {
+                dropHeldAndArmor(target);
             }
         } else if (spell.equals("아바다 케다브라") || spell.equalsIgnoreCase("Avada Kedavra")) {
             Player target = targetPlayerInSight(context, player, 20, false);
-            if (target != null && useAdvanced(context, player) && RANDOM.nextInt(100) < (harry ? 20 : 15)) {
+            if (target != null && useAdvanced(context, player) && rollPercent(harry ? 20 : 15)) {
                 target.setHealth(0.0D);
             }
         }
+    }
+
+    private String normalizeSpell(String spell) {
+        if (spell == null) {
+            return "";
+        }
+        String normalized = ChatColor.stripColor(spell).trim();
+        if (normalized.startsWith("/")) {
+            normalized = normalized.substring(1).trim();
+        }
+        return normalized;
     }
 
     protected void askQuestion(Player player) {
@@ -656,12 +796,12 @@ abstract class BaseAbility implements GodAbility {
         player.sendMessage(pendingQuestion);
     }
 
-    protected void answerQuestion(AbilityPlayerContext context, AsyncPlayerChatEvent event) {
+    protected void answerQuestion(AbilityPlayerContext context, String message) {
         if (pendingAnswer < 0) {
             return;
         }
         try {
-            int answer = Integer.parseInt(event.getMessage());
+            int answer = Integer.parseInt(message.trim());
             if (answer == pendingAnswer) {
                 context.plugin().abilities().assignRandom(context.player());
                 context.player().sendMessage(ChatColor.AQUA + "문제를 맞혀 새 능력을 얻었습니다!");

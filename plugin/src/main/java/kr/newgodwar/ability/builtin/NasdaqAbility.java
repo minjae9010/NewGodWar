@@ -38,12 +38,21 @@ final class NasdaqAbility extends BaseAbility {
             return;
         }
         ItemStack item = player.getItemInHand();
+        int successPercent = successPercent(context, item.getType());
         takeNormalCost(context, player);
         setCooldown(context, 0, context.ability().normalCooldownSeconds());
-        if (RANDOM.nextInt(4) < 3) {
+        if (rollPercent(successPercent)) {
             player.getInventory().addItem(item.clone());
+            sendAbilityMessage(context, player, "success", ChatColor.GREEN + "복사에 성공했습니다. 확률 " + successPercent + "%");
         } else {
             player.getInventory().removeItem(item.clone());
+            sendAbilityMessage(context, player, "failure", ChatColor.RED + "복사에 실패해 들고 있던 아이템을 잃었습니다. 확률 " + successPercent + "%");
         }
+    }
+
+    private int successPercent(AbilityPlayerContext context, Material material) {
+        String path = material == Material.DIAMOND ? "abilities.nasdaq.diamond-success-percent" : "abilities.nasdaq.iron-success-percent";
+        int fallback = material == Material.DIAMOND ? 25 : 75;
+        return Math.max(0, Math.min(100, context.plugin().getConfig().getInt(path, fallback)));
     }
 }
