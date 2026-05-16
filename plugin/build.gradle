@@ -1,0 +1,31 @@
+dependencies {
+    implementation project(":compatibility:common")
+    runtimeOnly project(":compatibility:reflection")
+}
+
+tasks.processResources {
+    filteringCharset = "UTF-8"
+    filesMatching("plugin.yml") {
+        expand(version: project.version)
+    }
+}
+
+tasks.jar {
+    dependsOn(":compatibility:common:jar", ":compatibility:reflection:jar")
+
+    archiveBaseName = "NewGodWar"
+    manifest {
+        attributes(
+            "Built-By": "Codex",
+            "Implementation-Title": rootProject.name,
+            "Implementation-Version": project.version
+        )
+    }
+
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    from {
+        configurations.runtimeClasspath.collect { file ->
+            file.isDirectory() ? file : zipTree(file)
+        }
+    }
+}

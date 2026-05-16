@@ -1,0 +1,42 @@
+# Build output
+.build/
+.deps/
+.gradle/
+build/
+target/
+out/
+
+# Gradle subproject output
+**/build/
+
+# Compiled artifacts
+*.class
+*.jar
+*.war
+*.ear
+
+# Keep the Gradle wrapper jar in git
+!gradle/wrapper/gradle-wrapper.jar
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+logs/
+
+# Local runtime/test server folders
+run/
+server/
+servers/

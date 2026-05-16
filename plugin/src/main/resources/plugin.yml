@@ -1,0 +1,21 @@
+name: NewGodWar
+main: kr.newgodwar.NewGodWarPlugin
+version: ${version}
+author: minjae9010
+description: 신들의 전쟁 스타일 팀 기반 미니게임 플러그인
+commands:
+  godwar:
+    aliases: [gw, godswar, 신들의전쟁]
+    description: 신들의 전쟁 게임을 관리합니다.
+    usage: /godwar help
+  teamchat:
+    aliases: [tc, 팀채팅]
+    description: 팀원에게만 채팅을 보냅니다.
+    usage: /teamchat <message>
+permissions:
+  newgodwar.admin:
+    description: 신들의 전쟁 관리자 명령어 권한
+    default: op
+  newgodwar.play:
+    description: 신들의 전쟁 참여 권한
+    default: true

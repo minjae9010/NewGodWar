@@ -1,0 +1,40 @@
+game:
+  min-players: 2
+  friendly-fire: false
+  auto-balance-teams: true
+  announce-radius: 0
+  ability-roll-message: true
+
+teams:
+  red:
+    display-name: "빨강"
+    color: RED
+  blue:
+    display-name: "파랑"
+    color: BLUE
+  green:
+    display-name: "초록"
+    color: GREEN
+
+abilities:
+  zeus:
+    enabled: true
+    lightning-chance: 0.18
+    cooldown-seconds: 8
+  ares:
+    enabled: true
+    damage-bonus: 1.25
+  hermes:
+    enabled: true
+    speed-amplifier: 1
+  poseidon:
+    enabled: true
+    water-heal-interval-seconds: 5
+    water-heal-amount: 1.0
+
+messages:
+  prefix: "&6[신들의 전쟁]&r "
+  game-start: "&e전쟁이 시작되었습니다. 각 팀의 신전을 지키고 적의 다이아 심장을 파괴하세요."
+  game-stop: "&c전쟁이 종료되었습니다."
+  team-eliminated: "&c{team} 팀의 다이아 심장이 파괴되었습니다."
+  winner: "&a{team} 팀이 신들의 전쟁에서 승리했습니다!"
