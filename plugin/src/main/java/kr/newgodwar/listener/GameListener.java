@@ -14,10 +14,23 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockExplodeEvent;
+import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.block.SignChangeEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.EntityRegainHealthEvent;
+import org.bukkit.event.entity.FoodLevelChangeEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.entity.ProjectileLaunchEvent;
+import org.bukkit.event.player.AsyncPlayerChatEvent;
+import org.bukkit.event.player.PlayerFishEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.player.PlayerRespawnEvent;
+import org.bukkit.projectiles.ProjectileSource;
 
 public final class GameListener implements Listener {
 
@@ -37,7 +50,7 @@ public final class GameListener implements Listener {
     public void onJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
         if (gameManager.isRunning() && gameManager.teamOf(player) != null) {
-            abilityManager.applyPersistentEffects(player);
+            abilityManager.reapply(player);
         }
     }
 
@@ -52,6 +65,13 @@ public final class GameListener implements Listener {
     public void onDamage(EntityDamageByEntityEvent event) {
         Entity damagerEntity = event.getDamager();
         Entity victimEntity = event.getEntity();
+        if (gameManager.isRunning() && victimEntity instanceof Player && damagerEntity instanceof org.bukkit.entity.Projectile) {
+            ProjectileSource shooter = ((org.bukkit.entity.Projectile) damagerEntity).getShooter();
+            if (shooter instanceof Player) {
+                abilityManager.handleProjectileHit((Player) shooter, (Player) victimEntity, event);
+            }
+        }
+
         if (!(damagerEntity instanceof Player) || !(victimEntity instanceof Player)) {
             return;
         }
@@ -67,11 +87,27 @@ public final class GameListener implements Listener {
             return;
         }
 
-        event.setDamage(abilityManager.modifyDamage(damager, event.getDamage()));
-        if (abilityManager.shouldStrikeLightning(damager)) {
-            victim.getWorld().strikeLightningEffect(victim.getLocation());
-            event.setDamage(event.getDamage() + 3.0D);
-            nmsAdapter.sendActionBar(damager, ChatColor.YELLOW + "제우스의 번개가 내려쳤습니다.");
+        abilityManager.handleDamage(damager, victim, event);
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onGenericDamage(EntityDamageEvent event) {
+        if (gameManager.isRunning() && event.getEntity() instanceof Player) {
+            abilityManager.handleGenericDamage((Player) event.getEntity(), event);
+        }
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onProjectileLaunch(ProjectileLaunchEvent event) {
+        if (gameManager.isRunning()) {
+            abilityManager.handleProjectileLaunch(event);
+        }
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onInteract(PlayerInteractEvent event) {
+        if (gameManager.isRunning()) {
+            abilityManager.handleInteract(event.getPlayer(), event);
         }
     }
 
@@ -95,13 +131,88 @@ public final class GameListener implements Listener {
             return;
         }
         gameManager.eliminate(team, event.getPlayer());
+        abilityManager.handleBlockBreak(event.getPlayer(), event);
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onAbilityBlockBreak(BlockBreakEvent event) {
+        if (gameManager.isRunning() && event.getBlock().getType() != Material.DIAMOND_BLOCK) {
+            abilityManager.handleBlockBreak(event.getPlayer(), event);
+        }
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onBlockPlace(BlockPlaceEvent event) {
+        if (gameManager.isRunning()) {
+            abilityManager.handleBlockPlace(event.getPlayer(), event);
+        }
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onBlockExplode(BlockExplodeEvent event) {
+        if (gameManager.isRunning()) {
+            abilityManager.handleBlockExplode(event);
+        }
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onSignChange(SignChangeEvent event) {
+        if (gameManager.isRunning()) {
+            abilityManager.handleSignChange(event.getPlayer(), event);
+        }
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onFoodLevelChange(FoodLevelChangeEvent event) {
+        if (gameManager.isRunning() && event.getEntity() instanceof Player) {
+            abilityManager.handleFoodLevelChange((Player) event.getEntity(), event);
+        }
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onRegainHealth(EntityRegainHealthEvent event) {
+        if (gameManager.isRunning() && event.getEntity() instanceof Player) {
+            abilityManager.handleRegainHealth((Player) event.getEntity(), event);
+        }
+    }
+
+    @EventHandler
+    public void onRespawn(PlayerRespawnEvent event) {
+        if (gameManager.isRunning()) {
+            abilityManager.handleRespawn(event.getPlayer(), event);
+        }
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onMove(PlayerMoveEvent event) {
+        if (gameManager.isRunning()) {
+            abilityManager.handleMove(event.getPlayer(), event);
+        }
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onChat(AsyncPlayerChatEvent event) {
+        if (gameManager.isRunning()) {
+            abilityManager.handleChat(event.getPlayer(), event);
+        }
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onFish(PlayerFishEvent event) {
+        if (gameManager.isRunning()) {
+            abilityManager.handleFish(event.getPlayer(), event);
+        }
     }
 
     @EventHandler
     public void onDeath(PlayerDeathEvent event) {
+        if (gameManager.isRunning()) {
+            abilityManager.handleDeath(event);
+        }
         Player killer = event.getEntity().getKiller();
         if (killer != null && gameManager.isRunning()) {
             gameManager.recordKill(killer);
+            abilityManager.handleKill(killer, event.getEntity(), event);
             event.setDeathMessage(plugin.messages().prefix() + ChatColor.RED + event.getEntity().getName()
                 + ChatColor.GRAY + " 님이 " + ChatColor.YELLOW + killer.getName() + ChatColor.GRAY + " 님에게 쓰러졌습니다.");
         }

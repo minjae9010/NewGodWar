@@ -2,9 +2,11 @@ package kr.newgodwar.command;
 
 import kr.newgodwar.NewGodWarPlugin;
 import kr.newgodwar.ability.AbilityManager;
-import kr.newgodwar.ability.AbilityType;
+import kr.newgodwar.ability.api.AbilityDefinition;
 import kr.newgodwar.game.GameManager;
 import kr.newgodwar.game.GodTeam;
+import kr.newgodwar.gui.AbilityGui;
+import kr.newgodwar.gui.SettingsGui;
 import kr.newgodwar.util.BukkitCompat;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -25,17 +27,21 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
 
     private static final List<String> SUBCOMMANDS = Arrays.asList(
         "help", "autoteam", "join", "leave", "settemple", "start", "stop", "status",
-        "ability", "setability", "spectate", "unspectate", "reload"
+        "ability", "abilities", "target", "setability", "spectate", "unspectate", "reload", "gui", "settings"
     );
 
     private final NewGodWarPlugin plugin;
     private final GameManager gameManager;
     private final AbilityManager abilityManager;
+    private final SettingsGui settingsGui;
+    private final AbilityGui abilityGui;
 
-    public GodWarCommand(NewGodWarPlugin plugin, GameManager gameManager, AbilityManager abilityManager) {
+    public GodWarCommand(NewGodWarPlugin plugin, GameManager gameManager, AbilityManager abilityManager, SettingsGui settingsGui, AbilityGui abilityGui) {
         this.plugin = plugin;
         this.gameManager = gameManager;
         this.abilityManager = abilityManager;
+        this.settingsGui = settingsGui;
+        this.abilityGui = abilityGui;
     }
 
     @Override
@@ -84,6 +90,14 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             ability(sender, args);
             return true;
         }
+        if (sub.equals("abilities")) {
+            listAbilities(sender);
+            return true;
+        }
+        if (sub.equals("target")) {
+            target(sender, args);
+            return true;
+        }
         if (sub.equals("setability")) {
             setAbility(sender, args);
             return true;
@@ -98,7 +112,12 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         }
         if (sub.equals("reload")) {
             plugin.reloadConfig();
+            gameManager.reloadSettings();
             plugin.messages().send(sender, "&a설정을 다시 불러왔습니다.");
+            return true;
+        }
+        if (sub.equals("gui") || sub.equals("settings")) {
+            openSettings(sender);
             return true;
         }
 
@@ -113,8 +132,11 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(ChatColor.GRAY + "/" + label + " settemple <red|blue|green>");
         sender.sendMessage(ChatColor.GRAY + "/" + label + " start | stop | status");
         sender.sendMessage(ChatColor.GRAY + "/" + label + " ability [player]");
+        sender.sendMessage(ChatColor.GRAY + "/" + label + " abilities");
+        sender.sendMessage(ChatColor.GRAY + "/" + label + " target <player>");
         sender.sendMessage(ChatColor.GRAY + "/" + label + " setability <player> <ability>");
         sender.sendMessage(ChatColor.GRAY + "/" + label + " spectate|unspectate <player>");
+        sender.sendMessage(ChatColor.GRAY + "/" + label + " gui");
     }
 
     private void join(CommandSender sender, String[] args) {
@@ -180,18 +202,44 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
     }
 
     private void ability(CommandSender sender, String[] args) {
+        if (args.length >= 2 && args[1].equalsIgnoreCase("list")) {
+            listAbilities(sender);
+            return;
+        }
         Player target = args.length >= 2 ? Bukkit.getPlayer(args[1]) : asPlayer(sender);
         if (target == null) {
             plugin.messages().send(sender, "&c대상 플레이어를 찾을 수 없습니다.");
             return;
         }
-        AbilityType ability = abilityManager.get(target);
+        Player viewer = asPlayer(sender);
+        if (viewer != null) {
+            abilityGui.open(viewer, target);
+            return;
+        }
+        AbilityDefinition ability = abilityManager.get(target);
         if (ability == null) {
             plugin.messages().send(sender, "&e" + target.getName() + " 님은 아직 능력이 없습니다.");
             return;
         }
-        plugin.messages().send(sender, "&a" + target.getName() + " 님의 능력: " + ability.displayName()
+        plugin.messages().send(sender, "&a" + target.getName() + " 님의 능력: " + ability.name()
             + ChatColor.GRAY + " - " + ability.description());
+    }
+
+    private void listAbilities(CommandSender sender) {
+        Player viewer = asPlayer(sender);
+        if (viewer != null) {
+            abilityGui.open(viewer, viewer);
+            return;
+        }
+        sender.sendMessage(plugin.messages().prefix() + ChatColor.YELLOW + "등록된 신의 능력");
+        for (AbilityDefinition ability : abilityManager.registry().all()) {
+            boolean enabled = abilityManager.isEnabled(ability);
+            ChatColor stateColor = enabled ? ChatColor.GREEN : ChatColor.RED;
+            String state = enabled ? "활성" : "비활성";
+            sender.sendMessage(ChatColor.GOLD + ability.id() + ChatColor.GRAY + " | "
+                + ChatColor.WHITE + ability.name() + ChatColor.GRAY + " | "
+                + stateColor + state + ChatColor.GRAY + " - " + ability.description());
+        }
     }
 
     private void setAbility(CommandSender sender, String[] args) {
@@ -200,14 +248,27 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             return;
         }
         Player target = Bukkit.getPlayer(args[1]);
-        AbilityType ability = AbilityType.parse(args[2]);
+        AbilityDefinition ability = abilityManager.registry().get(args[2]);
         if (target == null || ability == null) {
             plugin.messages().send(sender, "&c플레이어 또는 능력을 찾을 수 없습니다.");
             return;
         }
         abilityManager.set(target, ability);
-        plugin.nms().sendTitle(target, ability.displayName(), ability.description(), 10, 60, 10);
+        plugin.nms().sendTitle(target, ability.name(), ability.description(), 10, 60, 10);
         plugin.messages().send(sender, "&a능력을 지정했습니다.");
+    }
+
+    private void target(CommandSender sender, String[] args) {
+        Player player = asPlayer(sender);
+        if (player == null) {
+            plugin.messages().send(sender, "&c플레이어만 사용할 수 있습니다.");
+            return;
+        }
+        if (args.length < 2) {
+            plugin.messages().send(sender, "&e/godwar target <player>");
+            return;
+        }
+        abilityManager.setTarget(player, sender, args[1]);
     }
 
     private void spectate(CommandSender sender, String[] args, boolean spectate) {
@@ -228,8 +289,17 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         plugin.messages().send(sender, "&a처리했습니다.");
     }
 
+    private void openSettings(CommandSender sender) {
+        Player player = asPlayer(sender);
+        if (player == null) {
+            plugin.messages().send(sender, "&c플레이어만 GUI를 열 수 있습니다.");
+            return;
+        }
+        settingsGui.open(player);
+    }
+
     private boolean requiresAdmin(String sub) {
-        return !sub.equals("ability") && !sub.equals("status");
+        return !sub.equals("ability") && !sub.equals("abilities") && !sub.equals("target") && !sub.equals("status");
     }
 
     private Player asPlayer(CommandSender sender) {
@@ -244,10 +314,25 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         if (args.length == 2 && (args[0].equalsIgnoreCase("join") || args[0].equalsIgnoreCase("settemple"))) {
             return startsWith(Arrays.asList("red", "blue", "green"), args[1]);
         }
+        if (args.length == 2 && args[0].equalsIgnoreCase("ability")) {
+            List<String> values = new ArrayList<String>();
+            values.add("list");
+            for (Player player : BukkitCompat.onlinePlayers()) {
+                values.add(player.getName());
+            }
+            return startsWith(values, args[1]);
+        }
+        if (args.length == 2 && args[0].equalsIgnoreCase("target")) {
+            List<String> values = new ArrayList<String>();
+            for (Player player : BukkitCompat.onlinePlayers()) {
+                values.add(player.getName());
+            }
+            return startsWith(values, args[1]);
+        }
         if (args.length == 3 && args[0].equalsIgnoreCase("setability")) {
             List<String> abilities = new ArrayList<String>();
-            for (AbilityType type : AbilityType.values()) {
-                abilities.add(type.id());
+            for (String id : abilityManager.registry().ids()) {
+                abilities.add(id);
             }
             return startsWith(abilities, args[2]);
         }

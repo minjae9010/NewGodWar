@@ -2,7 +2,7 @@ package kr.newgodwar.game;
 
 import kr.newgodwar.NewGodWarPlugin;
 import kr.newgodwar.ability.AbilityManager;
-import kr.newgodwar.ability.AbilityType;
+import kr.newgodwar.ability.api.AbilityDefinition;
 import kr.newgodwar.nms.NmsAdapter;
 import kr.newgodwar.util.BukkitCompat;
 import org.bukkit.Bukkit;
@@ -56,6 +56,12 @@ public final class GameManager {
 
     public Map<GodTeam, TempleLocation> temples() {
         return Collections.unmodifiableMap(temples);
+    }
+
+    public void reloadSettings() {
+        temples.clear();
+        loadTemples();
+        setupScoreboard();
     }
 
     public GodTeam teamOf(Player player) {
@@ -157,11 +163,13 @@ public final class GameManager {
                 continue;
             }
             addToScoreboard(player, team);
-            AbilityType ability = abilityManager.assignRandom(player);
+            AbilityDefinition ability = abilityManager.assignRandom(player);
             BukkitCompat.setSurvival(player);
             player.setHealth(player.getMaxHealth());
             player.setFoodLevel(20);
-            nmsAdapter.sendTitle(player, ability.displayName(), ability.description(), 10, 70, 20);
+            if (plugin.getConfig().getBoolean("game.ability-roll-message", true)) {
+                nmsAdapter.sendTitle(player, ability.name(), ability.description(), 10, 70, 20);
+            }
         }
 
         String start = plugin.messages().get("game-start");
@@ -306,7 +314,7 @@ public final class GameManager {
             @Override
             public void run() {
                 if (state == GameState.RUNNING) {
-                    abilityManager.tickWaterHealing(BukkitCompat.onlinePlayers());
+                    abilityManager.tick(BukkitCompat.onlinePlayers());
                 }
             }
         }, interval, interval);

@@ -28,11 +28,22 @@
 - `/godwar start` 게임 시작 및 능력 배정
 - `/godwar stop` 게임 종료
 - `/godwar status` 현재 게임 상태
-- `/godwar ability [player]` 능력 확인
+- `/godwar gui` 또는 `/godwar settings` 관리자용 상자 GUI 설정 열기
+- `/godwar ability [player]` 능력 확인 GUI 열기
+- `/godwar abilities` 등록된 능력 목록 GUI 열기
 - `/godwar setability <player> <ability>` 능력 수동 지정
 - `/godwar spectate <player>` 관전 모드
 - `/godwar unspectate <player>` 관전 해제
 - `/teamchat <message>` 팀 채팅
+
+## 내장 능력
+
+| ID | 이름 | 효과 |
+| --- | --- | --- |
+| `zeus` | 제우스 | 공격 시 일정 확률로 번개를 내리고 추가 피해를 줍니다. |
+| `ares` | 아레스 | 근접 공격 피해량이 증가합니다. |
+| `hermes` | 헤르메스 | 능력 배정 시 빠른 이동 효과를 받습니다. |
+| `poseidon` | 포세이돈 | 물 안에 있을 때 설정된 간격마다 체력을 회복합니다. |
 
 ## 지원 버전
 

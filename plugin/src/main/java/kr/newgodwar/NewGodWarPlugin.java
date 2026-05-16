@@ -4,6 +4,8 @@ import kr.newgodwar.ability.AbilityManager;
 import kr.newgodwar.command.GodWarCommand;
 import kr.newgodwar.command.TeamChatCommand;
 import kr.newgodwar.game.GameManager;
+import kr.newgodwar.gui.AbilityGui;
+import kr.newgodwar.gui.SettingsGui;
 import kr.newgodwar.listener.GameListener;
 import kr.newgodwar.nms.NmsAdapter;
 import kr.newgodwar.nms.NmsAdapters;
@@ -19,6 +21,8 @@ public final class NewGodWarPlugin extends JavaPlugin {
     private AbilityManager abilityManager;
     private GameManager gameManager;
     private ServerVersionSupport versionSupport;
+    private SettingsGui settingsGui;
+    private AbilityGui abilityGui;
 
     @Override
     public void onEnable() {
@@ -30,12 +34,17 @@ public final class NewGodWarPlugin extends JavaPlugin {
         this.abilityManager = new AbilityManager(this);
         this.gameManager = new GameManager(this, abilityManager, nmsAdapter);
 
-        GodWarCommand godWarCommand = new GodWarCommand(this, gameManager, abilityManager);
+        this.settingsGui = new SettingsGui(this, gameManager, abilityManager);
+        this.abilityGui = new AbilityGui(this, abilityManager);
+
+        GodWarCommand godWarCommand = new GodWarCommand(this, gameManager, abilityManager, settingsGui, abilityGui);
         getCommand("godwar").setExecutor(godWarCommand);
         getCommand("godwar").setTabCompleter(godWarCommand);
         getCommand("teamchat").setExecutor(new TeamChatCommand(this, gameManager));
 
         Bukkit.getPluginManager().registerEvents(new GameListener(this, gameManager, abilityManager, nmsAdapter), this);
+        Bukkit.getPluginManager().registerEvents(settingsGui, this);
+        Bukkit.getPluginManager().registerEvents(abilityGui, this);
 
         if (versionSupport.paperDownloadVersion()) {
             getLogger().info("Detected Paper downloadable version target: " + versionSupport.summary());
