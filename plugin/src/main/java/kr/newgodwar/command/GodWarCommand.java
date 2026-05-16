@@ -314,7 +314,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             entries.add(new HelpEntry("운영 설정", "rerolls <횟수>", "능력 재추첨 가능 횟수 설정"));
             entries.add(new HelpEntry("운영 설정", "skipseconds <초>", "관리자 skip 기본 카운트다운 설정"));
             entries.add(new HelpEntry("운영 설정", "urf <on|off|toggle|80%>", "우르프 모드 및 쿨타임 감소율 설정"));
-            entries.add(new HelpEntry("운영 설정", "gamblereward <normal|tajja> <번호> hand|<material> [수량]", "도박 당첨 아이템 변경"));
+            entries.add(new HelpEntry("운영 설정", "gamblereward <normal|tajja> <번호|add> hand|<material> [수량]", "도박 당첨 아이템 변경/추가"));
             entries.add(new HelpEntry("운영 설정", "blacklist <list|add|remove|toggle> [ability]", "랜덤 제외 능력 관리"));
             entries.add(new HelpEntry("운영 설정", "gamerule <apply|restore>", "게임룰 수동 적용 / 복구"));
             entries.add(new HelpEntry("운영 설정", "reload", "config.yml 다시 불러오기"));
@@ -1102,7 +1102,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
 
     private void gamblingReward(CommandSender sender, String[] args) {
         if (args.length < 4) {
-            plugin.messages().send(sender, "&e/godwar gamblereward <normal|tajja> <번호> hand|<material> [수량]");
+            plugin.messages().send(sender, "&e/godwar gamblereward <normal|tajja> <번호|add> hand|<material> [수량]");
             return;
         }
         String path = gamblingRewardPath(args[1]);
@@ -1110,16 +1110,21 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             plugin.messages().send(sender, "&c종류는 normal 또는 tajja 중 하나여야 합니다.");
             return;
         }
-        Integer number = parsePositiveInt(args[2]);
-        if (number == null) {
-            plugin.messages().send(sender, "&c상품 번호는 숫자여야 합니다.");
-            return;
-        }
-        int index = number.intValue() - 1;
+        boolean add = isAddRewardToken(args[2]);
+        Integer number = null;
+        int index = -1;
         int size = plugin.getConfig().getMapList(path).size();
-        if (index < 0 || index >= size) {
-            plugin.messages().send(sender, "&c상품 번호는 1-" + size + " 사이여야 합니다.");
-            return;
+        if (!add) {
+            number = parsePositiveInt(args[2]);
+            if (number == null) {
+                plugin.messages().send(sender, "&c상품 번호는 숫자이거나 add여야 합니다.");
+                return;
+            }
+            index = number.intValue() - 1;
+            if (index < 0 || index >= size) {
+                plugin.messages().send(sender, "&c상품 번호는 1-" + size + " 사이여야 합니다.");
+                return;
+            }
         }
 
         String action = args[3].toLowerCase(Locale.ROOT);
@@ -1133,6 +1138,11 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             ItemStack hand = player.getItemInHand();
             if (hand == null || hand.getType() == Material.AIR || hand.getAmount() <= 0) {
                 plugin.messages().send(sender, "&c손에 든 아이템이 없습니다.");
+                return;
+            }
+            if (add) {
+                int added = addGamblingRewardItem(path, hand);
+                plugin.messages().send(sender, "&a도박 " + gamblingRewardLabel(path) + " 상품 #" + (added + 1) + "을 손 아이템으로 추가했습니다.");
                 return;
             }
             setGamblingRewardItem(path, index, hand);
@@ -1153,6 +1163,12 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
                 return;
             }
             amount = Math.min(2304, parsedAmount.intValue());
+        }
+        if (add) {
+            int added = addGamblingRewardMaterial(path, material, amount);
+            plugin.messages().send(sender, "&a도박 " + gamblingRewardLabel(path) + " 상품 #" + (added + 1) + "을 "
+                + material.name() + " " + amount + "개로 추가했습니다.");
+            return;
         }
         setGamblingRewardMaterial(path, index, material, amount);
         plugin.messages().send(sender, "&a도박 " + gamblingRewardLabel(path) + " 상품 #" + number + " 아이템을 "
@@ -1187,6 +1203,14 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         return material;
     }
 
+    private boolean isAddRewardToken(String token) {
+        return token != null
+            && (token.equalsIgnoreCase("add")
+                || token.equalsIgnoreCase("append")
+                || token.equalsIgnoreCase("new")
+                || token.equalsIgnoreCase("추가"));
+    }
+
     private void setGamblingRewardItem(String path, int index, ItemStack item) {
         ItemStack saved = item.clone();
         updateGamblingReward(path, index, saved, saved.getType(), saved.getAmount());
@@ -1216,6 +1240,36 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         }
         config.set(path, updated);
         plugin.saveConfig();
+    }
+
+    private int addGamblingRewardItem(String path, ItemStack item) {
+        ItemStack saved = item.clone();
+        return appendGamblingReward(path, saved, saved.getType(), saved.getAmount());
+    }
+
+    private int addGamblingRewardMaterial(String path, Material material, int amount) {
+        return appendGamblingReward(path, null, material, amount);
+    }
+
+    private int appendGamblingReward(String path, ItemStack item, Material material, int amount) {
+        FileConfiguration config = plugin.getConfig();
+        List<Map<?, ?>> source = config.getMapList(path);
+        List<Map<String, Object>> updated = new ArrayList<Map<String, Object>>();
+        for (Map<?, ?> reward : source) {
+            updated.add(copyReward(reward));
+        }
+        Map<String, Object> reward = new LinkedHashMap<String, Object>();
+        reward.put("chance", 1);
+        if (item != null) {
+            reward.put("item", item);
+        }
+        reward.put("material", material.name());
+        reward.put("amount", amount);
+        reward.put("message", "&a도박 상품에 당첨되었습니다!");
+        updated.add(reward);
+        config.set(path, updated);
+        plugin.saveConfig();
+        return updated.size() - 1;
     }
 
     private Map<String, Object> copyReward(Map<?, ?> source) {
@@ -1461,6 +1515,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         }
         int size = plugin.getConfig().getMapList(path).size();
         List<String> indexes = new ArrayList<String>();
+        indexes.add("add");
         for (int i = 1; i <= size; i++) {
             indexes.add(String.valueOf(i));
         }

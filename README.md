@@ -36,7 +36,7 @@
 - `/godwar stop` 게임 종료
 - `/godwar status` 현재 게임 상태
 - `/godwar gui` 또는 `/godwar settings` 관리자용 상자 GUI 설정 열기
-- `/godwar gamblereward <normal|tajja> <번호> hand|<material> [수량]` 도박 당첨 아이템 변경
+- `/godwar gamblereward <normal|tajja> <번호|add> hand|<material> [수량]` 도박 당첨 아이템 변경/추가
 - `/godwar ability [player]` 현재 능력만 확인
 - `/godwar abilities` 등록된 능력 도감 GUI 열기
 - `/godwar blacklist <list|add|remove|toggle> [ability]` 랜덤 배정에서 제외할 능력 관리

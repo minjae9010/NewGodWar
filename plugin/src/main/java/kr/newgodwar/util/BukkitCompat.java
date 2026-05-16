@@ -7,7 +7,10 @@ import org.bukkit.GameMode;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.ChatColor;
+import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.InventoryView;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scoreboard.Team;
@@ -48,6 +51,23 @@ public final class BukkitCompat {
             return hand == null || !"OFF_HAND".equals(String.valueOf(hand));
         } catch (Throwable ignored) {
             return true;
+        }
+    }
+
+    public static boolean hasOpenContainer(Player player) {
+        try {
+            InventoryView view = player.getOpenInventory();
+            if (view == null) {
+                return false;
+            }
+            Inventory top = view.getTopInventory();
+            if (top == null) {
+                return false;
+            }
+            InventoryType type = top.getType();
+            return type != InventoryType.CRAFTING && type != InventoryType.PLAYER;
+        } catch (Throwable ignored) {
+            return false;
         }
     }
 

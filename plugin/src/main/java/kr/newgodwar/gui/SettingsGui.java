@@ -356,9 +356,14 @@ public final class SettingsGui implements Listener {
         int index = slot;
         int size = plugin.getConfig().getMapList(path).size();
         if (index >= size) {
+            if (isRewardItemClick(click)) {
+                addRewardItemFromHand(player, path);
+            } else {
+                plugin.messages().send(player, "&e빈 상품 슬롯입니다. 손에 아이템을 들고 Q 또는 가운데 클릭으로 추가하세요.");
+            }
             return;
         }
-        if (click == ClickType.MIDDLE || click == ClickType.DROP || click == ClickType.CONTROL_DROP) {
+        if (isRewardItemClick(click)) {
             changeRewardItemFromHand(player, path, index);
             return;
         }
@@ -597,6 +602,9 @@ public final class SettingsGui implements Listener {
         for (int i = 0; i < limit; i++) {
             inventory.setItem(i, rewardItem(rewards.get(i), i, total));
         }
+        for (int i = limit; i < 18; i++) {
+            inventory.setItem(i, addRewardItem(i));
+        }
         inventory.setItem(18, item("PAPER", "PAPER", 1, (short) 0,
             ChatColor.YELLOW + title + " 상품 편집",
             ChatColor.GRAY + "총 가중치: " + ChatColor.WHITE + total,
@@ -604,6 +612,7 @@ public final class SettingsGui implements Listener {
             ChatColor.GRAY + "쉬프트 좌클릭: +5 / 쉬프트 우클릭: -5",
             ChatColor.GRAY + "손에 아이템을 들고 상품 슬롯에서 Q",
             ChatColor.GRAY + "또는 가운데 클릭: 손 아이템으로 변경",
+            ChatColor.GRAY + "빈 슬롯에서 Q/가운데 클릭: 상품 추가",
             ChatColor.DARK_GRAY + "확률은 chance 가중치 기준입니다."));
     }
 
@@ -753,6 +762,16 @@ public final class SettingsGui implements Listener {
         plugin.messages().send(player, "&a도박 상품 #" + (index + 1) + " 아이템을 손에 든 아이템으로 변경했습니다.");
     }
 
+    private void addRewardItemFromHand(Player player, String path) {
+        ItemStack item = player.getItemInHand();
+        if (item == null || item.getType() == Material.AIR || item.getAmount() <= 0) {
+            plugin.messages().send(player, "&c손에 든 아이템이 없습니다.");
+            return;
+        }
+        int index = addRewardItem(path, item);
+        plugin.messages().send(player, "&a도박 상품 #" + (index + 1) + "을 손에 든 아이템으로 추가했습니다.");
+    }
+
     private void changeRewardItem(String path, int index, ItemStack item) {
         FileConfiguration config = plugin.getConfig();
         List<Map<?, ?>> source = config.getMapList(path);
@@ -773,6 +792,30 @@ public final class SettingsGui implements Listener {
         }
         config.set(path, updated);
         plugin.saveConfig();
+    }
+
+    private int addRewardItem(String path, ItemStack item) {
+        FileConfiguration config = plugin.getConfig();
+        List<Map<?, ?>> source = config.getMapList(path);
+        List<Map<String, Object>> updated = new ArrayList<Map<String, Object>>();
+        for (Map<?, ?> reward : source) {
+            updated.add(copyReward(reward));
+        }
+        ItemStack saved = item.clone();
+        Map<String, Object> reward = new LinkedHashMap<String, Object>();
+        reward.put("chance", 1);
+        reward.put("item", saved);
+        reward.put("material", saved.getType().name());
+        reward.put("amount", saved.getAmount());
+        reward.put("message", "&a도박 상품에 당첨되었습니다!");
+        updated.add(reward);
+        config.set(path, updated);
+        plugin.saveConfig();
+        return updated.size() - 1;
+    }
+
+    private boolean isRewardItemClick(ClickType click) {
+        return click == ClickType.MIDDLE || click == ClickType.DROP || click == ClickType.CONTROL_DROP;
     }
 
     private Map<String, Object> copyReward(Map<?, ?> source) {
@@ -1052,6 +1095,14 @@ public final class SettingsGui implements Listener {
             ChatColor.GRAY + "좌클릭 +1 / 우클릭 -1",
             ChatColor.GRAY + "쉬프트 좌클릭 +5 / 쉬프트 우클릭 -5",
             ChatColor.GRAY + "Q/가운데 클릭: 손 아이템으로 변경");
+    }
+
+    private ItemStack addRewardItem(int index) {
+        return item("CHEST", "CHEST", 1, (short) 0,
+            ChatColor.GREEN + "상품 추가 #" + (index + 1),
+            ChatColor.GRAY + "손에 아이템을 들고 이 슬롯에서 Q",
+            ChatColor.GRAY + "또는 가운데 클릭으로 새 상품 추가",
+            ChatColor.GRAY + "기본 확률 가중치: " + ChatColor.WHITE + "1");
     }
 
     private ItemStack rewardStack(Map<?, ?> reward) {

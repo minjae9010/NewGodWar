@@ -327,6 +327,9 @@ public final class AbilityManager {
     }
 
     public void handleInteract(Player player, PlayerInteractEvent event) {
+        if (BukkitCompat.hasOpenContainer(player)) {
+            return;
+        }
         if (!BukkitCompat.isMainHandInteract(event)) {
             return;
         }
