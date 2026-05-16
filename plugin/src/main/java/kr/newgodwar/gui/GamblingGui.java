@@ -59,7 +59,7 @@ public final class GamblingGui implements Listener, CommandExecutor {
             ChatColor.YELLOW + "가챠" + ChatColor.AQUA + " ★ " + ChatColor.GREEN + "가챠",
             ChatColor.WHITE + "조약돌 " + cost + "개를 소모해 다양한 아이템을",
             ChatColor.WHITE + "뽑을 수 있습니다.",
-            ChatColor.DARK_GRAY + "상품은 config.yml의 gambling.rewards에서 설정합니다."));
+            ChatColor.DARK_GRAY + "상품은 관리자 설정에서 변경됩니다."));
         player.openInventory(inventory);
         openViewers.add(player.getUniqueId());
     }
@@ -142,14 +142,24 @@ public final class GamblingGui implements Listener, CommandExecutor {
         FileConfiguration config = plugin.getConfig();
         for (Map<?, ?> map : config.getMapList(path)) {
             int chance = intValue(map.get("chance"), 0);
-            Material material = material(stringValue(map.get("material"), "AIR"), stringValue(map.get("legacy-material"), "AIR"));
-            int amount = intValue(map.get("amount"), 0);
+            ItemStack item = rewardItem(map);
             List<String> messages = messages(map);
             if (chance > 0 && !messages.isEmpty()) {
-                rewards.add(new Reward(chance, material, amount, messages));
+                rewards.add(new Reward(chance, item, messages));
             }
         }
         return rewards;
+    }
+
+    private ItemStack rewardItem(Map<?, ?> map) {
+        Object configuredItem = map.get("item");
+        if (configuredItem instanceof ItemStack) {
+            ItemStack stack = ((ItemStack) configuredItem).clone();
+            return stack.getType() == Material.AIR || stack.getAmount() <= 0 ? null : stack;
+        }
+        Material material = material(stringValue(map.get("material"), "AIR"), stringValue(map.get("legacy-material"), "AIR"));
+        int amount = intValue(map.get("amount"), 0);
+        return material == Material.AIR || amount <= 0 ? null : new ItemStack(material, amount);
     }
 
     private List<String> messages(Map<?, ?> map) {
@@ -172,19 +182,19 @@ public final class GamblingGui implements Listener, CommandExecutor {
     private List<Reward> defaultRewards(boolean tajja) {
         List<Reward> rewards = new ArrayList<Reward>();
         if (tajja) {
-            rewards.add(new Reward(10, Material.DIAMOND, 3, one(ChatColor.AQUA + "와우! 축하합니다! 다이아몬드 3개입니다!")));
-            rewards.add(new Reward(10, material("OAK_LOG", "LOG"), 3, one(ChatColor.GOLD + "대박! 짜잔! 원목 3개 당첨 축하드립니다!")));
-            rewards.add(new Reward(65, Material.IRON_INGOT, 3, one("평범하군요! 철괴 3개를 드립니다.")));
-            rewards.add(new Reward(10, Material.IRON_INGOT, 4, one("평범하군요! 철괴 4개를 드립니다.")));
-            rewards.add(new Reward(5, Material.DIAMOND, 22, list(ChatColor.YELLOW + "헐... 대박, 당신의 운은 미쳤군요!", ChatColor.AQUA + "다이아몬드 22개에 당첨되셨습니다.")));
+            rewards.add(new Reward(10, new ItemStack(Material.DIAMOND, 3), one(ChatColor.AQUA + "와우! 축하합니다! 다이아몬드 3개입니다!")));
+            rewards.add(new Reward(10, new ItemStack(material("OAK_LOG", "LOG"), 3), one(ChatColor.GOLD + "대박! 짜잔! 원목 3개 당첨 축하드립니다!")));
+            rewards.add(new Reward(65, new ItemStack(Material.IRON_INGOT, 3), one("평범하군요! 철괴 3개를 드립니다.")));
+            rewards.add(new Reward(10, new ItemStack(Material.IRON_INGOT, 4), one("평범하군요! 철괴 4개를 드립니다.")));
+            rewards.add(new Reward(5, new ItemStack(Material.DIAMOND, 22), list(ChatColor.YELLOW + "헐... 대박, 당신의 운은 미쳤군요!", ChatColor.AQUA + "다이아몬드 22개에 당첨되셨습니다.")));
             return rewards;
         }
-        rewards.add(new Reward(5, Material.DIAMOND, 3, one(ChatColor.AQUA + "와우! 축하합니다! 다이아몬드 3개입니다!")));
-        rewards.add(new Reward(15, material("OAK_LOG", "LOG"), 3, one(ChatColor.GOLD + "대박! 짜잔! 원목 3개 당첨 축하드립니다!")));
-        rewards.add(new Reward(15, Material.BLAZE_ROD, 1, list(ChatColor.RED + "꽝!", ChatColor.BLUE + "서버의 신의 자비로 능력의 막대를 드립니다.")));
-        rewards.add(new Reward(45, Material.IRON_INGOT, 3, one("평범하군요! 철괴 3개를 드립니다.")));
-        rewards.add(new Reward(19, Material.IRON_INGOT, 4, one("평범하군요! 철괴 4개를 드립니다.")));
-        rewards.add(new Reward(1, Material.DIAMOND, 22, list(ChatColor.YELLOW + "헐... 대박, 당신의 운은 미쳤군요!", ChatColor.AQUA + "다이아몬드 22개에 당첨되셨습니다.")));
+        rewards.add(new Reward(5, new ItemStack(Material.DIAMOND, 3), one(ChatColor.AQUA + "와우! 축하합니다! 다이아몬드 3개입니다!")));
+        rewards.add(new Reward(15, new ItemStack(material("OAK_LOG", "LOG"), 3), one(ChatColor.GOLD + "대박! 짜잔! 원목 3개 당첨 축하드립니다!")));
+        rewards.add(new Reward(15, new ItemStack(Material.BLAZE_ROD, 1), list(ChatColor.RED + "꽝!", ChatColor.BLUE + "서버의 신의 자비로 능력의 막대를 드립니다.")));
+        rewards.add(new Reward(45, new ItemStack(Material.IRON_INGOT, 3), one("평범하군요! 철괴 3개를 드립니다.")));
+        rewards.add(new Reward(19, new ItemStack(Material.IRON_INGOT, 4), one("평범하군요! 철괴 4개를 드립니다.")));
+        rewards.add(new Reward(1, new ItemStack(Material.DIAMOND, 22), list(ChatColor.YELLOW + "헐... 대박, 당신의 운은 미쳤군요!", ChatColor.AQUA + "다이아몬드 22개에 당첨되셨습니다.")));
         return rewards;
     }
 
@@ -247,14 +257,12 @@ public final class GamblingGui implements Listener, CommandExecutor {
 
     private static final class Reward {
         private final int chance;
-        private final Material material;
-        private final int amount;
+        private final ItemStack item;
         private final List<String> messages;
 
-        private Reward(int chance, Material material, int amount, List<String> messages) {
+        private Reward(int chance, ItemStack item, List<String> messages) {
             this.chance = chance;
-            this.material = material;
-            this.amount = amount;
+            this.item = item == null ? null : item.clone();
             this.messages = messages;
         }
 
@@ -262,8 +270,8 @@ public final class GamblingGui implements Listener, CommandExecutor {
             for (String message : messages) {
                 player.sendMessage(message);
             }
-            if (amount > 0 && material != null && material != Material.AIR) {
-                player.getInventory().addItem(new ItemStack(material, amount));
+            if (item != null && item.getType() != Material.AIR && item.getAmount() > 0) {
+                player.getInventory().addItem(item.clone());
             }
         }
     }

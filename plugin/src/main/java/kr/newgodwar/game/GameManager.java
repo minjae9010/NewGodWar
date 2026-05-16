@@ -30,6 +30,7 @@ import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -45,7 +46,7 @@ public final class GameManager {
     private final Map<GodTeam, GameLocation> spawns = new EnumMap<GodTeam, GameLocation>(GodTeam.class);
     private final Set<GodTeam> eliminatedTeams = new HashSet<GodTeam>();
     private final Set<UUID> observers = new HashSet<UUID>();
-    private final Set<UUID> pendingSelection = new HashSet<UUID>();
+    private final Map<UUID, Integer> pendingSelection = new HashMap<UUID, Integer>();
     private final Map<UUID, Integer> kills = new HashMap<UUID, Integer>();
     private final Map<UUID, Scoreboard> playerScoreboards = new HashMap<UUID, Scoreboard>();
     private final Map<String, WorldSnapshot> worldSnapshots = new HashMap<String, WorldSnapshot>();
@@ -79,6 +80,10 @@ public final class GameManager {
         return Collections.unmodifiableMap(temples);
     }
 
+    public Map<GodTeam, GameLocation> spawns() {
+        return Collections.unmodifiableMap(spawns);
+    }
+
     public void reloadSettings() {
         temples.clear();
         spawns.clear();
@@ -97,6 +102,10 @@ public final class GameManager {
 
     public GodTeam teamOf(Player player) {
         return teams.get(player.getUniqueId());
+    }
+
+    public Map<UUID, GodTeam> teamAssignments() {
+        return Collections.unmodifiableMap(teams);
     }
 
     public boolean isObserver(Player player) {
@@ -123,7 +132,7 @@ public final class GameManager {
     public void assign(Player player, GodTeam team) {
         teams.put(player.getUniqueId(), team);
         refreshAllPlayerDisplays();
-        nmsAdapter.sendActionBar(player, team.color() + team.defaultDisplayName() + " 팀에 배정되었습니다.");
+        nmsAdapter.sendActionBar(player, teamColoredName(team) + " 팀에 배정되었습니다.");
     }
 
     public void leave(Player player) {
@@ -220,6 +229,7 @@ public final class GameManager {
         if (participants.size() < minPlayers) {
             throw new IllegalStateException("최소 " + minPlayers + "명 이상 팀에 배정되어야 합니다.");
         }
+        validateStartSettings();
 
         state = GameState.READY;
         eliminatedTeams.clear();
@@ -228,10 +238,11 @@ public final class GameManager {
         abilityManager.clear();
         setupScoreboard();
 
+        int rerollCount = abilityRerollCount();
         for (Player player : participants) {
             AbilityDefinition ability = abilityManager.assignRandom(player);
-            if (plugin.getConfig().getBoolean("game.select-right", true)) {
-                pendingSelection.add(player.getUniqueId());
+            if (plugin.getConfig().getBoolean("game.select-right", true) && rerollCount > 0) {
+                pendingSelection.put(player.getUniqueId(), rerollCount);
             }
             if (plugin.getConfig().getBoolean("game.ability-roll-message", true)) {
                 nmsAdapter.sendTitle(player, ability.name(), ability.description(), 10, 70, 20);
@@ -303,7 +314,7 @@ public final class GameManager {
         player.setHealth(player.getMaxHealth());
         player.setFoodLevel(20);
         nmsAdapter.sendTitle(player, ChatColor.GREEN + "중간 참여", ability.name(), 10, 60, 10);
-        Bukkit.broadcastMessage(plugin.messages().prefix() + team.coloredName() + ChatColor.YELLOW
+        Bukkit.broadcastMessage(plugin.messages().prefix() + teamColoredName(team) + ChatColor.YELLOW
             + " 팀에 " + player.getName() + " 님이 중간 참여했습니다.");
         refreshAllPlayerDisplays();
         return ability;
@@ -349,7 +360,7 @@ public final class GameManager {
             return;
         }
         eliminatedTeams.add(team);
-        String message = plugin.messages().get("team-eliminated").replace("{team}", team.coloredName());
+        String message = plugin.messages().get("team-eliminated").replace("{team}", teamColoredName(team));
         Bukkit.broadcastMessage(plugin.messages().prefix() + message);
         for (Player player : BukkitCompat.onlinePlayers()) {
             if (team == teamOf(player)) {
@@ -387,22 +398,43 @@ public final class GameManager {
     }
 
     public boolean confirmAbility(Player player) {
-        return pendingSelection.remove(player.getUniqueId());
+        return pendingSelection.remove(player.getUniqueId()) != null;
     }
 
     public AbilityDefinition rerollAbility(Player player) {
-        if (!pendingSelection.remove(player.getUniqueId())) {
+        Integer remaining = pendingSelection.get(player.getUniqueId());
+        if (remaining == null || remaining.intValue() <= 0) {
             return null;
         }
         AbilityDefinition ability = abilityManager.assignRandom(player);
+        if (remaining.intValue() > 1) {
+            pendingSelection.put(player.getUniqueId(), Integer.valueOf(remaining.intValue() - 1));
+        } else {
+            pendingSelection.remove(player.getUniqueId());
+        }
         nmsAdapter.sendTitle(player, ability.name(), ability.description(), 10, 70, 20);
         refreshPlayerDisplay(player);
         return ability;
     }
 
+    public int remainingAbilityRerolls(Player player) {
+        Integer remaining = pendingSelection.get(player.getUniqueId());
+        return remaining == null ? 0 : remaining.intValue();
+    }
+
     public int skipAbilitySelection() {
+        return skipAbilitySelection(plugin.getConfig().getInt("game.skip-ready-countdown-seconds", 5));
+    }
+
+    public int skipAbilitySelection(int countdownSeconds) {
         int count = pendingSelection.size();
         pendingSelection.clear();
+        if (state == GameState.READY) {
+            readySecondsRemaining = Math.max(0, countdownSeconds);
+            if (readySecondsRemaining <= 0) {
+                finishStart();
+            }
+        }
         return count;
     }
 
@@ -416,7 +448,7 @@ public final class GameManager {
             plugin.messages().send(sender, "&c팀에 소속되어 있지 않습니다.");
             return;
         }
-        String formatted = team.color() + "[팀] " + sender.getName() + ": " + ChatColor.WHITE + message;
+        String formatted = teamColor(team) + "[팀] " + sender.getName() + ": " + ChatColor.WHITE + message;
         for (Player player : BukkitCompat.onlinePlayers()) {
             if (team == teamOf(player)) {
                 player.sendMessage(formatted);
@@ -494,9 +526,9 @@ public final class GameManager {
     private void registerTeams(Scoreboard board) {
         for (GodTeam godTeam : GodTeam.values()) {
             Team team = board.registerNewTeam("gw_" + godTeam.id());
-            team.setPrefix(teamPrefix(godTeam));
             team.setAllowFriendlyFire(plugin.getConfig().getBoolean("game.friendly-fire", false));
-            BukkitCompat.setTeamColor(team, godTeam.color());
+            BukkitCompat.setTeamColor(team, teamColor(godTeam));
+            team.setPrefix(teamPrefix(godTeam));
         }
         for (Map.Entry<UUID, GodTeam> entry : teams.entrySet()) {
             Player member = Bukkit.getPlayer(entry.getKey());
@@ -519,7 +551,7 @@ public final class GameManager {
         GodTeam team = teamOf(player);
         int score = 15;
         setLine(objective, score--, ChatColor.YELLOW + "상태 " + ChatColor.WHITE + stateLabel());
-        setLine(objective, score--, ChatColor.YELLOW + "팀 " + (team == null ? ChatColor.GRAY + "미참가" : team.coloredName()));
+        setLine(objective, score--, ChatColor.YELLOW + "팀 " + (team == null ? ChatColor.GRAY + "미참가" : teamColoredName(team)));
         setLine(objective, score--, ChatColor.YELLOW + "능력 " + ChatColor.WHITE + (ability == null ? "없음" : ability.name()));
         if (hasSkill(ability == null ? null : ability.normalSkill())) {
             setLine(objective, score--, ChatColor.AQUA + "일반 " + cooldownStatus(player, ability, 1));
@@ -547,13 +579,13 @@ public final class GameManager {
 
     private String teamPrefix(GodTeam team) {
         if (!plugin.getConfig().getBoolean("scoreboard.team-prefixes", true)) {
-            return team.color().toString();
+            return teamColor(team).toString();
         }
         String displayName = teamDisplayName(team);
         if (displayName.length() > 6) {
             displayName = displayName.substring(0, 6);
         }
-        return team.color() + "[" + displayName + "] " + ChatColor.RESET;
+        return teamColor(team) + "[" + displayName + "] " + ChatColor.RESET;
     }
 
     private void updatePlayerListName(Player player) {
@@ -576,8 +608,32 @@ public final class GameManager {
         }
     }
 
-    private String teamDisplayName(GodTeam team) {
+    public String teamDisplayName(GodTeam team) {
         return plugin.getConfig().getString("teams." + team.id() + ".display-name", team.defaultDisplayName());
+    }
+
+    public ChatColor teamColor(GodTeam team) {
+        if (team == null) {
+            return ChatColor.WHITE;
+        }
+        String configured = plugin.getConfig().getString("teams." + team.id() + ".color", team.color().name());
+        if (configured != null) {
+            try {
+                ChatColor color = ChatColor.valueOf(configured.trim().toUpperCase(Locale.ROOT));
+                if (color.isColor()) {
+                    return color;
+                }
+            } catch (IllegalArgumentException ignored) {
+            }
+        }
+        return team.color();
+    }
+
+    public String teamColoredName(GodTeam team) {
+        if (team == null) {
+            return ChatColor.GRAY + "미배정" + ChatColor.RESET;
+        }
+        return teamColor(team) + teamDisplayName(team) + ChatColor.RESET;
     }
 
     private String stateLabel() {
@@ -662,6 +718,37 @@ public final class GameManager {
         return players;
     }
 
+    private void validateStartSettings() {
+        List<String> missing = new ArrayList<String>();
+        for (GodTeam team : GodTeam.values()) {
+            GameLocation spawn = spawns.get(team);
+            if (spawn == null || spawn.toLocation() == null) {
+                missing.add(teamDisplayName(team) + " 팀 스폰");
+            }
+
+            TempleLocation temple = temples.get(team);
+            Location templeLocation = temple == null ? null : temple.toLocation();
+            if (templeLocation == null || templeLocation.getBlock().getType() != Material.DIAMOND_BLOCK) {
+                missing.add(teamDisplayName(team) + " 팀 다이아 심장");
+            }
+        }
+        if (!missing.isEmpty()) {
+            throw new IllegalStateException("시작 설정이 완료되지 않았습니다: " + joinLabels(missing)
+                + ". /godwar settings 또는 /godwar setspawn, /godwar settemple로 먼저 설정해주세요.");
+        }
+    }
+
+    private String joinLabels(List<String> labels) {
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < labels.size(); i++) {
+            if (i > 0) {
+                builder.append(", ");
+            }
+            builder.append(labels.get(i));
+        }
+        return builder.toString();
+    }
+
     private void startReadyTask() {
         if (readyTask != -1) {
             Bukkit.getScheduler().cancelTask(readyTask);
@@ -722,14 +809,20 @@ public final class GameManager {
 
     private void broadcastPendingSelection() {
         Bukkit.broadcastMessage(ChatColor.DARK_AQUA + "능력을 확정하지 않은 플레이어 목록");
-        for (UUID uuid : pendingSelection) {
+        for (Map.Entry<UUID, Integer> entry : pendingSelection.entrySet()) {
+            UUID uuid = entry.getKey();
             Player player = Bukkit.getPlayer(uuid);
             if (player != null) {
-                Bukkit.broadcastMessage(ChatColor.GOLD + "  " + player.getName());
+                Bukkit.broadcastMessage(ChatColor.GOLD + "  " + player.getName()
+                    + ChatColor.GRAY + " (재추첨 " + entry.getValue() + "회 남음)");
             }
         }
         Bukkit.broadcastMessage(ChatColor.WHITE + "능력을 확정하려면 " + ChatColor.AQUA + "/t yes"
             + ChatColor.WHITE + " 또는 " + ChatColor.RED + "/t no" + ChatColor.WHITE + " 를 입력하세요.");
+    }
+
+    private int abilityRerollCount() {
+        return Math.max(0, plugin.getConfig().getInt("game.ability-reroll-count", 1));
     }
 
     private void broadcastStartSettings() {
@@ -858,11 +951,11 @@ public final class GameManager {
         }
         if (alive.size() == 1) {
             GodTeam winner = alive.iterator().next();
-            String message = plugin.messages().get("winner").replace("{team}", winner.coloredName());
+            String message = plugin.messages().get("winner").replace("{team}", teamColoredName(winner));
             Bukkit.broadcastMessage(plugin.messages().prefix() + message);
             for (Player player : BukkitCompat.onlinePlayers()) {
                 if (winner == teamOf(player)) {
-                    nmsAdapter.sendTitle(player, ChatColor.GOLD + "승리", winner.coloredName() + " 팀이 승리했습니다.", 10, 80, 20);
+                    nmsAdapter.sendTitle(player, ChatColor.GOLD + "승리", teamColoredName(winner) + " 팀이 승리했습니다.", 10, 80, 20);
                     BukkitCompat.playLevelUp(player);
                 }
             }

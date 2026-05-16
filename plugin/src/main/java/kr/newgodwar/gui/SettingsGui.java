@@ -2,10 +2,12 @@ package kr.newgodwar.gui;
 
 import kr.newgodwar.NewGodWarPlugin;
 import kr.newgodwar.game.GameManager;
+import kr.newgodwar.game.GodTeam;
 import kr.newgodwar.util.BukkitCompat;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
+import org.bukkit.block.Block;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -33,6 +35,16 @@ public final class SettingsGui implements Listener {
     private static final int SIZE = 27;
     private static final int BACK_SLOT = 22;
     private static final int CLOSE_SLOT = 26;
+    private static final ChatColor[] TEAM_COLORS = new ChatColor[] {
+        ChatColor.RED,
+        ChatColor.BLUE,
+        ChatColor.GREEN,
+        ChatColor.YELLOW,
+        ChatColor.AQUA,
+        ChatColor.GOLD,
+        ChatColor.LIGHT_PURPLE,
+        ChatColor.WHITE
+    };
 
     private final NewGodWarPlugin plugin;
     private final GameManager gameManager;
@@ -125,6 +137,8 @@ public final class SettingsGui implements Listener {
             handleMain(player, slot);
         } else if (view == SettingsView.GAME) {
             handleGame(player, slot);
+        } else if (view == SettingsView.TEAM) {
+            handleTeam(player, slot, click);
         } else if (view == SettingsView.WORLD_CORE) {
             handleWorldCore(player, slot);
         } else if (view == SettingsView.DISPLAY) {
@@ -143,9 +157,11 @@ public final class SettingsGui implements Listener {
     private void handleMain(Player player, int slot) {
         if (slot == 10) {
             switchView(player, SettingsView.GAME);
-        } else if (slot == 12) {
+        } else if (slot == 11) {
+            switchView(player, SettingsView.TEAM);
+        } else if (slot == 13) {
             switchView(player, SettingsView.WORLD_CORE);
-        } else if (slot == 14) {
+        } else if (slot == 15) {
             switchView(player, SettingsView.DISPLAY);
         } else if (slot == 16) {
             switchView(player, SettingsView.GAMBLING);
@@ -156,11 +172,46 @@ public final class SettingsGui implements Listener {
         }
     }
 
+    private void handleTeam(Player player, int slot, ClickType click) {
+        if (slot == 0) {
+            toggle("game.auto-balance-teams");
+        } else if (slot == 1) {
+            toggle("scoreboard.team-prefixes");
+            gameManager.refreshAllPlayerDisplays();
+        } else if (slot == 2) {
+            toggle("game.friendly-fire");
+            gameManager.reloadSettings();
+        } else if (slot == 4) {
+            gameManager.autoBalance();
+            plugin.messages().send(player, "&a온라인 플레이어를 자동으로 팀 배정했습니다.");
+        } else if (slot >= 9 && slot <= 17) {
+            GodTeam team = teamAt(slot);
+            int action = (slot - 9) % 3;
+            if (team == null) {
+                return;
+            }
+            if (action == 0) {
+                cycleTeamColor(team, click == ClickType.RIGHT || click == ClickType.SHIFT_RIGHT ? -1 : 1);
+                gameManager.refreshAllPlayerDisplays();
+                plugin.messages().send(player, "&a" + gameManager.teamColoredName(team) + " 팀 색상을 변경했습니다.");
+            } else if (action == 1) {
+                gameManager.setSpawn(team, player.getLocation());
+                plugin.messages().send(player, "&a현재 위치를 " + gameManager.teamColoredName(team) + " 팀 스폰으로 등록했습니다.");
+            } else if (action == 2) {
+                setTempleFromTarget(player, team);
+            }
+        }
+    }
+
     private void handleGame(Player player, int slot) {
         if (slot == 0) {
             changeInt("game.min-players", -1, 1, 100);
         } else if (slot == 2) {
             changeInt("game.min-players", 1, 1, 100);
+        } else if (slot == 5) {
+            changeInt("game.ability-reroll-count", -1, 0, 100);
+        } else if (slot == 7) {
+            changeInt("game.ability-reroll-count", 1, 0, 100);
         } else if (slot == 9) {
             toggle("game.clear-inventory");
         } else if (slot == 10) {
@@ -174,6 +225,10 @@ public final class SettingsGui implements Listener {
         } else if (slot == 14) {
             toggle("game.allow-mid-join");
             gameManager.refreshAllPlayerDisplays();
+        } else if (slot == 15) {
+            changeInt("game.skip-ready-countdown-seconds", -1, 0, 600);
+        } else if (slot == 17) {
+            changeInt("game.skip-ready-countdown-seconds", 1, 0, 600);
         } else if (slot == 18) {
             try {
                 gameManager.start();
@@ -269,6 +324,10 @@ public final class SettingsGui implements Listener {
         if (index >= size) {
             return;
         }
+        if (click == ClickType.MIDDLE || click == ClickType.DROP || click == ClickType.CONTROL_DROP) {
+            changeRewardItemFromHand(player, path, index);
+            return;
+        }
         int delta = 0;
         if (click == ClickType.LEFT) {
             delta = 1;
@@ -314,6 +373,8 @@ public final class SettingsGui implements Listener {
             fillMain(inventory);
         } else if (view == SettingsView.GAME) {
             fillGame(inventory);
+        } else if (view == SettingsView.TEAM) {
+            fillTeam(inventory);
         } else if (view == SettingsView.WORLD_CORE) {
             fillWorldCore(inventory);
         } else if (view == SettingsView.DISPLAY) {
@@ -335,10 +396,13 @@ public final class SettingsGui implements Listener {
         inventory.setItem(10, categoryItem("EMERALD_BLOCK", "게임 진행",
             ChatColor.GRAY + "시작 조건, 지급, 시작/종료",
             ChatColor.DARK_GRAY + "클릭해서 열기"));
-        inventory.setItem(12, categoryItem("DIAMOND_BLOCK", "월드 / 코어",
+        inventory.setItem(11, categoryItem("WOOL", "팀",
+            ChatColor.GRAY + "팀 배정, 색상, 스폰, 심장",
+            ChatColor.DARK_GRAY + "클릭해서 열기"));
+        inventory.setItem(13, categoryItem("DIAMOND_BLOCK", "월드 / 코어",
             ChatColor.GRAY + "월드 규칙, 신전 보호, 팀킬",
             ChatColor.DARK_GRAY + "클릭해서 열기"));
-        inventory.setItem(14, categoryItem("ITEM_FRAME", "표시 / 우르프",
+        inventory.setItem(15, categoryItem("ITEM_FRAME", "표시 / 우르프",
             ChatColor.GRAY + "스코어보드, Prefix, 우르프",
             ChatColor.DARK_GRAY + "클릭해서 열기"));
         inventory.setItem(16, categoryItem("GOLD_INGOT", "도박",
@@ -360,6 +424,16 @@ public final class SettingsGui implements Listener {
         inventory.setItem(2, item("TORCH", "TORCH", 1, (short) 0,
             ChatColor.GREEN + "최소 인원 +1",
             ChatColor.GRAY + "현재: " + ChatColor.YELLOW + config.getInt("game.min-players", 2)));
+        inventory.setItem(5, item("REDSTONE_TORCH", "REDSTONE_TORCH_ON", 1, (short) 0,
+            ChatColor.RED + "재추첨 횟수 -1",
+            ChatColor.GRAY + "현재: " + ChatColor.YELLOW + config.getInt("game.ability-reroll-count", 1) + "회"));
+        inventory.setItem(6, item("NETHER_STAR", "NETHER_STAR", Math.max(1, config.getInt("game.ability-reroll-count", 1)), (short) 0,
+            ChatColor.YELLOW + "능력 재추첨 가능 횟수",
+            ChatColor.GRAY + "/t no 사용 가능 횟수",
+            ChatColor.GRAY + "현재: " + ChatColor.YELLOW + config.getInt("game.ability-reroll-count", 1) + "회"));
+        inventory.setItem(7, item("TORCH", "TORCH", 1, (short) 0,
+            ChatColor.GREEN + "재추첨 횟수 +1",
+            ChatColor.GRAY + "현재: " + ChatColor.YELLOW + config.getInt("game.ability-reroll-count", 1) + "회"));
 
         inventory.setItem(9, toggleItem("game.clear-inventory", "인벤토리 클리어", "CHEST"));
         inventory.setItem(10, toggleItem("game.give-skyblock-items", "스카이블럭 아이템 지급", "ICE"));
@@ -367,6 +441,16 @@ public final class SettingsGui implements Listener {
         inventory.setItem(12, toggleItem("game.select-right", "능력 재추첨 기회", "NETHER_STAR"));
         inventory.setItem(13, toggleItem("game.auto-balance-teams", "시작 시 팀 자동 배정", "COMPASS"));
         inventory.setItem(14, toggleItem("game.allow-mid-join", "중간 참여 허용", "ENDER_PEARL"));
+        inventory.setItem(15, item("REDSTONE_TORCH", "REDSTONE_TORCH_ON", 1, (short) 0,
+            ChatColor.RED + "Skip 카운트다운 -1초",
+            ChatColor.GRAY + "현재: " + ChatColor.YELLOW + config.getInt("game.skip-ready-countdown-seconds", 5) + "초"));
+        inventory.setItem(16, item("WATCH", "WATCH", Math.max(1, config.getInt("game.skip-ready-countdown-seconds", 5)), (short) 0,
+            ChatColor.YELLOW + "관리자 Skip 기본 초",
+            ChatColor.GRAY + "/t a skip 기본 카운트다운",
+            ChatColor.GRAY + "현재: " + ChatColor.YELLOW + config.getInt("game.skip-ready-countdown-seconds", 5) + "초"));
+        inventory.setItem(17, item("TORCH", "TORCH", 1, (short) 0,
+            ChatColor.GREEN + "Skip 카운트다운 +1초",
+            ChatColor.GRAY + "현재: " + ChatColor.YELLOW + config.getInt("game.skip-ready-countdown-seconds", 5) + "초"));
 
         inventory.setItem(18, item("EMERALD_BLOCK", "EMERALD_BLOCK", 1, (short) 0,
             ChatColor.GREEN + "게임 시작",
@@ -377,6 +461,24 @@ public final class SettingsGui implements Listener {
         inventory.setItem(21, item("COMPASS", "COMPASS", 1, (short) 0,
             ChatColor.AQUA + "팀 자동 배정",
             ChatColor.GRAY + "/gw autoteam"));
+    }
+
+    private void fillTeam(Inventory inventory) {
+        inventory.setItem(0, toggleItem("game.auto-balance-teams", "시작 시 팀 자동 배정", "COMPASS"));
+        inventory.setItem(1, toggleItem("scoreboard.team-prefixes", "팀 Prefix 표시", "NAME_TAG"));
+        inventory.setItem(2, toggleItem("game.friendly-fire", "팀킬 허용", "IRON_SWORD"));
+        inventory.setItem(4, item("COMPASS", "COMPASS", 1, (short) 0,
+            ChatColor.AQUA + "온라인 플레이어 자동 배정",
+            ChatColor.GRAY + "현재 온라인 플레이어를 팀별로 나눕니다.",
+            ChatColor.DARK_GRAY + "/gw autoteam"));
+
+        int slot = 9;
+        for (GodTeam team : GodTeam.values()) {
+            inventory.setItem(slot, teamColorItem(team));
+            inventory.setItem(slot + 1, teamSpawnItem(team));
+            inventory.setItem(slot + 2, teamTempleItem(team));
+            slot += 3;
+        }
     }
 
     private void fillWorldCore(Inventory inventory) {
@@ -416,7 +518,7 @@ public final class SettingsGui implements Listener {
             ChatColor.YELLOW + "상품 설정",
             ChatColor.GRAY + "일반 상품: " + ChatColor.WHITE + config.getMapList("gambling.rewards.normal").size() + "개",
             ChatColor.GRAY + "타짜 상품: " + ChatColor.WHITE + config.getMapList("gambling.rewards.tajja").size() + "개",
-            ChatColor.DARK_GRAY + "config.yml의 gambling.rewards에서 편집"));
+            ChatColor.DARK_GRAY + "일반/타짜 상품 화면에서 편집"));
         inventory.setItem(14, item("TORCH", "TORCH", 1, (short) 0,
             ChatColor.GREEN + "도박 가격 +1",
             ChatColor.GRAY + "현재: " + ChatColor.YELLOW + "조약돌 " + cost + "개"));
@@ -479,7 +581,35 @@ public final class SettingsGui implements Listener {
             ChatColor.GRAY + "일반 상품: " + ChatColor.WHITE + normalRewards + "개",
             ChatColor.GRAY + "타짜 상품: " + ChatColor.WHITE + tajjaRewards + "개",
             ChatColor.GRAY + "클릭: 도박 켜기/끄기",
-            ChatColor.DARK_GRAY + "상품은 config.yml에서 편집");
+            ChatColor.DARK_GRAY + "상품은 GUI 또는 /gw gamblereward로 편집");
+    }
+
+    private ItemStack teamColorItem(GodTeam team) {
+        ChatColor color = gameManager.teamColor(team);
+        return item(teamWoolMaterial(team), "WOOL", 1, teamWoolData(team),
+            color + gameManager.teamDisplayName(team) + ChatColor.YELLOW + " 팀 색상",
+            ChatColor.GRAY + "현재 색상: " + color + colorLabel(color),
+            ChatColor.GRAY + "좌클릭: 다음 색상",
+            ChatColor.GRAY + "우클릭: 이전 색상",
+            ChatColor.DARK_GRAY + "teams." + team.id() + ".color");
+    }
+
+    private ItemStack teamSpawnItem(GodTeam team) {
+        boolean configured = gameManager.spawns().containsKey(team);
+        ChatColor stateColor = configured ? ChatColor.GREEN : ChatColor.RED;
+        return item("BED", "BED", 1, (short) 0,
+            stateColor + gameManager.teamDisplayName(team) + " 팀 스폰",
+            ChatColor.GRAY + "상태: " + stateColor + (configured ? "설정됨" : "미설정"),
+            ChatColor.GRAY + "클릭하면 현재 위치로 등록합니다.");
+    }
+
+    private ItemStack teamTempleItem(GodTeam team) {
+        boolean configured = gameManager.temples().containsKey(team);
+        ChatColor stateColor = configured ? ChatColor.GREEN : ChatColor.RED;
+        return item("DIAMOND_BLOCK", "DIAMOND_BLOCK", 1, (short) 0,
+            stateColor + gameManager.teamDisplayName(team) + " 팀 다이아 심장",
+            ChatColor.GRAY + "상태: " + stateColor + (configured ? "설정됨" : "미설정"),
+            ChatColor.GRAY + "바라보는 다이아 블록을 등록합니다.");
     }
 
     private ItemStack toggleItem(String path, String title, String icon) {
@@ -543,6 +673,38 @@ public final class SettingsGui implements Listener {
         plugin.saveConfig();
     }
 
+    private void changeRewardItemFromHand(Player player, String path, int index) {
+        ItemStack item = player.getItemInHand();
+        if (item == null || item.getType() == Material.AIR || item.getAmount() <= 0) {
+            plugin.messages().send(player, "&c손에 든 아이템이 없습니다.");
+            return;
+        }
+        changeRewardItem(path, index, item);
+        plugin.messages().send(player, "&a도박 상품 #" + (index + 1) + " 아이템을 손에 든 아이템으로 변경했습니다.");
+    }
+
+    private void changeRewardItem(String path, int index, ItemStack item) {
+        FileConfiguration config = plugin.getConfig();
+        List<Map<?, ?>> source = config.getMapList(path);
+        if (index < 0 || index >= source.size()) {
+            return;
+        }
+        List<Map<String, Object>> updated = new ArrayList<Map<String, Object>>();
+        for (int i = 0; i < source.size(); i++) {
+            Map<String, Object> copied = copyReward(source.get(i));
+            if (i == index) {
+                ItemStack saved = item.clone();
+                copied.put("item", saved);
+                copied.put("material", saved.getType().name());
+                copied.put("amount", saved.getAmount());
+                copied.remove("legacy-material");
+            }
+            updated.add(copied);
+        }
+        config.set(path, updated);
+        plugin.saveConfig();
+    }
+
     private Map<String, Object> copyReward(Map<?, ?> source) {
         Map<String, Object> copied = new LinkedHashMap<String, Object>();
         for (Map.Entry<?, ?> entry : source.entrySet()) {
@@ -555,6 +717,78 @@ public final class SettingsGui implements Listener {
 
     private void changeUrfCooldownPercent(int delta) {
         plugin.abilities().setUrfCooldownPercent(plugin.abilities().urfCooldownPercent() + delta);
+    }
+
+    private GodTeam teamAt(int slot) {
+        int index = (slot - 9) / 3;
+        GodTeam[] teams = GodTeam.values();
+        return index >= 0 && index < teams.length ? teams[index] : null;
+    }
+
+    private void cycleTeamColor(GodTeam team, int direction) {
+        ChatColor current = gameManager.teamColor(team);
+        int currentIndex = 0;
+        for (int i = 0; i < TEAM_COLORS.length; i++) {
+            if (TEAM_COLORS[i] == current) {
+                currentIndex = i;
+                break;
+            }
+        }
+        int nextIndex = (currentIndex + direction) % TEAM_COLORS.length;
+        if (nextIndex < 0) {
+            nextIndex += TEAM_COLORS.length;
+        }
+        plugin.getConfig().set("teams." + team.id() + ".color", TEAM_COLORS[nextIndex].name());
+        plugin.saveConfig();
+    }
+
+    private void setTempleFromTarget(Player player, GodTeam team) {
+        Block block = BukkitCompat.getTargetBlock(player, 8);
+        if (block == null || block.getType() != Material.DIAMOND_BLOCK) {
+            plugin.messages().send(player, "&c바라보는 블록이 다이아몬드 블록이어야 합니다.");
+            return;
+        }
+        if (gameManager.setTemple(team, block)) {
+            plugin.messages().send(player, "&a" + gameManager.teamColoredName(team) + " 팀의 다이아 심장을 등록했습니다.");
+        }
+    }
+
+    private String colorLabel(ChatColor color) {
+        if (color == ChatColor.RED) return "빨강";
+        if (color == ChatColor.BLUE) return "파랑";
+        if (color == ChatColor.GREEN) return "초록";
+        if (color == ChatColor.YELLOW) return "노랑";
+        if (color == ChatColor.AQUA) return "하늘";
+        if (color == ChatColor.GOLD) return "금색";
+        if (color == ChatColor.LIGHT_PURPLE) return "분홍";
+        if (color == ChatColor.WHITE) return "흰색";
+        return color.name();
+    }
+
+    private String teamWoolMaterial(GodTeam team) {
+        if (team == GodTeam.RED) {
+            return "RED_WOOL";
+        }
+        if (team == GodTeam.BLUE) {
+            return "BLUE_WOOL";
+        }
+        if (team == GodTeam.GREEN) {
+            return "GREEN_WOOL";
+        }
+        return "WHITE_WOOL";
+    }
+
+    private short teamWoolData(GodTeam team) {
+        if (team == GodTeam.RED) {
+            return 14;
+        }
+        if (team == GodTeam.BLUE) {
+            return 11;
+        }
+        if (team == GodTeam.GREEN) {
+            return 13;
+        }
+        return 0;
     }
 
     private int participantCount() {
@@ -582,18 +816,43 @@ public final class SettingsGui implements Listener {
     }
 
     private ItemStack rewardItem(Map<?, ?> reward, int index, int totalChance) {
-        String modern = stringValue(reward.get("material"), "CHEST");
-        String legacy = stringValue(reward.get("legacy-material"), modern);
+        ItemStack preview = rewardStack(reward);
         int amount = Math.max(1, intValue(reward.get("amount"), 1));
         int chance = Math.max(0, intValue(reward.get("chance"), 0));
         int percent = totalChance <= 0 ? 0 : (int) Math.round((chance * 100.0D) / totalChance);
-        return item(modern, legacy, amount, (short) 0,
+        return displayItem(preview, amount,
             ChatColor.YELLOW + rewardName(reward, index),
             ChatColor.GRAY + "확률 가중치: " + ChatColor.WHITE + chance,
             ChatColor.GRAY + "현재 비율: " + ChatColor.AQUA + percent + "%",
             ChatColor.GRAY + "수량: " + ChatColor.WHITE + amount,
             ChatColor.GRAY + "좌클릭 +1 / 우클릭 -1",
-            ChatColor.GRAY + "쉬프트 좌클릭 +5 / 쉬프트 우클릭 -5");
+            ChatColor.GRAY + "쉬프트 좌클릭 +5 / 쉬프트 우클릭 -5",
+            ChatColor.GRAY + "Q/가운데 클릭: 손 아이템으로 변경");
+    }
+
+    private ItemStack rewardStack(Map<?, ?> reward) {
+        Object configuredItem = reward.get("item");
+        if (configuredItem instanceof ItemStack) {
+            ItemStack stack = ((ItemStack) configuredItem).clone();
+            return stack.getType() == Material.AIR ? new ItemStack(Material.CHEST) : stack;
+        }
+        String modern = stringValue(reward.get("material"), "CHEST");
+        String legacy = stringValue(reward.get("legacy-material"), modern);
+        return new ItemStack(material(modern, legacy));
+    }
+
+    private ItemStack displayItem(ItemStack base, int amount, String name, String... lore) {
+        ItemStack stack = base == null ? new ItemStack(Material.CHEST) : base.clone();
+        stack.setAmount(Math.max(1, Math.min(64, amount)));
+        ItemMeta meta = stack.getItemMeta();
+        if (meta != null) {
+            meta.setDisplayName(name);
+            if (lore != null && lore.length > 0) {
+                meta.setLore(new ArrayList<String>(Arrays.asList(lore)));
+            }
+            stack.setItemMeta(meta);
+        }
+        return stack;
     }
 
     private String rewardName(Map<?, ?> reward, int index) {

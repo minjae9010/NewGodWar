@@ -159,7 +159,7 @@ public final class AbilityGui implements Listener {
         AbilityDefinition current = abilityManager.get(shown);
         inventory.setItem(4, item("KNOWLEDGE_BOOK", "BOOK", 1, (short) 0,
             ChatColor.YELLOW + "" + ChatColor.BOLD + shown.getName() + " 님의 능력 정보",
-            ChatColor.GRAY + "/t help 또는 /a 로 다시 열 수 있습니다."));
+            ChatColor.GRAY + "/a 로 다시 열 수 있습니다."));
 
         if (current == null) {
             inventory.setItem(13, noAbilityItem(shown));

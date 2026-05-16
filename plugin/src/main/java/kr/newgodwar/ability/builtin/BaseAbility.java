@@ -380,6 +380,30 @@ abstract class BaseAbility implements GodAbility {
     }
 
     protected Player commandTargetPlayerInSight(AbilityPlayerContext context, Player player, int range, boolean sameTeam) {
+        Player target = commandTargetPlayer(context, player, sameTeam);
+        if (target == null) {
+            return null;
+        }
+        if (!lookingAt(player, target, range)) {
+            player.sendMessage(ChatColor.RED + "타깃이 해당 구역에 없습니다.");
+            return null;
+        }
+        return target;
+    }
+
+    protected Player commandTargetPlayerInRange(AbilityPlayerContext context, Player player, int range, boolean sameTeam) {
+        Player target = commandTargetPlayer(context, player, sameTeam);
+        if (target == null) {
+            return null;
+        }
+        if (player.getLocation().distanceSquared(target.getLocation()) > range * range) {
+            player.sendMessage(ChatColor.RED + "타깃이 해당 구역에 없습니다.");
+            return null;
+        }
+        return target;
+    }
+
+    private Player commandTargetPlayer(AbilityPlayerContext context, Player player, boolean sameTeam) {
         if (targetName == null || targetName.trim().length() == 0) {
             sendAbilityMessage(context, player, "failure", ChatColor.RED + "먼저 /x <플레이어>로 타깃을 지정하세요.");
             return null;
@@ -389,7 +413,7 @@ abstract class BaseAbility implements GodAbility {
             player.sendMessage(ChatColor.RED + "타깃이 해당 구역에 없습니다.");
             return null;
         }
-        if (sameTeam(context, player, target) != sameTeam || !lookingAt(player, target, range)) {
+        if (sameTeam(context, player, target) != sameTeam) {
             player.sendMessage(ChatColor.RED + "타깃이 해당 구역에 없습니다.");
             return null;
         }

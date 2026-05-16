@@ -26,8 +26,13 @@ import java.util.List;
 )
 final class QueenBeeAbility extends BaseAbility {
     @Override
+    public boolean requiresTarget() {
+        return true;
+    }
+
+    @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
-        Player target = targetPlayerInSight(context, player, 10, false);
+        Player target = commandTargetPlayerInRange(context, player, 10, false);
         if (target == null) {
             return;
         }

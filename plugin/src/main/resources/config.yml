@@ -10,7 +10,9 @@ game:
   fast-start: true
   ready-countdown-seconds: 40
   fast-ready-countdown-seconds: 5
+  skip-ready-countdown-seconds: 5
   select-right: true
+  ability-reroll-count: 1
   announce-radius: 0
   ability-roll-message: true
   ability-tick-interval-seconds: 1

@@ -239,7 +239,7 @@ public final class AbilityManager {
         player.sendMessage(ChatColor.GRAY + "일반: " + ChatColor.WHITE + skillLine(definition.normalSkill(), definition.normalStoneCost(), definition.normalCooldown()));
         player.sendMessage(ChatColor.GRAY + "고급: " + ChatColor.WHITE + skillLine(definition.advancedSkill(), definition.advancedStoneCost(), definition.advancedCooldown()));
         player.sendMessage(ChatColor.GRAY + "패시브: " + ChatColor.WHITE + emptySkill(definition.passiveSkill()));
-        player.sendMessage(ChatColor.DARK_GRAY + "/a 또는 /t help 로 다시 확인할 수 있습니다.");
+        player.sendMessage(ChatColor.DARK_GRAY + "/a 로 다시 확인할 수 있습니다.");
     }
 
     private void sendTargetGuide(Player player) {
