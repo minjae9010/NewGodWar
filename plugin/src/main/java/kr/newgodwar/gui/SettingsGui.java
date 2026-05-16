@@ -34,7 +34,11 @@ public final class SettingsGui implements Listener {
 
     private static final int SIZE = 27;
     private static final int BACK_SLOT = 22;
+    private static final int TEAM_PREV_SLOT = 21;
+    private static final int TEAM_NEXT_SLOT = 23;
+    private static final int TEAM_ADD_SLOT = 24;
     private static final int CLOSE_SLOT = 26;
+    private static final int TEAMS_PER_PAGE = 3;
     private static final ChatColor[] TEAM_COLORS = new ChatColor[] {
         ChatColor.RED,
         ChatColor.BLUE,
@@ -43,13 +47,22 @@ public final class SettingsGui implements Listener {
         ChatColor.AQUA,
         ChatColor.GOLD,
         ChatColor.LIGHT_PURPLE,
-        ChatColor.WHITE
+        ChatColor.WHITE,
+        ChatColor.GRAY,
+        ChatColor.DARK_RED,
+        ChatColor.DARK_BLUE,
+        ChatColor.DARK_GREEN,
+        ChatColor.DARK_AQUA,
+        ChatColor.DARK_PURPLE,
+        ChatColor.DARK_GRAY,
+        ChatColor.BLACK
     };
 
     private final NewGodWarPlugin plugin;
     private final GameManager gameManager;
     private final Set<UUID> openViewers = new HashSet<UUID>();
     private final Map<UUID, SettingsView> openViews = new HashMap<UUID, SettingsView>();
+    private final Map<UUID, Integer> teamPages = new HashMap<UUID, Integer>();
 
     public SettingsGui(NewGodWarPlugin plugin, GameManager gameManager) {
         this.plugin = plugin;
@@ -62,7 +75,7 @@ public final class SettingsGui implements Listener {
 
     private void open(Player player, SettingsView view) {
         Inventory inventory = Bukkit.createInventory(player, SIZE, view.title);
-        fill(inventory, view);
+        fill(inventory, view, player);
         player.openInventory(inventory);
         openViewers.add(player.getUniqueId());
         openViews.put(player.getUniqueId(), view);
@@ -97,6 +110,7 @@ public final class SettingsGui implements Listener {
     public void onClose(InventoryCloseEvent event) {
         openViewers.remove(event.getPlayer().getUniqueId());
         openViews.remove(event.getPlayer().getUniqueId());
+        teamPages.remove(event.getPlayer().getUniqueId());
     }
 
     private boolean isSettingsInventory(InventoryClickEvent event) {
@@ -144,7 +158,7 @@ public final class SettingsGui implements Listener {
         } else if (view == SettingsView.DISPLAY) {
             handleDisplay(player, slot, click);
         } else if (view == SettingsView.GAMBLING) {
-            handleGambling(player, slot);
+            handleGambling(player, slot, click);
         } else if (view == SettingsView.GAMBLING_NORMAL) {
             handleRewardChance(player, "gambling.rewards.normal", slot, click);
         } else if (view == SettingsView.GAMBLING_TAJJA) {
@@ -184,14 +198,28 @@ public final class SettingsGui implements Listener {
         } else if (slot == 4) {
             gameManager.autoBalance();
             plugin.messages().send(player, "&a온라인 플레이어를 자동으로 팀 배정했습니다.");
-        } else if (slot >= 9 && slot <= 17) {
-            GodTeam team = teamAt(slot);
-            int action = (slot - 9) % 3;
+        } else if (slot == TEAM_PREV_SLOT) {
+            changeTeamPage(player, -1);
+        } else if (slot == TEAM_NEXT_SLOT) {
+            changeTeamPage(player, 1);
+        } else if (slot == TEAM_ADD_SLOT) {
+            GodTeam created = GodTeam.create(plugin.getConfig(), null);
+            plugin.saveConfig();
+            gameManager.reloadSettings();
+            setTeamPage(player, lastTeamPage());
+            plugin.messages().send(player, "&a" + gameManager.teamColoredName(created) + " 팀을 추가했습니다.");
+        } else if (slot >= 9 && slot <= 20) {
+            GodTeam team = teamAt(player, slot);
+            int action = (slot - 9) % 4;
             if (team == null) {
                 return;
             }
             if (action == 0) {
-                cycleTeamColor(team, click == ClickType.RIGHT || click == ClickType.SHIFT_RIGHT ? -1 : 1);
+                if (click == ClickType.SHIFT_RIGHT) {
+                    removeTeam(player, team);
+                    return;
+                }
+                cycleTeamColor(team, click == ClickType.RIGHT ? -1 : 1);
                 gameManager.refreshAllPlayerDisplays();
                 plugin.messages().send(player, "&a" + gameManager.teamColoredName(team) + " 팀 색상을 변경했습니다.");
             } else if (action == 1) {
@@ -199,6 +227,8 @@ public final class SettingsGui implements Listener {
                 plugin.messages().send(player, "&a현재 위치를 " + gameManager.teamColoredName(team) + " 팀 스폰으로 등록했습니다.");
             } else if (action == 2) {
                 setTempleFromTarget(player, team);
+            } else if (action == 3) {
+                toggleTeamEnabled(player, team);
             }
         }
     }
@@ -297,7 +327,7 @@ public final class SettingsGui implements Listener {
         }
     }
 
-    private void handleGambling(Player player, int slot) {
+    private void handleGambling(Player player, int slot, ClickType click) {
         if (slot == 10) {
             toggle("gambling.enabled");
             gameManager.refreshAllPlayerDisplays();
@@ -305,6 +335,10 @@ public final class SettingsGui implements Listener {
             changeInt("gambling.cost.cobblestone", -1, 1, 2304);
         } else if (slot == 14) {
             changeInt("gambling.cost.cobblestone", 1, 1, 2304);
+        } else if (slot == 13) {
+            switchView(player, click == ClickType.RIGHT || click == ClickType.SHIFT_RIGHT
+                ? SettingsView.GAMBLING_TAJJA
+                : SettingsView.GAMBLING_NORMAL);
         } else if (slot == 15) {
             switchView(player, SettingsView.GAMBLING_NORMAL);
         } else if (slot == 16) {
@@ -367,14 +401,14 @@ public final class SettingsGui implements Listener {
         });
     }
 
-    private void fill(Inventory inventory, SettingsView view) {
+    private void fill(Inventory inventory, SettingsView view, Player player) {
         fillBackground(inventory);
         if (view == SettingsView.MAIN) {
             fillMain(inventory);
         } else if (view == SettingsView.GAME) {
             fillGame(inventory);
         } else if (view == SettingsView.TEAM) {
-            fillTeam(inventory);
+            fillTeam(inventory, player);
         } else if (view == SettingsView.WORLD_CORE) {
             fillWorldCore(inventory);
         } else if (view == SettingsView.DISPLAY) {
@@ -396,7 +430,8 @@ public final class SettingsGui implements Listener {
         inventory.setItem(10, categoryItem("EMERALD_BLOCK", "게임 진행",
             ChatColor.GRAY + "시작 조건, 지급, 시작/종료",
             ChatColor.DARK_GRAY + "클릭해서 열기"));
-        inventory.setItem(11, categoryItem("WOOL", "팀",
+        inventory.setItem(11, item("WHITE_WOOL", "WOOL", 1, (short) 0,
+            ChatColor.YELLOW + "팀",
             ChatColor.GRAY + "팀 배정, 색상, 스폰, 심장",
             ChatColor.DARK_GRAY + "클릭해서 열기"));
         inventory.setItem(13, categoryItem("DIAMOND_BLOCK", "월드 / 코어",
@@ -463,7 +498,7 @@ public final class SettingsGui implements Listener {
             ChatColor.GRAY + "/gw autoteam"));
     }
 
-    private void fillTeam(Inventory inventory) {
+    private void fillTeam(Inventory inventory, Player player) {
         inventory.setItem(0, toggleItem("game.auto-balance-teams", "시작 시 팀 자동 배정", "COMPASS"));
         inventory.setItem(1, toggleItem("scoreboard.team-prefixes", "팀 Prefix 표시", "NAME_TAG"));
         inventory.setItem(2, toggleItem("game.friendly-fire", "팀킬 허용", "IRON_SWORD"));
@@ -472,13 +507,29 @@ public final class SettingsGui implements Listener {
             ChatColor.GRAY + "현재 온라인 플레이어를 팀별로 나눕니다.",
             ChatColor.DARK_GRAY + "/gw autoteam"));
 
+        GodTeam[] teams = GodTeam.values();
+        int page = clampedTeamPage(player, teams.length);
+        int start = page * TEAMS_PER_PAGE;
+        int end = Math.min(teams.length, start + TEAMS_PER_PAGE);
         int slot = 9;
-        for (GodTeam team : GodTeam.values()) {
+        for (int i = start; i < end; i++) {
+            GodTeam team = teams[i];
             inventory.setItem(slot, teamColorItem(team));
             inventory.setItem(slot + 1, teamSpawnItem(team));
             inventory.setItem(slot + 2, teamTempleItem(team));
-            slot += 3;
+            inventory.setItem(slot + 3, teamEnabledItem(team));
+            slot += 4;
         }
+        inventory.setItem(TEAM_PREV_SLOT, item("ARROW", "ARROW", 1, (short) 0,
+            ChatColor.AQUA + "이전 팀 페이지",
+            ChatColor.GRAY + "현재: " + ChatColor.YELLOW + (page + 1) + "/" + (lastTeamPage() + 1)));
+        inventory.setItem(TEAM_NEXT_SLOT, item("ARROW", "ARROW", 1, (short) 0,
+            ChatColor.AQUA + "다음 팀 페이지",
+            ChatColor.GRAY + "현재: " + ChatColor.YELLOW + (page + 1) + "/" + (lastTeamPage() + 1)));
+        inventory.setItem(TEAM_ADD_SLOT, item("EMERALD", "EMERALD", 1, (short) 0,
+            ChatColor.GREEN + "팀 추가",
+            ChatColor.GRAY + "새 팀을 config.yml의 teams에 추가합니다.",
+            ChatColor.DARK_GRAY + "새 팀 ID는 team4, team5 순서로 생성"));
     }
 
     private void fillWorldCore(Inventory inventory) {
@@ -518,16 +569,22 @@ public final class SettingsGui implements Listener {
             ChatColor.YELLOW + "상품 설정",
             ChatColor.GRAY + "일반 상품: " + ChatColor.WHITE + config.getMapList("gambling.rewards.normal").size() + "개",
             ChatColor.GRAY + "타짜 상품: " + ChatColor.WHITE + config.getMapList("gambling.rewards.tajja").size() + "개",
-            ChatColor.DARK_GRAY + "일반/타짜 상품 화면에서 편집"));
+            ChatColor.GRAY + "좌클릭: 일반 상품 편집",
+            ChatColor.GRAY + "우클릭: 타짜 상품 편집",
+            ChatColor.DARK_GRAY + "손 아이템 변경은 편집 화면에서 Q"));
         inventory.setItem(14, item("TORCH", "TORCH", 1, (short) 0,
             ChatColor.GREEN + "도박 가격 +1",
             ChatColor.GRAY + "현재: " + ChatColor.YELLOW + "조약돌 " + cost + "개"));
         inventory.setItem(15, item("DIAMOND", "DIAMOND", 1, (short) 0,
-            ChatColor.AQUA + "일반 확률 편집",
-            ChatColor.GRAY + "상품별 chance 값을 GUI에서 조정합니다."));
+            ChatColor.AQUA + "일반 상품 편집",
+            ChatColor.GRAY + "좌/우클릭으로 확률 가중치 조정",
+            ChatColor.GRAY + "손에 아이템을 들고 상품 슬롯에서 Q",
+            ChatColor.DARK_GRAY + "/gw gamblereward normal <번호> hand"));
         inventory.setItem(16, item("GOLD_INGOT", "GOLD_INGOT", 1, (short) 0,
-            ChatColor.GOLD + "타짜 확률 편집",
-            ChatColor.GRAY + "타짜 능력 보유자용 chance 값을 조정합니다."));
+            ChatColor.GOLD + "타짜 상품 편집",
+            ChatColor.GRAY + "좌/우클릭으로 확률 가중치 조정",
+            ChatColor.GRAY + "손에 아이템을 들고 상품 슬롯에서 Q",
+            ChatColor.DARK_GRAY + "/gw gamblereward tajja <번호> hand"));
         inventory.setItem(17, item("BOOK", "BOOK", 1, (short) 0,
             ChatColor.YELLOW + "상품 설정 다시 불러오기",
             ChatColor.GRAY + "config.yml을 다시 읽습니다."));
@@ -541,10 +598,12 @@ public final class SettingsGui implements Listener {
             inventory.setItem(i, rewardItem(rewards.get(i), i, total));
         }
         inventory.setItem(18, item("PAPER", "PAPER", 1, (short) 0,
-            ChatColor.YELLOW + title + " 상품 확률",
+            ChatColor.YELLOW + title + " 상품 편집",
             ChatColor.GRAY + "총 가중치: " + ChatColor.WHITE + total,
             ChatColor.GRAY + "좌클릭: +1 / 우클릭: -1",
             ChatColor.GRAY + "쉬프트 좌클릭: +5 / 쉬프트 우클릭: -5",
+            ChatColor.GRAY + "손에 아이템을 들고 상품 슬롯에서 Q",
+            ChatColor.GRAY + "또는 가운데 클릭: 손 아이템으로 변경",
             ChatColor.DARK_GRAY + "확률은 chance 가중치 기준입니다."));
     }
 
@@ -591,6 +650,7 @@ public final class SettingsGui implements Listener {
             ChatColor.GRAY + "현재 색상: " + color + colorLabel(color),
             ChatColor.GRAY + "좌클릭: 다음 색상",
             ChatColor.GRAY + "우클릭: 이전 색상",
+            ChatColor.GRAY + "Shift+우클릭: 빈 커스텀 팀 삭제",
             ChatColor.DARK_GRAY + "teams." + team.id() + ".color");
     }
 
@@ -610,6 +670,16 @@ public final class SettingsGui implements Listener {
             stateColor + gameManager.teamDisplayName(team) + " 팀 다이아 심장",
             ChatColor.GRAY + "상태: " + stateColor + (configured ? "설정됨" : "미설정"),
             ChatColor.GRAY + "바라보는 다이아 블록을 등록합니다.");
+    }
+
+    private ItemStack teamEnabledItem(GodTeam team) {
+        boolean enabled = gameManager.isTeamEnabled(team);
+        ChatColor stateColor = enabled ? ChatColor.GREEN : ChatColor.RED;
+        return item(enabled ? "LIME_DYE" : "GRAY_DYE", enabled ? "INK_SACK" : "INK_SACK", 1, enabled ? (short) 10 : (short) 8,
+            stateColor + gameManager.teamDisplayName(team) + " 팀 " + (enabled ? "활성" : "비활성"),
+            ChatColor.GRAY + "클릭하면 이번 게임 참가 여부를 전환합니다.",
+            ChatColor.GRAY + "비활성 팀은 자동배정과 참여에서 제외됩니다.",
+            ChatColor.DARK_GRAY + "teams." + team.id() + ".enabled");
     }
 
     private ItemStack toggleItem(String path, String title, String icon) {
@@ -719,10 +789,84 @@ public final class SettingsGui implements Listener {
         plugin.abilities().setUrfCooldownPercent(plugin.abilities().urfCooldownPercent() + delta);
     }
 
-    private GodTeam teamAt(int slot) {
-        int index = (slot - 9) / 3;
+    private GodTeam teamAt(Player player, int slot) {
+        int index = currentTeamPage(player) * TEAMS_PER_PAGE + ((slot - 9) / 4);
         GodTeam[] teams = GodTeam.values();
         return index >= 0 && index < teams.length ? teams[index] : null;
+    }
+
+    private void changeTeamPage(Player player, int delta) {
+        setTeamPage(player, currentTeamPage(player) + delta);
+    }
+
+    private void setTeamPage(Player player, int page) {
+        int max = lastTeamPage();
+        int next = page;
+        if (next < 0) {
+            next = max;
+        } else if (next > max) {
+            next = 0;
+        }
+        teamPages.put(player.getUniqueId(), next);
+    }
+
+    private int currentTeamPage(Player player) {
+        Integer page = teamPages.get(player.getUniqueId());
+        return page == null ? 0 : Math.max(0, Math.min(lastTeamPage(), page.intValue()));
+    }
+
+    private int clampedTeamPage(Player player, int teamCount) {
+        int max = Math.max(0, (Math.max(1, teamCount) - 1) / TEAMS_PER_PAGE);
+        int page = currentTeamPage(player);
+        if (page > max) {
+            page = max;
+            teamPages.put(player.getUniqueId(), page);
+        }
+        return page;
+    }
+
+    private int lastTeamPage() {
+        return Math.max(0, (Math.max(1, GodTeam.values().length) - 1) / TEAMS_PER_PAGE);
+    }
+
+    private void removeTeam(Player player, GodTeam team) {
+        if (teamMemberCount(team) > 0) {
+            plugin.messages().send(player, "&c팀원이 있는 팀은 삭제할 수 없습니다. 먼저 팀 배정을 해제해주세요.");
+            return;
+        }
+        if (!GodTeam.remove(plugin.getConfig(), team)) {
+            plugin.messages().send(player, "&c기본 팀은 삭제할 수 없고, 팀은 최소 2개 이상 남아야 합니다.");
+            return;
+        }
+        plugin.getConfig().set("spawns." + team.id(), null);
+        plugin.getConfig().set("temples." + team.id(), null);
+        plugin.saveConfig();
+        gameManager.reloadSettings();
+        setTeamPage(player, currentTeamPage(player));
+        plugin.messages().send(player, "&a" + team.defaultDisplayName() + " 팀을 삭제했습니다.");
+    }
+
+    private void toggleTeamEnabled(Player player, GodTeam team) {
+        boolean enabled = gameManager.isTeamEnabled(team);
+        if (enabled && gameManager.activeTeams().size() <= 2) {
+            plugin.messages().send(player, "&c활성 팀은 최소 2개 이상이어야 합니다.");
+            return;
+        }
+        plugin.getConfig().set("teams." + team.id() + ".enabled", !enabled);
+        plugin.saveConfig();
+        gameManager.reloadSettings();
+        plugin.messages().send(player, "&a" + gameManager.teamColoredName(team) + " 팀을 "
+            + (!enabled ? "활성화" : "비활성화") + "했습니다.");
+    }
+
+    private int teamMemberCount(GodTeam team) {
+        int count = 0;
+        for (GodTeam assigned : gameManager.teamAssignments().values()) {
+            if (team.equals(assigned)) {
+                count++;
+            }
+        }
+        return count;
     }
 
     private void cycleTeamColor(GodTeam team, int direction) {
@@ -762,31 +906,111 @@ public final class SettingsGui implements Listener {
         if (color == ChatColor.GOLD) return "금색";
         if (color == ChatColor.LIGHT_PURPLE) return "분홍";
         if (color == ChatColor.WHITE) return "흰색";
+        if (color == ChatColor.GRAY) return "회색";
+        if (color == ChatColor.DARK_RED) return "진한 빨강";
+        if (color == ChatColor.DARK_BLUE) return "진한 파랑";
+        if (color == ChatColor.DARK_GREEN) return "진한 초록";
+        if (color == ChatColor.DARK_AQUA) return "진한 하늘";
+        if (color == ChatColor.DARK_PURPLE) return "보라";
+        if (color == ChatColor.DARK_GRAY) return "진한 회색";
+        if (color == ChatColor.BLACK) return "검정";
         return color.name();
     }
 
     private String teamWoolMaterial(GodTeam team) {
-        if (team == GodTeam.RED) {
+        if ("red".equals(team.id())) {
             return "RED_WOOL";
         }
-        if (team == GodTeam.BLUE) {
+        if ("blue".equals(team.id())) {
             return "BLUE_WOOL";
         }
-        if (team == GodTeam.GREEN) {
+        if ("green".equals(team.id())) {
             return "GREEN_WOOL";
+        }
+        if (gameManager.teamColor(team) == ChatColor.YELLOW) {
+            return "YELLOW_WOOL";
+        }
+        if (gameManager.teamColor(team) == ChatColor.AQUA) {
+            return "LIGHT_BLUE_WOOL";
+        }
+        if (gameManager.teamColor(team) == ChatColor.GOLD) {
+            return "ORANGE_WOOL";
+        }
+        if (gameManager.teamColor(team) == ChatColor.LIGHT_PURPLE) {
+            return "PINK_WOOL";
+        }
+        if (gameManager.teamColor(team) == ChatColor.GRAY) {
+            return "LIGHT_GRAY_WOOL";
+        }
+        if (gameManager.teamColor(team) == ChatColor.DARK_RED) {
+            return "RED_WOOL";
+        }
+        if (gameManager.teamColor(team) == ChatColor.DARK_BLUE) {
+            return "BLUE_WOOL";
+        }
+        if (gameManager.teamColor(team) == ChatColor.DARK_GREEN) {
+            return "GREEN_WOOL";
+        }
+        if (gameManager.teamColor(team) == ChatColor.DARK_AQUA) {
+            return "CYAN_WOOL";
+        }
+        if (gameManager.teamColor(team) == ChatColor.DARK_PURPLE) {
+            return "PURPLE_WOOL";
+        }
+        if (gameManager.teamColor(team) == ChatColor.DARK_GRAY) {
+            return "GRAY_WOOL";
+        }
+        if (gameManager.teamColor(team) == ChatColor.BLACK) {
+            return "BLACK_WOOL";
         }
         return "WHITE_WOOL";
     }
 
     private short teamWoolData(GodTeam team) {
-        if (team == GodTeam.RED) {
+        if ("red".equals(team.id())) {
             return 14;
         }
-        if (team == GodTeam.BLUE) {
+        if ("blue".equals(team.id())) {
             return 11;
         }
-        if (team == GodTeam.GREEN) {
+        if ("green".equals(team.id())) {
             return 13;
+        }
+        if (gameManager.teamColor(team) == ChatColor.YELLOW) {
+            return 4;
+        }
+        if (gameManager.teamColor(team) == ChatColor.AQUA) {
+            return 3;
+        }
+        if (gameManager.teamColor(team) == ChatColor.GOLD) {
+            return 1;
+        }
+        if (gameManager.teamColor(team) == ChatColor.LIGHT_PURPLE) {
+            return 6;
+        }
+        if (gameManager.teamColor(team) == ChatColor.GRAY) {
+            return 8;
+        }
+        if (gameManager.teamColor(team) == ChatColor.DARK_RED) {
+            return 14;
+        }
+        if (gameManager.teamColor(team) == ChatColor.DARK_BLUE) {
+            return 11;
+        }
+        if (gameManager.teamColor(team) == ChatColor.DARK_GREEN) {
+            return 13;
+        }
+        if (gameManager.teamColor(team) == ChatColor.DARK_AQUA) {
+            return 9;
+        }
+        if (gameManager.teamColor(team) == ChatColor.DARK_PURPLE) {
+            return 10;
+        }
+        if (gameManager.teamColor(team) == ChatColor.DARK_GRAY) {
+            return 7;
+        }
+        if (gameManager.teamColor(team) == ChatColor.BLACK) {
+            return 15;
         }
         return 0;
     }

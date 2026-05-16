@@ -26,9 +26,9 @@ import org.bukkit.scoreboard.Team;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -42,8 +42,8 @@ public final class GameManager {
     private final NmsAdapter nmsAdapter;
     private final GameRuleController gameRuleController;
     private final Map<UUID, GodTeam> teams = new HashMap<UUID, GodTeam>();
-    private final Map<GodTeam, TempleLocation> temples = new EnumMap<GodTeam, TempleLocation>(GodTeam.class);
-    private final Map<GodTeam, GameLocation> spawns = new EnumMap<GodTeam, GameLocation>(GodTeam.class);
+    private final Map<GodTeam, TempleLocation> temples = new LinkedHashMap<GodTeam, TempleLocation>();
+    private final Map<GodTeam, GameLocation> spawns = new LinkedHashMap<GodTeam, GameLocation>();
     private final Set<GodTeam> eliminatedTeams = new HashSet<GodTeam>();
     private final Set<UUID> observers = new HashSet<UUID>();
     private final Map<UUID, Integer> pendingSelection = new HashMap<UUID, Integer>();
@@ -63,6 +63,7 @@ public final class GameManager {
         this.abilityManager = abilityManager;
         this.nmsAdapter = nmsAdapter;
         this.gameRuleController = new GameRuleController(plugin);
+        GodTeam.reload(plugin.getConfig());
         loadTemples();
         loadSpawns();
         setupScoreboard();
@@ -85,11 +86,33 @@ public final class GameManager {
     }
 
     public void reloadSettings() {
+        GodTeam.reload(plugin.getConfig());
+        cleanupRemovedTeams();
         temples.clear();
         spawns.clear();
         loadTemples();
         loadSpawns();
         setupScoreboard();
+    }
+
+    public void cleanupRemovedTeams() {
+        Set<String> knownIds = new HashSet<String>(GodTeam.ids());
+        List<UUID> removedPlayers = new ArrayList<UUID>();
+        for (Map.Entry<UUID, GodTeam> entry : teams.entrySet()) {
+            if (!knownIds.contains(entry.getValue().id()) || !isTeamEnabled(entry.getValue())) {
+                removedPlayers.add(entry.getKey());
+            }
+        }
+        for (UUID uuid : removedPlayers) {
+            teams.remove(uuid);
+        }
+        List<GodTeam> removedEliminated = new ArrayList<GodTeam>();
+        for (GodTeam team : eliminatedTeams) {
+            if (!knownIds.contains(team.id()) || !isTeamEnabled(team)) {
+                removedEliminated.add(team);
+            }
+        }
+        eliminatedTeams.removeAll(removedEliminated);
     }
 
     public void applyGameRules() {
@@ -129,7 +152,24 @@ public final class GameManager {
         return eliminatedTeams.contains(team);
     }
 
+    public boolean isTeamEnabled(GodTeam team) {
+        return team != null && plugin.getConfig().getBoolean("teams." + team.id() + ".enabled", true);
+    }
+
+    public List<GodTeam> activeTeams() {
+        List<GodTeam> active = new ArrayList<GodTeam>();
+        for (GodTeam team : GodTeam.values()) {
+            if (isTeamEnabled(team)) {
+                active.add(team);
+            }
+        }
+        return active;
+    }
+
     public void assign(Player player, GodTeam team) {
+        if (!isTeamEnabled(team)) {
+            throw new IllegalStateException("비활성화된 팀에는 배정할 수 없습니다.");
+        }
         teams.put(player.getUniqueId(), team);
         refreshAllPlayerDisplays();
         nmsAdapter.sendActionBar(player, teamColoredName(team) + " 팀에 배정되었습니다.");
@@ -154,9 +194,12 @@ public final class GameManager {
             }
         }
         Collections.shuffle(players);
-        GodTeam[] values = GodTeam.values();
+        List<GodTeam> values = activeTeams();
+        if (values.isEmpty()) {
+            return;
+        }
         for (int i = 0; i < players.size(); i++) {
-            assign(players.get(i), values[i % values.length]);
+            assign(players.get(i), values.get(i % values.size()));
         }
     }
 
@@ -195,7 +238,7 @@ public final class GameManager {
         if (!plugin.getConfig().getBoolean("game.friendly-fire", false)) {
             GodTeam attackerTeam = teamOf(attacker);
             GodTeam victimTeam = teamOf(victim);
-            if (attackerTeam != null && attackerTeam == victimTeam) {
+            if (attackerTeam != null && attackerTeam.equals(victimTeam)) {
                 return false;
             }
         }
@@ -274,7 +317,8 @@ public final class GameManager {
 
         GodTeam team = teamOf(player);
         if (team == null) {
-            team = GodTeam.RED;
+            List<GodTeam> teams = activeTeams();
+            team = teams.isEmpty() ? GodTeam.RED : teams.get(0);
             assign(player, team);
         }
         AbilityDefinition ability = preferredAbility == null ? abilityManager.assignRandom(player) : preferredAbility;
@@ -363,7 +407,7 @@ public final class GameManager {
         String message = plugin.messages().get("team-eliminated").replace("{team}", teamColoredName(team));
         Bukkit.broadcastMessage(plugin.messages().prefix() + message);
         for (Player player : BukkitCompat.onlinePlayers()) {
-            if (team == teamOf(player)) {
+            if (team.equals(teamOf(player))) {
                 setSpectator(player);
             }
         }
@@ -450,7 +494,7 @@ public final class GameManager {
         }
         String formatted = teamColor(team) + "[팀] " + sender.getName() + ": " + ChatColor.WHITE + message;
         for (Player player : BukkitCompat.onlinePlayers()) {
-            if (team == teamOf(player)) {
+            if (team.equals(teamOf(player))) {
                 player.sendMessage(formatted);
             }
         }
@@ -690,13 +734,13 @@ public final class GameManager {
     private GodTeam smallestJoinableTeam() {
         GodTeam selected = null;
         int selectedCount = Integer.MAX_VALUE;
-        for (GodTeam team : GodTeam.values()) {
+        for (GodTeam team : activeTeams()) {
             if (eliminatedTeams.contains(team)) {
                 continue;
             }
             int count = 0;
             for (GodTeam assigned : teams.values()) {
-                if (assigned == team) {
+                if (team.equals(assigned)) {
                     count++;
                 }
             }
@@ -720,7 +764,7 @@ public final class GameManager {
 
     private void validateStartSettings() {
         List<String> missing = new ArrayList<String>();
-        for (GodTeam team : GodTeam.values()) {
+        for (GodTeam team : activeTeams()) {
             GameLocation spawn = spawns.get(team);
             if (spawn == null || spawn.toLocation() == null) {
                 missing.add(teamDisplayName(team) + " 팀 스폰");
@@ -954,7 +998,7 @@ public final class GameManager {
             String message = plugin.messages().get("winner").replace("{team}", teamColoredName(winner));
             Bukkit.broadcastMessage(plugin.messages().prefix() + message);
             for (Player player : BukkitCompat.onlinePlayers()) {
-                if (winner == teamOf(player)) {
+                if (winner.equals(teamOf(player))) {
                     nmsAdapter.sendTitle(player, ChatColor.GOLD + "승리", teamColoredName(winner) + " 팀이 승리했습니다.", 10, 80, 20);
                     BukkitCompat.playLevelUp(player);
                 }

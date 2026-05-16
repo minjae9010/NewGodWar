@@ -286,21 +286,21 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         entries.add(new HelpEntry("게임 진행", "stop", "게임 종료"));
         entries.add(new HelpEntry("게임 진행", "status", "현재 상태 보기"));
         entries.add(new HelpEntry("게임 진행", "autoteam", "온라인 플레이어 자동 팀 배정"));
-        entries.add(new HelpEntry("팀 / 신전", "join <red|blue|green> [player]", "팀 수동 배정"));
-        entries.add(new HelpEntry("팀 / 신전", "midjoin [player] [red|blue|green|auto]", "진행 중인 게임에 중간 참여"));
+        entries.add(new HelpEntry("팀 / 신전", "join <team> [player]", "팀 수동 배정"));
+        entries.add(new HelpEntry("팀 / 신전", "midjoin [player] [team|auto]", "진행 중인 게임에 중간 참여"));
         entries.add(new HelpEntry("팀 / 신전", "leave [player]", "팀 배정 해제"));
-        entries.add(new HelpEntry("팀 / 신전", "setspawn <red|blue|green>", "현재 위치를 팀 스폰으로 등록"));
-        entries.add(new HelpEntry("팀 / 신전", "settemple <red|blue|green>", "바라보는 다이아 블록을 심장으로 등록"));
-        entries.add(new HelpEntry("팀 / 신전", "info [red|blue|green]", "팀원 목록 확인"));
+        entries.add(new HelpEntry("팀 / 신전", "setspawn <team>", "현재 위치를 팀 스폰으로 등록"));
+        entries.add(new HelpEntry("팀 / 신전", "settemple <team>", "바라보는 다이아 블록을 심장으로 등록"));
+        entries.add(new HelpEntry("팀 / 신전", "info [team]", "팀원 목록 확인"));
         entries.add(new HelpEntry("능력", "yes|no", "능력 재추첨 확정 / 다시 뽑기"));
         entries.add(new HelpEntry("능력", "abilities [검색어]", "능력 도감 검색"));
         entries.add(new HelpEntry("능력", "ability [player]", "현재 능력만 보기"));
         entries.add(new HelpEntry("능력", "target <player>", "타깃형 능력 대상 지정"));
         entries.add(new HelpEntry("능력", "clear [player]", "쿨타임 초기화"));
         entries.add(new HelpEntry("능력", "gamble", "도박 GUI 열기"));
-        entries.add(new HelpEntry("Themachy 호환", "t <red|blue|green> [player]", "팀 수동 배정"));
-        entries.add(new HelpEntry("Themachy 호환", "spawn|s <red|blue|green>", "팀 스폰 등록"));
-        entries.add(new HelpEntry("Themachy 호환", "dia|d <red|blue|green>", "다이아 심장 등록"));
+        entries.add(new HelpEntry("Themachy 호환", "t <team> [player]", "팀 수동 배정"));
+        entries.add(new HelpEntry("Themachy 호환", "spawn|s <team>", "팀 스폰 등록"));
+        entries.add(new HelpEntry("Themachy 호환", "dia|d <team>", "다이아 심장 등록"));
         entries.add(new HelpEntry("Themachy 호환", "set", "설정 GUI 열기"));
         entries.add(new HelpEntry("Themachy 호환", "alist [검색어]", "플레이어별 배정 능력 확인"));
         entries.add(new HelpEntry("Themachy 호환", "a skip [초]", "능력 확정 대기 종료 및 시작 카운트다운 조정"));
@@ -404,12 +404,17 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
 
     private void join(CommandSender sender, String[] args) {
         if (args.length < 2) {
-            plugin.messages().send(sender, "&e/godwar join <red|blue|green> [player]");
+            plugin.messages().send(sender, "&e/godwar join <team> [player]");
+            plugin.messages().send(sender, "&7가능한 팀: &f" + teamUsage());
             return;
         }
         GodTeam team = GodTeam.parse(args[1]);
         if (team == null) {
-            plugin.messages().send(sender, "&c팀은 red, blue, green 중 하나여야 합니다.");
+            plugin.messages().send(sender, "&c팀은 " + teamUsage() + " 중 하나여야 합니다.");
+            return;
+        }
+        if (!gameManager.isTeamEnabled(team)) {
+            plugin.messages().send(sender, "&c비활성화된 팀에는 배정할 수 없습니다.");
             return;
         }
         Player target = args.length >= 3 ? Bukkit.getPlayer(args[2]) : asPlayer(sender);
@@ -441,14 +446,22 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         if (args.length >= 2) {
             if (isTeamOrAuto(args[1])) {
                 team = GodTeam.parse(args[1]);
+                if (team != null && !gameManager.isTeamEnabled(team)) {
+                    plugin.messages().send(sender, "&c비활성화된 팀에는 중간 참여할 수 없습니다.");
+                    return;
+                }
             } else {
                 player = Bukkit.getPlayer(args[1]);
                 if (args.length >= 3) {
                     if (!isTeamOrAuto(args[2])) {
-                        plugin.messages().send(sender, "&c팀은 red, blue, green, auto 중 하나여야 합니다.");
+                        plugin.messages().send(sender, "&c팀은 " + teamUsage() + ", auto 중 하나여야 합니다.");
                         return;
                     }
                     team = GodTeam.parse(args[2]);
+                    if (team != null && !gameManager.isTeamEnabled(team)) {
+                        plugin.messages().send(sender, "&c비활성화된 팀에는 중간 참여할 수 없습니다.");
+                        return;
+                    }
                 }
             }
         }
@@ -493,12 +506,13 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             return;
         }
         if (args.length < 2) {
-            plugin.messages().send(sender, "&e/godwar settemple <red|blue|green>");
+            plugin.messages().send(sender, "&e/godwar settemple <team>");
+            plugin.messages().send(sender, "&7가능한 팀: &f" + teamUsage());
             return;
         }
         GodTeam team = GodTeam.parse(args[1]);
         if (team == null) {
-            plugin.messages().send(sender, "&c팀은 red, blue, green 중 하나여야 합니다.");
+            plugin.messages().send(sender, "&c팀은 " + teamUsage() + " 중 하나여야 합니다.");
             return;
         }
         Block block = BukkitCompat.getTargetBlock(player, 8);
@@ -518,12 +532,13 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             return;
         }
         if (args.length < 2) {
-            plugin.messages().send(sender, "&e/godwar setspawn <red|blue|green>");
+            plugin.messages().send(sender, "&e/godwar setspawn <team>");
+            plugin.messages().send(sender, "&7가능한 팀: &f" + teamUsage());
             return;
         }
         GodTeam team = GodTeam.parse(args[1]);
         if (team == null) {
-            plugin.messages().send(sender, "&c팀은 red, blue, green 중 하나여야 합니다.");
+            plugin.messages().send(sender, "&c팀은 " + teamUsage() + " 중 하나여야 합니다.");
             return;
         }
         gameManager.setSpawn(team, player.getLocation());
@@ -634,7 +649,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         if (args.length >= 2) {
             team = GodTeam.parse(args[1]);
             if (team == null) {
-                plugin.messages().send(sender, "&c팀은 red, blue, green 중 하나여야 합니다.");
+                plugin.messages().send(sender, "&c팀은 " + teamUsage() + " 중 하나여야 합니다.");
                 return;
             }
         } else {
@@ -650,7 +665,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(ChatColor.GREEN + "======  " + teamName(team) + ChatColor.GREEN + "  ======");
         int count = 0;
         for (Player player : BukkitCompat.onlinePlayers()) {
-            if (gameManager.teamOf(player) == team) {
+            if (team.equals(gameManager.teamOf(player))) {
                 count++;
                 sender.sendMessage(ChatColor.YELLOW + String.valueOf(count) + ". " + ChatColor.GOLD + player.getName());
             }
@@ -747,7 +762,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         for (GodTeam team : GodTeam.values()) {
             int count = 0;
             for (ParticipantView view : participants) {
-                if (view.team == team) {
+                if (team.equals(view.team)) {
                     if (count == 0) {
                         sender.sendMessage(teamName(team) + ChatColor.GRAY + " 팀");
                     }
@@ -886,14 +901,22 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             if (args.length >= 3) {
                 if (isTeamOrAuto(args[2])) {
                     team = GodTeam.parse(args[2]);
+                    if (team != null && !gameManager.isTeamEnabled(team)) {
+                        plugin.messages().send(sender, "&c비활성화된 팀에는 중간 참여할 수 없습니다.");
+                        return;
+                    }
                 } else {
                     player = Bukkit.getPlayer(args[2]);
                     if (args.length >= 4) {
                         if (!isTeamOrAuto(args[3])) {
-                            plugin.messages().send(sender, "&c팀은 red, blue, green, auto 중 하나여야 합니다.");
+                            plugin.messages().send(sender, "&c팀은 " + teamUsage() + ", auto 중 하나여야 합니다.");
                             return;
                         }
                         team = GodTeam.parse(args[3]);
+                        if (team != null && !gameManager.isTeamEnabled(team)) {
+                            plugin.messages().send(sender, "&c비활성화된 팀에는 중간 참여할 수 없습니다.");
+                            return;
+                        }
                     }
                 }
             }
@@ -1416,14 +1439,19 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
 
     private List<String> teamSuggestions(boolean includeAuto) {
         List<String> teams = new ArrayList<String>();
-        teams.add("red");
-        teams.add("blue");
-        teams.add("green");
+        for (GodTeam team : GodTeam.values()) {
+            teams.add(team.id());
+            teams.add(gameManager.teamDisplayName(team));
+        }
         if (includeAuto) {
             teams.add("auto");
             teams.add("자동");
         }
         return teams;
+    }
+
+    private String teamUsage() {
+        return join(GodTeam.ids());
     }
 
     private List<String> gamblingRewardIndexes(String token) {
@@ -1648,7 +1676,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
     private boolean participantMatches(String playerName, GodTeam team, AbilityDefinition ability, String query) {
         String normalized = query.toLowerCase(Locale.ROOT).trim();
         return contains(playerName, normalized)
-            || (team != null && (contains(team.id(), normalized) || contains(team.defaultDisplayName(), normalized)))
+            || (team != null && (contains(team.id(), normalized) || contains(gameManager.teamDisplayName(team), normalized)))
             || (ability != null && abilityMatches(ability, query));
     }
 

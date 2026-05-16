@@ -134,7 +134,7 @@ public final class GameListener implements Listener {
             return;
         }
         GodTeam breakerTeam = gameManager.teamOf(event.getPlayer());
-        if (breakerTeam == team) {
+        if (team.equals(breakerTeam)) {
             event.setCancelled(true);
             plugin.messages().send(event.getPlayer(), "&c자기 팀의 다이아 심장은 파괴할 수 없습니다.");
             return;
