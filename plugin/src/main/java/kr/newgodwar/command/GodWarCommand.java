@@ -8,6 +8,7 @@ import kr.newgodwar.game.GodTeam;
 import kr.newgodwar.gui.AbilityGui;
 import kr.newgodwar.gui.SettingsGui;
 import kr.newgodwar.util.BukkitCompat;
+import kr.newgodwar.util.GameTips;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -36,7 +37,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
 
     private static final List<String> SUBCOMMANDS = Arrays.asList(
         "help", "autoteam", "join", "leave", "settemple", "setspawn", "start", "stop", "status",
-        "ability", "abilities", "assignedabilities", "assignments", "participants", "players", "rerolls", "skipseconds", "blacklist", "gamerule", "target", "setability", "spectate", "unspectate", "observer",
+        "tips", "ability", "abilities", "assignedabilities", "assignments", "participants", "players", "rerolls", "skipseconds", "blacklist", "gamerule", "target", "setability", "spectate", "unspectate", "observer",
         "reload", "gui", "settings", "test", "midjoin", "info", "yes", "no", "clear", "gamble", "gamblereward", "urf"
     );
     private static final int HELP_LINES_PER_PAGE = 7;
@@ -130,6 +131,10 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         }
         if (sub.equals("status")) {
             status(sender);
+            return true;
+        }
+        if (sub.equals("tips")) {
+            GameTips.send(sender, plugin);
             return true;
         }
         if (sub.equals("urf")) {
@@ -285,6 +290,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         entries.add(new HelpEntry("게임 진행", "test [ability]", "혼자 능력 테스트 시작"));
         entries.add(new HelpEntry("게임 진행", "stop", "게임 종료"));
         entries.add(new HelpEntry("게임 진행", "status", "현재 상태 보기"));
+        entries.add(new HelpEntry("게임 진행", "tips", "서버 플레이 팁 보기"));
         entries.add(new HelpEntry("게임 진행", "autoteam", "온라인 플레이어 자동 팀 배정"));
         entries.add(new HelpEntry("팀 / 신전", "join <team> [player]", "팀 수동 배정"));
         entries.add(new HelpEntry("팀 / 신전", "midjoin [player] [team|auto]", "진행 중인 게임에 중간 참여"));
@@ -1326,6 +1332,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             && !sub.equals("abilities")
             && !sub.equals("target")
             && !sub.equals("status")
+            && !sub.equals("tips")
             && !sub.equals("join")
             && !sub.equals("leave")
             && !sub.equals("midjoin")
@@ -1835,6 +1842,9 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         }
         if (lower.equals("info") || lower.equals("i")) {
             return "info";
+        }
+        if (lower.equals("tip") || lower.equals("tips") || lower.equals("팁")) {
+            return "tips";
         }
         if (lower.equals("clear") || lower.equals("c")) {
             return "clear";

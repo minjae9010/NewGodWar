@@ -35,6 +35,7 @@
 - `/godwar test [ability]` 혼자 능력 테스트 시작
 - `/godwar stop` 게임 종료
 - `/godwar status` 현재 게임 상태
+- `/godwar tips` 서버 플레이 팁 확인
 - `/godwar gui` 또는 `/godwar settings` 관리자용 상자 GUI 설정 열기
 - `/godwar gamblereward <normal|tajja> <번호|add> hand|message|<material> [값]` 도박 당첨 아이템 변경/추가 및 멘트 수정
 - `/godwar ability [player]` 현재 능력만 확인
@@ -77,6 +78,7 @@
 - `scoreboard.enabled`: 우측 스코어보드에 내 팀, 능력, 킬 상태 표시
 - `scoreboard.team-prefixes`: 탭 목록과 머리 위 이름에 팀 Prefix 표시
 - `blacklist.abilities`: 랜덤 배정에서 제외할 능력 ID 목록
+- `tips`: `/godwar tips`와 게임 시작 준비 때 표시할 서버 플레이 팁
 - `gamerules`: 게임 시작 시 모든 월드에 적용할 마인크래프트 게임룰과 종료 시 복구 여부
 
 ## 지원 버전

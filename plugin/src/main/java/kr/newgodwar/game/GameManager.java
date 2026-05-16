@@ -5,6 +5,7 @@ import kr.newgodwar.ability.AbilityManager;
 import kr.newgodwar.ability.api.AbilityDefinition;
 import kr.newgodwar.nms.NmsAdapter;
 import kr.newgodwar.util.BukkitCompat;
+import kr.newgodwar.util.GameTips;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Difficulty;
@@ -295,6 +296,7 @@ public final class GameManager {
 
         Bukkit.broadcastMessage(plugin.messages().prefix() + ChatColor.GOLD + "게임 시작 준비를 시작합니다.");
         broadcastStartSettings();
+        GameTips.broadcast(plugin);
         if (!pendingSelection.isEmpty()) {
             Bukkit.broadcastMessage(ChatColor.YELLOW + "능력 재추첨 기회가 주어졌습니다. "
                 + ChatColor.AQUA + "/t yes" + ChatColor.WHITE + " 또는 " + ChatColor.RED + "/t no"
