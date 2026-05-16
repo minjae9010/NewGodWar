@@ -5,6 +5,7 @@ import kr.newgodwar.ability.AbilityManager;
 import kr.newgodwar.game.GameManager;
 import kr.newgodwar.game.GodTeam;
 import kr.newgodwar.nms.NmsAdapter;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -19,6 +20,7 @@ import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.block.SignChangeEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.entity.EntityRegainHealthEvent;
 import org.bukkit.event.entity.FoodLevelChangeEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
@@ -31,6 +33,8 @@ import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.projectiles.ProjectileSource;
+
+import java.util.Iterator;
 
 public final class GameListener implements Listener {
 
@@ -133,6 +137,14 @@ public final class GameListener implements Listener {
             plugin.messages().send(event.getPlayer(), "&c자기 팀의 다이아 심장은 파괴할 수 없습니다.");
             return;
         }
+        if (plugin.getConfig().getBoolean("core.forbid-diamond-pickaxe", true)
+            && event.getPlayer().getItemInHand() != null
+            && event.getPlayer().getItemInHand().getType() == Material.DIAMOND_PICKAXE) {
+            event.setCancelled(true);
+            Bukkit.broadcastMessage(plugin.messages().prefix() + ChatColor.RED + event.getPlayer().getName()
+                + ChatColor.WHITE + " 님이 다이아 곡괭이로 코어를 파괴하려다 적발되었습니다.");
+            return;
+        }
         gameManager.eliminate(team, event.getPlayer());
         abilityManager.handleBlockBreak(event.getPlayer(), event);
     }
@@ -153,9 +165,15 @@ public final class GameListener implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onBlockExplode(BlockExplodeEvent event) {
+        protectTempleDiamonds(event.blockList());
         if (gameManager.isRunning()) {
             abilityManager.handleBlockExplode(event);
         }
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onEntityExplode(EntityExplodeEvent event) {
+        protectTempleDiamonds(event.blockList());
     }
 
     @EventHandler(ignoreCancelled = true)
@@ -182,6 +200,17 @@ public final class GameListener implements Listener {
     @EventHandler
     public void onRespawn(PlayerRespawnEvent event) {
         if (gameManager.isRunning()) {
+            try {
+                org.bukkit.Location location = gameManager.respawnLocation(event.getPlayer(), event.isBedSpawn());
+                if (location != null) {
+                    event.setRespawnLocation(location);
+                }
+            } catch (NoSuchMethodError ignored) {
+                org.bukkit.Location location = gameManager.respawnLocation(event.getPlayer(), false);
+                if (location != null) {
+                    event.setRespawnLocation(location);
+                }
+            }
             abilityManager.handleRespawn(event.getPlayer(), event);
         }
     }
@@ -218,6 +247,19 @@ public final class GameListener implements Listener {
             abilityManager.handleKill(killer, event.getEntity(), event);
             event.setDeathMessage(plugin.messages().prefix() + ChatColor.RED + event.getEntity().getName()
                 + ChatColor.GRAY + " 님이 " + ChatColor.YELLOW + killer.getName() + ChatColor.GRAY + " 님에게 쓰러졌습니다.");
+        }
+    }
+
+    private void protectTempleDiamonds(java.util.List<Block> blocks) {
+        if (!plugin.getConfig().getBoolean("core.protect-diamond-from-explosion", true)) {
+            return;
+        }
+        Iterator<Block> iterator = blocks.iterator();
+        while (iterator.hasNext()) {
+            Block block = iterator.next();
+            if (block.getType() == Material.DIAMOND_BLOCK && gameManager.templeTeam(block) != null) {
+                iterator.remove();
+            }
         }
     }
 }

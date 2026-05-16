@@ -10,6 +10,7 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
@@ -58,7 +59,7 @@ public final class SettingsGui implements Listener {
             return;
         }
 
-        handle(player, event.getRawSlot());
+        handle(player, event.getRawSlot(), event.getClick());
     }
 
     @EventHandler
@@ -87,92 +88,78 @@ public final class SettingsGui implements Listener {
             && TITLE.equals(event.getView().getTitle());
     }
 
-    private void handle(Player player, int slot) {
+    private void handle(Player player, int slot, ClickType click) {
         if (slot == 0) {
             changeInt("game.min-players", -1, 1, 100);
-            reopen(player);
-            return;
-        }
-        if (slot == 2) {
+        } else if (slot == 2) {
             changeInt("game.min-players", 1, 1, 100);
-            reopen(player);
-            return;
-        }
-        if (slot == 4) {
-            toggle("game.friendly-fire");
-            gameManager.reloadSettings();
-            reopen(player);
-            return;
-        }
-        if (slot == 6) {
-            toggle("game.auto-balance-teams");
-            reopen(player);
-            return;
-        }
-        if (slot == 8) {
-            toggle("game.ability-roll-message");
-            reopen(player);
-            return;
-        }
-        if (slot == 10) {
-            toggle("game.allow-mid-join");
-            gameManager.refreshAllPlayerDisplays();
-            reopen(player);
-            return;
-        }
-        if (slot == 11) {
-            toggle("game.urf.enabled");
-            gameManager.refreshAllPlayerDisplays();
-            reopen(player);
-            return;
-        }
-        if (slot == 12) {
-            toggle("gamerules.enabled");
-            reopen(player);
-            return;
-        }
-        if (slot == 14) {
+        } else if (slot == 3) {
+            toggle("game.clear-inventory");
+        } else if (slot == 4) {
+            toggle("game.give-skyblock-items");
+        } else if (slot == 5) {
+            toggle("game.remove-entities");
+        } else if (slot == 6) {
+            toggle("game.ignore-bed");
+        } else if (slot == 7) {
+            toggle("game.fast-start");
+        } else if (slot == 8) {
+            toggle("game.select-right");
+        } else if (slot == 9) {
+            toggle("world.autosave");
+        } else if (slot == 10) {
+            toggle("world.spawn-animals");
+        } else if (slot == 11) {
+            toggle("world.spawn-monsters");
+        } else if (slot == 12) {
+            toggle("gambling.enabled");
+        } else if (slot == 13) {
+            toggle("core.protect-diamond-from-explosion");
+        } else if (slot == 14) {
+            toggle("core.forbid-diamond-pickaxe");
+        } else if (slot == 15) {
             toggle("scoreboard.enabled");
             gameManager.refreshAllPlayerDisplays();
-            reopen(player);
-            return;
-        }
-        if (slot == 16) {
+        } else if (slot == 16) {
             toggle("scoreboard.team-prefixes");
             gameManager.refreshAllPlayerDisplays();
-            reopen(player);
-            return;
-        }
-        if (slot == 18) {
+        } else if (slot == 17) {
+            if (click == ClickType.RIGHT) {
+                changeUrfCooldownPercent(5);
+            } else if (click == ClickType.SHIFT_RIGHT) {
+                changeUrfCooldownPercent(-5);
+            } else {
+                toggle("game.urf.enabled");
+            }
+            gameManager.refreshAllPlayerDisplays();
+        } else if (slot == 18) {
             try {
                 gameManager.start();
             } catch (IllegalStateException ex) {
                 plugin.messages().send(player, "&c" + ex.getMessage());
             }
-            reopen(player);
-            return;
-        }
-        if (slot == 20) {
+        } else if (slot == 19) {
+            toggle("game.friendly-fire");
+            gameManager.reloadSettings();
+        } else if (slot == 20) {
             gameManager.stop(true);
-            reopen(player);
-            return;
-        }
-        if (slot == 22) {
+        } else if (slot == 21) {
+            toggle("game.auto-balance-teams");
+        } else if (slot == 22) {
             gameManager.autoBalance();
             plugin.messages().send(player, "&a온라인 플레이어를 자동으로 팀 배정했습니다.");
-            reopen(player);
-            return;
-        }
-        if (slot == 24) {
+        } else if (slot == 23) {
+            toggle("game.allow-mid-join");
+            gameManager.refreshAllPlayerDisplays();
+        } else if (slot == 24) {
             plugin.reloadConfig();
             gameManager.reloadSettings();
             plugin.messages().send(player, "&a설정을 다시 불러왔습니다.");
-            reopen(player);
+        } else if (slot == 26) {
+            player.closeInventory();
             return;
         }
-        if (slot == 26) {
-            player.closeInventory();
-        }
+        reopen(player);
     }
 
     private void reopen(final Player player) {
@@ -202,24 +189,34 @@ public final class SettingsGui implements Listener {
             ChatColor.GREEN + "최소 인원 +1",
             ChatColor.GRAY + "현재: " + ChatColor.YELLOW + config.getInt("game.min-players", 2)));
 
-        inventory.setItem(4, toggleItem("game.friendly-fire", "팀킬 허용", "IRON_SWORD"));
-        inventory.setItem(6, toggleItem("game.auto-balance-teams", "팀 자동 배정", "COMPASS"));
-        inventory.setItem(8, toggleItem("game.ability-roll-message", "능력 배정 안내", "PAPER"));
-        inventory.setItem(10, toggleItem("game.allow-mid-join", "중간 참여 허용", "ENDER_PEARL"));
-        inventory.setItem(11, urfItem());
-        inventory.setItem(12, toggleItem("gamerules.enabled", "게임룰 자동 적용", "COMMAND"));
-        inventory.setItem(14, toggleItem("scoreboard.enabled", "스코어보드 안내 사용", "ITEM_FRAME"));
+        inventory.setItem(3, toggleItem("game.clear-inventory", "인벤토리 클리어", "CHEST"));
+        inventory.setItem(4, toggleItem("game.give-skyblock-items", "스카이블럭 아이템 지급", "ICE"));
+        inventory.setItem(5, toggleItem("game.remove-entities", "엔티티 제거", "ROTTEN_FLESH"));
+        inventory.setItem(6, toggleItem("game.ignore-bed", "침대 무시", "BED"));
+        inventory.setItem(7, toggleItem("game.fast-start", "빠른 시작", "SUGAR"));
+        inventory.setItem(8, toggleItem("game.select-right", "능력 재추첨 기회", "NETHER_STAR"));
+        inventory.setItem(9, toggleItem("world.autosave", "서버 자동 저장", "BOOK"));
+        inventory.setItem(10, toggleItem("world.spawn-animals", "동물 스폰", "WHEAT"));
+        inventory.setItem(11, toggleItem("world.spawn-monsters", "몬스터 스폰", "BONE"));
+        inventory.setItem(12, toggleItem("gambling.enabled", "도박 허용", "GOLD_INGOT"));
+        inventory.setItem(13, toggleItem("core.protect-diamond-from-explosion", "코어 폭파 보호", "DIAMOND_BLOCK"));
+        inventory.setItem(14, toggleItem("core.forbid-diamond-pickaxe", "다이아 곡괭이 금지", "DIAMOND_PICKAXE"));
+        inventory.setItem(15, toggleItem("scoreboard.enabled", "스코어보드 안내 사용", "ITEM_FRAME"));
         inventory.setItem(16, toggleItem("scoreboard.team-prefixes", "팀 Prefix 표시", "NAME_TAG"));
+        inventory.setItem(17, urfItem());
 
         inventory.setItem(18, item("EMERALD_BLOCK", "EMERALD_BLOCK", 1, (short) 0,
             ChatColor.GREEN + "게임 시작",
             ChatColor.GRAY + "/t start"));
+        inventory.setItem(19, toggleItem("game.friendly-fire", "팀킬 허용", "IRON_SWORD"));
         inventory.setItem(20, item("REDSTONE_BLOCK", "REDSTONE_BLOCK", 1, (short) 0,
             ChatColor.RED + "게임 종료",
             ChatColor.GRAY + "/t stop"));
+        inventory.setItem(21, toggleItem("game.auto-balance-teams", "시작 시 팀 자동 배정", "COMPASS"));
         inventory.setItem(22, item("COMPASS", "COMPASS", 1, (short) 0,
             ChatColor.AQUA + "팀 자동 배정",
             ChatColor.GRAY + "/gw autoteam"));
+        inventory.setItem(23, toggleItem("game.allow-mid-join", "중간 참여 허용", "ENDER_PEARL"));
         inventory.setItem(24, item("BOOK", "BOOK", 1, (short) 0,
             ChatColor.YELLOW + "설정 다시 불러오기",
             ChatColor.GRAY + "config.yml을 다시 읽습니다."));
@@ -231,11 +228,13 @@ public final class SettingsGui implements Listener {
         boolean enabled = plugin.getConfig().getBoolean("game.urf.enabled", false);
         ChatColor color = enabled ? ChatColor.GREEN : ChatColor.RED;
         String state = enabled ? "켜짐" : "꺼짐";
-        double multiplier = plugin.getConfig().getDouble("game.urf.cooldown-multiplier", 0.2D);
+        int percent = plugin.abilities().urfCooldownPercent();
         return item("BLAZE_POWDER", "BLAZE_POWDER", 1, (short) 0,
             color + "우르프 모드: " + state,
-            ChatColor.GRAY + "능력 쿨타임 배율: " + ChatColor.YELLOW + multiplier,
-            ChatColor.GRAY + "클릭하면 설정이 전환됩니다.",
+            ChatColor.GRAY + "능력 쿨타임 배율: " + ChatColor.YELLOW + percent + "%",
+            ChatColor.GRAY + "좌클릭: 우르프 켜기/끄기",
+            ChatColor.GRAY + "우클릭: 배율 +5%",
+            ChatColor.GRAY + "쉬프트+우클릭: 배율 -5%",
             ChatColor.DARK_GRAY + "game.urf.enabled");
     }
 
@@ -263,10 +262,14 @@ public final class SettingsGui implements Listener {
         plugin.saveConfig();
     }
 
+    private void changeUrfCooldownPercent(int delta) {
+        plugin.abilities().setUrfCooldownPercent(plugin.abilities().urfCooldownPercent() + delta);
+    }
+
     private int participantCount() {
         int count = 0;
         for (Player player : BukkitCompat.onlinePlayers()) {
-            if (gameManager.teamOf(player) != null) {
+            if (gameManager.teamOf(player) != null && !gameManager.isObserver(player)) {
                 count++;
             }
         }

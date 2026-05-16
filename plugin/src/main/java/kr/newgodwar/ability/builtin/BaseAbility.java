@@ -107,6 +107,20 @@ abstract class BaseAbility implements GodAbility {
         cooldowns.put(slot, System.currentTimeMillis() + millis);
     }
 
+    @Override
+    public long cooldownRemainingMillis(int slot) {
+        Long until = cooldowns.get(slot);
+        if (until == null) {
+            return 0L;
+        }
+        return Math.max(0L, until - System.currentTimeMillis());
+    }
+
+    @Override
+    public void clearCooldowns() {
+        cooldowns.clear();
+    }
+
     protected boolean readyCooldown(Player player, int slot, int cooldownSeconds) {
         Long until = cooldowns.get(slot);
         long now = System.currentTimeMillis();
@@ -130,12 +144,22 @@ abstract class BaseAbility implements GodAbility {
         if (amount <= 0 || player.getInventory().contains(material, amount)) {
             return true;
         }
-        if (material == COBBLESTONE) {
-            player.sendMessage(ChatColor.RED + "조약돌 " + amount + "개가 부족합니다.");
-        } else {
-            player.sendMessage(ChatColor.RED + material.name() + " " + amount + "개가 필요합니다.");
-        }
+        player.sendMessage(ChatColor.RED + materialDisplayName(material) + " " + amount + "개가 부족합니다.");
         return false;
+    }
+
+    private String materialDisplayName(Material material) {
+        String name = material.name();
+        if (material == COBBLESTONE || "COBBLESTONE".equals(name)) {
+            return "조약돌";
+        }
+        if ("IRON_INGOT".equals(name) || "IRON".equals(name)) {
+            return "철괴";
+        }
+        if ("DIAMOND".equals(name)) {
+            return "다이아몬드";
+        }
+        return name.replace('_', ' ');
     }
 
     protected boolean holding(Player player, Material material) {

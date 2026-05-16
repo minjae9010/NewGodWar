@@ -87,6 +87,13 @@ public interface GodAbility {
         sender.sendMessage("타깃을 사용하는 능력이 아닙니다.");
     }
 
+    default long cooldownRemainingMillis(int slot) {
+        return 0L;
+    }
+
+    default void clearCooldowns() {
+    }
+
     default boolean supports(Player player) {
         return true;
     }

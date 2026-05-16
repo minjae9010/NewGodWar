@@ -91,6 +91,18 @@ public final class AbilityManager {
         }
     }
 
+    public boolean remove(Player player) {
+        AbilitySession previous = assignments.remove(player.getUniqueId());
+        if (previous == null) {
+            return false;
+        }
+        previous.ability().onRemove(playerContext(player, previous.definition()));
+        if (plugin.game() != null) {
+            plugin.game().refreshPlayerDisplay(player);
+        }
+        return true;
+    }
+
     public AbilitySession session(Player player) {
         return assignments.get(player.getUniqueId());
     }
@@ -98,6 +110,24 @@ public final class AbilityManager {
     public AbilityDefinition get(Player player) {
         AbilitySession session = session(player);
         return session == null ? null : session.definition();
+    }
+
+    public long cooldownRemainingMillis(Player player, int slot) {
+        AbilitySession session = session(player);
+        return session == null ? 0L : session.ability().cooldownRemainingMillis(slot);
+    }
+
+    public void clearCooldowns(Player player) {
+        AbilitySession session = session(player);
+        if (session != null) {
+            session.ability().clearCooldowns();
+        }
+    }
+
+    public void clearAllCooldowns() {
+        for (AbilitySession session : assignments.values()) {
+            session.ability().clearCooldowns();
+        }
     }
 
     public List<AbilityDefinition> enabledAbilities(Player player) {
@@ -162,12 +192,25 @@ public final class AbilityManager {
         return plugin.getConfig().getBoolean("game.urf.enabled", false);
     }
 
+    public int urfCooldownPercent() {
+        return (int) Math.round(urfCooldownMultiplier() * 100.0D);
+    }
+
+    public void setUrfCooldownPercent(int percent) {
+        int clamped = Math.max(0, Math.min(500, percent));
+        plugin.getConfig().set("game.urf.cooldown-multiplier", clamped / 100.0D);
+        plugin.saveConfig();
+    }
+
+    public double urfCooldownMultiplier() {
+        return Math.max(0.0D, plugin.getConfig().getDouble("game.urf.cooldown-multiplier", 0.2D));
+    }
+
     public long scaleCooldownMillis(long baseMillis) {
         if (!urfEnabled()) {
             return baseMillis;
         }
-        double multiplier = plugin.getConfig().getDouble("game.urf.cooldown-multiplier", 0.2D);
-        return Math.max(0L, Math.round(baseMillis * Math.max(0.0D, multiplier)));
+        return Math.max(0L, Math.round(baseMillis * urfCooldownMultiplier()));
     }
 
     public void handleDamage(Player damager, Player victim, EntityDamageByEntityEvent event) {

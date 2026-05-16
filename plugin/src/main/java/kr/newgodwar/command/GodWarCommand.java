@@ -26,8 +26,9 @@ import java.util.List;
 public final class GodWarCommand implements CommandExecutor, TabCompleter {
 
     private static final List<String> SUBCOMMANDS = Arrays.asList(
-        "help", "autoteam", "join", "leave", "settemple", "start", "stop", "status",
-        "ability", "abilities", "blacklist", "gamerule", "target", "setability", "spectate", "unspectate", "reload", "gui", "settings", "test", "midjoin"
+        "help", "autoteam", "join", "leave", "settemple", "setspawn", "start", "stop", "status",
+        "ability", "abilities", "blacklist", "gamerule", "target", "setability", "spectate", "unspectate", "observer",
+        "reload", "gui", "settings", "test", "midjoin", "info", "yes", "no", "clear", "gamble", "urf"
     );
 
     private final NewGodWarPlugin plugin;
@@ -101,6 +102,10 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             setTemple(sender, args);
             return true;
         }
+        if (sub.equals("setspawn")) {
+            setSpawn(sender, args);
+            return true;
+        }
         if (sub.equals("start")) {
             start(sender);
             return true;
@@ -115,6 +120,30 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         }
         if (sub.equals("status")) {
             status(sender);
+            return true;
+        }
+        if (sub.equals("urf")) {
+            urf(sender, args);
+            return true;
+        }
+        if (sub.equals("info")) {
+            teamInfo(sender, args);
+            return true;
+        }
+        if (sub.equals("yes")) {
+            confirmAbility(sender);
+            return true;
+        }
+        if (sub.equals("no")) {
+            rerollAbility(sender);
+            return true;
+        }
+        if (sub.equals("clear")) {
+            clearCooldowns(sender, args);
+            return true;
+        }
+        if (sub.equals("gamble")) {
+            plugin.getServer().dispatchCommand(sender, "gamble");
             return true;
         }
         if (sub.equals("ability")) {
@@ -153,6 +182,10 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             spectate(sender, args, false);
             return true;
         }
+        if (sub.equals("observer")) {
+            observer(sender, args);
+            return true;
+        }
         if (sub.equals("reload")) {
             plugin.reloadConfig();
             gameManager.reloadSettings();
@@ -188,10 +221,13 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         command(sender, label, "join <red|blue|green> [player]", "팀 수동 배정");
         command(sender, label, "midjoin [red|blue|green]", "진행 중인 게임에 중간 참여");
         command(sender, label, "leave [player]", "팀 배정 해제");
+        command(sender, label, "setspawn <red|blue|green>", "현재 위치를 팀 스폰으로 등록");
         command(sender, label, "settemple <red|blue|green>", "바라보는 다이아 블록을 심장으로 등록");
+        command(sender, label, "info [red|blue|green]", "팀원 목록 확인");
         section(sender, "능력");
         sender.sendMessage(ChatColor.DARK_GRAY + "  /a" + ChatColor.GRAY + " 로 내 능력을 빠르게 확인할 수 있습니다.");
         sender.sendMessage(ChatColor.DARK_GRAY + "  /t help" + ChatColor.GRAY + " 도 Themachy처럼 내 능력을 보여줍니다.");
+        command(sender, label, "yes|no", "능력 재추첨 확정 / 다시 뽑기");
         command(sender, label, "abilities", "능력 도감 GUI");
         command(sender, label, "ability [player]", "현재 능력만 보기");
         command(sender, label, "setability <player> <ability>", "능력 수동 지정");
@@ -200,14 +236,20 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         if (label.equalsIgnoreCase("t")) {
             section(sender, "Themachy 호환");
             command(sender, label, "t <red|blue|green> [player]", "팀 수동 배정");
+            command(sender, label, "spawn|s <red|blue|green>", "팀 스폰 등록");
+            command(sender, label, "info|i [red|blue|green]", "팀원 목록 확인");
             command(sender, label, "dia|d <red|blue|green>", "다이아 심장 등록");
             command(sender, label, "set", "설정 GUI 열기");
             command(sender, label, "black ...", "블랙리스트 관리");
             command(sender, label, "alist", "능력 도감 보기");
             command(sender, label, "a <ability> <player>", "능력 수동 지정");
+            command(sender, label, "clear|c [player]", "쿨타임 초기화");
+            command(sender, label, "observer [list]", "옵저버 전환 / 목록");
+            command(sender, label, "con", "도박 GUI 열기");
         }
         if (sender.hasPermission("newgodwar.admin")) {
             section(sender, "운영 설정");
+            command(sender, label, "urf <on|off|toggle|20%>", "우르프 모드 및 쿨타임 배율 설정");
             command(sender, label, "blacklist <list|add|remove|toggle> [ability]", "랜덤 제외 능력 관리");
             command(sender, label, "gamerule <apply|restore>", "게임룰 수동 적용 / 복구");
             command(sender, label, "reload", "config.yml 다시 불러오기");
@@ -223,7 +265,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(ChatColor.GRAY + "  상태       " + ChatColor.YELLOW + gameManager.state());
         sender.sendMessage(ChatColor.GRAY + "  버전       " + ChatColor.YELLOW + plugin.versionSupport().minecraftVersion());
         sender.sendMessage(ChatColor.GRAY + "  팀킬       " + state(plugin.getConfig().getBoolean("game.friendly-fire", false)));
-        sender.sendMessage(ChatColor.GRAY + "  우르프     " + state(abilityManager.urfEnabled()));
+        sender.sendMessage(ChatColor.GRAY + "  우르프     " + urfStatus());
         sender.sendMessage(ChatColor.GRAY + "  게임룰     " + state(plugin.getConfig().getBoolean("gamerules.enabled", true)));
         sender.sendMessage(ChatColor.GRAY + "  블랙리스트 " + ChatColor.YELLOW + abilityManager.blacklistedAbilityIds().size() + ChatColor.GRAY + "개");
         sender.sendMessage(ChatColor.GRAY + "  원문       " + gameManager.statusLine());
@@ -245,6 +287,11 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
 
     private String state(boolean enabled) {
         return enabled ? ChatColor.GREEN + "켜짐" : ChatColor.RED + "꺼짐";
+    }
+
+    private String urfStatus() {
+        return state(abilityManager.urfEnabled()) + ChatColor.GRAY + " / 쿨타임 "
+            + ChatColor.YELLOW + abilityManager.urfCooldownPercent() + "%";
     }
 
     private void join(CommandSender sender, String[] args) {
@@ -341,6 +388,60 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         }
     }
 
+    private void setSpawn(CommandSender sender, String[] args) {
+        Player player = asPlayer(sender);
+        if (player == null) {
+            plugin.messages().send(sender, "&c플레이어만 사용할 수 있습니다.");
+            return;
+        }
+        if (args.length < 2) {
+            plugin.messages().send(sender, "&e/godwar setspawn <red|blue|green>");
+            return;
+        }
+        GodTeam team = GodTeam.parse(args[1]);
+        if (team == null) {
+            plugin.messages().send(sender, "&c팀은 red, blue, green 중 하나여야 합니다.");
+            return;
+        }
+        gameManager.setSpawn(team, player.getLocation());
+        plugin.messages().send(sender, "&a현재 위치를 " + team.coloredName() + " 팀 스폰으로 등록했습니다.");
+    }
+
+    private void urf(CommandSender sender, String[] args) {
+        if (args.length < 2) {
+            plugin.messages().send(sender, "&e/godwar urf <on|off|toggle|20%>");
+            plugin.messages().send(sender, "&7현재 우르프: " + urfStatus());
+            return;
+        }
+
+        String value = args[1];
+        if (value.equalsIgnoreCase("on") || value.equalsIgnoreCase("enable") || value.equalsIgnoreCase("true")) {
+            plugin.getConfig().set("game.urf.enabled", true);
+            plugin.saveConfig();
+        } else if (value.equalsIgnoreCase("off") || value.equalsIgnoreCase("disable") || value.equalsIgnoreCase("false")) {
+            plugin.getConfig().set("game.urf.enabled", false);
+            plugin.saveConfig();
+        } else if (value.equalsIgnoreCase("toggle")) {
+            plugin.getConfig().set("game.urf.enabled", !abilityManager.urfEnabled());
+            plugin.saveConfig();
+        } else {
+            String percentText = value;
+            if ((value.equalsIgnoreCase("percent") || value.equalsIgnoreCase("rate") || value.equalsIgnoreCase("배율"))
+                && args.length >= 3) {
+                percentText = args[2];
+            }
+            Integer percent = parsePercent(percentText);
+            if (percent == null) {
+                plugin.messages().send(sender, "&e/godwar urf <on|off|toggle|20%>");
+                return;
+            }
+            abilityManager.setUrfCooldownPercent(percent.intValue());
+        }
+
+        gameManager.refreshAllPlayerDisplays();
+        plugin.messages().send(sender, "&a우르프 설정: " + urfStatus());
+    }
+
     private void start(CommandSender sender) {
         try {
             gameManager.start();
@@ -357,7 +458,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         }
         AbilityDefinition ability = null;
         if (args.length >= 2) {
-            ability = abilityManager.registry().get(args[1]);
+            ability = abilityByToken(args[1]);
             if (ability == null) {
                 plugin.messages().send(sender, "&c능력을 찾을 수 없습니다.");
                 return;
@@ -421,6 +522,86 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         line(sender);
     }
 
+    private void teamInfo(CommandSender sender, String[] args) {
+        GodTeam team = null;
+        if (args.length >= 2) {
+            team = GodTeam.parse(args[1]);
+            if (team == null) {
+                plugin.messages().send(sender, "&c팀은 red, blue, green 중 하나여야 합니다.");
+                return;
+            }
+        } else {
+            Player player = asPlayer(sender);
+            if (player != null) {
+                team = gameManager.teamOf(player);
+            }
+        }
+        if (team == null) {
+            plugin.messages().send(sender, "&e소속 팀이 없습니다.");
+            return;
+        }
+        sender.sendMessage(ChatColor.GREEN + "======  " + team.coloredName() + ChatColor.GREEN + "  ======");
+        int count = 0;
+        for (Player player : BukkitCompat.onlinePlayers()) {
+            if (gameManager.teamOf(player) == team) {
+                count++;
+                sender.sendMessage(ChatColor.YELLOW + String.valueOf(count) + ". " + ChatColor.GOLD + player.getName());
+            }
+        }
+        if (count == 0) {
+            plugin.messages().send(sender, "&e해당 팀에 온라인 팀원이 없습니다.");
+        }
+    }
+
+    private void confirmAbility(CommandSender sender) {
+        Player player = asPlayer(sender);
+        if (player == null) {
+            plugin.messages().send(sender, "&c플레이어만 사용할 수 있습니다.");
+            return;
+        }
+        if (gameManager.confirmAbility(player)) {
+            AbilityDefinition ability = abilityManager.get(player);
+            plugin.messages().send(sender, "&a능력을 확정했습니다: &f" + (ability == null ? "없음" : ability.name()));
+            Bukkit.broadcastMessage(ChatColor.DARK_AQUA + player.getName() + ChatColor.WHITE + " 님께서 능력을 확정하셨습니다.");
+            return;
+        }
+        plugin.messages().send(sender, "&e현재 확정할 능력이 없습니다.");
+    }
+
+    private void rerollAbility(CommandSender sender) {
+        Player player = asPlayer(sender);
+        if (player == null) {
+            plugin.messages().send(sender, "&c플레이어만 사용할 수 있습니다.");
+            return;
+        }
+        AbilityDefinition ability = gameManager.rerollAbility(player);
+        if (ability == null) {
+            plugin.messages().send(sender, "&e현재 다시 뽑을 능력이 없습니다.");
+            return;
+        }
+        plugin.messages().send(sender, "&a능력을 새로 뽑았습니다: &f" + ability.name());
+        Bukkit.broadcastMessage(ChatColor.DARK_AQUA + player.getName() + ChatColor.WHITE + " 님께서 능력을 확정하셨습니다.");
+    }
+
+    private void clearCooldowns(CommandSender sender, String[] args) {
+        Player target = args.length >= 2 ? Bukkit.getPlayer(args[1]) : asPlayer(sender);
+        if (target == null) {
+            if (sender.hasPermission("newgodwar.admin")) {
+                abilityManager.clearAllCooldowns();
+                plugin.messages().send(sender, "&a모든 능력 쿨타임을 초기화했습니다.");
+                return;
+            }
+            plugin.messages().send(sender, "&c대상 플레이어를 찾을 수 없습니다.");
+            return;
+        }
+        if (!target.equals(sender) && !sender.hasPermission("newgodwar.admin")) {
+            plugin.messages().send(sender, "&c다른 플레이어의 쿨타임은 관리자만 초기화할 수 있습니다.");
+            return;
+        }
+        abilityManager.clearCooldowns(target);
+        plugin.messages().send(sender, "&a쿨타임을 초기화했습니다.");
+    }
+
     private void listAssignedAbilities(CommandSender sender) {
         boolean found = false;
         for (Player player : BukkitCompat.onlinePlayers()) {
@@ -463,7 +644,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             return;
         }
         Player target = Bukkit.getPlayer(args[1]);
-        AbilityDefinition ability = abilityManager.registry().get(args[2]);
+        AbilityDefinition ability = abilityByToken(args[2]);
         if (target == null || ability == null) {
             plugin.messages().send(sender, "&c플레이어 또는 능력을 찾을 수 없습니다.");
             return;
@@ -478,11 +659,71 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             plugin.messages().send(sender, "&c권한이 없습니다.");
             return;
         }
+        if (args.length < 2 || args[1].equalsIgnoreCase("help")) {
+            sender.sendMessage(ChatColor.YELLOW + "/t a help " + ChatColor.WHITE + "모든 능력 ID를 확인합니다.");
+            sender.sendMessage(ChatColor.YELLOW + "/t a random " + ChatColor.WHITE + "온라인 참가자에게 랜덤 능력을 배정합니다.");
+            sender.sendMessage(ChatColor.YELLOW + "/t a remove <player> " + ChatColor.WHITE + "해당 플레이어의 능력을 삭제합니다.");
+            sender.sendMessage(ChatColor.YELLOW + "/t a reset " + ChatColor.WHITE + "모든 능력을 초기화합니다.");
+            sender.sendMessage(ChatColor.YELLOW + "/t a skip " + ChatColor.WHITE + "능력 확정을 강제로 넘깁니다.");
+            sender.sendMessage(ChatColor.YELLOW + "/t a cutin " + ChatColor.WHITE + "진행 중 게임에 중간 참여합니다.");
+            sender.sendMessage(ChatColor.YELLOW + "/t a <ability|number> <player> " + ChatColor.WHITE + "능력을 지정합니다.");
+            listAbilities(sender);
+            return;
+        }
+        if (args[1].equalsIgnoreCase("random")) {
+            for (Player player : BukkitCompat.onlinePlayers()) {
+                if (gameManager.teamOf(player) != null && !gameManager.isObserver(player)) {
+                    abilityManager.assignRandom(player);
+                }
+            }
+            gameManager.refreshAllPlayerDisplays();
+            Bukkit.broadcastMessage(plugin.messages().prefix() + ChatColor.AQUA + "관리자가 참가자 능력을 랜덤으로 배정했습니다.");
+            return;
+        }
+        if (args[1].equalsIgnoreCase("reset")) {
+            abilityManager.clear();
+            gameManager.refreshAllPlayerDisplays();
+            Bukkit.broadcastMessage(plugin.messages().prefix() + ChatColor.AQUA + "관리자가 모든 능력을 초기화했습니다.");
+            return;
+        }
+        if (args[1].equalsIgnoreCase("skip")) {
+            int skipped = gameManager.skipAbilitySelection();
+            Bukkit.broadcastMessage(plugin.messages().prefix() + ChatColor.YELLOW + "능력 확정 대기를 종료했습니다. 대상: " + skipped + "명");
+            return;
+        }
+        if (args[1].equalsIgnoreCase("cutin")) {
+            Player player = asPlayer(sender);
+            if (player == null) {
+                plugin.messages().send(sender, "&c플레이어만 사용할 수 있습니다.");
+                return;
+            }
+            try {
+                AbilityDefinition ability = gameManager.joinMidGame(player, null);
+                plugin.messages().send(sender, "&a중간 참여했습니다. 능력: &f" + ability.name());
+            } catch (IllegalStateException ex) {
+                plugin.messages().send(sender, "&c" + ex.getMessage());
+            }
+            return;
+        }
+        if (args[1].equalsIgnoreCase("remove")) {
+            if (args.length < 3) {
+                plugin.messages().send(sender, "&e/t a remove <player>");
+                return;
+            }
+            Player target = Bukkit.getPlayer(args[2]);
+            if (target == null || abilityManager.get(target) == null) {
+                plugin.messages().send(sender, "&c플레이어 또는 능력을 찾을 수 없습니다.");
+                return;
+            }
+            abilityManager.remove(target);
+            plugin.messages().send(sender, "&a능력을 삭제했습니다.");
+            return;
+        }
         if (args.length < 3) {
             plugin.messages().send(sender, "&e/t a <ability> <player>");
             return;
         }
-        AbilityDefinition ability = abilityManager.registry().get(args[1]);
+        AbilityDefinition ability = abilityByToken(args[1]);
         Player target = Bukkit.getPlayer(args[2]);
         if (target == null || ability == null) {
             plugin.messages().send(sender, "&c플레이어 또는 능력을 찾을 수 없습니다.");
@@ -595,6 +836,30 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         plugin.messages().send(sender, "&a처리했습니다.");
     }
 
+    private void observer(CommandSender sender, String[] args) {
+        if (args.length >= 2 && args[1].equalsIgnoreCase("list")) {
+            sender.sendMessage(ChatColor.DARK_AQUA + "옵저버 목록");
+            boolean found = false;
+            for (Player player : BukkitCompat.onlinePlayers()) {
+                if (gameManager.isObserver(player)) {
+                    found = true;
+                    sender.sendMessage(ChatColor.GRAY + "  " + player.getName());
+                }
+            }
+            if (!found) {
+                plugin.messages().send(sender, "&e아무도 옵저버가 아닙니다.");
+            }
+            return;
+        }
+        Player player = asPlayer(sender);
+        if (player == null) {
+            plugin.messages().send(sender, "&c플레이어만 사용할 수 있습니다.");
+            return;
+        }
+        boolean enabled = gameManager.toggleObserver(player);
+        plugin.messages().send(sender, enabled ? "&a옵저버 모드가 켜졌습니다." : "&a옵저버 모드가 해제되었습니다.");
+    }
+
     private void openSettings(CommandSender sender) {
         Player player = asPlayer(sender);
         if (player == null) {
@@ -611,7 +876,11 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             && !sub.equals("status")
             && !sub.equals("join")
             && !sub.equals("leave")
-            && !sub.equals("midjoin");
+            && !sub.equals("midjoin")
+            && !sub.equals("info")
+            && !sub.equals("yes")
+            && !sub.equals("no")
+            && !sub.equals("gamble");
     }
 
     private Player asPlayer(CommandSender sender) {
@@ -638,9 +907,16 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
                 values.add("black");
                 values.add("d");
                 values.add("dia");
+                values.add("info");
+                values.add("observer");
                 values.add("s");
                 values.add("set");
+                values.add("spawn");
                 values.add("t");
+                values.add("yes");
+                values.add("no");
+                values.add("clear");
+                values.add("con");
             }
             return startsWith(values, args[0]);
         }
@@ -661,7 +937,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
                 return startsWith(players, args[2]);
             }
         }
-        if (args.length == 2 && (sub.equals("join") || sub.equals("settemple"))) {
+        if (args.length == 2 && (sub.equals("join") || sub.equals("settemple") || sub.equals("setspawn") || sub.equals("info"))) {
             return startsWith(Arrays.asList("red", "blue", "green"), args[1]);
         }
         if (args.length == 2 && sub.equals("midjoin")) {
@@ -694,6 +970,13 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         }
         if (args.length == 2 && sub.equals("gamerule")) {
             return startsWith(Arrays.asList("apply", "restore"), args[1]);
+        }
+        if (args.length == 2 && sub.equals("urf")) {
+            return startsWith(Arrays.asList("on", "off", "toggle", "20%", "50%", "100%", "percent"), args[1]);
+        }
+        if (args.length == 3 && sub.equals("urf")
+            && (args[1].equalsIgnoreCase("percent") || args[1].equalsIgnoreCase("rate") || args[1].equalsIgnoreCase("배율"))) {
+            return startsWith(Arrays.asList("0%", "20%", "50%", "100%"), args[2]);
         }
         if (args.length == 2 && sub.equals("test")) {
             List<String> abilities = new ArrayList<String>();
@@ -738,6 +1021,45 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         return cost <= 0 ? "없음" : cost + "개";
     }
 
+    private Integer parsePercent(String text) {
+        if (text == null) {
+            return null;
+        }
+        String normalized = text.trim();
+        if (normalized.endsWith("%")) {
+            normalized = normalized.substring(0, normalized.length() - 1).trim();
+        }
+        try {
+            return Integer.valueOf((int) Math.round(Double.parseDouble(normalized)));
+        } catch (NumberFormatException ex) {
+            return null;
+        }
+    }
+
+    private AbilityDefinition abilityByToken(String token) {
+        AbilityDefinition byId = abilityManager.registry().get(token);
+        if (byId != null) {
+            return byId;
+        }
+        try {
+            int code = Integer.parseInt(token);
+            int index = 1;
+            for (AbilityDefinition ability : abilityManager.registry().all()) {
+                if (index == code) {
+                    return ability;
+                }
+                index++;
+            }
+        } catch (NumberFormatException ignored) {
+        }
+        for (AbilityDefinition ability : abilityManager.registry().all()) {
+            if (ability.name().equalsIgnoreCase(token)) {
+                return ability;
+            }
+        }
+        return null;
+    }
+
     private String normalizeSubcommand(String sub, boolean themachyLabel) {
         String lower = sub == null ? "" : sub.toLowerCase();
         if (!themachyLabel) {
@@ -751,6 +1073,18 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         }
         if (lower.equals("dia") || lower.equals("d")) {
             return "settemple";
+        }
+        if (lower.equals("spawn") || lower.equals("s")) {
+            return "setspawn";
+        }
+        if (lower.equals("info") || lower.equals("i")) {
+            return "info";
+        }
+        if (lower.equals("clear") || lower.equals("c")) {
+            return "clear";
+        }
+        if (lower.equals("con")) {
+            return "gamble";
         }
         if (lower.equals("set")) {
             return "settings";
