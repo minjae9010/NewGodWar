@@ -19,6 +19,7 @@ import java.util.List;
     description = "낙하 피해를 무시하고 크게 도약합니다.",
     normalSkill = "바라보는 방향으로 크게 도약합니다.",
     normalStoneCost = 2,
+    normalCooldownSeconds = 10,
     advancedSkill = "없음",
     advancedStoneCost = 0,
     passiveSkill = "낙하 피해를 무시합니다."
@@ -26,7 +27,7 @@ import java.util.List;
 final class NaroAbility extends BaseAbility {
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
-        if (use(context, player, 0, COBBLESTONE, 2, 10)) {
+        if (useNormal(context, player, 0)) {
             Vector vector = player.getEyeLocation().getDirection();
             vector.setY(3.0D);
             player.setVelocity(vector);

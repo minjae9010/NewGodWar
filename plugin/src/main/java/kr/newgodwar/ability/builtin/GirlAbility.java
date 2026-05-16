@@ -19,6 +19,7 @@ import java.util.List;
     description = "주변 적을 끌어와 굶주리게 합니다.",
     normalSkill = "주변 적을 끌어오고 허기를 0으로 만듭니다.",
     normalStoneCost = 15,
+    normalCooldownSeconds = 60,
     advancedSkill = "없음",
     advancedStoneCost = 0,
     passiveSkill = "없음"
@@ -26,7 +27,7 @@ import java.util.List;
 final class GirlAbility extends BaseAbility {
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
-        if (use(context, player, 0, COBBLESTONE, 15, 60)) {
+        if (useNormal(context, player, 0)) {
             for (Player target : nearbyPlayers(context, player, 5, false)) {
                 target.teleport(player);
                 target.setFoodLevel(0);

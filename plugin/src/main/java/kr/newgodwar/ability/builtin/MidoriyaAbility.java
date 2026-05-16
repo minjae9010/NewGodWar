@@ -19,6 +19,7 @@ import java.util.List;
     description = "원 포 올을 준비한 뒤 맨손 공격으로 큰 피해를 줍니다.",
     normalSkill = "원 포 올을 준비합니다.",
     normalStoneCost = 50,
+    normalCooldownSeconds = 150,
     advancedSkill = "없음",
     advancedStoneCost = 0,
     passiveSkill = "준비 후 맨손 공격 시 큰 피해와 자기 디버프를 발생시킵니다."
@@ -26,7 +27,7 @@ import java.util.List;
 final class MidoriyaAbility extends BaseAbility {
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
-        if (has(player, COBBLESTONE, cost(context, 50)) && readyCooldown(player, 0, 150)) {
+        if (hasNormalCost(context, player) && readyNormal(context, player, 0)) {
             ready = true;
             player.sendMessage(ChatColor.YELLOW + "원" + ChatColor.GREEN + " 포 " + ChatColor.AQUA + "올" + ChatColor.WHITE + "이 준비되었습니다!");
         }
@@ -35,7 +36,7 @@ final class MidoriyaAbility extends BaseAbility {
     @Override
     public void onDamageByEntity(AbilityPlayerContext context, EntityDamageByEntityEvent event, Player opponent, boolean attacker) {
         Player player = context.player();
-        if (attacker && ready && player.getItemInHand().getType() == Material.AIR && use(context, player, 0, COBBLESTONE, 50, 150)) {
+        if (attacker && ready && player.getItemInHand().getType() == Material.AIR && useNormal(context, player, 0)) {
             ready = false;
             event.setDamage(200.0D);
             effect(player, PotionEffectType.CONFUSION, 10, 0);

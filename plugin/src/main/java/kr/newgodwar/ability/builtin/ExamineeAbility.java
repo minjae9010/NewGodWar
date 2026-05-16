@@ -19,6 +19,7 @@ import java.util.List;
     description = "수학 문제를 맞히면 무작위 능력으로 바뀝니다.",
     normalSkill = "수학 문제를 출제합니다.",
     normalStoneCost = 5,
+    normalCooldownSeconds = 60,
     advancedSkill = "없음",
     advancedStoneCost = 0,
     passiveSkill = "채팅으로 정답을 맞히면 무작위 능력으로 바뀝니다."
@@ -26,7 +27,7 @@ import java.util.List;
 final class ExamineeAbility extends BaseAbility {
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
-        if (use(context, player, 0, COBBLESTONE, 5, 60)) {
+        if (useNormal(context, player, 0)) {
             askQuestion(player);
         }
     }

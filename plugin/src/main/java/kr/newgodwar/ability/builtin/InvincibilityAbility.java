@@ -19,14 +19,16 @@ import java.util.List;
     description = "잠시 무적이 되거나 재생 효과를 얻습니다.",
     normalSkill = "잠시 모든 피해를 무시합니다.",
     normalStoneCost = 30,
+    normalCooldownSeconds = 50,
     advancedSkill = "재생 효과를 얻습니다.",
     advancedStoneCost = 50,
+    advancedCooldownSeconds = 90,
     passiveSkill = "무적 상태일 때 피해를 취소합니다."
 )
 final class InvincibilityAbility extends BaseAbility {
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
-        if (use(context, player, 1, COBBLESTONE, 30, 50)) {
+        if (useNormal(context, player)) {
             invincible = true;
             later(context, 7, new Runnable() {
                 @Override
@@ -39,7 +41,7 @@ final class InvincibilityAbility extends BaseAbility {
 
     @Override
     protected void onStaffRight(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
-        if (use(context, player, 2, COBBLESTONE, 50, 90)) {
+        if (useAdvanced(context, player)) {
             effect(player, PotionEffectType.REGENERATION, 25, 0);
         }
     }

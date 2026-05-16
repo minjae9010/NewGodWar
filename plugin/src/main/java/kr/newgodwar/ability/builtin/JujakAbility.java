@@ -19,6 +19,7 @@ import java.util.List;
     description = "화염 피해를 무시하고 짧게 비행합니다.",
     normalSkill = "잠시 비행합니다.",
     normalStoneCost = 15,
+    normalCooldownSeconds = 80,
     advancedSkill = "없음",
     advancedStoneCost = 0,
     passiveSkill = "화염 피해를 무시하고 익사 피해가 증가합니다."
@@ -26,7 +27,7 @@ import java.util.List;
 final class JujakAbility extends BaseAbility {
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
-        if (use(context, player, 0, COBBLESTONE, 15, 80)) {
+        if (useNormal(context, player, 0)) {
             fly(context, player, 12);
         }
     }

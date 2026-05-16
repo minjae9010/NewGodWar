@@ -19,21 +19,23 @@ import java.util.List;
     description = "화살과 활을 만들며 화살로 즉사 확률을 가집니다.",
     normalSkill = "화살을 생성합니다.",
     normalStoneCost = 7,
+    normalCooldownSeconds = 20,
     advancedSkill = "활을 생성합니다.",
     advancedStoneCost = 15,
+    advancedCooldownSeconds = 180,
     passiveSkill = "화살 적중 시 확률로 큰 피해를 줍니다."
 )
 final class ArtemisAbility extends BaseAbility {
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
-        if (use(context, player, 1, COBBLESTONE, 7, 20)) {
+        if (useNormal(context, player)) {
             give(player, Material.ARROW, 1);
         }
     }
 
     @Override
     protected void onStaffRight(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
-        if (use(context, player, 2, COBBLESTONE, 15, 180)) {
+        if (useAdvanced(context, player)) {
             give(player, Material.BOW, 1);
         }
     }

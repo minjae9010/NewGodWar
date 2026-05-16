@@ -19,6 +19,7 @@ import java.util.List;
     description = "투명화 후 공격 시 확률로 즉사시킵니다.",
     normalSkill = "잠시 투명화합니다.",
     normalStoneCost = 25,
+    normalCooldownSeconds = 60,
     advancedSkill = "없음",
     advancedStoneCost = 0,
     passiveSkill = "투명화 중 공격 시 확률로 큰 피해를 줍니다."
@@ -33,7 +34,7 @@ final class ClockingAbility extends BaseAbility {
 
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
-        if (use(context, player, 0, COBBLESTONE, 25, 60)) {
+        if (useNormal(context, player, 0)) {
             invisible = true;
             effect(player, PotionEffectType.INVISIBILITY, 7, 0);
             later(context, 7, new Runnable() {

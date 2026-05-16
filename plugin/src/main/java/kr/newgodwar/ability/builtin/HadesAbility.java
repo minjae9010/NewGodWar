@@ -19,8 +19,10 @@ import java.util.List;
     description = "주변 생물을 나락으로 떨어뜨리고 사망 시 확률로 아이템을 보존합니다.",
     normalSkill = "주변 생물과 자신을 나락으로 떨어뜨립니다.",
     normalStoneCost = 20,
+    normalCooldownSeconds = 100,
     advancedSkill = "더 넓은 범위의 주변 생물을 나락으로 떨어뜨립니다.",
     advancedStoneCost = 35,
+    advancedCooldownSeconds = 150,
     passiveSkill = "사망 시 확률로 인벤토리와 방어구를 보존합니다."
 )
 final class HadesAbility extends BaseAbility {
@@ -29,14 +31,14 @@ final class HadesAbility extends BaseAbility {
 
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
-        if (use(context, player, 1, COBBLESTONE, 20, 100)) {
+        if (useNormal(context, player)) {
             abyss(player, 2, true);
         }
     }
 
     @Override
     protected void onStaffRight(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
-        if (use(context, player, 2, COBBLESTONE, 35, 150)) {
+        if (useAdvanced(context, player)) {
             abyss(player, 4, false);
         }
     }

@@ -19,6 +19,7 @@ import java.util.List;
     description = "팻말로 대상을 연결해 원격 피해를 줍니다.",
     normalSkill = "팻말 첫 줄에 대상 이름을 적어 연결합니다.",
     normalStoneCost = 5,
+    normalCooldownSeconds = 180,
     advancedSkill = "없음",
     advancedStoneCost = 0,
     passiveSkill = "연결은 잠시 유지되며 팻말이 자동 제거됩니다."
@@ -37,7 +38,7 @@ final class VoodooAbility extends BaseAbility {
         }
         if (postSign == null && holding(context.player(), Material.SIGN) && isLeft(event.getAction())) {
             Player player = context.player();
-            if (readyCooldown(player, 0, 180) && has(player, COBBLESTONE, cost(context, 5))) {
+            if (readyNormal(context, player, 0) && hasNormalCost(context, player)) {
                 player.sendMessage("스킬을 사용 할 수 있습니다.");
             }
         }
@@ -45,7 +46,7 @@ final class VoodooAbility extends BaseAbility {
 
     @Override
     public void onBlockPlace(AbilityPlayerContext context, BlockPlaceEvent event) {
-        if (event.getBlock().getType() == Material.SIGN && (!readyCooldown(context.player(), 0, 180) || !has(context.player(), COBBLESTONE, cost(context, 5)))) {
+        if (event.getBlock().getType() == Material.SIGN && (!readyNormal(context, context.player(), 0) || !hasNormalCost(context, context.player()))) {
             event.setCancelled(true);
         }
     }
@@ -53,7 +54,7 @@ final class VoodooAbility extends BaseAbility {
     @Override
     public void onSignChange(final AbilityPlayerContext context, SignChangeEvent event) {
         Player target = Bukkit.getPlayer(event.getLine(0));
-        if (target != null && use(context, context.player(), 0, COBBLESTONE, 5, 180)) {
+        if (target != null && useNormal(context, context.player(), 0)) {
             targetName = target.getName();
             postSign = event.getBlock();
             final Block sign = postSign;

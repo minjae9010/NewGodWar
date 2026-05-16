@@ -28,7 +28,7 @@ final class MeguminAbility extends BaseAbility {
 
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, final Player player, PlayerInteractEvent event) {
-        if (oneTimeUsed || !use(context, player, 0, COBBLESTONE, 25, 0)) {
+        if (oneTimeUsed || !useNormal(context, player, 0)) {
             return;
         }
         oneTimeUsed = true;

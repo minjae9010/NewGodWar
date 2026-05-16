@@ -33,7 +33,7 @@ final class SnowAbility extends BaseAbility {
 
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
-        if (use(context, player, 0, COBBLESTONE, 1, 0)) {
+        if (useNormal(context, player, 0)) {
             give(player, Material.SNOW_BALL, 1);
         }
     }

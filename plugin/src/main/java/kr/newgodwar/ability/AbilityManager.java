@@ -220,14 +220,15 @@ public final class AbilityManager {
         player.sendMessage(ChatColor.GOLD + "" + ChatColor.BOLD + "능력이 배정되었습니다: "
             + ChatColor.WHITE + definition.name() + ChatColor.DARK_GRAY + " (" + definition.id() + ")");
         player.sendMessage(ChatColor.GRAY + "설명: " + ChatColor.YELLOW + definition.description());
-        player.sendMessage(ChatColor.GRAY + "일반: " + ChatColor.WHITE + skillLine(definition.normalSkill(), definition.normalStoneCost()));
-        player.sendMessage(ChatColor.GRAY + "고급: " + ChatColor.WHITE + skillLine(definition.advancedSkill(), definition.advancedStoneCost()));
+        player.sendMessage(ChatColor.GRAY + "일반: " + ChatColor.WHITE + skillLine(definition.normalSkill(), definition.normalStoneCost(), definition.normalCooldown()));
+        player.sendMessage(ChatColor.GRAY + "고급: " + ChatColor.WHITE + skillLine(definition.advancedSkill(), definition.advancedStoneCost(), definition.advancedCooldown()));
         player.sendMessage(ChatColor.GRAY + "패시브: " + ChatColor.WHITE + emptySkill(definition.passiveSkill()));
         player.sendMessage(ChatColor.DARK_GRAY + "/a 또는 /t help 로 다시 확인할 수 있습니다.");
     }
 
-    private String skillLine(String skill, int stoneCost) {
-        return emptySkill(skill) + ChatColor.DARK_GRAY + " / 조약돌 " + stoneCost(stoneCost);
+    private String skillLine(String skill, int stoneCost, String cooldown) {
+        return emptySkill(skill) + ChatColor.DARK_GRAY + " / 조약돌 " + stoneCost(stoneCost)
+            + ChatColor.DARK_GRAY + " / 쿨타임 " + cooldown(cooldown);
     }
 
     private String emptySkill(String skill) {
@@ -236,6 +237,10 @@ public final class AbilityManager {
 
     private String stoneCost(int cost) {
         return cost <= 0 ? "없음" : cost + "개";
+    }
+
+    private String cooldown(String cooldown) {
+        return cooldown == null || cooldown.trim().length() == 0 ? "없음" : cooldown;
     }
 
     public void handleDamage(Player damager, Player victim, EntityDamageByEntityEvent event) {

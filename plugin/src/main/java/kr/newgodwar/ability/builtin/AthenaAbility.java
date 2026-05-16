@@ -19,8 +19,10 @@ import java.util.List;
     description = "책과 인챈트 테이블을 만들고 사망자를 통해 경험을 얻습니다.",
     normalSkill = "책을 생성합니다.",
     normalStoneCost = 5,
+    normalCooldownSeconds = 10,
     advancedSkill = "제한 횟수 안에서 인챈트 테이블을 생성합니다.",
     advancedStoneCost = 64,
+    advancedCooldownSeconds = -1,
     passiveSkill = "다른 플레이어가 사망하면 경험 레벨을 얻습니다."
 )
 final class AthenaAbility extends BaseAbility {
@@ -28,7 +30,7 @@ final class AthenaAbility extends BaseAbility {
 
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
-        if (use(context, player, 1, COBBLESTONE, 5, 10)) {
+        if (useNormal(context, player)) {
             give(player, Material.BOOK, 3);
         }
     }

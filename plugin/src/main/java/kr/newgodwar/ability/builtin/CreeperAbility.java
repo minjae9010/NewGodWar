@@ -19,6 +19,7 @@ import java.util.List;
     description = "자폭하고 번개를 맞으면 폭발력이 달라집니다.",
     normalSkill = "자폭 폭발을 일으킵니다.",
     normalStoneCost = 20,
+    normalCooldownSeconds = 60,
     advancedSkill = "없음",
     advancedStoneCost = 0,
     passiveSkill = "번개를 맞으면 다음 자폭 폭발력이 증가합니다."
@@ -28,7 +29,7 @@ final class CreeperAbility extends BaseAbility {
 
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
-        if (use(context, player, 0, COBBLESTONE, 20, 60)) {
+        if (useNormal(context, player, 0)) {
             player.getWorld().createExplosion(player.getLocation(), plasma ? 6.0F : 3.0F);
             player.setHealth(0.0D);
         }

@@ -19,21 +19,23 @@ import java.util.List;
     description = "아군에게 바람의 축복을 주거나 적을 밀쳐냅니다.",
     normalSkill = "주변 아군에게 신속과 재생을 부여합니다.",
     normalStoneCost = 10,
+    normalCooldownSeconds = 60,
     advancedSkill = "주변 적을 밀쳐내고 약화/감속을 부여합니다.",
     advancedStoneCost = 20,
+    advancedCooldownSeconds = 150,
     passiveSkill = "없음"
 )
 final class AeolusAbility extends BaseAbility {
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
-        if (use(context, player, 1, COBBLESTONE, 10, 60)) {
+        if (useNormal(context, player)) {
             teamBuff(context, player);
         }
     }
 
     @Override
     protected void onStaffRight(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
-        if (use(context, player, 2, COBBLESTONE, 20, 150)) {
+        if (useAdvanced(context, player)) {
             List<Player> targets = nearbyPlayers(context, player, 10, false);
             push(player, targets, 2.4D);
             for (Player target : targets) {

@@ -19,21 +19,23 @@ import java.util.List;
     description = "활 피해 대신 독을 부여합니다.",
     normalSkill = "화살을 생성합니다.",
     normalStoneCost = 5,
+    normalCooldownSeconds = 20,
     advancedSkill = "활을 생성합니다.",
     advancedStoneCost = 15,
+    advancedCooldownSeconds = 60,
     passiveSkill = "화살 피해 대신 독을 부여합니다."
 )
 final class AcidArcherAbility extends BaseAbility {
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
-        if (use(context, player, 1, COBBLESTONE, 5, 20)) {
+        if (useNormal(context, player)) {
             give(player, Material.ARROW, 1);
         }
     }
 
     @Override
     protected void onStaffRight(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
-        if (use(context, player, 2, COBBLESTONE, 15, 60)) {
+        if (useAdvanced(context, player)) {
             give(player, Material.BOW, 1);
         }
     }

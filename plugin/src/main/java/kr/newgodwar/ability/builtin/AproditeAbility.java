@@ -19,6 +19,7 @@ import java.util.List;
     description = "주변 플레이어를 자신의 위치로 끌어옵니다.",
     normalSkill = "주변 플레이어를 자신의 위치로 끌어옵니다.",
     normalStoneCost = 20,
+    normalCooldownSeconds = 100,
     advancedSkill = "없음",
     advancedStoneCost = 0,
     passiveSkill = "없음"
@@ -26,7 +27,7 @@ import java.util.List;
 final class AproditeAbility extends BaseAbility {
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
-        if (use(context, player, 0, COBBLESTONE, 20, 100)) {
+        if (useNormal(context, player, 0)) {
             pullAll(player, 20);
         }
     }

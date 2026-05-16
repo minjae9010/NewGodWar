@@ -49,7 +49,7 @@ final class SniperAbility extends BaseAbility {
 
     @Override
     public void onProjectileLaunch(AbilityPlayerContext context, ProjectileLaunchEvent event) {
-        if (ready && event.getEntity() instanceof Arrow && use(context, context.player(), 0, COBBLESTONE, 5, 50)) {
+        if (ready && event.getEntity() instanceof Arrow && useNormal(context, context.player(), 0)) {
             ready = false;
             event.getEntity().setVelocity(context.player().getEyeLocation().getDirection().multiply(20));
         }

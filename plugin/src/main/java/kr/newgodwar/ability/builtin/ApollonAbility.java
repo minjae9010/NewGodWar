@@ -19,14 +19,16 @@ import java.util.List;
     description = "태양을 띄우고 주변 적을 불태웁니다.",
     normalSkill = "시간을 낮으로 바꿉니다.",
     normalStoneCost = 1,
+    normalCooldownSeconds = 30,
     advancedSkill = "햇빛 아래 주변 적을 불태우고 피해를 줍니다.",
     advancedStoneCost = 15,
+    advancedCooldownSeconds = 90,
     passiveSkill = "없음"
 )
 final class ApollonAbility extends BaseAbility {
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
-        if (use(context, player, 1, COBBLESTONE, 1, 30)) {
+        if (useNormal(context, player)) {
             player.getWorld().setTime(6000);
             Bukkit.broadcastMessage(ChatColor.YELLOW + "태양의 신이 해를 띄웠습니다.");
         }
@@ -34,7 +36,7 @@ final class ApollonAbility extends BaseAbility {
 
     @Override
     protected void onStaffRight(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
-        if (use(context, player, 2, COBBLESTONE, 15, 90)) {
+        if (useAdvanced(context, player)) {
             player.getWorld().setTime(6000);
             for (Player target : nearbyPlayers(context, player, 15, false)) {
                 if (target.getLocation().getBlock().getLightFromSky() > 10) {

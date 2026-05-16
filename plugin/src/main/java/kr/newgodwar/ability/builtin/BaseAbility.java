@@ -86,9 +86,11 @@ abstract class BaseAbility implements GodAbility {
     protected boolean use(AbilityPlayerContext context, Player player, int slot, Material material, int amount, int cooldownSeconds) {
         int realCost = material == COBBLESTONE ? cost(context, amount) : amount;
         if (!readyCooldown(player, slot, cooldownSeconds)) {
+            refreshDisplay(context);
             return false;
         }
         if (!has(player, material, realCost)) {
+            refreshDisplay(context);
             return false;
         }
         if (realCost > 0) {
@@ -99,13 +101,59 @@ abstract class BaseAbility implements GodAbility {
         return true;
     }
 
+    protected boolean useNormal(AbilityPlayerContext context, Player player) {
+        return useNormal(context, player, 1);
+    }
+
+    protected boolean useNormal(AbilityPlayerContext context, Player player, int slot) {
+        return use(context, player, slot, COBBLESTONE, context.ability().normalStoneCost(), context.ability().normalCooldownSeconds());
+    }
+
+    protected boolean useAdvanced(AbilityPlayerContext context, Player player) {
+        return useAdvanced(context, player, 2);
+    }
+
+    protected boolean useAdvanced(AbilityPlayerContext context, Player player, int slot) {
+        return use(context, player, slot, COBBLESTONE, context.ability().advancedStoneCost(), context.ability().advancedCooldownSeconds());
+    }
+
+    protected boolean readyNormal(AbilityPlayerContext context, Player player, int slot) {
+        return readyCooldown(player, slot, context.ability().normalCooldownSeconds());
+    }
+
+    protected boolean hasNormalCost(AbilityPlayerContext context, Player player) {
+        return has(player, COBBLESTONE, cost(context, context.ability().normalStoneCost()));
+    }
+
+    protected void takeNormalCost(AbilityPlayerContext context, Player player) {
+        int realCost = cost(context, context.ability().normalStoneCost());
+        if (realCost > 0) {
+            player.getInventory().removeItem(new ItemStack(COBBLESTONE, realCost));
+        }
+    }
+
     protected void setCooldown(AbilityPlayerContext context, int slot, int cooldownSeconds) {
         cooldowns.put(slot, System.currentTimeMillis() + context.plugin().abilities().scaleCooldownMillis(cooldownSeconds * 1000L));
-        context.plugin().game().refreshPlayerDisplay(context.player());
+        refreshDisplay(context);
     }
 
     protected void setRawCooldown(int slot, long millis) {
         cooldowns.put(slot, System.currentTimeMillis() + millis);
+    }
+
+    protected void setRawCooldown(AbilityPlayerContext context, int slot, long millis) {
+        cooldowns.put(slot, System.currentTimeMillis() + millis);
+        refreshDisplay(context);
+    }
+
+    private void refreshDisplay(final AbilityPlayerContext context) {
+        context.plugin().game().refreshPlayerDisplay(context.player());
+        Bukkit.getScheduler().runTask(context.plugin(), new Runnable() {
+            @Override
+            public void run() {
+                context.plugin().game().refreshPlayerDisplay(context.player());
+            }
+        });
     }
 
     @Override
@@ -306,7 +354,7 @@ abstract class BaseAbility implements GodAbility {
     protected void lava(Player player, AbilityPlayerContext context) {
         Block base = targetBlock(player, 5);
         final Block block = base.getLocation().add(0, 1, 0).getBlock();
-        if (block.getType() == Material.AIR && use(context, player, 0, COBBLESTONE, 1, 10)) {
+        if (block.getType() == Material.AIR && useNormal(context, player, 0)) {
             block.setType(Material.LAVA);
             later(context, 2, new Runnable() {
                 @Override
@@ -515,19 +563,19 @@ abstract class BaseAbility implements GodAbility {
     protected void castSpell(AbilityPlayerContext context, String spell, boolean harry) {
         final Player player = context.player();
         if (spell.equals("루모스") || spell.equalsIgnoreCase("Lumos")) {
-            if (use(context, player, 1, COBBLESTONE, 5, 5)) {
+            if (useNormal(context, player)) {
                 player.getWorld().setTime(1000);
             }
         } else if (spell.equals("녹스") || spell.equalsIgnoreCase("Nox")) {
-            if (use(context, player, 1, COBBLESTONE, 5, 5)) {
+            if (useNormal(context, player)) {
                 player.getWorld().setTime(18000);
             }
         } else if (spell.equals("봄바르다") || spell.equalsIgnoreCase("Bombarda")) {
-            if (use(context, player, 1, COBBLESTONE, 5, 5)) {
+            if (useNormal(context, player)) {
                 player.getWorld().createExplosion(targetLocation(player, 5), 1.0F);
             }
         } else if (spell.equals("스투페파이") || spell.equalsIgnoreCase("Stupefy")) {
-            if (use(context, player, 2, COBBLESTONE, 10, 20)) {
+            if (useAdvanced(context, player)) {
                 for (Player target : nearbyPlayers(context, player, 10, false)) {
                     if (RANDOM.nextBoolean()) {
                         effect(target, PotionEffectType.SLOW, 8, harry ? 1 : 2);
@@ -535,7 +583,7 @@ abstract class BaseAbility implements GodAbility {
                 }
             }
         } else if (spell.equals("익스펙토 패트로눔") || spell.equalsIgnoreCase("Expecto Patronum")) {
-            if (use(context, player, 2, COBBLESTONE, 10, 20) && RANDOM.nextInt(4) < (harry ? 3 : 2)) {
+            if (useAdvanced(context, player) && RANDOM.nextInt(4) < (harry ? 3 : 2)) {
                 invincible = true;
                 later(context, 5, new Runnable() {
                     @Override
@@ -546,13 +594,13 @@ abstract class BaseAbility implements GodAbility {
             }
         } else if (spell.equals("엑스펠리아무스") || spell.equalsIgnoreCase("Expelliarmus")) {
             Player target = targetPlayerInSight(context, player, 20, false);
-            if (target != null && use(context, player, 2, COBBLESTONE, 10, 20) && RANDOM.nextInt(100) < (harry ? 25 : 20)) {
+            if (target != null && useAdvanced(context, player) && RANDOM.nextInt(100) < (harry ? 25 : 20)) {
                 target.getInventory().setArmorContents(new ItemStack[] {null, null, null, null});
                 target.setItemInHand(new ItemStack(Material.AIR));
             }
         } else if (spell.equals("아바다 케다브라") || spell.equalsIgnoreCase("Avada Kedavra")) {
             Player target = targetPlayerInSight(context, player, 20, false);
-            if (target != null && use(context, player, 2, COBBLESTONE, 10, 20) && RANDOM.nextInt(100) < (harry ? 20 : 15)) {
+            if (target != null && useAdvanced(context, player) && RANDOM.nextInt(100) < (harry ? 20 : 15)) {
                 target.setHealth(0.0D);
             }
         }

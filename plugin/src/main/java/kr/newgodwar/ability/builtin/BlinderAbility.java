@@ -19,6 +19,7 @@ import java.util.List;
     description = "주변 적이나 공격자에게 실명을 겁니다.",
     normalSkill = "주변 적에게 실명을 겁니다.",
     normalStoneCost = 10,
+    normalCooldownSeconds = 30,
     advancedSkill = "없음",
     advancedStoneCost = 0,
     passiveSkill = "피격 시 확률로 공격자에게 실명을 겁니다."
@@ -26,7 +27,7 @@ import java.util.List;
 final class BlinderAbility extends BaseAbility {
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
-        if (use(context, player, 0, COBBLESTONE, 10, 30)) {
+        if (useNormal(context, player, 0)) {
             for (Player target : nearbyPlayers(context, player, 5, false)) {
                 effect(target, PotionEffectType.BLINDNESS, 8, 0);
             }

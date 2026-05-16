@@ -21,9 +21,13 @@ public @interface AbilityInfo {
 
     int normalStoneCost() default 0;
 
+    int normalCooldownSeconds() default 0;
+
     String advancedSkill() default "";
 
     int advancedStoneCost() default 0;
+
+    int advancedCooldownSeconds() default 0;
 
     String passiveSkill() default "";
 

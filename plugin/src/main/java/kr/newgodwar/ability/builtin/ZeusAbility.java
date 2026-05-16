@@ -19,21 +19,23 @@ import java.util.List;
     description = "번개를 내리고 번개/폭발 피해를 무시합니다.",
     normalSkill = "바라보는 위치에 번개를 내립니다.",
     normalStoneCost = 15,
+    normalCooldownSeconds = 90,
     advancedSkill = "지정 위치 주변에 연속 번개를 내립니다.",
     advancedStoneCost = 25,
+    advancedCooldownSeconds = 150,
     passiveSkill = "번개와 폭발 피해를 무시합니다."
 )
 final class ZeusAbility extends BaseAbility {
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
-        if (use(context, player, 1, COBBLESTONE, 15, 90)) {
+        if (useNormal(context, player)) {
             player.getWorld().strikeLightning(targetLocation(player, 50));
         }
     }
 
     @Override
     protected void onStaffRight(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
-        if (use(context, player, 2, COBBLESTONE, 25, 150)) {
+        if (useAdvanced(context, player)) {
             Location center = targetLocation(player, 30);
             for (int i = 0; i < 5; i++) {
                 player.getWorld().strikeLightning(center.clone().add(RANDOM.nextInt(11) - 5, 0, RANDOM.nextInt(11) - 5));

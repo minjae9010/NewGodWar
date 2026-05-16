@@ -516,8 +516,8 @@ public final class GameManager {
         setLine(objective, 9, ChatColor.YELLOW + "팀 " + (team == null ? ChatColor.GRAY + "미참가" : team.coloredName()));
         setLine(objective, 8, ChatColor.YELLOW + "능력 " + ChatColor.WHITE + (ability == null ? "없음" : ability.name()));
         setLine(objective, 7, ChatColor.DARK_GRAY + " ");
-        setLine(objective, 6, ChatColor.AQUA + "일반 " + cooldownStatus(player, 1));
-        setLine(objective, 5, ChatColor.RED + "고급 " + cooldownStatus(player, 2));
+        setLine(objective, 6, ChatColor.AQUA + "일반 " + cooldownStatus(player, ability, 1));
+        setLine(objective, 5, ChatColor.RED + "고급 " + cooldownStatus(player, ability, 2));
         setLine(objective, 4, ChatColor.GOLD + "능력 " + cooldownStatus(player, 0));
         setLine(objective, 3, ChatColor.DARK_GRAY + "  ");
         setLine(objective, 2, ChatColor.YELLOW + "킬 " + ChatColor.WHITE + killsOf(player));
@@ -580,11 +580,32 @@ public final class GameManager {
 
     private String cooldownStatus(Player player, int slot) {
         long millis = abilityManager.cooldownRemainingMillis(player, slot);
+        return cooldownText(millis);
+    }
+
+    private String cooldownStatus(Player player, AbilityDefinition ability, int slot) {
+        long millis = abilityManager.cooldownRemainingMillis(player, slot);
+        if (millis <= 0L && ability != null) {
+            long shared = abilityManager.cooldownRemainingMillis(player, 0);
+            if (slot == 1 && shared > 0L && hasCooldown(ability.normalCooldown()) && !hasCooldown(ability.advancedCooldown())) {
+                millis = shared;
+            } else if (slot == 2 && shared > 0L && hasCooldown(ability.advancedCooldown()) && !hasCooldown(ability.normalCooldown())) {
+                millis = shared;
+            }
+        }
+        return cooldownText(millis);
+    }
+
+    private String cooldownText(long millis) {
         if (millis <= 0L) {
             return ChatColor.DARK_AQUA + "사용 가능!";
         }
         long seconds = (millis + 999L) / 1000L;
         return ChatColor.WHITE + "" + (seconds / 60L) + "분 " + (seconds % 60L) + "초";
+    }
+
+    private boolean hasCooldown(String cooldown) {
+        return cooldown != null && cooldown.trim().length() > 0 && !"없음".equals(cooldown.trim());
     }
 
     private String state(boolean enabled) {

@@ -19,21 +19,23 @@ import java.util.List;
     description = "아군에게 향락을, 적에게 고통을 부여합니다.",
     normalSkill = "주변 아군에게 신속과 재생을 부여합니다.",
     normalStoneCost = 10,
+    normalCooldownSeconds = 60,
     advancedSkill = "주변 적에게 혼란과 피해를 줍니다.",
     advancedStoneCost = 20,
+    advancedCooldownSeconds = 80,
     passiveSkill = "없음"
 )
 final class AkashaAbility extends BaseAbility {
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
-        if (use(context, player, 1, COBBLESTONE, 10, 60)) {
+        if (useNormal(context, player)) {
             teamBuff(context, player);
         }
     }
 
     @Override
     protected void onStaffRight(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
-        if (use(context, player, 2, COBBLESTONE, 20, 80)) {
+        if (useAdvanced(context, player)) {
             for (Player target : nearbyPlayers(context, player, 10, false)) {
                 effect(target, PotionEffectType.CONFUSION, 6, 0);
                 damage(target, 4.0D, player);

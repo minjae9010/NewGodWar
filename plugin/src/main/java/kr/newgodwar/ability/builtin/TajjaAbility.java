@@ -19,6 +19,7 @@ import java.util.List;
     description = "검을 숨겨 맨손 공격에 검 피해를 싣습니다.",
     normalSkill = "인벤토리의 검 하나를 숨깁니다.",
     normalStoneCost = 10,
+    normalCooldownSeconds = 60,
     advancedSkill = "없음",
     advancedStoneCost = 0,
     passiveSkill = "맨손 공격에 숨긴 검 피해를 제한 횟수만큼 싣습니다."
@@ -29,7 +30,7 @@ final class TajjaAbility extends BaseAbility {
 
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
-        if (use(context, player, 0, COBBLESTONE, 10, 60)) {
+        if (useNormal(context, player, 0)) {
             stealSword(player);
         }
     }

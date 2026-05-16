@@ -19,14 +19,16 @@ import java.util.List;
     description = "바라보는 곳으로 이동하거나 아군과 위치를 바꿉니다.",
     normalSkill = "바라보는 안전한 위치로 이동합니다.",
     normalStoneCost = 15,
+    normalCooldownSeconds = 25,
     advancedSkill = "지정한 아군과 위치를 바꿉니다.",
     advancedStoneCost = 25,
+    advancedCooldownSeconds = 30,
     passiveSkill = "타깃 지정 명령을 사용할 수 있습니다."
 )
 final class TeleporterAbility extends BaseAbility {
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
-        if (use(context, player, 1, COBBLESTONE, 15, 25)) {
+        if (useNormal(context, player)) {
             teleportToTargetBlock(player);
         }
     }
@@ -37,7 +39,7 @@ final class TeleporterAbility extends BaseAbility {
         if (target == null) {
             return;
         }
-        if (use(context, player, 2, COBBLESTONE, 25, 30)) {
+        if (useAdvanced(context, player)) {
             Location first = player.getLocation();
             Location second = target.getLocation();
             player.teleport(second);

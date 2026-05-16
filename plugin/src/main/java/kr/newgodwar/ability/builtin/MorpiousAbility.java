@@ -19,6 +19,7 @@ import java.util.List;
     description = "지정한 적을 수면 상태로 만듭니다.",
     normalSkill = "지정한 적에게 실명과 강한 감속을 부여합니다.",
     normalStoneCost = 20,
+    normalCooldownSeconds = 100,
     advancedSkill = "없음",
     advancedStoneCost = 0,
     passiveSkill = "타깃 지정 명령을 사용할 수 있습니다."
@@ -30,7 +31,7 @@ final class MorpiousAbility extends BaseAbility {
         if (target == null) {
             return;
         }
-        if (use(context, player, 0, COBBLESTONE, 20, 100)) {
+        if (useNormal(context, player, 0)) {
             sleepTarget(target);
         }
     }

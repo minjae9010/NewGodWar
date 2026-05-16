@@ -19,21 +19,23 @@ import java.util.List;
     description = "자신 또는 주변 아군을 완전히 회복합니다.",
     normalSkill = "자신을 완전히 회복합니다.",
     normalStoneCost = 10,
+    normalCooldownSeconds = 60,
     advancedSkill = "주변 아군을 완전히 회복합니다.",
     advancedStoneCost = 15,
+    advancedCooldownSeconds = 120,
     passiveSkill = "없음"
 )
 final class AsclepiusAbility extends BaseAbility {
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
-        if (use(context, player, 1, COBBLESTONE, 10, 60)) {
+        if (useNormal(context, player)) {
             heal(player);
         }
     }
 
     @Override
     protected void onStaffRight(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
-        if (use(context, player, 2, COBBLESTONE, 15, 120)) {
+        if (useAdvanced(context, player)) {
             for (Player target : nearbyPlayers(context, player, 5, true)) {
                 heal(target);
             }

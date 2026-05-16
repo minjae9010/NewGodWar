@@ -19,6 +19,7 @@ import java.util.List;
     description = "독침과 페로몬 끌어오기를 사용합니다.",
     normalSkill = "지정한 적을 자신의 위치로 끌어옵니다.",
     normalStoneCost = 30,
+    normalCooldownSeconds = 150,
     advancedSkill = "없음",
     advancedStoneCost = 0,
     passiveSkill = "피격 시 확률로 공격자에게 독을 겁니다."
@@ -30,7 +31,7 @@ final class QueenBeeAbility extends BaseAbility {
         if (target == null) {
             return;
         }
-        if (use(context, player, 0, COBBLESTONE, 30, 150)) {
+        if (useNormal(context, player, 0)) {
             target.teleport(player);
         }
     }

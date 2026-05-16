@@ -19,6 +19,7 @@ import java.util.List;
     description = "익힌 돼지고기를 만들고 허기와 재생에 강합니다.",
     normalSkill = "익힌 돼지고기를 생성합니다.",
     normalStoneCost = 10,
+    normalCooldownSeconds = 20,
     advancedSkill = "없음",
     advancedStoneCost = 0,
     passiveSkill = "재생 효과를 유지하고 허기가 감소하지 않습니다."
@@ -37,7 +38,7 @@ final class GalbiAbility extends BaseAbility {
 
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
-        if (use(context, player, 0, COBBLESTONE, 10, 20)) {
+        if (useNormal(context, player, 0)) {
             give(player, Material.GRILLED_PORK, 3);
         }
     }

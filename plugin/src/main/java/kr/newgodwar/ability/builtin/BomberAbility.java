@@ -21,6 +21,7 @@ import java.util.List;
     normalStoneCost = 0,
     advancedSkill = "설치한 폭탄을 폭발시킵니다.",
     advancedStoneCost = 25,
+    advancedCooldownSeconds = 30,
     passiveSkill = "없음"
 )
 final class BomberAbility extends BaseAbility {
@@ -38,7 +39,7 @@ final class BomberAbility extends BaseAbility {
             player.sendMessage("TNT가 설치되지 않았습니다.");
             return;
         }
-        if (use(context, player, 0, COBBLESTONE, 25, 30)) {
+        if (useAdvanced(context, player, 0)) {
             player.getWorld().createExplosion(bombLocation, 2.0F, true);
             bombLocation = null;
             player.sendMessage("TNT가 폭발했습니다!");

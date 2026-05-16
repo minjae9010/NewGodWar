@@ -19,6 +19,7 @@ import java.util.List;
     description = "현재 위치를 기억하고 잠시 후 되돌아옵니다.",
     normalSkill = "현재 위치를 저장하고 잠시 후 되돌아옵니다.",
     normalStoneCost = 15,
+    normalCooldownSeconds = 80,
     advancedSkill = "없음",
     advancedStoneCost = 0,
     passiveSkill = "없음"
@@ -26,7 +27,7 @@ import java.util.List;
 final class HoreundalAbility extends BaseAbility {
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
-        if (use(context, player, 0, COBBLESTONE, 15, 80)) {
+        if (useNormal(context, player, 0)) {
             recall(context, player);
         }
     }

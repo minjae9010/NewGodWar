@@ -154,10 +154,10 @@ public final class AbilityGui implements Listener {
             inventory.setItem(13, noAbilityItem(shown));
         } else {
             inventory.setItem(10, skillItem("LIGHT_BLUE_STAINED_GLASS", (short) 3, ChatColor.AQUA + "일반 능력",
-                current.normalSkill(), current.normalStoneCost(), cooldownLine(shown, 1)));
+                current.normalSkill(), current.normalStoneCost(), current.normalCooldown(), cooldownLine(shown, current, 1)));
             inventory.setItem(13, currentAbilityItem(shown, current));
             inventory.setItem(16, skillItem("RED_STAINED_GLASS", (short) 14, ChatColor.RED + "고급 능력",
-                current.advancedSkill(), current.advancedStoneCost(), cooldownLine(shown, 2)));
+                current.advancedSkill(), current.advancedStoneCost(), current.advancedCooldown(), cooldownLine(shown, current, 2)));
             inventory.setItem(20, item("EMERALD", "EMERALD", 1, (short) 0,
                 ChatColor.GREEN + "" + ChatColor.BOLD + "패시브",
                 ChatColor.WHITE + current.passiveSkill()));
@@ -165,7 +165,7 @@ public final class AbilityGui implements Listener {
                 ChatColor.GOLD + "" + ChatColor.BOLD + "세부 정보",
                 ChatColor.GRAY + "ID: " + ChatColor.WHITE + current.id(),
                 ChatColor.GRAY + "제작자: " + ChatColor.WHITE + current.author(),
-                cooldownLine(shown, 0)));
+                ChatColor.GRAY + "공용 쿨타임: " + currentCooldownText(shown, 0)));
         }
 
         inventory.setItem(CURRENT_CLOSE_SLOT, closeItem());
@@ -228,12 +228,13 @@ public final class AbilityGui implements Listener {
             ChatColor.DARK_GRAY + "게임 시작 후 자동으로 배정됩니다.");
     }
 
-    private ItemStack skillItem(String material, short damage, String name, String skill, int cost, String state) {
+    private ItemStack skillItem(String material, short damage, String name, String skill, int cost, String cooldown, String state) {
         return item(material, "STAINED_GLASS", 1, damage,
             name,
             ChatColor.WHITE + skill,
             "",
             ChatColor.GRAY + "조약돌: " + ChatColor.WHITE + stoneCost(cost),
+            ChatColor.GRAY + "기본 쿨타임: " + ChatColor.WHITE + cooldown(cooldown),
             state);
     }
 
@@ -249,8 +250,10 @@ public final class AbilityGui implements Listener {
         lore.add("");
         lore.add(ChatColor.AQUA + "일반: " + ChatColor.GRAY + ability.normalSkill());
         lore.add(ChatColor.GRAY + "조약돌: " + ChatColor.WHITE + stoneCost(ability.normalStoneCost()));
+        lore.add(ChatColor.GRAY + "쿨타임: " + ChatColor.WHITE + cooldown(ability.normalCooldown()));
         lore.add(ChatColor.RED + "고급: " + ChatColor.GRAY + ability.advancedSkill());
         lore.add(ChatColor.GRAY + "조약돌: " + ChatColor.WHITE + stoneCost(ability.advancedStoneCost()));
+        lore.add(ChatColor.GRAY + "쿨타임: " + ChatColor.WHITE + cooldown(ability.advancedCooldown()));
         lore.add(ChatColor.AQUA + "패시브: " + ChatColor.GRAY + ability.passiveSkill());
         lore.add(ChatColor.DARK_GRAY + "ID: " + ability.id());
         if (showAdminState) {
@@ -295,16 +298,50 @@ public final class AbilityGui implements Listener {
         return abilities;
     }
 
-    private String cooldownLine(Player player, int slot) {
-        long millis = abilityManager.cooldownRemainingMillis(player, slot);
+    private String cooldownLine(Player player, AbilityDefinition ability, int slot) {
+        long millis = semanticCooldownMillis(player, ability, slot);
         if (millis <= 0L) {
             return ChatColor.WHITE + "상태: " + ChatColor.GREEN + "사용 가능";
         }
         return ChatColor.WHITE + "상태: " + ChatColor.YELLOW + "쿨타임 " + ((millis + 999L) / 1000L) + "초";
     }
 
+    private String currentCooldownText(Player player, int slot) {
+        long millis = abilityManager.cooldownRemainingMillis(player, slot);
+        if (millis <= 0L) {
+            return ChatColor.GREEN + "없음";
+        }
+        return ChatColor.YELLOW + String.valueOf((millis + 999L) / 1000L) + "초";
+    }
+
+    private long semanticCooldownMillis(Player player, AbilityDefinition ability, int slot) {
+        long millis = abilityManager.cooldownRemainingMillis(player, slot);
+        if (millis > 0L || ability == null) {
+            return millis;
+        }
+        long shared = abilityManager.cooldownRemainingMillis(player, 0);
+        if (shared <= 0L) {
+            return 0L;
+        }
+        if (slot == 1 && hasCooldown(ability.normalCooldown()) && !hasCooldown(ability.advancedCooldown())) {
+            return shared;
+        }
+        if (slot == 2 && hasCooldown(ability.advancedCooldown()) && !hasCooldown(ability.normalCooldown())) {
+            return shared;
+        }
+        return 0L;
+    }
+
     private String stoneCost(int cost) {
         return cost <= 0 ? "없음" : cost + "개";
+    }
+
+    private String cooldown(String cooldown) {
+        return hasCooldown(cooldown) ? cooldown : "없음";
+    }
+
+    private boolean hasCooldown(String cooldown) {
+        return cooldown != null && cooldown.trim().length() > 0 && !"없음".equals(cooldown.trim());
     }
 
     private void fill(Inventory inventory, ItemStack item) {

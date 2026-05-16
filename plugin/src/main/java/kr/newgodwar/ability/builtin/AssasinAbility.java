@@ -21,6 +21,7 @@ import java.util.List;
     normalStoneCost = 0,
     advancedSkill = "주변 적의 뒤로 이동합니다.",
     advancedStoneCost = 15,
+    advancedCooldownSeconds = 15,
     passiveSkill = "없음"
 )
 final class AssasinAbility extends BaseAbility {
@@ -31,7 +32,7 @@ final class AssasinAbility extends BaseAbility {
 
     @Override
     protected void onStaffRight(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
-        if (use(context, player, 2, COBBLESTONE, 15, 15)) {
+        if (useAdvanced(context, player)) {
             backstab(context, player);
         }
     }
