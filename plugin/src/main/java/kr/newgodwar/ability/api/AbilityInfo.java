@@ -15,6 +15,16 @@ public @interface AbilityInfo {
 
     String description();
 
+    String normalSkill() default "";
+
+    int normalStoneCost() default 0;
+
+    String advancedSkill() default "";
+
+    int advancedStoneCost() default 0;
+
+    String passiveSkill() default "";
+
     String author() default "NewGodWar";
 
     boolean enabledByDefault() default true;

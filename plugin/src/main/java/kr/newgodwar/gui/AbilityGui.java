@@ -127,6 +127,11 @@ public final class AbilityGui implements Listener {
             ChatColor.GOLD + target.getName() + " 님의 현재 능력",
             ChatColor.WHITE + ability.name() + ChatColor.GRAY + " (" + ability.id() + ")",
             ChatColor.GRAY + ability.description(),
+            ChatColor.YELLOW + "일반: " + ChatColor.GRAY + ability.normalSkill(),
+            ChatColor.YELLOW + "일반 돌 소모: " + ChatColor.GRAY + stoneCost(ability.normalStoneCost()),
+            ChatColor.GOLD + "고급: " + ChatColor.GRAY + ability.advancedSkill(),
+            ChatColor.GOLD + "고급 돌 소모: " + ChatColor.GRAY + stoneCost(ability.advancedStoneCost()),
+            ChatColor.AQUA + "패시브: " + ChatColor.GRAY + ability.passiveSkill(),
             ChatColor.DARK_GRAY + "제작자: " + ability.author());
     }
 
@@ -137,6 +142,11 @@ public final class AbilityGui implements Listener {
         String state = blacklisted ? "블랙리스트" : (enabled ? "사용 가능" : "비활성");
         ArrayList<String> lore = new ArrayList<String>();
         lore.add(ChatColor.GRAY + ability.description());
+        lore.add(ChatColor.YELLOW + "일반: " + ChatColor.GRAY + ability.normalSkill());
+        lore.add(ChatColor.YELLOW + "일반 돌 소모: " + ChatColor.GRAY + stoneCost(ability.normalStoneCost()));
+        lore.add(ChatColor.GOLD + "고급: " + ChatColor.GRAY + ability.advancedSkill());
+        lore.add(ChatColor.GOLD + "고급 돌 소모: " + ChatColor.GRAY + stoneCost(ability.advancedStoneCost()));
+        lore.add(ChatColor.AQUA + "패시브: " + ChatColor.GRAY + ability.passiveSkill());
         lore.add(ChatColor.DARK_GRAY + "ID: " + ability.id());
         lore.add(ChatColor.DARK_GRAY + "제작자: " + ability.author());
         if (showAdminState) {
@@ -173,6 +183,10 @@ public final class AbilityGui implements Listener {
             current++;
         }
         return null;
+    }
+
+    private String stoneCost(int cost) {
+        return cost <= 0 ? "없음" : cost + "개";
     }
 
     private ItemStack item(String modernMaterial, String legacyMaterial, int amount, short damage, String name, String... lore) {

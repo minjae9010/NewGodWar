@@ -13,6 +13,16 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
 import java.util.List;
+@AbilityInfo(
+    id = "stance",
+    name = "스탠스",
+    description = "공격 넉백과 피해 증폭을 무시합니다.",
+    normalSkill = "없음",
+    normalStoneCost = 0,
+    advancedSkill = "없음",
+    advancedStoneCost = 0,
+    passiveSkill = "공격과 투사체 피해의 넉백/증폭을 억제합니다."
+)
 final class StanceAbility extends BaseAbility {
     @Override
     public void onGenericDamage(AbilityPlayerContext context, EntityDamageEvent event) {

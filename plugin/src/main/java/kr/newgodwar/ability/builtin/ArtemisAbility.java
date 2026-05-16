@@ -13,6 +13,16 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
 import java.util.List;
+@AbilityInfo(
+    id = "artemis",
+    name = "아르테미스",
+    description = "화살과 활을 만들며 화살로 즉사 확률을 가집니다.",
+    normalSkill = "화살을 생성합니다.",
+    normalStoneCost = 7,
+    advancedSkill = "활을 생성합니다.",
+    advancedStoneCost = 15,
+    passiveSkill = "화살 적중 시 확률로 큰 피해를 줍니다."
+)
 final class ArtemisAbility extends BaseAbility {
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {

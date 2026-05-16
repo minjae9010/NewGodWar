@@ -13,6 +13,16 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
 import java.util.List;
+@AbilityInfo(
+    id = "megumin",
+    name = "메구밍",
+    description = "게임 중 한 번 폭렬 마법을 사용합니다.",
+    normalSkill = "바라보는 위치에 지연 폭발을 일으키고 사망합니다.",
+    normalStoneCost = 25,
+    advancedSkill = "없음",
+    advancedStoneCost = 0,
+    passiveSkill = "게임 중 한 번만 사용할 수 있습니다."
+)
 final class MeguminAbility extends BaseAbility {
     private boolean oneTimeUsed;
 

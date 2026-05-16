@@ -13,6 +13,16 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
 import java.util.List;
+@AbilityInfo(
+    id = "blinder",
+    name = "블라인더",
+    description = "주변 적이나 공격자에게 실명을 겁니다.",
+    normalSkill = "주변 적에게 실명을 겁니다.",
+    normalStoneCost = 10,
+    advancedSkill = "없음",
+    advancedStoneCost = 0,
+    passiveSkill = "피격 시 확률로 공격자에게 실명을 겁니다."
+)
 final class BlinderAbility extends BaseAbility {
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {

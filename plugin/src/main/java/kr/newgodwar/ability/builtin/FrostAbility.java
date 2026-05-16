@@ -13,6 +13,16 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
 import java.util.List;
+@AbilityInfo(
+    id = "frost",
+    name = "잭프로스트",
+    description = "얼음을 만들고 지정한 적을 얼음 안에 가둡니다.",
+    normalSkill = "바라보는 위치에 얼음 구체를 만듭니다.",
+    normalStoneCost = 10,
+    advancedSkill = "지정한 적을 얼음 구체 안에 가둡니다.",
+    advancedStoneCost = 20,
+    passiveSkill = "타깃 지정 명령을 사용할 수 있습니다."
+)
 final class FrostAbility extends BaseAbility {
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {

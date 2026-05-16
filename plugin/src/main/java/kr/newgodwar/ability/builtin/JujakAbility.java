@@ -13,6 +13,16 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
 import java.util.List;
+@AbilityInfo(
+    id = "jujak",
+    name = "주작",
+    description = "화염 피해를 무시하고 짧게 비행합니다.",
+    normalSkill = "잠시 비행합니다.",
+    normalStoneCost = 15,
+    advancedSkill = "없음",
+    advancedStoneCost = 0,
+    passiveSkill = "화염 피해를 무시하고 익사 피해가 증가합니다."
+)
 final class JujakAbility extends BaseAbility {
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {

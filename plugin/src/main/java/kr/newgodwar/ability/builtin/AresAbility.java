@@ -13,6 +13,16 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
 import java.util.List;
+@AbilityInfo(
+    id = "ares",
+    name = "아레스",
+    description = "공격 피해가 증가하고 일정 확률로 공격을 회피합니다.",
+    normalSkill = "없음",
+    normalStoneCost = 0,
+    advancedSkill = "없음",
+    advancedStoneCost = 0,
+    passiveSkill = "공격 피해가 증가하고 피격 시 확률로 회피합니다."
+)
 final class AresAbility extends BaseAbility {
     @Override
     public void onDamageByEntity(AbilityPlayerContext context, EntityDamageByEntityEvent event, Player opponent, boolean attacker) {

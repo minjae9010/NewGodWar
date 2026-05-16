@@ -13,6 +13,16 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
 import java.util.List;
+@AbilityInfo(
+    id = "naro",
+    name = "나로호",
+    description = "낙하 피해를 무시하고 크게 도약합니다.",
+    normalSkill = "바라보는 방향으로 크게 도약합니다.",
+    normalStoneCost = 2,
+    advancedSkill = "없음",
+    advancedStoneCost = 0,
+    passiveSkill = "낙하 피해를 무시합니다."
+)
 final class NaroAbility extends BaseAbility {
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {

@@ -13,6 +13,16 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
 import java.util.List;
+@AbilityInfo(
+    id = "assasin",
+    name = "암살자",
+    description = "더블 점프와 기습 이동을 사용합니다.",
+    normalSkill = "앞으로 도약합니다.",
+    normalStoneCost = 0,
+    advancedSkill = "주변 적의 뒤로 이동합니다.",
+    advancedStoneCost = 15,
+    passiveSkill = "없음"
+)
 final class AssasinAbility extends BaseAbility {
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {

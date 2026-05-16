@@ -13,6 +13,16 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
 import java.util.List;
+@AbilityInfo(
+    id = "sniper",
+    name = "저격수",
+    description = "스나이핑 모드에서 매우 빠른 화살을 발사합니다.",
+    normalSkill = "활을 들고 웅크린 채 좌클릭하면 저격을 준비합니다.",
+    normalStoneCost = 0,
+    advancedSkill = "준비 후 화살 발사 시 매우 빠른 화살을 발사합니다.",
+    advancedStoneCost = 5,
+    passiveSkill = "배정 시 활과 화살을 받습니다."
+)
 final class SniperAbility extends BaseAbility {
     @Override
     public void onAssign(AbilityPlayerContext context) {

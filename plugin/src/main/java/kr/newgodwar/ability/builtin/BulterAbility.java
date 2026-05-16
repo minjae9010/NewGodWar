@@ -13,6 +13,16 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
 import java.util.List;
+@AbilityInfo(
+    id = "bulter",
+    name = "집사",
+    description = "폭발을 안정시켜 막습니다.",
+    normalSkill = "없음",
+    normalStoneCost = 0,
+    advancedSkill = "없음",
+    advancedStoneCost = 0,
+    passiveSkill = "블록 폭발 이벤트를 취소합니다."
+)
 final class BulterAbility extends BaseAbility {
     @Override
     public void onBlockExplode(BlockExplodeEvent event) {

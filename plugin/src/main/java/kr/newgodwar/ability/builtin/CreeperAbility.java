@@ -13,6 +13,16 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
 import java.util.List;
+@AbilityInfo(
+    id = "creeper",
+    name = "크리퍼",
+    description = "자폭하고 번개를 맞으면 폭발력이 달라집니다.",
+    normalSkill = "자폭 폭발을 일으킵니다.",
+    normalStoneCost = 20,
+    advancedSkill = "없음",
+    advancedStoneCost = 0,
+    passiveSkill = "번개를 맞으면 다음 자폭 폭발력이 증가합니다."
+)
 final class CreeperAbility extends BaseAbility {
     private boolean plasma;
 

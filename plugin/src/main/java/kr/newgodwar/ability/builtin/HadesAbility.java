@@ -13,6 +13,16 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
 import java.util.List;
+@AbilityInfo(
+    id = "hades",
+    name = "하데스",
+    description = "주변 생물을 나락으로 떨어뜨리고 사망 시 확률로 아이템을 보존합니다.",
+    normalSkill = "주변 생물과 자신을 나락으로 떨어뜨립니다.",
+    normalStoneCost = 20,
+    advancedSkill = "더 넓은 범위의 주변 생물을 나락으로 떨어뜨립니다.",
+    advancedStoneCost = 35,
+    passiveSkill = "사망 시 확률로 인벤토리와 방어구를 보존합니다."
+)
 final class HadesAbility extends BaseAbility {
     private ItemStack[] savedInventory;
     private ItemStack[] savedArmor;

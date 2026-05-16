@@ -13,6 +13,16 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
 import java.util.List;
+@AbilityInfo(
+    id = "gardener",
+    name = "정원사",
+    description = "나무를 캐면 꽃과 코블스톤을 얻습니다.",
+    normalSkill = "없음",
+    normalStoneCost = 0,
+    advancedSkill = "없음",
+    advancedStoneCost = 0,
+    passiveSkill = "배정 시 묘목과 염료를 받고 나무 채굴 시 보상을 얻습니다."
+)
 final class GardenerAbility extends BaseAbility {
     @Override
     public void onAssign(AbilityPlayerContext context) {

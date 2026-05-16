@@ -13,6 +13,16 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
 import java.util.List;
+@AbilityInfo(
+    id = "clocking",
+    name = "클로킹",
+    description = "투명화 후 공격 시 확률로 즉사시킵니다.",
+    normalSkill = "잠시 투명화합니다.",
+    normalStoneCost = 25,
+    advancedSkill = "없음",
+    advancedStoneCost = 0,
+    passiveSkill = "투명화 중 공격 시 확률로 큰 피해를 줍니다."
+)
 final class ClockingAbility extends BaseAbility {
     private boolean invisible;
 

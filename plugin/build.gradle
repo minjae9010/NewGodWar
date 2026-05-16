@@ -1,6 +1,17 @@
+plugins {
+    id "xyz.jpenilla.run-paper" version "2.3.1"
+}
+
 dependencies {
     implementation project(":compatibility:common")
     runtimeOnly project(":compatibility:reflection")
+}
+
+def testServerVersion = providers.gradleProperty("newGodWarMinecraftVersion").orElse("1.21.10")
+
+tasks.named("runServer") {
+    minecraftVersion(testServerVersion.get())
+    runDirectory.set(rootProject.layout.projectDirectory.dir("run"))
 }
 
 tasks.processResources {

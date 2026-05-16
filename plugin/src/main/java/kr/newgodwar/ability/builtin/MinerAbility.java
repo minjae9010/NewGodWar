@@ -13,6 +13,16 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
 import java.util.List;
+@AbilityInfo(
+    id = "miner",
+    name = "광부",
+    description = "코블스톤 채굴 보너스와 곡괭이 고정 피해를 가집니다.",
+    normalSkill = "없음",
+    normalStoneCost = 0,
+    advancedSkill = "없음",
+    advancedStoneCost = 0,
+    passiveSkill = "코블스톤 채굴 보너스와 곡괭이 고정 피해를 가집니다."
+)
 final class MinerAbility extends BaseAbility {
     @Override
     public void onDamageByEntity(AbilityPlayerContext context, EntityDamageByEntityEvent event, Player opponent, boolean attacker) {

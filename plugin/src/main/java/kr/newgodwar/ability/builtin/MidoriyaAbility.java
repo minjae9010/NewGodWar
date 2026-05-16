@@ -13,6 +13,16 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
 import java.util.List;
+@AbilityInfo(
+    id = "midoriya",
+    name = "미도리야",
+    description = "원 포 올을 준비한 뒤 맨손 공격으로 큰 피해를 줍니다.",
+    normalSkill = "원 포 올을 준비합니다.",
+    normalStoneCost = 50,
+    advancedSkill = "없음",
+    advancedStoneCost = 0,
+    passiveSkill = "준비 후 맨손 공격 시 큰 피해와 자기 디버프를 발생시킵니다."
+)
 final class MidoriyaAbility extends BaseAbility {
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {

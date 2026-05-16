@@ -13,6 +13,16 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
 import java.util.List;
+@AbilityInfo(
+    id = "asclepius",
+    name = "아스클리피어스",
+    description = "자신 또는 주변 아군을 완전히 회복합니다.",
+    normalSkill = "자신을 완전히 회복합니다.",
+    normalStoneCost = 10,
+    advancedSkill = "주변 아군을 완전히 회복합니다.",
+    advancedStoneCost = 15,
+    passiveSkill = "없음"
+)
 final class AsclepiusAbility extends BaseAbility {
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {

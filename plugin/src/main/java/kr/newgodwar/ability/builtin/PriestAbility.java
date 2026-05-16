@@ -13,6 +13,16 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
 import java.util.List;
+@AbilityInfo(
+    id = "priest",
+    name = "사제",
+    description = "자신 또는 팀원에게 무작위 축복을 부여합니다.",
+    normalSkill = "자신에게 무작위 축복을 부여합니다.",
+    normalStoneCost = 30,
+    advancedSkill = "주변 아군에게 무작위 축복을 부여합니다.",
+    advancedStoneCost = 45,
+    passiveSkill = "없음"
+)
 final class PriestAbility extends BaseAbility {
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {

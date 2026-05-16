@@ -13,6 +13,16 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
 import java.util.List;
+@AbilityInfo(
+    id = "witch",
+    name = "마녀",
+    description = "주변 적과 공격자에게 저주를 겁니다.",
+    normalSkill = "주변 적에게 저주를 겁니다.",
+    normalStoneCost = 15,
+    advancedSkill = "없음",
+    advancedStoneCost = 0,
+    passiveSkill = "피격 시 확률로 공격자에게 저주를 겁니다."
+)
 final class WitchAbility extends BaseAbility {
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {

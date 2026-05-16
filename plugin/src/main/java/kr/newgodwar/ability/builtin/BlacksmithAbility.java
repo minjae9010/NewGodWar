@@ -13,6 +13,16 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
 import java.util.List;
+@AbilityInfo(
+    id = "blacksmith",
+    name = "대장장이",
+    description = "코블스톤을 철로, 철을 다이아몬드로 바꿉니다.",
+    normalSkill = "코블스톤을 철괴로 바꿉니다.",
+    normalStoneCost = 70,
+    advancedSkill = "철괴를 다이아몬드로 바꿉니다.",
+    advancedStoneCost = 0,
+    passiveSkill = "없음"
+)
 final class BlacksmithAbility extends BaseAbility {
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {

@@ -13,6 +13,16 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
 import java.util.List;
+@AbilityInfo(
+    id = "zeus",
+    name = "제우스",
+    description = "번개를 내리고 번개/폭발 피해를 무시합니다.",
+    normalSkill = "바라보는 위치에 번개를 내립니다.",
+    normalStoneCost = 15,
+    advancedSkill = "지정 위치 주변에 연속 번개를 내립니다.",
+    advancedStoneCost = 25,
+    passiveSkill = "번개와 폭발 피해를 무시합니다."
+)
 final class ZeusAbility extends BaseAbility {
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {

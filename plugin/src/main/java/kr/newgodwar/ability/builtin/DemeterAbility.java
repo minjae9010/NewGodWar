@@ -13,6 +13,16 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
 import java.util.List;
+@AbilityInfo(
+    id = "demeter",
+    name = "데메테르",
+    description = "빵을 만들고 허기와 재생에 강합니다.",
+    normalSkill = "빵을 생성합니다.",
+    normalStoneCost = 10,
+    advancedSkill = "없음",
+    advancedStoneCost = 0,
+    passiveSkill = "재생 효과를 유지하고 허기가 감소하지 않습니다."
+)
 final class DemeterAbility extends BaseAbility {
     @Override
     public void onAssign(AbilityPlayerContext context) {

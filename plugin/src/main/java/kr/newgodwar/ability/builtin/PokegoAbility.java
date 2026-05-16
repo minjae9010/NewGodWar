@@ -13,6 +13,16 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
 import java.util.List;
+@AbilityInfo(
+    id = "pokego",
+    name = "포켓몬고",
+    description = "많이 걸으면 다른 능력으로 바뀝니다.",
+    normalSkill = "없음",
+    normalStoneCost = 0,
+    advancedSkill = "없음",
+    advancedStoneCost = 0,
+    passiveSkill = "일정 거리 이상 이동하면 무작위 능력으로 바뀝니다."
+)
 final class PokegoAbility extends BaseAbility {
     private int steps;
 

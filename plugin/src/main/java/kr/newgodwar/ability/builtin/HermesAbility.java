@@ -13,6 +13,16 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
 import java.util.List;
+@AbilityInfo(
+    id = "hermes",
+    name = "헤르메스",
+    description = "빠른 이동과 짧은 비행을 사용합니다.",
+    normalSkill = "잠시 비행합니다.",
+    normalStoneCost = 10,
+    advancedSkill = "없음",
+    advancedStoneCost = 0,
+    passiveSkill = "상시 신속 효과를 받습니다."
+)
 final class HermesAbility extends BaseAbility {
     @Override
     public void onAssign(AbilityPlayerContext context) {

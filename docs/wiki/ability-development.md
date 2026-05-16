@@ -9,6 +9,11 @@
     id = "sample",
     name = "샘플",
     description = "공격 피해량을 2배로 올립니다.",
+    normalSkill = "없음",
+    normalStoneCost = 0,
+    advancedSkill = "없음",
+    advancedStoneCost = 0,
+    passiveSkill = "공격 피해량을 2배로 올립니다.",
     author = "minjae9010"
 )
 public final class SampleAbility implements GodAbility {
@@ -55,6 +60,11 @@ com.example.godwar.SampleAbilityRegistrar
     id = "sample",
     name = "샘플",
     description = "능력 설명",
+    normalSkill = "일반 능력 설명",
+    normalStoneCost = 10,
+    advancedSkill = "고급 능력 설명",
+    advancedStoneCost = 20,
+    passiveSkill = "패시브 능력 설명",
     author = "작성자",
     enabledByDefault = true
 )
@@ -63,6 +73,11 @@ com.example.godwar.SampleAbilityRegistrar
 - `id`: 설정과 명령어에서 사용하는 고유 ID
 - `name`: 게임 안에 표시되는 이름
 - `description`: 능력 설명
+- `normalSkill`: 일반 능력 설명. 보통 좌클릭 능력을 적습니다.
+- `normalStoneCost`: 일반 능력 돌 소모량
+- `advancedSkill`: 고급 능력 설명. 보통 우클릭 능력을 적습니다.
+- `advancedStoneCost`: 고급 능력 돌 소모량
+- `passiveSkill`: 패시브 능력 설명
 - `author`: 능력 작성자
 - `enabledByDefault`: config에 값이 없을 때 기본 활성화 여부
 

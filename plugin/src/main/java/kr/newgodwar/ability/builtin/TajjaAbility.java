@@ -13,6 +13,16 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
 import java.util.List;
+@AbilityInfo(
+    id = "tajja",
+    name = "타짜",
+    description = "검을 숨겨 맨손 공격에 검 피해를 싣습니다.",
+    normalSkill = "인벤토리의 검 하나를 숨깁니다.",
+    normalStoneCost = 10,
+    advancedSkill = "없음",
+    advancedStoneCost = 0,
+    passiveSkill = "맨손 공격에 숨긴 검 피해를 제한 횟수만큼 싣습니다."
+)
 final class TajjaAbility extends BaseAbility {
     private int tajjaDamage;
     private int tajjaUses;

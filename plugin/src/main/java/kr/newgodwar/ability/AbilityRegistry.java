@@ -26,6 +26,11 @@ public final class AbilityRegistry {
             normalize(info.id()),
             info.name(),
             info.description(),
+            info.normalSkill(),
+            info.normalStoneCost(),
+            info.advancedSkill(),
+            info.advancedStoneCost(),
+            info.passiveSkill(),
             info.author(),
             info.enabledByDefault(),
             reflectionFactory(abilityClass)

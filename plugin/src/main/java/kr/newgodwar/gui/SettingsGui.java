@@ -320,7 +320,16 @@ public final class SettingsGui implements Listener {
             color + ability.name() + ChatColor.GRAY + " (" + ability.id() + ")",
             ChatColor.GRAY + "상태: " + color + state,
             ChatColor.GRAY + ability.description(),
+            ChatColor.YELLOW + "일반: " + ChatColor.GRAY + ability.normalSkill(),
+            ChatColor.YELLOW + "일반 돌 소모: " + ChatColor.GRAY + stoneCost(ability.normalStoneCost()),
+            ChatColor.GOLD + "고급: " + ChatColor.GRAY + ability.advancedSkill(),
+            ChatColor.GOLD + "고급 돌 소모: " + ChatColor.GRAY + stoneCost(ability.advancedStoneCost()),
+            ChatColor.AQUA + "패시브: " + ChatColor.GRAY + ability.passiveSkill(),
             ChatColor.DARK_GRAY + "클릭하면 능력 사용 여부가 전환됩니다.");
+    }
+
+    private String stoneCost(int cost) {
+        return cost <= 0 ? "없음" : cost + "개";
     }
 
     private ItemStack numberItem(String title, String path, int fallback, String clickHint) {

@@ -13,6 +13,16 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
 import java.util.List;
+@AbilityInfo(
+    id = "snow",
+    name = "사이코스노우",
+    description = "눈덩이 피해와 성장하는 공격 지수를 가집니다.",
+    normalSkill = "눈덩이를 생성합니다.",
+    normalStoneCost = 1,
+    advancedSkill = "현재 공격 지수를 확인합니다.",
+    advancedStoneCost = 0,
+    passiveSkill = "눈덩이 피해가 공격 지수를 따르고 사망할 때 성장합니다."
+)
 final class SnowAbility extends BaseAbility {
     private int snowAttack;
 

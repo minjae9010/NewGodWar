@@ -13,6 +13,16 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
 import java.util.List;
+@AbilityInfo(
+    id = "bomber",
+    name = "봄버",
+    description = "보이지 않는 폭탄을 설치하고 원격 폭발시킵니다.",
+    normalSkill = "바라보는 위치에 폭탄을 설치합니다.",
+    normalStoneCost = 0,
+    advancedSkill = "설치한 폭탄을 폭발시킵니다.",
+    advancedStoneCost = 25,
+    passiveSkill = "없음"
+)
 final class BomberAbility extends BaseAbility {
     private Location bombLocation;
 

@@ -13,6 +13,16 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
 import java.util.List;
+@AbilityInfo(
+    id = "aprodite",
+    name = "아프로디테",
+    description = "주변 플레이어를 자신의 위치로 끌어옵니다.",
+    normalSkill = "주변 플레이어를 자신의 위치로 끌어옵니다.",
+    normalStoneCost = 20,
+    advancedSkill = "없음",
+    advancedStoneCost = 0,
+    passiveSkill = "없음"
+)
 final class AproditeAbility extends BaseAbility {
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {

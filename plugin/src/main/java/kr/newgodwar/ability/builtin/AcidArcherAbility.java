@@ -13,6 +13,16 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
 import java.util.List;
+@AbilityInfo(
+    id = "acidarcher",
+    name = "독화살아처",
+    description = "활 피해 대신 독을 부여합니다.",
+    normalSkill = "화살을 생성합니다.",
+    normalStoneCost = 5,
+    advancedSkill = "활을 생성합니다.",
+    advancedStoneCost = 15,
+    passiveSkill = "화살 피해 대신 독을 부여합니다."
+)
 final class AcidArcherAbility extends BaseAbility {
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {

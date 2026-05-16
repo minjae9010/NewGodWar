@@ -13,6 +13,16 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
 import java.util.List;
+@AbilityInfo(
+    id = "horeundal",
+    name = "호른달",
+    description = "현재 위치를 기억하고 잠시 후 되돌아옵니다.",
+    normalSkill = "현재 위치를 저장하고 잠시 후 되돌아옵니다.",
+    normalStoneCost = 15,
+    advancedSkill = "없음",
+    advancedStoneCost = 0,
+    passiveSkill = "없음"
+)
 final class HoreundalAbility extends BaseAbility {
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {

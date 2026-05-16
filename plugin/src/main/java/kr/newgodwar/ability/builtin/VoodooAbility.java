@@ -13,6 +13,16 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
 import java.util.List;
+@AbilityInfo(
+    id = "voodoo",
+    name = "부두술사",
+    description = "팻말로 대상을 연결해 원격 피해를 줍니다.",
+    normalSkill = "팻말 첫 줄에 대상 이름을 적어 연결합니다.",
+    normalStoneCost = 5,
+    advancedSkill = "없음",
+    advancedStoneCost = 0,
+    passiveSkill = "연결은 잠시 유지되며 팻말이 자동 제거됩니다."
+)
 final class VoodooAbility extends BaseAbility {
     @Override
     public void onBlockPlace(AbilityPlayerContext context, BlockPlaceEvent event) {

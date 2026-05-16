@@ -13,6 +13,16 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
 import java.util.List;
+@AbilityInfo(
+    id = "apollon",
+    name = "아폴론",
+    description = "태양을 띄우고 주변 적을 불태웁니다.",
+    normalSkill = "시간을 낮으로 바꿉니다.",
+    normalStoneCost = 1,
+    advancedSkill = "햇빛 아래 주변 적을 불태우고 피해를 줍니다.",
+    advancedStoneCost = 15,
+    passiveSkill = "없음"
+)
 final class ApollonAbility extends BaseAbility {
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {

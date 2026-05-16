@@ -13,6 +13,16 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
 import java.util.List;
+@AbilityInfo(
+    id = "hephaestus",
+    name = "헤파이토스",
+    description = "용암을 만들고 화염 피해를 무시합니다.",
+    normalSkill = "바라보는 위치에 잠시 용암을 만듭니다.",
+    normalStoneCost = 1,
+    advancedSkill = "없음",
+    advancedStoneCost = 0,
+    passiveSkill = "화염 피해를 무시하고 익사 피해가 증가합니다."
+)
 final class HephaestusAbility extends BaseAbility {
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {

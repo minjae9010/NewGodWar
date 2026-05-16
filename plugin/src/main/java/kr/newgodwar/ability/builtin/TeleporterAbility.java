@@ -13,6 +13,16 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
 import java.util.List;
+@AbilityInfo(
+    id = "teleporter",
+    name = "텔레포터",
+    description = "바라보는 곳으로 이동하거나 아군과 위치를 바꿉니다.",
+    normalSkill = "바라보는 안전한 위치로 이동합니다.",
+    normalStoneCost = 15,
+    advancedSkill = "지정한 아군과 위치를 바꿉니다.",
+    advancedStoneCost = 25,
+    passiveSkill = "타깃 지정 명령을 사용할 수 있습니다."
+)
 final class TeleporterAbility extends BaseAbility {
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {

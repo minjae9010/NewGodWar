@@ -13,6 +13,16 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
 import java.util.List;
+@AbilityInfo(
+    id = "invincibility",
+    name = "무적",
+    description = "잠시 무적이 되거나 재생 효과를 얻습니다.",
+    normalSkill = "잠시 모든 피해를 무시합니다.",
+    normalStoneCost = 30,
+    advancedSkill = "재생 효과를 얻습니다.",
+    advancedStoneCost = 50,
+    passiveSkill = "무적 상태일 때 피해를 취소합니다."
+)
 final class InvincibilityAbility extends BaseAbility {
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {

@@ -13,6 +13,16 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
 import java.util.List;
+@AbilityInfo(
+    id = "hermione",
+    name = "헤르미온느",
+    description = "채팅 주문으로 다양한 마법을 사용합니다.",
+    normalSkill = "채팅으로 기본 주문을 사용합니다.",
+    normalStoneCost = 5,
+    advancedSkill = "채팅으로 고급 주문을 사용합니다.",
+    advancedStoneCost = 10,
+    passiveSkill = "배정 시 주문서를 받고 보호 주문 중 피해를 무시합니다."
+)
 final class HermioneAbility extends BaseAbility {
     @Override
     public void onAssign(AbilityPlayerContext context) {
