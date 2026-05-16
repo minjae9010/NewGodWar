@@ -101,6 +101,7 @@ abstract class BaseAbility implements GodAbility {
 
     protected void setCooldown(AbilityPlayerContext context, int slot, int cooldownSeconds) {
         cooldowns.put(slot, System.currentTimeMillis() + context.plugin().abilities().scaleCooldownMillis(cooldownSeconds * 1000L));
+        context.plugin().game().refreshPlayerDisplay(context.player());
     }
 
     protected void setRawCooldown(int slot, long millis) {

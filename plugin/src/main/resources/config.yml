@@ -3,12 +3,34 @@ game:
   friendly-fire: false
   auto-balance-teams: true
   allow-mid-join: true
+  clear-inventory: true
+  give-skyblock-items: true
+  remove-entities: true
+  ignore-bed: true
+  fast-start: true
+  ready-countdown-seconds: 40
+  fast-ready-countdown-seconds: 5
+  select-right: true
   announce-radius: 0
   ability-roll-message: true
   ability-tick-interval-seconds: 1
   urf:
     enabled: false
     cooldown-multiplier: 0.2
+
+world:
+  autosave: true
+  spawn-animals: false
+  spawn-monsters: false
+  difficulty: EASY
+  start-time: 6000
+
+core:
+  protect-diamond-from-explosion: true
+  forbid-diamond-pickaxe: true
+
+gambling:
+  enabled: true
 
 scoreboard:
   enabled: true
@@ -37,6 +59,8 @@ teams:
   green:
     display-name: "초록"
     color: GREEN
+
+spawns: {}
 
 messages:
   prefix: "&6[신들의 전쟁]&r "

@@ -503,23 +503,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             plugin.messages().send(sender, "&c플레이어만 사용할 수 있습니다.");
             return;
         }
-        AbilityDefinition ability = abilityManager.get(player);
-        if (ability == null) {
-            plugin.messages().send(sender, "&e아직 능력이 없습니다.");
-            return;
-        }
-        sender.sendMessage("");
-        line(sender);
-        sender.sendMessage(ChatColor.GOLD + "" + ChatColor.BOLD + "내 능력");
-        sender.sendMessage(ChatColor.GRAY + "  이름   " + ChatColor.WHITE + ability.name()
-            + ChatColor.DARK_GRAY + " (" + ability.id() + ")");
-        sender.sendMessage(ChatColor.GRAY + "  설명   " + ChatColor.YELLOW + ability.description());
-        sender.sendMessage(ChatColor.GRAY + "  일반   " + ChatColor.WHITE + ability.normalSkill()
-            + ChatColor.DARK_GRAY + " / 조약돌 " + stoneCost(ability.normalStoneCost()));
-        sender.sendMessage(ChatColor.GRAY + "  고급   " + ChatColor.WHITE + ability.advancedSkill()
-            + ChatColor.DARK_GRAY + " / 조약돌 " + stoneCost(ability.advancedStoneCost()));
-        sender.sendMessage(ChatColor.GRAY + "  패시브 " + ChatColor.WHITE + ability.passiveSkill());
-        line(sender);
+        abilityGui.openCurrent(player, player);
     }
 
     private void teamInfo(CommandSender sender, String[] args) {
@@ -588,6 +572,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         if (target == null) {
             if (sender.hasPermission("newgodwar.admin")) {
                 abilityManager.clearAllCooldowns();
+                gameManager.refreshAllPlayerDisplays();
                 plugin.messages().send(sender, "&a모든 능력 쿨타임을 초기화했습니다.");
                 return;
             }
@@ -599,6 +584,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             return;
         }
         abilityManager.clearCooldowns(target);
+        gameManager.refreshPlayerDisplay(target);
         plugin.messages().send(sender, "&a쿨타임을 초기화했습니다.");
     }
 

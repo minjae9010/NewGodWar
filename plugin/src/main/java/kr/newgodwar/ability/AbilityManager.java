@@ -7,6 +7,7 @@ import kr.newgodwar.ability.api.AbilityKillContext;
 import kr.newgodwar.ability.api.AbilityPlayerContext;
 import kr.newgodwar.ability.api.AbilityRegistrar;
 import kr.newgodwar.util.BukkitCompat;
+import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Player;
@@ -86,6 +87,7 @@ public final class AbilityManager {
         AbilitySession session = new AbilitySession(definition, definition.create());
         assignments.put(player.getUniqueId(), session);
         session.ability().onAssign(playerContext(player, definition));
+        sendAbilityInfo(player, definition);
         if (plugin.game() != null) {
             plugin.game().refreshPlayerDisplay(player);
         }
@@ -211,6 +213,29 @@ public final class AbilityManager {
             return baseMillis;
         }
         return Math.max(0L, Math.round(baseMillis * urfCooldownMultiplier()));
+    }
+
+    private void sendAbilityInfo(Player player, AbilityDefinition definition) {
+        player.sendMessage("");
+        player.sendMessage(ChatColor.GOLD + "" + ChatColor.BOLD + "능력이 배정되었습니다: "
+            + ChatColor.WHITE + definition.name() + ChatColor.DARK_GRAY + " (" + definition.id() + ")");
+        player.sendMessage(ChatColor.GRAY + "설명: " + ChatColor.YELLOW + definition.description());
+        player.sendMessage(ChatColor.GRAY + "일반: " + ChatColor.WHITE + skillLine(definition.normalSkill(), definition.normalStoneCost()));
+        player.sendMessage(ChatColor.GRAY + "고급: " + ChatColor.WHITE + skillLine(definition.advancedSkill(), definition.advancedStoneCost()));
+        player.sendMessage(ChatColor.GRAY + "패시브: " + ChatColor.WHITE + emptySkill(definition.passiveSkill()));
+        player.sendMessage(ChatColor.DARK_GRAY + "/a 또는 /t help 로 다시 확인할 수 있습니다.");
+    }
+
+    private String skillLine(String skill, int stoneCost) {
+        return emptySkill(skill) + ChatColor.DARK_GRAY + " / 조약돌 " + stoneCost(stoneCost);
+    }
+
+    private String emptySkill(String skill) {
+        return skill == null || skill.trim().length() == 0 ? "없음" : skill;
+    }
+
+    private String stoneCost(int cost) {
+        return cost <= 0 ? "없음" : cost + "개";
     }
 
     public void handleDamage(Player damager, Player victim, EntityDamageByEntityEvent event) {

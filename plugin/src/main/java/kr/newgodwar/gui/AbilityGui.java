@@ -18,20 +18,32 @@ import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
 public final class AbilityGui implements Listener {
 
-    private static final String CURRENT_TITLE = ChatColor.DARK_AQUA + "현재 능력 보기";
-    private static final String LIST_TITLE = ChatColor.DARK_AQUA + "신의 능력 도감";
+    private static final String CURRENT_TITLE = ChatColor.BLACK + "능력 정보";
+    private static final String LIST_TITLE = ChatColor.BLACK + "능력 목록";
     private static final int CURRENT_SIZE = 27;
     private static final int LIST_SIZE = 54;
+    private static final int LIST_PAGE_SIZE = 36;
+    private static final int CURRENT_CLOSE_SLOT = 22;
+    private static final int LIST_PREVIOUS_SLOT = 48;
+    private static final int LIST_PAGE_SLOT = 49;
+    private static final int LIST_NEXT_SLOT = 50;
+    private static final int LIST_CLOSE_SLOT = 53;
 
     private final NewGodWarPlugin plugin;
     private final AbilityManager abilityManager;
     private final Set<UUID> openViewers = new HashSet<UUID>();
+    private final Map<UUID, Integer> listPages = new HashMap<UUID, Integer>();
 
     public AbilityGui(NewGodWarPlugin plugin, AbilityManager abilityManager) {
         this.plugin = plugin;
@@ -50,10 +62,15 @@ public final class AbilityGui implements Listener {
     }
 
     public void openList(Player viewer) {
+        openList(viewer, 1);
+    }
+
+    private void openList(Player viewer, int page) {
         Inventory inventory = Bukkit.createInventory(viewer, LIST_SIZE, LIST_TITLE);
-        fillList(inventory, viewer);
+        int currentPage = fillList(inventory, viewer, page);
         viewer.openInventory(inventory);
         openViewers.add(viewer.getUniqueId());
+        listPages.put(viewer.getUniqueId(), currentPage);
     }
 
     @EventHandler
@@ -64,7 +81,7 @@ public final class AbilityGui implements Listener {
         event.setCancelled(true);
 
         boolean list = LIST_TITLE.equals(event.getView().getTitle());
-        if ((list && event.getRawSlot() == 49) || (!list && event.getRawSlot() == 22)) {
+        if (!list && event.getRawSlot() == CURRENT_CLOSE_SLOT) {
             event.getWhoClicked().closeInventory();
             return;
         }
@@ -73,11 +90,27 @@ public final class AbilityGui implements Listener {
         }
 
         Player player = (Player) event.getWhoClicked();
-        AbilityDefinition ability = abilityAtSlot(event.getRawSlot());
+        if (event.getRawSlot() == LIST_CLOSE_SLOT) {
+            event.getWhoClicked().closeInventory();
+            return;
+        }
+        if (event.getRawSlot() == LIST_PREVIOUS_SLOT) {
+            openList(player, listPage(player) - 1);
+            return;
+        }
+        if (event.getRawSlot() == LIST_NEXT_SLOT) {
+            openList(player, listPage(player) + 1);
+            return;
+        }
+        if (event.getRawSlot() >= LIST_PAGE_SIZE) {
+            return;
+        }
+
+        AbilityDefinition ability = abilityAtSlot(event.getRawSlot(), player);
         if (ability != null && event.isRightClick() && player.hasPermission("newgodwar.admin")) {
             abilityManager.toggleBlacklisted(ability.id());
             plugin.messages().send(player, "&a" + ability.name() + " 블랙리스트 상태를 전환했습니다.");
-            openList(player);
+            openList(player, listPage(player));
         }
     }
 
@@ -91,6 +124,7 @@ public final class AbilityGui implements Listener {
     @EventHandler
     public void onClose(InventoryCloseEvent event) {
         openViewers.remove(event.getPlayer().getUniqueId());
+        listPages.remove(event.getPlayer().getUniqueId());
     }
 
     private boolean isAbilityInventory(InventoryClickEvent event) {
@@ -108,48 +142,60 @@ public final class AbilityGui implements Listener {
     }
 
     private void fillCurrent(Inventory inventory, Player viewer, Player target) {
-        for (int i = 0; i < CURRENT_SIZE; i++) {
-            inventory.setItem(i, item("GRAY_STAINED_GLASS_PANE", "STAINED_GLASS_PANE", 1, (short) 7, " "));
-        }
+        fill(inventory, deco());
 
         Player shown = target == null ? viewer : target;
         AbilityDefinition current = abilityManager.get(shown);
-        inventory.setItem(13, currentAbilityItem(shown, current));
-        inventory.setItem(22, item("BARRIER", "BARRIER", 1, (short) 0, ChatColor.RED + "닫기"));
+        inventory.setItem(4, item("KNOWLEDGE_BOOK", "BOOK", 1, (short) 0,
+            ChatColor.YELLOW + "" + ChatColor.BOLD + shown.getName() + " 님의 능력 정보",
+            ChatColor.GRAY + "/t help 또는 /a 로 다시 열 수 있습니다."));
+
+        if (current == null) {
+            inventory.setItem(13, noAbilityItem(shown));
+        } else {
+            inventory.setItem(10, skillItem("LIGHT_BLUE_STAINED_GLASS", (short) 3, ChatColor.AQUA + "일반 능력",
+                current.normalSkill(), current.normalStoneCost(), cooldownLine(shown, 1)));
+            inventory.setItem(13, currentAbilityItem(shown, current));
+            inventory.setItem(16, skillItem("RED_STAINED_GLASS", (short) 14, ChatColor.RED + "고급 능력",
+                current.advancedSkill(), current.advancedStoneCost(), cooldownLine(shown, 2)));
+            inventory.setItem(20, item("EMERALD", "EMERALD", 1, (short) 0,
+                ChatColor.GREEN + "" + ChatColor.BOLD + "패시브",
+                ChatColor.WHITE + current.passiveSkill()));
+            inventory.setItem(24, item("PAPER", "PAPER", 1, (short) 0,
+                ChatColor.GOLD + "" + ChatColor.BOLD + "세부 정보",
+                ChatColor.GRAY + "ID: " + ChatColor.WHITE + current.id(),
+                ChatColor.GRAY + "제작자: " + ChatColor.WHITE + current.author(),
+                cooldownLine(shown, 0)));
+        }
+
+        inventory.setItem(CURRENT_CLOSE_SLOT, closeItem());
     }
 
-    private void fillList(Inventory inventory, Player viewer) {
-        for (int i = 0; i < LIST_SIZE; i++) {
-            inventory.setItem(i, item("GRAY_STAINED_GLASS_PANE", "STAINED_GLASS_PANE", 1, (short) 7, " "));
+    private int fillList(Inventory inventory, Player viewer, int requestedPage) {
+        fill(inventory, deco());
+
+        List<AbilityDefinition> abilities = sortedAbilities();
+        int maxPage = Math.max(1, ((abilities.size() - 1) / LIST_PAGE_SIZE) + 1);
+        int page = Math.max(1, Math.min(maxPage, requestedPage));
+        int start = (page - 1) * LIST_PAGE_SIZE;
+        int end = Math.min(abilities.size(), start + LIST_PAGE_SIZE);
+
+        for (int i = start; i < end; i++) {
+            inventory.setItem(i - start, abilityItem(abilities.get(i), viewer.hasPermission("newgodwar.admin")));
         }
 
-        inventory.setItem(4, item("BOOK", "BOOK", 1, (short) 0,
-            ChatColor.YELLOW + "" + ChatColor.BOLD + "능력 도감",
-            ChatColor.GRAY + "등록된 능력을 한눈에 확인합니다.",
-            ChatColor.GRAY + "능력 아이템에 마우스를 올리면 세부 설명이 보입니다."));
-        inventory.setItem(6, guideItem(viewer));
-        inventory.setItem(9, item("COMPASS", "COMPASS", 1, (short) 0,
-            ChatColor.AQUA + "" + ChatColor.BOLD + "능력 목록",
-            ChatColor.GRAY + "초록: 사용 가능",
-            ChatColor.GRAY + "빨강: 비활성 또는 블랙리스트"));
-
-        int[] slots = new int[] {
-            10, 11, 12, 13, 14, 15, 16,
-            19, 20, 21, 22, 23, 24, 25,
-            28, 29, 30, 31, 32, 33, 34,
-            37, 38, 39, 40, 41, 42, 43
-        };
-
-        int index = 0;
-        for (AbilityDefinition ability : abilityManager.registry().all()) {
-            if (index >= slots.length) {
-                break;
-            }
-            inventory.setItem(slots[index], abilityItem(ability, viewer.hasPermission("newgodwar.admin")));
-            index++;
+        inventory.setItem(45, guideItem(viewer));
+        if (page > 1) {
+            inventory.setItem(LIST_PREVIOUS_SLOT, item("ARROW", "ARROW", 1, (short) 0, ChatColor.AQUA + "이전 페이지"));
         }
-
-        inventory.setItem(49, item("BARRIER", "BARRIER", 1, (short) 0, ChatColor.RED + "닫기"));
+        inventory.setItem(LIST_PAGE_SLOT, item("PAPER", "PAPER", 1, (short) 0,
+            ChatColor.GOLD + "페이지 " + ChatColor.YELLOW + page + ChatColor.GOLD + " / " + ChatColor.YELLOW + maxPage,
+            ChatColor.GRAY + "등록된 능력: " + ChatColor.WHITE + abilities.size() + "개"));
+        if (page < maxPage) {
+            inventory.setItem(LIST_NEXT_SLOT, item("ARROW", "ARROW", 1, (short) 0, ChatColor.AQUA + "다음 페이지"));
+        }
+        inventory.setItem(LIST_CLOSE_SLOT, closeItem());
+        return page;
     }
 
     private ItemStack guideItem(Player viewer) {
@@ -161,81 +207,118 @@ public final class AbilityGui implements Listener {
         }
         return item("NAME_TAG", "NAME_TAG", 1, (short) 0,
             ChatColor.GOLD + "" + ChatColor.BOLD + "보기 안내",
-            ChatColor.GRAY + "능력 이름, 설명, 돌 소모량을 확인하세요.",
-            ChatColor.GRAY + "게임 시작 후 내 현재 능력이 위에 표시됩니다.");
+            ChatColor.GRAY + "능력 이름, 설명, 돌 소모량을 확인하세요.");
     }
 
     private ItemStack currentAbilityItem(Player target, AbilityDefinition ability) {
-        if (ability == null) {
-            return item("BOOK", "BOOK", 1, (short) 0,
-                ChatColor.YELLOW + "" + ChatColor.BOLD + target.getName() + " 님의 현재 능력",
-                ChatColor.GRAY + "아직 능력이 배정되지 않았습니다.",
-                ChatColor.DARK_GRAY + "게임 시작 후 자동으로 배정됩니다.");
-        }
         return item("NETHER_STAR", "NETHER_STAR", 1, (short) 0,
-            ChatColor.GOLD + "" + ChatColor.BOLD + target.getName() + " 님의 현재 능력",
-            ChatColor.WHITE + ability.name() + ChatColor.GRAY + " (" + ability.id() + ")",
+            ChatColor.AQUA + "" + ChatColor.BOLD + ability.name(),
+            ChatColor.WHITE + target.getName() + ChatColor.GRAY + " 님의 현재 능력",
+            ChatColor.GRAY + "종류: " + ChatColor.YELLOW + "신의 능력",
+            "",
             ChatColor.GRAY + ability.description(),
-            ChatColor.YELLOW + "일반: " + ChatColor.GRAY + ability.normalSkill(),
-            ChatColor.YELLOW + "일반 돌 소모: " + ChatColor.GRAY + stoneCost(ability.normalStoneCost()),
-            ChatColor.GOLD + "고급: " + ChatColor.GRAY + ability.advancedSkill(),
-            ChatColor.GOLD + "고급 돌 소모: " + ChatColor.GRAY + stoneCost(ability.advancedStoneCost()),
-            ChatColor.AQUA + "패시브: " + ChatColor.GRAY + ability.passiveSkill(),
-            ChatColor.DARK_GRAY + "제작자: " + ability.author());
+            "",
+            ChatColor.DARK_GRAY + "ID: " + ability.id());
+    }
+
+    private ItemStack noAbilityItem(Player target) {
+        return item("BARRIER", "BARRIER", 1, (short) 0,
+            ChatColor.RED + "" + ChatColor.BOLD + "능력이 없습니다",
+            ChatColor.WHITE + target.getName() + ChatColor.GRAY + " 님에게 아직 능력이 배정되지 않았습니다.",
+            ChatColor.DARK_GRAY + "게임 시작 후 자동으로 배정됩니다.");
+    }
+
+    private ItemStack skillItem(String material, short damage, String name, String skill, int cost, String state) {
+        return item(material, "STAINED_GLASS", 1, damage,
+            name,
+            ChatColor.WHITE + skill,
+            "",
+            ChatColor.GRAY + "조약돌: " + ChatColor.WHITE + stoneCost(cost),
+            state);
     }
 
     private ItemStack abilityItem(AbilityDefinition ability, boolean showAdminState) {
         boolean enabled = abilityManager.isEnabled(ability);
         boolean blacklisted = abilityManager.isBlacklisted(ability);
-        ChatColor color = enabled ? ChatColor.GREEN : ChatColor.RED;
+        ChatColor color = enabled ? ChatColor.AQUA : ChatColor.RED;
         String state = blacklisted ? "블랙리스트" : (enabled ? "사용 가능" : "비활성");
         ArrayList<String> lore = new ArrayList<String>();
-        lore.add(ChatColor.GRAY + ability.description());
-        lore.add(ChatColor.YELLOW + "일반: " + ChatColor.GRAY + ability.normalSkill());
-        lore.add(ChatColor.YELLOW + "일반 돌 소모: " + ChatColor.GRAY + stoneCost(ability.normalStoneCost()));
-        lore.add(ChatColor.GOLD + "고급: " + ChatColor.GRAY + ability.advancedSkill());
-        lore.add(ChatColor.GOLD + "고급 돌 소모: " + ChatColor.GRAY + stoneCost(ability.advancedStoneCost()));
+        lore.add(ChatColor.WHITE + "상태: " + (enabled ? ChatColor.GREEN : ChatColor.RED) + state);
+        lore.add("");
+        lore.add(ChatColor.WHITE + ability.description());
+        lore.add("");
+        lore.add(ChatColor.AQUA + "일반: " + ChatColor.GRAY + ability.normalSkill());
+        lore.add(ChatColor.GRAY + "조약돌: " + ChatColor.WHITE + stoneCost(ability.normalStoneCost()));
+        lore.add(ChatColor.RED + "고급: " + ChatColor.GRAY + ability.advancedSkill());
+        lore.add(ChatColor.GRAY + "조약돌: " + ChatColor.WHITE + stoneCost(ability.advancedStoneCost()));
         lore.add(ChatColor.AQUA + "패시브: " + ChatColor.GRAY + ability.passiveSkill());
         lore.add(ChatColor.DARK_GRAY + "ID: " + ability.id());
-        lore.add(ChatColor.DARK_GRAY + "제작자: " + ability.author());
         if (showAdminState) {
-            lore.add(color + state);
+            lore.add("");
             lore.add(ChatColor.DARK_GRAY + "우클릭: 블랙리스트 전환");
         }
-        return item(enabled ? "ENCHANTED_BOOK" : "BOOK", enabled ? "ENCHANTED_BOOK" : "BOOK", 1, (short) 0,
+        String material = blacklisted ? "RED_STAINED_GLASS" : (enabled ? "IRON_BLOCK" : "GRAY_STAINED_GLASS");
+        short damage = blacklisted ? (short) 14 : (enabled ? (short) 0 : (short) 7);
+        return item(material, blacklisted || !enabled ? "STAINED_GLASS" : "IRON_BLOCK", 1, damage,
             color + ability.name(), lore);
     }
 
-    private AbilityDefinition abilityAtSlot(int slot) {
-        int[] slots = new int[] {
-            10, 11, 12, 13, 14, 15, 16,
-            19, 20, 21, 22, 23, 24, 25,
-            28, 29, 30, 31, 32, 33, 34,
-            37, 38, 39, 40, 41, 42, 43
-        };
-        int index = -1;
-        for (int i = 0; i < slots.length; i++) {
-            if (slots[i] == slot) {
-                index = i;
-                break;
-            }
-        }
-        if (index < 0) {
+    private AbilityDefinition abilityAtSlot(int slot, Player viewer) {
+        if (slot < 0 || slot >= LIST_PAGE_SIZE) {
             return null;
         }
 
-        int current = 0;
-        for (AbilityDefinition ability : abilityManager.registry().all()) {
-            if (current == index) {
-                return ability;
-            }
-            current++;
+        int index = (listPage(viewer) - 1) * LIST_PAGE_SIZE + slot;
+        List<AbilityDefinition> abilities = sortedAbilities();
+        if (index < 0 || index >= abilities.size()) {
+            return null;
         }
-        return null;
+        return abilities.get(index);
+    }
+
+    private int listPage(Player viewer) {
+        Integer page = listPages.get(viewer.getUniqueId());
+        return page == null ? 1 : page;
+    }
+
+    private List<AbilityDefinition> sortedAbilities() {
+        ArrayList<AbilityDefinition> abilities = new ArrayList<AbilityDefinition>();
+        for (AbilityDefinition ability : abilityManager.registry().all()) {
+            abilities.add(ability);
+        }
+        Collections.sort(abilities, new Comparator<AbilityDefinition>() {
+            @Override
+            public int compare(AbilityDefinition first, AbilityDefinition second) {
+                return first.name().compareTo(second.name());
+            }
+        });
+        return abilities;
+    }
+
+    private String cooldownLine(Player player, int slot) {
+        long millis = abilityManager.cooldownRemainingMillis(player, slot);
+        if (millis <= 0L) {
+            return ChatColor.WHITE + "상태: " + ChatColor.GREEN + "사용 가능";
+        }
+        return ChatColor.WHITE + "상태: " + ChatColor.YELLOW + "쿨타임 " + ((millis + 999L) / 1000L) + "초";
     }
 
     private String stoneCost(int cost) {
         return cost <= 0 ? "없음" : cost + "개";
+    }
+
+    private void fill(Inventory inventory, ItemStack item) {
+        for (int i = 0; i < inventory.getSize(); i++) {
+            inventory.setItem(i, item);
+        }
+    }
+
+    private ItemStack deco() {
+        return item("GRAY_STAINED_GLASS_PANE", "STAINED_GLASS_PANE", 1, (short) 7, ChatColor.WHITE.toString());
+    }
+
+    private ItemStack closeItem() {
+        return item("SPRUCE_DOOR", "WOOD_DOOR", 1, (short) 0, ChatColor.DARK_AQUA + "나가기");
     }
 
     private ItemStack item(String modernMaterial, String legacyMaterial, int amount, short damage, String name, String... lore) {

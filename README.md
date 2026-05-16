@@ -19,11 +19,18 @@
 - `/t` Themachy 스타일 짧은 명령어 도움말
 - `/t help` 또는 `/a` 자신의 현재 능력 빠른 확인
 - `/t a <ability> <player>` Themachy 스타일 능력 수동 지정
+- `/t a random|reset|remove|skip|cutin` Themachy 스타일 능력 배정 보조 명령
+- `/t yes` 또는 `/t no` 능력 재추첨 확정 / 다시 뽑기
 - `/godwar autoteam` 온라인 플레이어 자동 팀 배정
 - `/godwar join <red|blue|green> [player]` 팀 수동 배정
 - `/godwar midjoin [red|blue|green]` 진행 중인 게임에 중간 참여
 - `/godwar leave [player]` 팀 제거
+- `/godwar setspawn <red|blue|green>` 현재 위치를 팀 스폰으로 등록
 - `/godwar settemple <red|blue|green>` 바라보는 다이아 블록을 팀 심장으로 등록
+- `/t info [team]` 팀원 목록 확인
+- `/t observer [list]` 옵저버 전환 또는 목록 확인
+- `/t clear [player]` 능력 쿨타임 초기화
+- `/도박` 또는 `/t con` 카지노 GUI 열기
 - `/godwar start` 게임 시작 및 능력 배정
 - `/godwar test [ability]` 혼자 능력 테스트 시작
 - `/godwar stop` 게임 종료
@@ -55,9 +62,16 @@
 - `game.friendly-fire`: 같은 팀 공격 허용 여부
 - `game.auto-balance-teams`: 팀이 비어 있을 때 시작 시 자동 팀 배정
 - `game.allow-mid-join`: 진행 중인 게임의 중간 참여 허용 여부
+- `game.clear-inventory`, `game.give-skyblock-items`, `game.remove-entities`: 시작 시 인벤토리/기본 아이템/엔티티 정리
+- `game.ignore-bed`: 리스폰 시 침대 대신 팀 스폰 사용
+- `game.fast-start`, `game.ready-countdown-seconds`: 시작 준비 카운트다운
+- `game.select-right`: 능력 재추첨 기회 사용 여부
 - `game.ability-roll-message`: 능력 배정 타이틀 표시 여부
 - `game.ability-tick-interval-seconds`: 능력 반복 처리 주기
 - `game.urf`: 우르프 모드 사용 여부와 능력 쿨타임 배율
+- `world`: 시작 시 autosave, 동물/몬스터 스폰, 난이도, 시작 시간을 적용하고 종료 시 복구
+- `core`: 코어 폭파 보호와 다이아 곡괭이 파괴 금지
+- `gambling.enabled`: 도박 GUI 사용 여부
 - `scoreboard.enabled`: 우측 스코어보드에 내 팀, 능력, 킬 상태 표시
 - `scoreboard.team-prefixes`: 탭 목록과 머리 위 이름에 팀 Prefix 표시
 - `blacklist.abilities`: 랜덤 배정에서 제외할 능력 ID 목록

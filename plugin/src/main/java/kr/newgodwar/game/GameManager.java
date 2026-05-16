@@ -837,6 +837,7 @@ public final class GameManager {
             public void run() {
                 if (state == GameState.RUNNING) {
                     abilityManager.tick(BukkitCompat.onlinePlayers());
+                    refreshAllPlayerDisplays();
                 }
             }
         }, interval, interval);

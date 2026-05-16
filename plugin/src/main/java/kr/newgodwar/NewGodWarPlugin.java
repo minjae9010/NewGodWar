@@ -6,6 +6,7 @@ import kr.newgodwar.command.TeamChatCommand;
 import kr.newgodwar.game.BlazeRodRecipes;
 import kr.newgodwar.game.GameManager;
 import kr.newgodwar.gui.AbilityGui;
+import kr.newgodwar.gui.GamblingGui;
 import kr.newgodwar.gui.SettingsGui;
 import kr.newgodwar.listener.GameListener;
 import kr.newgodwar.nms.NmsAdapter;
@@ -24,6 +25,7 @@ public final class NewGodWarPlugin extends JavaPlugin {
     private ServerVersionSupport versionSupport;
     private SettingsGui settingsGui;
     private AbilityGui abilityGui;
+    private GamblingGui gamblingGui;
 
     @Override
     public void onEnable() {
@@ -37,6 +39,7 @@ public final class NewGodWarPlugin extends JavaPlugin {
 
         this.settingsGui = new SettingsGui(this, gameManager);
         this.abilityGui = new AbilityGui(this, abilityManager);
+        this.gamblingGui = new GamblingGui(this);
 
         GodWarCommand godWarCommand = new GodWarCommand(this, gameManager, abilityManager, settingsGui, abilityGui);
         getCommand("godwar").setExecutor(godWarCommand);
@@ -45,11 +48,13 @@ public final class NewGodWarPlugin extends JavaPlugin {
         getCommand("x").setTabCompleter(godWarCommand);
         getCommand("a").setExecutor(godWarCommand);
         getCommand("a").setTabCompleter(godWarCommand);
+        getCommand("gamble").setExecutor(gamblingGui);
         getCommand("teamchat").setExecutor(new TeamChatCommand(this, gameManager));
 
         Bukkit.getPluginManager().registerEvents(new GameListener(this, gameManager, abilityManager, nmsAdapter), this);
         Bukkit.getPluginManager().registerEvents(settingsGui, this);
         Bukkit.getPluginManager().registerEvents(abilityGui, this);
+        Bukkit.getPluginManager().registerEvents(gamblingGui, this);
         BlazeRodRecipes.register(this);
 
         if (versionSupport.paperDownloadVersion()) {
