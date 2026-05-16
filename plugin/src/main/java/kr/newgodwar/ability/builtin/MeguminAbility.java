@@ -32,12 +32,12 @@ final class MeguminAbility extends BaseAbility {
             return;
         }
         oneTimeUsed = true;
-        final Block block = targetBlock(player, 25);
+        final Location location = targetLocation(player, 25);
         player.sendMessage(ChatColor.RED + "익스플로전!");
         later(context, 3, new Runnable() {
             @Override
             public void run() {
-                player.getWorld().createExplosion(block.getLocation(), 5.0F);
+                player.getWorld().createExplosion(location, 5.0F);
                 player.setHealth(0.0D);
             }
         });

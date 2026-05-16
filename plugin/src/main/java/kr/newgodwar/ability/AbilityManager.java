@@ -84,6 +84,9 @@ public final class AbilityManager {
         AbilitySession session = new AbilitySession(definition, definition.create());
         assignments.put(player.getUniqueId(), session);
         session.ability().onAssign(playerContext(player, definition));
+        if (plugin.game() != null) {
+            plugin.game().refreshPlayerDisplay(player);
+        }
     }
 
     public AbilitySession session(Player player) {

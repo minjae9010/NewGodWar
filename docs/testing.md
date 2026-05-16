@@ -25,6 +25,12 @@ powershell -ExecutionPolicy Bypass -File .\scripts\Test-PaperMatrix.ps1
 .\scripts\Test-PaperMatrix.ps1 -Versions 1.12.2,1.20.6,1.21.1
 ```
 
+로컬 테스트는 기본적으로 `PATH`의 `java`를 사용합니다. 구버전 서버를 로컬에서 확인할 때는 해당 버전에 맞는 Java 실행 파일을 직접 지정할 수 있습니다.
+
+```powershell
+.\scripts\Test-PaperMatrix.ps1 -Versions 1.12.2 -JavaExecutable "C:\Program Files\Eclipse Adoptium\jdk-8\bin\java.exe"
+```
+
 이미 빌드된 jar를 테스트하려면 다음처럼 실행합니다.
 
 ```powershell

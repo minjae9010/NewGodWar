@@ -122,6 +122,12 @@ public final class SettingsGui implements Listener {
             reopen(player);
             return;
         }
+        if (slot == 17) {
+            toggle("game.allow-mid-join");
+            gameManager.refreshAllPlayerDisplays();
+            reopen(player);
+            return;
+        }
         if (slot == 19) {
             changeInt("game.announce-radius", -10, 0, 10000, false);
             reopen(player);
@@ -144,6 +150,18 @@ public final class SettingsGui implements Listener {
         }
         if (slot == 24) {
             toggle("gamerules.enabled");
+            reopen(player);
+            return;
+        }
+        if (slot == 25) {
+            toggle("scoreboard.enabled");
+            gameManager.refreshAllPlayerDisplays();
+            reopen(player);
+            return;
+        }
+        if (slot == 26) {
+            toggle("scoreboard.team-prefixes");
+            gameManager.refreshAllPlayerDisplays();
             reopen(player);
             return;
         }
@@ -171,6 +189,12 @@ public final class SettingsGui implements Listener {
             plugin.reloadConfig();
             gameManager.reloadSettings();
             plugin.messages().send(player, "&a설정을 다시 불러왔습니다.");
+            reopen(player);
+            return;
+        }
+        if (slot == 32) {
+            AbilityDefinition ability = gameManager.startTest(player, null);
+            plugin.messages().send(player, "&a테스트 모드를 시작했습니다. 능력: &f" + ability.name());
             reopen(player);
             return;
         }
@@ -236,10 +260,22 @@ public final class SettingsGui implements Listener {
 
         FileConfiguration config = plugin.getConfig();
         inventory.setItem(4, item("NETHER_STAR", "NETHER_STAR", 1, (short) 0,
-            ChatColor.GOLD + "신들의 전쟁 관리",
+            ChatColor.GOLD + "" + ChatColor.BOLD + "신들의 전쟁 관리",
             ChatColor.GRAY + "상태: " + ChatColor.YELLOW + gameManager.state(),
             ChatColor.GRAY + "참가자: " + ChatColor.YELLOW + participantCount(),
-            ChatColor.GRAY + "마인크래프트: " + ChatColor.YELLOW + plugin.versionSupport().minecraftVersion()));
+            ChatColor.GRAY + "마인크래프트: " + ChatColor.YELLOW + plugin.versionSupport().minecraftVersion(),
+            ChatColor.DARK_GRAY + "/gw 로 채팅 도움말을 볼 수 있습니다."));
+
+        inventory.setItem(0, sectionItem("코어 설정", "최소 인원과 게임 기본 옵션"));
+        inventory.setItem(18, sectionItem("알림 / 모드", "방송 반경, 우르프, 스코어보드"));
+        inventory.setItem(27, sectionItem("빠른 실행", "시작, 종료, 자동 팀 배정"));
+        inventory.setItem(35, sectionItem("능력 ON/OFF", "능력별 사용 여부"));
+        inventory.setItem(44, sectionItem("능력 세부값", "쿨타임과 수치 조절"));
+        inventory.setItem(53, item("NAME_TAG", "NAME_TAG", 1, (short) 0,
+            ChatColor.AQUA + "조작 안내",
+            ChatColor.GRAY + "왼쪽 클릭: 증가 또는 실행",
+            ChatColor.GRAY + "오른쪽 클릭: 감소",
+            ChatColor.GRAY + "Shift 클릭: 큰 폭 조정"));
 
         inventory.setItem(10, item("REDSTONE_TORCH", "REDSTONE_TORCH_ON", 1, (short) 0,
             ChatColor.RED + "최소 인원 -1",
@@ -254,6 +290,7 @@ public final class SettingsGui implements Listener {
         inventory.setItem(14, toggleItem("game.friendly-fire", "팀킬 허용", "IRON_SWORD"));
         inventory.setItem(15, toggleItem("game.auto-balance-teams", "빈 팀이면 자동 배정", "COMPASS"));
         inventory.setItem(16, toggleItem("game.ability-roll-message", "능력 배정 안내", "PAPER"));
+        inventory.setItem(17, toggleItem("game.allow-mid-join", "중간 참여 허용", "ENDER_PEARL"));
 
         inventory.setItem(19, item("REDSTONE", "REDSTONE", 1, (short) 0,
             ChatColor.RED + "알림 반경 -10",
@@ -268,6 +305,8 @@ public final class SettingsGui implements Listener {
         inventory.setItem(22, toggleItem("game.urf.enabled", "우르프 모드", "BLAZE_POWDER"));
         inventory.setItem(23, numberItem("우르프 쿨타임 배율", "game.urf.cooldown-multiplier", 0.2D, "왼쪽 -0.05 / 오른쪽 +0.05"));
         inventory.setItem(24, toggleItem("gamerules.enabled", "게임룰 자동 적용", "COMMAND"));
+        inventory.setItem(25, toggleItem("scoreboard.enabled", "능력 스코어보드", "ITEM_FRAME"));
+        inventory.setItem(26, toggleItem("scoreboard.team-prefixes", "팀 Prefix 표시", "NAME_TAG"));
 
         inventory.setItem(28, item("EMERALD_BLOCK", "EMERALD_BLOCK", 1, (short) 0,
             ChatColor.GREEN + "게임 시작",
@@ -281,6 +320,10 @@ public final class SettingsGui implements Listener {
         inventory.setItem(31, item("BOOK", "BOOK", 1, (short) 0,
             ChatColor.YELLOW + "설정 다시 불러오기",
             ChatColor.GRAY + "config.yml을 다시 읽고 GUI를 갱신합니다."));
+        inventory.setItem(32, item("EXPERIENCE_BOTTLE", "EXP_BOTTLE", 1, (short) 0,
+            ChatColor.LIGHT_PURPLE + "혼자 능력 테스트",
+            ChatColor.GRAY + "최소 인원 조건 없이",
+            ChatColor.GRAY + "나에게 랜덤 능력을 바로 부여합니다."));
         inventory.setItem(33, item("BARRIER", "BARRIER", 1, (short) 0,
             ChatColor.RED + "닫기"));
 
@@ -310,6 +353,12 @@ public final class SettingsGui implements Listener {
             color + title + ": " + state,
             ChatColor.GRAY + "클릭하면 설정이 전환됩니다.",
             ChatColor.DARK_GRAY + path);
+    }
+
+    private ItemStack sectionItem(String title, String description) {
+        return item("OAK_SIGN", "SIGN", 1, (short) 0,
+            ChatColor.YELLOW + "" + ChatColor.BOLD + title,
+            ChatColor.GRAY + description);
     }
 
     private ItemStack abilityItem(AbilityDefinition ability) {

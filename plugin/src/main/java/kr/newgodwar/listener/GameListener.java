@@ -52,13 +52,16 @@ public final class GameListener implements Listener {
         if (gameManager.isRunning() && gameManager.teamOf(player) != null) {
             abilityManager.reapply(player);
         }
+        gameManager.refreshPlayerDisplay(player);
     }
 
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
         if (!gameManager.isRunning()) {
             gameManager.leave(event.getPlayer());
+            return;
         }
+        gameManager.forgetPlayer(event.getPlayer());
     }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)

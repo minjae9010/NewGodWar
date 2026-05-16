@@ -3,6 +3,7 @@ package kr.newgodwar;
 import kr.newgodwar.ability.AbilityManager;
 import kr.newgodwar.command.GodWarCommand;
 import kr.newgodwar.command.TeamChatCommand;
+import kr.newgodwar.game.BlazeRodRecipes;
 import kr.newgodwar.game.GameManager;
 import kr.newgodwar.gui.AbilityGui;
 import kr.newgodwar.gui.SettingsGui;
@@ -42,11 +43,14 @@ public final class NewGodWarPlugin extends JavaPlugin {
         getCommand("godwar").setTabCompleter(godWarCommand);
         getCommand("x").setExecutor(godWarCommand);
         getCommand("x").setTabCompleter(godWarCommand);
+        getCommand("a").setExecutor(godWarCommand);
+        getCommand("a").setTabCompleter(godWarCommand);
         getCommand("teamchat").setExecutor(new TeamChatCommand(this, gameManager));
 
         Bukkit.getPluginManager().registerEvents(new GameListener(this, gameManager, abilityManager, nmsAdapter), this);
         Bukkit.getPluginManager().registerEvents(settingsGui, this);
         Bukkit.getPluginManager().registerEvents(abilityGui, this);
+        BlazeRodRecipes.register(this);
 
         if (versionSupport.paperDownloadVersion()) {
             getLogger().info("Detected Paper downloadable version target: " + versionSupport.summary());

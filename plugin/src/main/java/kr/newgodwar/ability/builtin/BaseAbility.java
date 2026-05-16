@@ -21,6 +21,7 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BookMeta;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.util.BlockIterator;
 import org.bukkit.util.Vector;
 
 import java.util.ArrayList;
@@ -84,7 +85,10 @@ abstract class BaseAbility implements GodAbility {
 
     protected boolean use(AbilityPlayerContext context, Player player, int slot, Material material, int amount, int cooldownSeconds) {
         int realCost = material == COBBLESTONE ? cost(context, amount) : amount;
-        if (!readyCooldown(player, slot, cooldownSeconds) || !has(player, material, realCost)) {
+        if (!readyCooldown(player, slot, cooldownSeconds)) {
+            return false;
+        }
+        if (!has(player, material, realCost)) {
             return false;
         }
         if (realCost > 0) {
@@ -107,7 +111,8 @@ abstract class BaseAbility implements GodAbility {
         Long until = cooldowns.get(slot);
         long now = System.currentTimeMillis();
         if (until != null && until > now) {
-            player.sendMessage(ChatColor.YELLOW + "쿨타임: " + ((until - now + 999L) / 1000L) + "초");
+            player.sendMessage(ChatColor.YELLOW + "아직 능력을 사용할 수 없습니다. 쿨타임 "
+                + ((until - now + 999L) / 1000L) + "초 남았습니다.");
             return false;
         }
         return true;
@@ -125,7 +130,11 @@ abstract class BaseAbility implements GodAbility {
         if (amount <= 0 || player.getInventory().contains(material, amount)) {
             return true;
         }
-        player.sendMessage(ChatColor.RED + material.name() + " " + amount + "개가 필요합니다.");
+        if (material == COBBLESTONE) {
+            player.sendMessage(ChatColor.RED + "조약돌 " + amount + "개가 부족합니다.");
+        } else {
+            player.sendMessage(ChatColor.RED + material.name() + " " + amount + "개가 필요합니다.");
+        }
         return false;
     }
 
@@ -157,6 +166,29 @@ abstract class BaseAbility implements GodAbility {
         return BukkitCompat.getTargetBlock(player, range);
     }
 
+    protected Location targetLocation(Player player, int range) {
+        Block block = firstSightBlock(player, range);
+        if (block != null) {
+            return block.getLocation();
+        }
+        return player.getEyeLocation().add(player.getEyeLocation().getDirection().normalize().multiply(range));
+    }
+
+    private Block firstSightBlock(Player player, int range) {
+        BlockIterator iterator = new BlockIterator(player, range);
+        while (iterator.hasNext()) {
+            Block block = iterator.next();
+            if (!isAir(block)) {
+                return block;
+            }
+        }
+        return null;
+    }
+
+    private boolean isAir(Block block) {
+        return block == null || block.getType() == Material.AIR || block.getType().name().endsWith("_AIR");
+    }
+
     protected List<Player> nearbyPlayers(AbilityPlayerContext context, Player player, int range, boolean sameTeam) {
         List<Player> players = new ArrayList<Player>();
         for (Entity entity : player.getNearbyEntities(range, range, range)) {
@@ -178,6 +210,42 @@ abstract class BaseAbility implements GodAbility {
 
     protected Player targetPlayer() {
         return targetName == null ? null : Bukkit.getPlayer(targetName);
+    }
+
+    protected Player targetPlayerInSight(AbilityPlayerContext context, Player player, int range, boolean sameTeam) {
+        Player target = targetPlayer();
+        if (target == null || !target.isOnline() || target.getWorld() != player.getWorld()) {
+            player.sendMessage(ChatColor.RED + "타깃이 해당 구역에 없습니다.");
+            return null;
+        }
+        if (sameTeam(context, player, target) != sameTeam || !lookingAt(player, target, range)) {
+            player.sendMessage(ChatColor.RED + "타깃이 해당 구역에 없습니다.");
+            return null;
+        }
+        return target;
+    }
+
+    private boolean lookingAt(Player player, Player target, int range) {
+        if (player.getLocation().distanceSquared(target.getLocation()) > range * range) {
+            return false;
+        }
+        if (!player.hasLineOfSight(target)) {
+            return false;
+        }
+        Location eye = player.getEyeLocation();
+        Vector direction = eye.getDirection().normalize();
+        return lookingNear(eye, direction, target.getEyeLocation(), range)
+            || lookingNear(eye, direction, target.getLocation().add(0.0D, 0.9D, 0.0D), range);
+    }
+
+    private boolean lookingNear(Location eye, Vector direction, Location point, int range) {
+        Vector offset = point.toVector().subtract(eye.toVector());
+        double projected = offset.dot(direction);
+        if (projected < 0.0D || projected > range) {
+            return false;
+        }
+        double missDistanceSquared = offset.lengthSquared() - projected * projected;
+        return missDistanceSquared <= 2.25D;
     }
 
     protected void later(AbilityPlayerContext context, int seconds, Runnable runnable) {
@@ -237,12 +305,9 @@ abstract class BaseAbility implements GodAbility {
         }
     }
 
-    protected void sleepTarget(AbilityPlayerContext context, Player player) {
-        Player target = targetPlayer();
-        if (target != null && !sameTeam(context, player, target) && player.getLocation().distanceSquared(target.getLocation()) <= 400.0D) {
-            effect(target, PotionEffectType.BLINDNESS, 30, 0);
-            effect(target, PotionEffectType.SLOW, 30, 3);
-        }
+    protected void sleepTarget(Player target) {
+        effect(target, PotionEffectType.BLINDNESS, 30, 0);
+        effect(target, PotionEffectType.SLOW, 30, 3);
     }
 
     protected void teamBuff(AbilityPlayerContext context, Player player) {
@@ -312,14 +377,16 @@ abstract class BaseAbility implements GodAbility {
         }
     }
 
-    protected void swapTarget(AbilityPlayerContext context, Player player) {
-        Player target = targetPlayer();
-        if (target != null && sameTeam(context, player, target)) {
-            Location first = player.getLocation();
-            Location second = target.getLocation();
-            player.teleport(second);
-            target.teleport(first);
+    protected boolean swapTarget(AbilityPlayerContext context, Player player) {
+        Player target = targetPlayerInSight(context, player, 30, true);
+        if (target == null) {
+            return false;
         }
+        Location first = player.getLocation();
+        Location second = target.getLocation();
+        player.teleport(second);
+        target.teleport(first);
+        return true;
     }
 
     protected void push(Player player, List<Player> targets, double power) {
@@ -386,11 +453,13 @@ abstract class BaseAbility implements GodAbility {
         effect(player, PotionEffectType.SLOW_DIGGING, 10, 0);
     }
 
-    protected void pullTarget(AbilityPlayerContext context, Player player, int range) {
-        Player target = targetPlayer();
-        if (target != null && !sameTeam(context, player, target) && target.getLocation().distanceSquared(player.getLocation()) <= range * range) {
-            target.teleport(player);
+    protected boolean pullTarget(AbilityPlayerContext context, Player player, int range) {
+        Player target = targetPlayerInSight(context, player, range, false);
+        if (target == null) {
+            return false;
         }
+        target.teleport(player);
+        return true;
     }
 
     protected void giveSpellBook(Player player, boolean harry) {
@@ -417,7 +486,7 @@ abstract class BaseAbility implements GodAbility {
             }
         } else if (spell.equals("봄바르다") || spell.equalsIgnoreCase("Bombarda")) {
             if (use(context, player, 1, COBBLESTONE, 5, 5)) {
-                player.getWorld().createExplosion(targetBlock(player, 5).getLocation(), 1.0F);
+                player.getWorld().createExplosion(targetLocation(player, 5), 1.0F);
             }
         } else if (spell.equals("스투페파이") || spell.equalsIgnoreCase("Stupefy")) {
             if (use(context, player, 2, COBBLESTONE, 10, 20)) {
@@ -438,13 +507,13 @@ abstract class BaseAbility implements GodAbility {
                 });
             }
         } else if (spell.equals("엑스펠리아무스") || spell.equalsIgnoreCase("Expelliarmus")) {
-            Player target = targetPlayer();
+            Player target = targetPlayerInSight(context, player, 20, false);
             if (target != null && use(context, player, 2, COBBLESTONE, 10, 20) && RANDOM.nextInt(100) < (harry ? 25 : 20)) {
                 target.getInventory().setArmorContents(new ItemStack[] {null, null, null, null});
                 target.setItemInHand(new ItemStack(Material.AIR));
             }
         } else if (spell.equals("아바다 케다브라") || spell.equalsIgnoreCase("Avada Kedavra")) {
-            Player target = targetPlayer();
+            Player target = targetPlayerInSight(context, player, 20, false);
             if (target != null && use(context, player, 2, COBBLESTONE, 10, 20) && RANDOM.nextInt(100) < (harry ? 20 : 15)) {
                 target.setHealth(0.0D);
             }

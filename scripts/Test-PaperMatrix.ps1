@@ -11,6 +11,7 @@ param(
     ),
     [string] $PluginJar = "",
     [string] $WorkDir = ".paper-smoke",
+    [string] $JavaExecutable = "java",
     [int] $TimeoutSeconds = 150,
     [switch] $SkipBuild,
     [switch] $KeepWorkDirs
@@ -140,18 +141,12 @@ function Stop-ServerProcess {
     }
 
     try {
-        $Process.StandardInput.WriteLine("stop")
-        $Process.StandardInput.Flush()
+        $Process.Kill($true)
     } catch {
+        $Process.Kill()
     }
 
-    if (-not $Process.WaitForExit(45000)) {
-        try {
-            $Process.Kill($true)
-        } catch {
-            $Process.Kill()
-        }
-    }
+    $Process.WaitForExit(15000) | Out-Null
 }
 
 function Test-PaperVersion {
@@ -197,43 +192,22 @@ function Test-PaperVersion {
     Write-Step "Starting Paper $MinecraftVersion"
 
     $psi = [System.Diagnostics.ProcessStartInfo]::new()
-    $psi.FileName = "java"
+    $psi.FileName = $JavaExecutable
     $psi.Arguments = "-Xmx1G -jar `"$paperJar`" nogui"
     $psi.WorkingDirectory = $versionDir
     $psi.UseShellExecute = $false
-    $psi.RedirectStandardInput = $true
-    $psi.RedirectStandardOutput = $true
-    $psi.RedirectStandardError = $true
+    $psi.RedirectStandardInput = $false
+    $psi.RedirectStandardOutput = $false
+    $psi.RedirectStandardError = $false
     $psi.CreateNoWindow = $true
 
     $process = [System.Diagnostics.Process]::new()
     $process.StartInfo = $psi
 
-    $writer = [System.IO.StreamWriter]::new($logPath, $true, [System.Text.Encoding]::UTF8)
-    $outputHandler = [System.Diagnostics.DataReceivedEventHandler] {
-        param($sender, $eventArgs)
-        if ($null -ne $eventArgs.Data) {
-            $writer.WriteLine($eventArgs.Data)
-            $writer.Flush()
-        }
-    }
-    $errorHandler = [System.Diagnostics.DataReceivedEventHandler] {
-        param($sender, $eventArgs)
-        if ($null -ne $eventArgs.Data) {
-            $writer.WriteLine($eventArgs.Data)
-            $writer.Flush()
-        }
-    }
-
-    $process.add_OutputDataReceived($outputHandler)
-    $process.add_ErrorDataReceived($errorHandler)
-
     try {
         if (-not $process.Start()) {
             throw "Failed to start Java process."
         }
-        $process.BeginOutputReadLine()
-        $process.BeginErrorReadLine()
 
         $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
         $enabled = $false
@@ -274,7 +248,6 @@ function Test-PaperVersion {
         Write-Host "PASS Paper $MinecraftVersion loaded NewGodWar successfully."
     } finally {
         Stop-ServerProcess -Process $process
-        $writer.Dispose()
     }
 }
 

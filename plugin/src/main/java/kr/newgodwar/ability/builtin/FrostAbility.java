@@ -27,17 +27,18 @@ final class FrostAbility extends BaseAbility {
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
         if (use(context, player, 1, COBBLESTONE, 10, 8)) {
-            iceSphere(context, targetBlock(player, 15).getLocation(), 3, 5);
+            iceSphere(context, targetLocation(player, 15), 3, 5);
         }
     }
 
     @Override
     protected void onStaffRight(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
+        Player target = targetPlayerInSight(context, player, 20, false);
+        if (target == null) {
+            return;
+        }
         if (use(context, player, 2, COBBLESTONE, 20, 140)) {
-            Player target = targetPlayer();
-            if (target != null && !sameTeam(context, player, target)) {
-                iceSphere(context, target.getLocation(), 5, 8);
-            }
+            iceSphere(context, target.getLocation(), 5, 8);
         }
     }
 }

@@ -16,16 +16,21 @@
 ## 명령어
 
 - `/godwar help` 도움말
+- `/t` Themachy 스타일 짧은 명령어 도움말
+- `/t help` 또는 `/a` 자신의 현재 능력 빠른 확인
+- `/t a <ability> <player>` Themachy 스타일 능력 수동 지정
 - `/godwar autoteam` 온라인 플레이어 자동 팀 배정
 - `/godwar join <red|blue|green> [player]` 팀 수동 배정
+- `/godwar midjoin [red|blue|green]` 진행 중인 게임에 중간 참여
 - `/godwar leave [player]` 팀 제거
 - `/godwar settemple <red|blue|green>` 바라보는 다이아 블록을 팀 심장으로 등록
 - `/godwar start` 게임 시작 및 능력 배정
+- `/godwar test [ability]` 혼자 능력 테스트 시작
 - `/godwar stop` 게임 종료
 - `/godwar status` 현재 게임 상태
 - `/godwar gui` 또는 `/godwar settings` 관리자용 상자 GUI 설정 열기
-- `/godwar ability [player]` 능력 확인 GUI 열기
-- `/godwar abilities` 등록된 능력 목록 GUI 열기
+- `/godwar ability [player]` 현재 능력만 확인
+- `/godwar abilities` 등록된 능력 도감 GUI 열기
 - `/godwar blacklist <list|add|remove|toggle> [ability]` 랜덤 배정에서 제외할 능력 관리
 - `/godwar gamerule <apply|restore>` 설정된 게임룰 수동 적용 또는 복구
 - `/godwar target <player>` 또는 `/x <player>` 타깃형 능력 대상 지정
@@ -40,13 +45,20 @@
 
 내장 능력 목록은 [능력 목록](docs/wiki/abilities.md)을 확인하세요.
 
+## 추가 조합법
+
+- 막대기 2개를 일자 또는 사선으로 배치하면 블레이즈 막대기 1개를 제작할 수 있습니다.
+
 ## 주요 설정
 
 - `game.min-players`: 게임 시작 최소 팀 배정 인원
 - `game.friendly-fire`: 같은 팀 공격 허용 여부
 - `game.auto-balance-teams`: 팀이 비어 있을 때 시작 시 자동 팀 배정
+- `game.allow-mid-join`: 진행 중인 게임의 중간 참여 허용 여부
 - `game.ability-roll-message`: 능력 배정 타이틀 표시 여부
 - `game.urf`: 우르프 모드 설정, 능력 쿨타임과 일부 능력 보정에 적용
+- `scoreboard.enabled`: 우측 스코어보드에 내 팀, 능력, 킬 상태 표시
+- `scoreboard.team-prefixes`: 탭 목록과 머리 위 이름에 팀 Prefix 표시
 - `blacklist.abilities`: 랜덤 배정에서 제외할 능력 ID 목록
 - `gamerules`: 게임 시작 시 모든 월드에 적용할 마인크래프트 게임룰과 종료 시 복구 여부
 

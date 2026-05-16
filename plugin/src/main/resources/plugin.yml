@@ -5,7 +5,7 @@ author: minjae9010
 description: 신들의 전쟁 스타일 팀 기반 미니게임 플러그인
 commands:
   godwar:
-    aliases: [gw, godswar, 신들의전쟁]
+    aliases: [gw, t, godswar, 신들의전쟁]
     description: 신들의 전쟁 게임을 관리합니다.
     usage: /godwar help
   teamchat:
@@ -15,6 +15,10 @@ commands:
   x:
     description: 타깃형 능력의 대상을 지정합니다.
     usage: /x <player>
+  a:
+    aliases: [ability, 능력]
+    description: 자신의 현재 능력을 확인합니다.
+    usage: /a
 permissions:
   newgodwar.admin:
     description: 신들의 전쟁 관리자 명령어 권한

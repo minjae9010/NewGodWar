@@ -26,8 +26,12 @@ import java.util.List;
 final class QueenBeeAbility extends BaseAbility {
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
+        Player target = targetPlayerInSight(context, player, 10, false);
+        if (target == null) {
+            return;
+        }
         if (use(context, player, 0, COBBLESTONE, 30, 150)) {
-            pullTarget(context, player, 10);
+            target.teleport(player);
         }
     }
 

@@ -24,8 +24,10 @@ import java.util.UUID;
 
 public final class AbilityGui implements Listener {
 
-    private static final String TITLE = ChatColor.DARK_AQUA + "신의 능력 보기";
-    private static final int SIZE = 54;
+    private static final String CURRENT_TITLE = ChatColor.DARK_AQUA + "현재 능력 보기";
+    private static final String LIST_TITLE = ChatColor.DARK_AQUA + "신의 능력 도감";
+    private static final int CURRENT_SIZE = 27;
+    private static final int LIST_SIZE = 54;
 
     private final NewGodWarPlugin plugin;
     private final AbilityManager abilityManager;
@@ -37,8 +39,19 @@ public final class AbilityGui implements Listener {
     }
 
     public void open(Player viewer, Player target) {
-        Inventory inventory = Bukkit.createInventory(viewer, SIZE, TITLE);
-        fill(inventory, viewer, target);
+        openCurrent(viewer, target);
+    }
+
+    public void openCurrent(Player viewer, Player target) {
+        Inventory inventory = Bukkit.createInventory(viewer, CURRENT_SIZE, CURRENT_TITLE);
+        fillCurrent(inventory, viewer, target);
+        viewer.openInventory(inventory);
+        openViewers.add(viewer.getUniqueId());
+    }
+
+    public void openList(Player viewer) {
+        Inventory inventory = Bukkit.createInventory(viewer, LIST_SIZE, LIST_TITLE);
+        fillList(inventory, viewer);
         viewer.openInventory(inventory);
         openViewers.add(viewer.getUniqueId());
     }
@@ -49,8 +62,13 @@ public final class AbilityGui implements Listener {
             return;
         }
         event.setCancelled(true);
-        if (event.getRawSlot() == 49) {
+
+        boolean list = LIST_TITLE.equals(event.getView().getTitle());
+        if ((list && event.getRawSlot() == 49) || (!list && event.getRawSlot() == 22)) {
             event.getWhoClicked().closeInventory();
+            return;
+        }
+        if (!list) {
             return;
         }
 
@@ -59,7 +77,7 @@ public final class AbilityGui implements Listener {
         if (ability != null && event.isRightClick() && player.hasPermission("newgodwar.admin")) {
             abilityManager.toggleBlacklisted(ability.id());
             plugin.messages().send(player, "&a" + ability.name() + " 블랙리스트 상태를 전환했습니다.");
-            open(player, player);
+            openList(player);
         }
     }
 
@@ -78,24 +96,42 @@ public final class AbilityGui implements Listener {
     private boolean isAbilityInventory(InventoryClickEvent event) {
         return openViewers.contains(event.getWhoClicked().getUniqueId())
             && event.getView() != null
-            && TITLE.equals(event.getView().getTitle())
-            && event.getRawSlot() < SIZE;
+            && (CURRENT_TITLE.equals(event.getView().getTitle()) || LIST_TITLE.equals(event.getView().getTitle()))
+            && event.getRawSlot() >= 0
+            && event.getRawSlot() < event.getView().getTopInventory().getSize();
     }
 
     private boolean isAbilityInventory(InventoryDragEvent event) {
         return openViewers.contains(event.getWhoClicked().getUniqueId())
             && event.getView() != null
-            && TITLE.equals(event.getView().getTitle());
+            && (CURRENT_TITLE.equals(event.getView().getTitle()) || LIST_TITLE.equals(event.getView().getTitle()));
     }
 
-    private void fill(Inventory inventory, Player viewer, Player target) {
-        for (int i = 0; i < SIZE; i++) {
+    private void fillCurrent(Inventory inventory, Player viewer, Player target) {
+        for (int i = 0; i < CURRENT_SIZE; i++) {
             inventory.setItem(i, item("GRAY_STAINED_GLASS_PANE", "STAINED_GLASS_PANE", 1, (short) 7, " "));
         }
 
         Player shown = target == null ? viewer : target;
         AbilityDefinition current = abilityManager.get(shown);
-        inventory.setItem(4, currentAbilityItem(shown, current));
+        inventory.setItem(13, currentAbilityItem(shown, current));
+        inventory.setItem(22, item("BARRIER", "BARRIER", 1, (short) 0, ChatColor.RED + "닫기"));
+    }
+
+    private void fillList(Inventory inventory, Player viewer) {
+        for (int i = 0; i < LIST_SIZE; i++) {
+            inventory.setItem(i, item("GRAY_STAINED_GLASS_PANE", "STAINED_GLASS_PANE", 1, (short) 7, " "));
+        }
+
+        inventory.setItem(4, item("BOOK", "BOOK", 1, (short) 0,
+            ChatColor.YELLOW + "" + ChatColor.BOLD + "능력 도감",
+            ChatColor.GRAY + "등록된 능력을 한눈에 확인합니다.",
+            ChatColor.GRAY + "능력 아이템에 마우스를 올리면 세부 설명이 보입니다."));
+        inventory.setItem(6, guideItem(viewer));
+        inventory.setItem(9, item("COMPASS", "COMPASS", 1, (short) 0,
+            ChatColor.AQUA + "" + ChatColor.BOLD + "능력 목록",
+            ChatColor.GRAY + "초록: 사용 가능",
+            ChatColor.GRAY + "빨강: 비활성 또는 블랙리스트"));
 
         int[] slots = new int[] {
             10, 11, 12, 13, 14, 15, 16,
@@ -116,15 +152,28 @@ public final class AbilityGui implements Listener {
         inventory.setItem(49, item("BARRIER", "BARRIER", 1, (short) 0, ChatColor.RED + "닫기"));
     }
 
+    private ItemStack guideItem(Player viewer) {
+        if (viewer.hasPermission("newgodwar.admin")) {
+            return item("NAME_TAG", "NAME_TAG", 1, (short) 0,
+                ChatColor.GOLD + "" + ChatColor.BOLD + "관리자 조작",
+                ChatColor.GRAY + "우클릭: 능력 블랙리스트 전환",
+                ChatColor.GRAY + "/gw blacklist 로도 관리할 수 있습니다.");
+        }
+        return item("NAME_TAG", "NAME_TAG", 1, (short) 0,
+            ChatColor.GOLD + "" + ChatColor.BOLD + "보기 안내",
+            ChatColor.GRAY + "능력 이름, 설명, 돌 소모량을 확인하세요.",
+            ChatColor.GRAY + "게임 시작 후 내 현재 능력이 위에 표시됩니다.");
+    }
+
     private ItemStack currentAbilityItem(Player target, AbilityDefinition ability) {
         if (ability == null) {
             return item("BOOK", "BOOK", 1, (short) 0,
-                ChatColor.YELLOW + target.getName() + " 님의 현재 능력",
+                ChatColor.YELLOW + "" + ChatColor.BOLD + target.getName() + " 님의 현재 능력",
                 ChatColor.GRAY + "아직 능력이 배정되지 않았습니다.",
                 ChatColor.DARK_GRAY + "게임 시작 후 자동으로 배정됩니다.");
         }
         return item("NETHER_STAR", "NETHER_STAR", 1, (short) 0,
-            ChatColor.GOLD + target.getName() + " 님의 현재 능력",
+            ChatColor.GOLD + "" + ChatColor.BOLD + target.getName() + " 님의 현재 능력",
             ChatColor.WHITE + ability.name() + ChatColor.GRAY + " (" + ability.id() + ")",
             ChatColor.GRAY + ability.description(),
             ChatColor.YELLOW + "일반: " + ChatColor.GRAY + ability.normalSkill(),

@@ -26,8 +26,12 @@ import java.util.List;
 final class MorpiousAbility extends BaseAbility {
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
+        Player target = targetPlayerInSight(context, player, 20, false);
+        if (target == null) {
+            return;
+        }
         if (use(context, player, 0, COBBLESTONE, 20, 100)) {
-            sleepTarget(context, player);
+            sleepTarget(target);
         }
     }
 }

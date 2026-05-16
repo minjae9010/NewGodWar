@@ -33,8 +33,15 @@ final class TeleporterAbility extends BaseAbility {
 
     @Override
     protected void onStaffRight(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
+        Player target = targetPlayerInSight(context, player, 30, true);
+        if (target == null) {
+            return;
+        }
         if (use(context, player, 2, COBBLESTONE, 25, 30)) {
-            swapTarget(context, player);
+            Location first = player.getLocation();
+            Location second = target.getLocation();
+            player.teleport(second);
+            target.teleport(first);
         }
     }
 }
