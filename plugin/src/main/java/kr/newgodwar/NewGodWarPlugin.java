@@ -40,6 +40,8 @@ public final class NewGodWarPlugin extends JavaPlugin {
         GodWarCommand godWarCommand = new GodWarCommand(this, gameManager, abilityManager, settingsGui, abilityGui);
         getCommand("godwar").setExecutor(godWarCommand);
         getCommand("godwar").setTabCompleter(godWarCommand);
+        getCommand("x").setExecutor(godWarCommand);
+        getCommand("x").setTabCompleter(godWarCommand);
         getCommand("teamchat").setExecutor(new TeamChatCommand(this, gameManager));
 
         Bukkit.getPluginManager().registerEvents(new GameListener(this, gameManager, abilityManager, nmsAdapter), this);

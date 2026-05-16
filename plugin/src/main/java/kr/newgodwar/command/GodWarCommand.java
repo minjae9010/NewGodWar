@@ -27,7 +27,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
 
     private static final List<String> SUBCOMMANDS = Arrays.asList(
         "help", "autoteam", "join", "leave", "settemple", "start", "stop", "status",
-        "ability", "abilities", "target", "setability", "spectate", "unspectate", "reload", "gui", "settings"
+        "ability", "abilities", "blacklist", "gamerule", "target", "setability", "spectate", "unspectate", "reload", "gui", "settings"
     );
 
     private final NewGodWarPlugin plugin;
@@ -46,6 +46,11 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        if (command.getName().equalsIgnoreCase("x")) {
+            targetShortcut(sender, args);
+            return true;
+        }
+
         if (args.length == 0 || args[0].equalsIgnoreCase("help")) {
             help(sender, label);
             return true;
@@ -94,6 +99,14 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             listAbilities(sender);
             return true;
         }
+        if (sub.equals("blacklist")) {
+            blacklist(sender, args);
+            return true;
+        }
+        if (sub.equals("gamerule")) {
+            gamerule(sender, args);
+            return true;
+        }
         if (sub.equals("target")) {
             target(sender, args);
             return true;
@@ -133,6 +146,8 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(ChatColor.GRAY + "/" + label + " start | stop | status");
         sender.sendMessage(ChatColor.GRAY + "/" + label + " ability [player]");
         sender.sendMessage(ChatColor.GRAY + "/" + label + " abilities");
+        sender.sendMessage(ChatColor.GRAY + "/" + label + " blacklist <list|add|remove|toggle> [ability]");
+        sender.sendMessage(ChatColor.GRAY + "/" + label + " gamerule <apply|restore>");
         sender.sendMessage(ChatColor.GRAY + "/" + label + " target <player>");
         sender.sendMessage(ChatColor.GRAY + "/" + label + " setability <player> <ability>");
         sender.sendMessage(ChatColor.GRAY + "/" + label + " spectate|unspectate <player>");
@@ -258,6 +273,64 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         plugin.messages().send(sender, "&a능력을 지정했습니다.");
     }
 
+    private void blacklist(CommandSender sender, String[] args) {
+        if (args.length < 2 || args[1].equalsIgnoreCase("list")) {
+            List<String> ids = abilityManager.blacklistedAbilityIds();
+            if (ids.isEmpty()) {
+                plugin.messages().send(sender, "&e블랙리스트에 등록된 능력이 없습니다.");
+                return;
+            }
+            plugin.messages().send(sender, "&e능력 블랙리스트: &f" + join(ids));
+            return;
+        }
+        if (args.length < 3) {
+            plugin.messages().send(sender, "&e/godwar blacklist <list|add|remove|toggle> [ability]");
+            return;
+        }
+
+        String action = args[1].toLowerCase();
+        AbilityDefinition ability = abilityManager.registry().get(args[2]);
+        if (ability == null) {
+            plugin.messages().send(sender, "&c능력을 찾을 수 없습니다.");
+            return;
+        }
+        if (action.equals("add")) {
+            abilityManager.setBlacklisted(ability.id(), true);
+            plugin.messages().send(sender, "&a" + ability.name() + " 능력을 블랙리스트에 추가했습니다.");
+            return;
+        }
+        if (action.equals("remove")) {
+            abilityManager.setBlacklisted(ability.id(), false);
+            plugin.messages().send(sender, "&a" + ability.name() + " 능력을 블랙리스트에서 제거했습니다.");
+            return;
+        }
+        if (action.equals("toggle")) {
+            abilityManager.toggleBlacklisted(ability.id());
+            String state = abilityManager.isBlacklisted(ability) ? "추가" : "제거";
+            plugin.messages().send(sender, "&a" + ability.name() + " 능력을 블랙리스트에서 " + state + "했습니다.");
+            return;
+        }
+        plugin.messages().send(sender, "&e/godwar blacklist <list|add|remove|toggle> [ability]");
+    }
+
+    private void gamerule(CommandSender sender, String[] args) {
+        if (args.length < 2) {
+            plugin.messages().send(sender, "&e/godwar gamerule <apply|restore>");
+            return;
+        }
+        if (args[1].equalsIgnoreCase("apply")) {
+            gameManager.applyGameRules();
+            plugin.messages().send(sender, "&a설정된 게임룰을 모든 월드에 적용했습니다.");
+            return;
+        }
+        if (args[1].equalsIgnoreCase("restore")) {
+            gameManager.restoreGameRules();
+            plugin.messages().send(sender, "&a게임 시작 전 게임룰 값으로 복구했습니다.");
+            return;
+        }
+        plugin.messages().send(sender, "&e/godwar gamerule <apply|restore>");
+    }
+
     private void target(CommandSender sender, String[] args) {
         Player player = asPlayer(sender);
         if (player == null) {
@@ -269,6 +342,19 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             return;
         }
         abilityManager.setTarget(player, sender, args[1]);
+    }
+
+    private void targetShortcut(CommandSender sender, String[] args) {
+        Player player = asPlayer(sender);
+        if (player == null) {
+            plugin.messages().send(sender, "&c플레이어만 사용할 수 있습니다.");
+            return;
+        }
+        if (args.length < 1) {
+            plugin.messages().send(sender, "&e/x <player>");
+            return;
+        }
+        abilityManager.setTarget(player, sender, args[0]);
     }
 
     private void spectate(CommandSender sender, String[] args, boolean spectate) {
@@ -308,6 +394,13 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
+        if (command.getName().equalsIgnoreCase("x") && args.length == 1) {
+            List<String> values = new ArrayList<String>();
+            for (Player player : BukkitCompat.onlinePlayers()) {
+                values.add(player.getName());
+            }
+            return startsWith(values, args[0]);
+        }
         if (args.length == 1) {
             return startsWith(SUBCOMMANDS, args[0]);
         }
@@ -329,6 +422,19 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             }
             return startsWith(values, args[1]);
         }
+        if (args.length == 2 && args[0].equalsIgnoreCase("blacklist")) {
+            return startsWith(Arrays.asList("list", "add", "remove", "toggle"), args[1]);
+        }
+        if (args.length == 3 && args[0].equalsIgnoreCase("blacklist")) {
+            List<String> abilities = new ArrayList<String>();
+            for (String id : abilityManager.registry().ids()) {
+                abilities.add(id);
+            }
+            return startsWith(abilities, args[2]);
+        }
+        if (args.length == 2 && args[0].equalsIgnoreCase("gamerule")) {
+            return startsWith(Arrays.asList("apply", "restore"), args[1]);
+        }
         if (args.length == 3 && args[0].equalsIgnoreCase("setability")) {
             List<String> abilities = new ArrayList<String>();
             for (String id : abilityManager.registry().ids()) {
@@ -348,5 +454,16 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             }
         }
         return result;
+    }
+
+    private String join(List<String> values) {
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < values.size(); i++) {
+            if (i > 0) {
+                builder.append(", ");
+            }
+            builder.append(values.get(i));
+        }
+        return builder.toString();
     }
 }

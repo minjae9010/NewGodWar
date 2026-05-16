@@ -25,7 +25,8 @@ public final class PoseidonAbility implements GodAbility {
         if (block.getType() != Material.WATER && !block.getType().name().equals("STATIONARY_WATER")) {
             return;
         }
-        long intervalMillis = Math.max(1L, context.plugin().getConfig().getLong(context.configPath("water-heal-interval-seconds"), 5L)) * 1000L;
+        long intervalMillis = context.plugin().abilities().scaleCooldownMillis(
+            Math.max(1L, context.plugin().getConfig().getLong(context.configPath("water-heal-interval-seconds"), 5L)) * 1000L);
         long now = System.currentTimeMillis();
         if (now - lastHeal < intervalMillis) {
             return;

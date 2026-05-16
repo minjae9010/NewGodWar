@@ -4,6 +4,24 @@ game:
   auto-balance-teams: true
   announce-radius: 0
   ability-roll-message: true
+  urf:
+    enabled: false
+    cooldown-multiplier: 0.2
+    speed-amplifier-bonus: 1
+    damage-multiplier: 1.0
+
+blacklist:
+  abilities: []
+
+gamerules:
+  enabled: true
+  restore-on-stop: true
+  rules:
+    keepInventory: true
+    doImmediateRespawn: true
+    doDaylightCycle: false
+    doWeatherCycle: false
+    naturalRegeneration: true
 
 teams:
   red:

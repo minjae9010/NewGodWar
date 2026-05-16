@@ -14,7 +14,8 @@ public final class AresAbility implements GodAbility {
 
     @Override
     public void onDamage(AbilityDamageContext context) {
-        double bonus = context.plugin().getConfig().getDouble(context.configPath("damage-bonus"), 1.25D);
+        double bonus = context.plugin().getConfig().getDouble(context.configPath("damage-bonus"), 1.25D)
+            * context.plugin().abilities().urfDamageMultiplier();
         context.damage(context.damage() * bonus);
     }
 }

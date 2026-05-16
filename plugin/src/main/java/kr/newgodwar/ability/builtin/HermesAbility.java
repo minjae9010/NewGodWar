@@ -16,7 +16,8 @@ public final class HermesAbility implements GodAbility {
 
     @Override
     public void onAssign(AbilityPlayerContext context) {
-        int amplifier = context.plugin().getConfig().getInt(context.configPath("speed-amplifier"), 1);
+        int amplifier = context.plugin().getConfig().getInt(context.configPath("speed-amplifier"), 1)
+            + context.plugin().abilities().urfSpeedAmplifierBonus();
         BukkitCompat.addPotionEffect(context.player(), PotionEffectType.SPEED, 20 * 60 * 60, amplifier, true, false);
     }
 }

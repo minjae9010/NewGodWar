@@ -51,6 +51,15 @@ public final class AbilityGui implements Listener {
         event.setCancelled(true);
         if (event.getRawSlot() == 49) {
             event.getWhoClicked().closeInventory();
+            return;
+        }
+
+        Player player = (Player) event.getWhoClicked();
+        AbilityDefinition ability = abilityAtSlot(event.getRawSlot());
+        if (ability != null && event.isRightClick() && player.hasPermission("newgodwar.admin")) {
+            abilityManager.toggleBlacklisted(ability.id());
+            plugin.messages().send(player, "&a" + ability.name() + " 블랙리스트 상태를 전환했습니다.");
+            open(player, player);
         }
     }
 
@@ -123,17 +132,47 @@ public final class AbilityGui implements Listener {
 
     private ItemStack abilityItem(AbilityDefinition ability, boolean showAdminState) {
         boolean enabled = abilityManager.isEnabled(ability);
+        boolean blacklisted = abilityManager.isBlacklisted(ability);
         ChatColor color = enabled ? ChatColor.GREEN : ChatColor.RED;
-        String state = enabled ? "사용 가능" : "비활성";
+        String state = blacklisted ? "블랙리스트" : (enabled ? "사용 가능" : "비활성");
         ArrayList<String> lore = new ArrayList<String>();
         lore.add(ChatColor.GRAY + ability.description());
         lore.add(ChatColor.DARK_GRAY + "ID: " + ability.id());
         lore.add(ChatColor.DARK_GRAY + "제작자: " + ability.author());
         if (showAdminState) {
             lore.add(color + state);
+            lore.add(ChatColor.DARK_GRAY + "우클릭: 블랙리스트 전환");
         }
         return item(enabled ? "ENCHANTED_BOOK" : "BOOK", enabled ? "ENCHANTED_BOOK" : "BOOK", 1, (short) 0,
             color + ability.name(), lore);
+    }
+
+    private AbilityDefinition abilityAtSlot(int slot) {
+        int[] slots = new int[] {
+            10, 11, 12, 13, 14, 15, 16,
+            19, 20, 21, 22, 23, 24, 25,
+            28, 29, 30, 31, 32, 33, 34,
+            37, 38, 39, 40, 41, 42, 43
+        };
+        int index = -1;
+        for (int i = 0; i < slots.length; i++) {
+            if (slots[i] == slot) {
+                index = i;
+                break;
+            }
+        }
+        if (index < 0) {
+            return null;
+        }
+
+        int current = 0;
+        for (AbilityDefinition ability : abilityManager.registry().all()) {
+            if (current == index) {
+                return ability;
+            }
+            current++;
+        }
+        return null;
     }
 
     private ItemStack item(String modernMaterial, String legacyMaterial, int amount, short damage, String name, String... lore) {

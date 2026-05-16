@@ -1,6 +1,6 @@
 # NewGodWar
 
-`NewGodWar`는 예전 마인크래프트 “신들의 전쟁” 서버팩의 팀전 룰과 AbilityWar 계열의 랜덤 능력 콘셉트를 참고해 만든 신규 Bukkit/Spigot 플러그인입니다.
+`NewGodWar`는 마인크래프트 팀전 룰과 랜덤 능력 전투를 지원하는 Bukkit/Spigot 플러그인입니다.
 
 ## 핵심 기능
 
@@ -12,11 +12,6 @@
 - 팀 채팅
 - 관전 모드 전환
 - NMS 리플렉션 어댑터 기반 액션바/타이틀 전송
-
-## 참고한 기존 콘텐츠
-
-- AbilityWar 계열: 게임 시작 시 플레이어에게 랜덤 능력을 부여하고 능력으로 대전하는 구조를 참고했습니다.
-- 구 신들의 전쟁 서버팩: 팀 구별, 팀킬 방지, 다이아 블록 파괴 알림, 킬 순위, 팀채팅, 관전 모드, 팀 자동 세팅 같은 운영 흐름을 새 구조로 재해석했습니다.
 
 ## 명령어
 
@@ -31,6 +26,9 @@
 - `/godwar gui` 또는 `/godwar settings` 관리자용 상자 GUI 설정 열기
 - `/godwar ability [player]` 능력 확인 GUI 열기
 - `/godwar abilities` 등록된 능력 목록 GUI 열기
+- `/godwar blacklist <list|add|remove|toggle> [ability]` 랜덤 배정에서 제외할 능력 관리
+- `/godwar gamerule <apply|restore>` 설정된 게임룰 수동 적용 또는 복구
+- `/godwar target <player>` 또는 `/x <player>` 타깃형 능력 대상 지정
 - `/godwar setability <player> <ability>` 능력 수동 지정
 - `/godwar spectate <player>` 관전 모드
 - `/godwar unspectate <player>` 관전 해제
@@ -38,12 +36,19 @@
 
 ## 내장 능력
 
-| ID | 이름 | 효과 |
-| --- | --- | --- |
-| `zeus` | 제우스 | 공격 시 일정 확률로 번개를 내리고 추가 피해를 줍니다. |
-| `ares` | 아레스 | 근접 공격 피해량이 증가합니다. |
-| `hermes` | 헤르메스 | 능력 배정 시 빠른 이동 효과를 받습니다. |
-| `poseidon` | 포세이돈 | 물 안에 있을 때 설정된 간격마다 체력을 회복합니다. |
+해당 능력들은 기존 Septagrame 및 Flair-Delta 님이 만드신 능력을 포함하였습니다.
+
+내장 능력 목록은 [능력 목록](docs/wiki/abilities.md)을 확인하세요.
+
+## 주요 설정
+
+- `game.min-players`: 게임 시작 최소 팀 배정 인원
+- `game.friendly-fire`: 같은 팀 공격 허용 여부
+- `game.auto-balance-teams`: 팀이 비어 있을 때 시작 시 자동 팀 배정
+- `game.ability-roll-message`: 능력 배정 타이틀 표시 여부
+- `game.urf`: 우르프 모드 설정, 능력 쿨타임과 일부 능력 보정에 적용
+- `blacklist.abilities`: 랜덤 배정에서 제외할 능력 ID 목록
+- `gamerules`: 게임 시작 시 모든 월드에 적용할 마인크래프트 게임룰과 종료 시 복구 여부
 
 ## 지원 버전
 

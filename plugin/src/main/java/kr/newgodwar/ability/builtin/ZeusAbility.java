@@ -21,7 +21,8 @@ public final class ZeusAbility implements GodAbility {
     @Override
     public void onDamage(AbilityDamageContext context) {
         long now = System.currentTimeMillis();
-        long cooldownMillis = context.plugin().getConfig().getLong(context.configPath("cooldown-seconds"), 8L) * 1000L;
+        long cooldownMillis = context.plugin().abilities().scaleCooldownMillis(
+            context.plugin().getConfig().getLong(context.configPath("cooldown-seconds"), 8L) * 1000L);
         if (now - lastStrike < cooldownMillis) {
             return;
         }

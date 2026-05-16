@@ -12,6 +12,9 @@ commands:
     aliases: [tc, 팀채팅]
     description: 팀원에게만 채팅을 보냅니다.
     usage: /teamchat <message>
+  x:
+    description: 타깃형 능력의 대상을 지정합니다.
+    usage: /x <player>
 permissions:
   newgodwar.admin:
     description: 신들의 전쟁 관리자 명령어 권한

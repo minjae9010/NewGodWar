@@ -29,6 +29,7 @@ public final class GameManager {
     private final NewGodWarPlugin plugin;
     private final AbilityManager abilityManager;
     private final NmsAdapter nmsAdapter;
+    private final GameRuleController gameRuleController;
     private final Map<UUID, GodTeam> teams = new HashMap<UUID, GodTeam>();
     private final Map<GodTeam, TempleLocation> temples = new EnumMap<GodTeam, TempleLocation>(GodTeam.class);
     private final Set<GodTeam> eliminatedTeams = new HashSet<GodTeam>();
@@ -42,6 +43,7 @@ public final class GameManager {
         this.plugin = plugin;
         this.abilityManager = abilityManager;
         this.nmsAdapter = nmsAdapter;
+        this.gameRuleController = new GameRuleController(plugin);
         loadTemples();
         setupScoreboard();
     }
@@ -62,6 +64,14 @@ public final class GameManager {
         temples.clear();
         loadTemples();
         setupScoreboard();
+    }
+
+    public void applyGameRules() {
+        gameRuleController.applyConfiguredRules();
+    }
+
+    public void restoreGameRules() {
+        gameRuleController.restorePreviousRules();
     }
 
     public GodTeam teamOf(Player player) {
@@ -155,6 +165,7 @@ public final class GameManager {
         eliminatedTeams.clear();
         kills.clear();
         abilityManager.clear();
+        gameRuleController.applyConfiguredRules();
         setupScoreboard();
 
         for (Player player : BukkitCompat.onlinePlayers()) {
@@ -186,6 +197,7 @@ public final class GameManager {
         if (announce) {
             Bukkit.broadcastMessage(plugin.messages().prefix() + plugin.messages().get("game-stop"));
         }
+        gameRuleController.restorePreviousRules();
     }
 
     public void recordKill(Player killer) {

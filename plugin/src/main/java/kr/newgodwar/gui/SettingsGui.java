@@ -132,6 +132,21 @@ public final class SettingsGui implements Listener {
             reopen(player);
             return;
         }
+        if (slot == 22) {
+            toggle("game.urf.enabled");
+            reopen(player);
+            return;
+        }
+        if (slot == 23) {
+            changeDouble("game.urf.cooldown-multiplier", rightClick ? 0.05D : -0.05D, 0.0D, 1.0D, shiftClick);
+            reopen(player);
+            return;
+        }
+        if (slot == 24) {
+            toggle("gamerules.enabled");
+            reopen(player);
+            return;
+        }
         if (slot == 28) {
             try {
                 gameManager.start();
@@ -250,6 +265,9 @@ public final class SettingsGui implements Listener {
         inventory.setItem(21, item("GLOWSTONE_DUST", "GLOWSTONE_DUST", 1, (short) 0,
             ChatColor.GREEN + "알림 반경 +10",
             ChatColor.GRAY + "현재: " + ChatColor.YELLOW + config.getInt("game.announce-radius", 0)));
+        inventory.setItem(22, toggleItem("game.urf.enabled", "우르프 모드", "BLAZE_POWDER"));
+        inventory.setItem(23, numberItem("우르프 쿨타임 배율", "game.urf.cooldown-multiplier", 0.2D, "왼쪽 -0.05 / 오른쪽 +0.05"));
+        inventory.setItem(24, toggleItem("gamerules.enabled", "게임룰 자동 적용", "COMMAND"));
 
         inventory.setItem(28, item("EMERALD_BLOCK", "EMERALD_BLOCK", 1, (short) 0,
             ChatColor.GREEN + "게임 시작",

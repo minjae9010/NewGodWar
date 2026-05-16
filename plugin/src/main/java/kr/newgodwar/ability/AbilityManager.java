@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 import java.util.ServiceLoader;
@@ -109,7 +110,67 @@ public final class AbilityManager {
     }
 
     public boolean isEnabled(AbilityDefinition definition) {
-        return plugin.getConfig().getBoolean("abilities." + definition.id() + ".enabled", definition.enabledByDefault());
+        return plugin.getConfig().getBoolean("abilities." + definition.id() + ".enabled", definition.enabledByDefault())
+            && !isBlacklisted(definition);
+    }
+
+    public boolean isBlacklisted(AbilityDefinition definition) {
+        return definition != null && blacklistedAbilityIds().contains(definition.id().toLowerCase(Locale.ROOT));
+    }
+
+    public List<String> blacklistedAbilityIds() {
+        List<String> ids = new ArrayList<String>();
+        for (String id : plugin.getConfig().getStringList("blacklist.abilities")) {
+            if (id != null && id.trim().length() > 0) {
+                ids.add(id.toLowerCase(Locale.ROOT).trim());
+            }
+        }
+        return ids;
+    }
+
+    public boolean setBlacklisted(String abilityId, boolean blacklisted) {
+        AbilityDefinition definition = registry.get(abilityId);
+        if (definition == null) {
+            return false;
+        }
+        List<String> ids = blacklistedAbilityIds();
+        String normalized = definition.id().toLowerCase(Locale.ROOT);
+        if (blacklisted && !ids.contains(normalized)) {
+            ids.add(normalized);
+        } else if (!blacklisted) {
+            ids.remove(normalized);
+        }
+        plugin.getConfig().set("blacklist.abilities", ids);
+        plugin.saveConfig();
+        return true;
+    }
+
+    public boolean toggleBlacklisted(String abilityId) {
+        AbilityDefinition definition = registry.get(abilityId);
+        if (definition == null) {
+            return false;
+        }
+        return setBlacklisted(definition.id(), !isBlacklisted(definition));
+    }
+
+    public boolean urfEnabled() {
+        return plugin.getConfig().getBoolean("game.urf.enabled", false);
+    }
+
+    public long scaleCooldownMillis(long baseMillis) {
+        if (!urfEnabled()) {
+            return baseMillis;
+        }
+        double multiplier = plugin.getConfig().getDouble("game.urf.cooldown-multiplier", 0.2D);
+        return Math.max(0L, Math.round(baseMillis * Math.max(0.0D, multiplier)));
+    }
+
+    public int urfSpeedAmplifierBonus() {
+        return urfEnabled() ? plugin.getConfig().getInt("game.urf.speed-amplifier-bonus", 1) : 0;
+    }
+
+    public double urfDamageMultiplier() {
+        return urfEnabled() ? plugin.getConfig().getDouble("game.urf.damage-multiplier", 1.0D) : 1.0D;
     }
 
     public void handleDamage(Player damager, Player victim, EntityDamageByEntityEvent event) {
