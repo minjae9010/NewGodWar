@@ -2,6 +2,16 @@
 
 `NewGodWar`는 마인크래프트 팀전 룰과 랜덤 능력 전투를 지원하는 Bukkit/Spigot 플러그인입니다.
 
+## 문서
+
+- [Wiki 첫 페이지](docs/wiki/Home.md)
+- [시작하기](docs/wiki/getting-started.md)
+- [명령어](docs/wiki/commands.md)
+- [설정](docs/wiki/configuration.md)
+- [능력 목록](docs/wiki/abilities.md)
+
+`docs/wiki` 문서는 `Wiki` GitHub Actions 워크플로를 통해 GitHub Wiki에 자동 반영됩니다. GitHub Wiki의 첫 화면은 `Home.md`입니다. 저장소 Settings > Features에서 Wiki 기능이 켜져 있어야 배포가 완료됩니다.
+
 ## 핵심 기능
 
 - 빨강/파랑/초록 3팀 자동 배정

@@ -1,0 +1,63 @@
+name: Wiki
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - "docs/wiki/**"
+      - ".github/workflows/wiki.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    name: Publish GitHub Wiki
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Sync docs/wiki to GitHub Wiki
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          wiki_dir="$(mktemp -d)"
+          wiki_url="https://x-access-token:${GH_TOKEN}@github.com/${REPOSITORY}.wiki.git"
+
+          if ! git clone "$wiki_url" "$wiki_dir"; then
+            echo "::warning::GitHub Wiki 저장소를 clone하지 못했습니다. 비어 있는 Wiki일 수 있어 새 저장소로 초기화한 뒤 push를 시도합니다."
+            rm -rf "$wiki_dir"
+            mkdir -p "$wiki_dir"
+            git -C "$wiki_dir" init -b master
+            git -C "$wiki_dir" remote add origin "$wiki_url"
+          fi
+
+          find "$wiki_dir" -mindepth 1 -maxdepth 1 ! -name ".git" -exec rm -rf {} +
+          cp -R docs/wiki/. "$wiki_dir/"
+
+          if [ -f "$wiki_dir/index.md" ]; then
+            rm "$wiki_dir/index.md"
+          fi
+
+          git -C "$wiki_dir" config user.name "github-actions[bot]"
+          git -C "$wiki_dir" config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          if git -C "$wiki_dir" diff --quiet --exit-code && [ -z "$(git -C "$wiki_dir" ls-files --others --exclude-standard)" ]; then
+            echo "Wiki is already up to date."
+            exit 0
+          fi
+
+          git -C "$wiki_dir" add .
+          git -C "$wiki_dir" commit -m "Update wiki from docs/wiki"
+          if ! git -C "$wiki_dir" push origin HEAD:master; then
+            echo "::error::GitHub Wiki에 push하지 못했습니다. 저장소 Settings > Features에서 Wiki가 켜져 있는지 확인한 뒤 다시 실행하세요."
+            exit 1
+          fi
