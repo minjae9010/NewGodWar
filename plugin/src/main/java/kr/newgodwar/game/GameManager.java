@@ -347,7 +347,12 @@ public final class GameManager {
         if (!plugin.getConfig().getBoolean("game.allow-mid-join", true)) {
             throw new IllegalStateException("현재 설정에서 중간 참여가 꺼져 있습니다.");
         }
-        if (teamOf(player) != null && abilityManager.get(player) != null) {
+        GodTeam currentTeam = teamOf(player);
+        boolean activeParticipant = currentTeam != null
+            && abilityManager.get(player) != null
+            && !eliminatedTeams.contains(currentTeam)
+            && !isObserver(player);
+        if (activeParticipant) {
             throw new IllegalStateException("이미 게임에 참여 중입니다.");
         }
 
@@ -356,6 +361,7 @@ public final class GameManager {
             throw new IllegalStateException("참여 가능한 팀이 없습니다.");
         }
 
+        observers.remove(player.getUniqueId());
         assign(player, team);
         preparePlayerForGame(player);
         teleportToTeamSpawn(player, team);

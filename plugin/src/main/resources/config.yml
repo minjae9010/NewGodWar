@@ -41,6 +41,11 @@ abilities:
   nasdaq:
     iron-success-percent: 75
     diamond-success-percent: 25
+  voodoo:
+    damage: 0.5
+    hit-interval-millis: 1000
+  darkness:
+    incoming-damage-multiplier: 0.25
 
 gambling:
   enabled: true

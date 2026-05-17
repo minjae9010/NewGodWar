@@ -26,6 +26,11 @@ import java.util.List;
 final class DarknessAbility extends BaseAbility {
     @Override
     public void onDamageByEntity(AbilityPlayerContext context, EntityDamageByEntityEvent event, Player opponent, boolean attacker) {
-        event.setDamage(attacker ? 0.0D : event.getDamage() / 10.0D);
+        if (attacker) {
+            event.setDamage(0.0D);
+            return;
+        }
+        double multiplier = Math.max(0.0D, context.plugin().getConfig().getDouble(context.configPath("incoming-damage-multiplier"), 0.25D));
+        event.setDamage(event.getDamage() * multiplier);
     }
 }

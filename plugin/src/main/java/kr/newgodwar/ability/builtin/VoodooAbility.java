@@ -26,13 +26,14 @@ import java.util.List;
 )
 final class VoodooAbility extends BaseAbility {
     private Block postSign;
+    private long lastPulseMillis;
 
     @Override
     public void onInteract(AbilityPlayerContext context, PlayerInteractEvent event) {
         if (postSign != null && event.getAction() == Action.LEFT_CLICK_BLOCK && event.getClickedBlock().equals(postSign)) {
             Player target = targetPlayer();
-            if (target != null) {
-                damage(target, 1.0D, context.player());
+            if (target != null && readyPulse(context)) {
+                damage(target, damagePerPulse(context), context.player());
             }
             return;
         }
@@ -57,11 +58,13 @@ final class VoodooAbility extends BaseAbility {
         if (target != null && useNormal(context, context.player(), 0)) {
             targetName = target.getName();
             postSign = event.getBlock();
+            lastPulseMillis = 0L;
             final Block sign = postSign;
             context.player().sendMessage(ChatColor.RED + targetName + ChatColor.WHITE + " 를(을) 팻말과 연결시켰습니다.");
             target.sendMessage(ChatColor.RED + "부두술사가 당신을 위협합니다.");
             later(context, 7, "부두 연결 해제", "부두 연결 해제", () -> {
                 targetName = null;
+                lastPulseMillis = 0L;
                 if (postSign != null && postSign.equals(sign)) {
                     postSign = null;
                     sign.breakNaturally();
@@ -86,5 +89,19 @@ final class VoodooAbility extends BaseAbility {
         String name = material.name();
         return "SIGN".equals(name) || "SIGN_POST".equals(name) || "LEGACY_SIGN".equals(name) || "LEGACY_SIGN_POST".equals(name)
             || name.endsWith("_SIGN") || name.endsWith("_WALL_SIGN") || name.endsWith("_HANGING_SIGN") || name.endsWith("_WALL_HANGING_SIGN");
+    }
+
+    private boolean readyPulse(AbilityPlayerContext context) {
+        long interval = Math.max(0L, context.plugin().getConfig().getLong(context.configPath("hit-interval-millis"), 1000L));
+        long now = System.currentTimeMillis();
+        if (lastPulseMillis > 0L && now - lastPulseMillis < interval) {
+            return false;
+        }
+        lastPulseMillis = now;
+        return true;
+    }
+
+    private double damagePerPulse(AbilityPlayerContext context) {
+        return Math.max(0.0D, context.plugin().getConfig().getDouble(context.configPath("damage"), 0.5D));
     }
 }
