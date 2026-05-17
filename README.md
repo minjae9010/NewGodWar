@@ -117,14 +117,6 @@ Windows PowerShell에서는 다음처럼 실행할 수 있습니다.
 
 빌드 결과물은 `build/libs/NewGodWar-0.1.0-SNAPSHOT.jar`에 복사되며, 모듈 산출물은 `plugin/build/libs/NewGodWar-0.1.0-SNAPSHOT.jar`에서도 확인할 수 있습니다.
 
-## 릴리즈
-
-`master` 브랜치에 푸시하면 GitHub Actions가 `build.gradle`의 `version` 값을 읽고, 해당 버전의 태그가 아직 없을 때 자동 릴리즈를 진행합니다. 예를 들어 `version = "0.1.3"`이면 `v0.1.3` 태그를 만들고, 빌드 및 Paper 호환성 스모크 테스트가 모두 통과한 뒤 GitHub Release에 `NewGodWar-0.1.3.jar`를 업로드합니다.
-
-이미 같은 태그가 있으면 자동 릴리즈는 건너뜁니다. 새 릴리즈를 만들려면 `build.gradle`의 버전을 올린 뒤 `master`에 푸시하세요.
-
-수동 릴리즈도 가능합니다. `v*` 태그를 직접 푸시하거나, GitHub Actions의 `Release` 워크플로우를 수동 실행하면서 릴리즈할 태그를 입력하면 됩니다.
-
 ## 라이선스
 
 Copyright (c) 2026 minjae9010
