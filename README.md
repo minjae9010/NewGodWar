@@ -12,7 +12,7 @@
 
 `docs/wiki` 문서는 `Wiki` GitHub Actions 워크플로를 통해 GitHub Wiki에 자동 반영됩니다. GitHub Wiki의 첫 화면은 `Home.md`입니다.
 
-Wiki 배포 전 저장소 Settings > Features에서 Wiki 기능을 켜야 합니다. Wiki가 꺼져 있으면 GitHub가 `<owner>/<repo>.wiki.git` 저장소를 만들지 않아 워크플로가 배포할 수 없습니다.
+Wiki 배포 전 저장소 Settings > Features에서 Wiki 기능을 켜야 합니다. 그리고 Wiki 탭에서 첫 페이지를 한 번 저장해 `<owner>/<repo>.wiki.git` 저장소를 초기화해야 합니다. 이후부터 워크플로가 `docs/wiki` 내용을 자동 동기화합니다.
 
 ## 핵심 기능
 

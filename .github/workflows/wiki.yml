@@ -39,11 +39,8 @@ jobs:
           fi
 
           if ! git clone "$wiki_url" "$wiki_dir"; then
-            echo "::warning::GitHub Wiki 저장소를 clone하지 못했습니다. Wiki가 비어 있거나 아직 초기화되지 않았을 수 있어 첫 push를 시도합니다."
-            rm -rf "$wiki_dir"
-            mkdir -p "$wiki_dir"
-            git -C "$wiki_dir" init -b master
-            git -C "$wiki_dir" remote add origin "$wiki_url"
+            echo "::error::GitHub Wiki 기능은 켜져 있지만 ${REPOSITORY}.wiki.git 저장소를 clone하지 못했습니다. Wiki 탭에서 첫 페이지를 한 번 Save Page로 저장해 Wiki 저장소를 초기화한 뒤 이 워크플로를 다시 실행하세요."
+            exit 1
           fi
 
           find "$wiki_dir" -mindepth 1 -maxdepth 1 ! -name ".git" -exec rm -rf {} +
