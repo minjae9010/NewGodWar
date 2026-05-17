@@ -65,6 +65,7 @@
 - `game.friendly-fire`: 같은 팀 공격 허용 여부
 - `game.auto-balance-teams`: 팀이 비어 있을 때 시작 시 자동 팀 배정
 - `game.allow-mid-join`: 진행 중인 게임의 중간 참여 허용 여부
+- `game.eliminated-player-action`: 팀 탈락 시 플레이어 처리 방식. `spectator`, `kick`, `midjoin`
 - `game.clear-inventory`, `game.give-skyblock-items`, `game.remove-entities`: 시작 시 인벤토리/기본 아이템/엔티티 정리
 - `game.ignore-bed`: 리스폰 시 침대 대신 팀 스폰 사용
 - `game.fast-start`, `game.ready-countdown-seconds`: 시작 준비 카운트다운
@@ -88,6 +89,7 @@
 
 | 마인크래프트 버전 | 권장 플러그인 버전 |
 | --- | --- |
+| MC 26.1.1 ~ 26.1.2 | 최신 버전 |
 | MC 1.21.x | 최신 버전 |
 | MC 1.20.x | 최신 버전 |
 | MC 1.19.x | 최신 버전 |
@@ -98,7 +100,7 @@
 | MC 1.14.x | 최신 버전 |
 | MC 1.13.x | 최신 버전 |
 | MC 1.12.x | 최신 버전 |
-| MC 1.11.x 이하 Legacy | 최신 버전 |
+| MC 1.11.x 이하 Legacy | 지원 X |
 | Pre-release / RC | 지원 X |
 
 ## 빌드

@@ -3,6 +3,7 @@ game:
   friendly-fire: false
   auto-balance-teams: true
   allow-mid-join: true
+  eliminated-player-action: spectator
   clear-inventory: true
   give-skyblock-items: true
   remove-entities: true
@@ -159,4 +160,5 @@ messages:
   game-start: "&e전쟁이 시작되었습니다. 각 팀의 신전을 지키고 적의 다이아 심장을 파괴하세요."
   game-stop: "&c전쟁이 종료되었습니다."
   team-eliminated: "&c{team} 팀의 다이아 심장이 파괴되었습니다."
+  team-eliminated-kick: "&c{team} 팀이 탈락했습니다."
   winner: "&a{team} 팀이 신들의 전쟁에서 승리했습니다!"

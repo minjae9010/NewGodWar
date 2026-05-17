@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Latest release
+    url: https://github.com/minjae9010/NewGodWar/releases/latest
+    about: 최신 릴리즈와 다운로드 파일을 확인합니다.
+  - name: Ability documentation
+    url: https://github.com/minjae9010/NewGodWar/blob/master/docs/wiki/abilities.md
+    about: 내장 능력 목록과 설명을 확인합니다.

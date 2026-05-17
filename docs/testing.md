@@ -22,7 +22,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\Test-PaperMatrix.ps1
 특정 버전만 확인하려면 다음처럼 실행합니다.
 
 ```powershell
-.\scripts\Test-PaperMatrix.ps1 -Versions 1.12.2,1.20.6,1.21.1
+.\scripts\Test-PaperMatrix.ps1 -Versions 1.12.2,1.21.11,26.1.2
 ```
 
 지원 목록 전체를 확인하려면 다음처럼 실행합니다.
@@ -48,7 +48,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\Test-PaperMatrix.ps1
 이미 빌드된 jar를 테스트하려면 다음처럼 실행합니다.
 
 ```powershell
-.\scripts\Test-PaperMatrix.ps1 -SkipBuild -PluginJar .\build\libs\NewGodWar-0.1.0-SNAPSHOT.jar -Versions 1.21.1
+.\scripts\Test-PaperMatrix.ps1 -SkipBuild -PluginJar .\build\libs\NewGodWar-0.1.3.jar -Versions 26.1.2
 ```
 
 테스트 서버 파일은 `.paper-smoke/` 아래에 생성되며 git에는 포함되지 않습니다.
@@ -62,9 +62,10 @@ powershell -ExecutionPolicy Bypass -File .\scripts\Test-PaperMatrix.ps1
 
 | Minecraft | Java |
 | --- | --- |
-| 1.7.10 ~ 1.16.5 | 8 |
+| 1.12 ~ 1.16.5 | 8 |
 | 1.17 ~ 1.20.4 | 17 |
-| 1.20.5 이상 | 21 |
+| 1.20.5 ~ 1.21.x | 21 |
+| 26.1.1 ~ 26.1.2 | 21 |
 
 일부 버전만 빠르게 확인해야 하면 로컬 스크립트의 `-Versions`에 원하는 Paper 버전을 넘겨 실행하면 됩니다.
 
@@ -73,8 +74,10 @@ powershell -ExecutionPolicy Bypass -File .\scripts\Test-PaperMatrix.ps1
 `v*` 형식의 태그를 GitHub에 push하면 `.github/workflows/release.yml` 워크플로가 실행됩니다.
 
 1. 플러그인 jar를 빌드합니다.
-2. 위 Paper 매트릭스에서 서버 기동 스모크 테스트를 모두 통과해야 합니다.
+2. 최신 지원 Paper 서버 기동 스모크 테스트를 통과해야 합니다.
 3. 테스트가 성공하면 해당 태그의 GitHub Release를 만들고 `NewGodWar-*.jar`를 첨부합니다.
+
+전체 Paper 매트릭스는 별도 호환성 신호로 계속 실행하지만, 구버전 개별 실패가 릴리즈 생성을 막지는 않습니다.
 
 예시는 다음과 같습니다.
 

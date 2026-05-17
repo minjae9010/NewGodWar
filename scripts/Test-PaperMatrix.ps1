@@ -7,7 +7,8 @@ param(
         "1.18.2",
         "1.19.4",
         "1.20.6",
-        "1.21.1"
+        "1.21.11",
+        "26.1.2"
     ),
     [string] $PluginJar = "",
     [string] $WorkDir = ".paper-smoke",
@@ -25,7 +26,9 @@ Set-StrictMode -Version Latest
 
 $RootDir = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $WorkRoot = Join-Path $RootDir $WorkDir
-$ApiBase = "https://api.papermc.io/v2/projects/paper"
+$FillApiBase = "https://fill.papermc.io/v3/projects/paper"
+$LegacyApiBase = "https://api.papermc.io/v2/projects/paper"
+$PaperUserAgent = "NewGodWar compatibility smoke test (https://github.com/minjae9010/NewGodWar)"
 $IsWindowsPlatform = [System.IO.Path]::DirectorySeparatorChar -eq "\"
 
 function Write-Step {
@@ -36,11 +39,6 @@ function Write-Step {
 
 function Get-SupportedPaperVersions {
     return @(
-        "1.7.10",
-        "1.8.8",
-        "1.9.4",
-        "1.10.2",
-        "1.11.2",
         "1.12",
         "1.12.1",
         "1.12.2",
@@ -86,7 +84,9 @@ function Get-SupportedPaperVersions {
         "1.21.8",
         "1.21.9",
         "1.21.10",
-        "1.21.11"
+        "1.21.11",
+        "26.1.1",
+        "26.1.2"
     )
 }
 
@@ -136,7 +136,18 @@ function Invoke-PaperApi {
     param([string] $Uri)
 
     Invoke-RestMethod -Uri $Uri -Headers @{
-        "User-Agent" = "NewGodWar compatibility smoke test"
+        "User-Agent" = $PaperUserAgent
+    }
+}
+
+function Invoke-PaperDownload {
+    param(
+        [string] $Uri,
+        [string] $OutFile
+    )
+
+    Invoke-WebRequest -Uri $Uri -OutFile $OutFile -Headers @{
+        "User-Agent" = $PaperUserAgent
     }
 }
 
@@ -168,12 +179,36 @@ function Get-PaperJar {
         [string] $VersionDir
     )
 
-    $buildsUri = "$ApiBase/versions/$MinecraftVersion/builds"
+    $fillBuildsUri = "$FillApiBase/versions/$MinecraftVersion/builds"
+    $fillBuilds = Invoke-PaperApi -Uri $fillBuildsUri
+    if ($null -ne $fillBuilds -and $fillBuilds.Count -gt 0) {
+        $latestBuild = $fillBuilds |
+            Where-Object { $_.channel -eq "STABLE" -and $null -ne $_.downloads."server:default" } |
+            Sort-Object id |
+            Select-Object -Last 1
+        if ($null -eq $latestBuild) {
+            $latestBuild = $fillBuilds |
+                Where-Object { $null -ne $_.downloads."server:default" } |
+                Sort-Object id |
+                Select-Object -Last 1
+        }
+        if ($null -ne $latestBuild) {
+            $download = $latestBuild.downloads."server:default"
+            $jarPath = Join-Path $VersionDir $download.name
+            if (-not (Test-Path $jarPath)) {
+                Write-Host "Downloading Paper $MinecraftVersion build $($latestBuild.id) from Fill API"
+                Invoke-PaperDownload -Uri $download.url -OutFile $jarPath
+            }
+
+            return $jarPath
+        }
+    }
+
+    $buildsUri = "$LegacyApiBase/versions/$MinecraftVersion/builds"
     $builds = Invoke-PaperApi -Uri $buildsUri
     if ($null -eq $builds.builds -or $builds.builds.Count -eq 0) {
         throw "No Paper builds found for Minecraft $MinecraftVersion."
     }
-
     $latestBuild = $builds.builds | Sort-Object build | Select-Object -Last 1
     $buildNumber = $latestBuild.build
     $downloadName = $null
@@ -186,11 +221,9 @@ function Get-PaperJar {
 
     $jarPath = Join-Path $VersionDir $downloadName
     if (-not (Test-Path $jarPath)) {
-        $downloadUri = "$ApiBase/versions/$MinecraftVersion/builds/$buildNumber/downloads/$downloadName"
+        $downloadUri = "$LegacyApiBase/versions/$MinecraftVersion/builds/$buildNumber/downloads/$downloadName"
         Write-Host "Downloading Paper $MinecraftVersion build $buildNumber"
-        Invoke-WebRequest -Uri $downloadUri -OutFile $jarPath -Headers @{
-            "User-Agent" = "NewGodWar compatibility smoke test"
-        }
+        Invoke-PaperDownload -Uri $downloadUri -OutFile $jarPath
     }
 
     return $jarPath

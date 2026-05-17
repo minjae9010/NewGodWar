@@ -1,0 +1,60 @@
+name: Ability request
+description: 새 능력 추가나 기존 능력 밸런스 조정을 제안합니다.
+title: "[Ability] "
+labels:
+  - ability
+  - enhancement
+body:
+  - type: input
+    id: ability-name
+    attributes:
+      label: 능력 이름
+      placeholder: 예) 시간 왜곡자
+    validations:
+      required: true
+
+  - type: dropdown
+    id: request-type
+    attributes:
+      label: 요청 종류
+      options:
+        - 새 능력 추가
+        - 기존 능력 밸런스 조정
+        - 기존 능력 버그 수정
+        - 설명 / 문서 개선
+    validations:
+      required: true
+
+  - type: textarea
+    id: concept
+    attributes:
+      label: 능력 콘셉트
+      description: 플레이어가 어떤 재미를 느끼게 할 능력인지 적어 주세요.
+    validations:
+      required: true
+
+  - type: textarea
+    id: behavior
+    attributes:
+      label: 상세 동작
+      description: 발동 조건, 쿨타임, 지속 시간, 피해량, 제한 사항을 구체적으로 적어 주세요.
+      placeholder: |
+        - 발동 조건:
+        - 쿨타임:
+        - 지속 시간:
+        - 효과:
+        - 제한:
+    validations:
+      required: true
+
+  - type: textarea
+    id: balance
+    attributes:
+      label: 밸런스 고려사항
+      description: 강한 점, 약한 점, 카운터 플레이를 적어 주세요.
+
+  - type: textarea
+    id: references
+    attributes:
+      label: 참고 자료
+      description: 기존 능력, 다른 플러그인, 영상, 문서 등 참고할 내용이 있으면 적어 주세요.

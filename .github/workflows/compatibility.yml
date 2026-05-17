@@ -42,16 +42,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - minecraft: "1.7.10"
-            java: "8"
-          - minecraft: "1.8.8"
-            java: "8"
-          - minecraft: "1.9.4"
-            java: "8"
-          - minecraft: "1.10.2"
-            java: "8"
-          - minecraft: "1.11.2"
-            java: "8"
           - minecraft: "1.12"
             java: "8"
           - minecraft: "1.12.1"
@@ -143,6 +133,10 @@ jobs:
           - minecraft: "1.21.10"
             java: "21"
           - minecraft: "1.21.11"
+            java: "21"
+          - minecraft: "26.1.1"
+            java: "21"
+          - minecraft: "26.1.2"
             java: "21"
 
     steps:

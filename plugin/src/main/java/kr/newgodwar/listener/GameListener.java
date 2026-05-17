@@ -57,6 +57,10 @@ public final class GameListener implements Listener {
     public void onJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
         if (gameManager.isRunning() && gameManager.teamOf(player) != null) {
+            if (gameManager.handleEliminatedJoin(player)) {
+                gameManager.refreshPlayerDisplay(player);
+                return;
+            }
             abilityManager.reapply(player);
         }
         gameManager.refreshPlayerDisplay(player);

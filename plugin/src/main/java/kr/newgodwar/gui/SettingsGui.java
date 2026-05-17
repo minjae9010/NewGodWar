@@ -175,7 +175,7 @@ public final class SettingsGui implements Listener {
         if (view == SettingsView.MAIN) {
             handleMain(player, slot);
         } else if (view == SettingsView.GAME) {
-            handleGame(player, slot);
+            handleGame(player, slot, click);
         } else if (view == SettingsView.TEAM) {
             handleTeam(player, slot, click);
         } else if (view == SettingsView.TEAM_DETAIL) {
@@ -261,7 +261,7 @@ public final class SettingsGui implements Listener {
         }
     }
 
-    private void handleGame(Player player, int slot) {
+    private void handleGame(Player player, int slot, ClickType click) {
         if (slot == 0) {
             changeInt("game.min-players", -1, 1, 100);
         } else if (slot == 2) {
@@ -298,6 +298,8 @@ public final class SettingsGui implements Listener {
         } else if (slot == 21) {
             gameManager.autoBalance();
             plugin.messages().send(player, "&a온라인 플레이어를 자동으로 팀 배정했습니다.");
+        } else if (slot == 23) {
+            cycleEliminatedPlayerAction(click == ClickType.RIGHT || click == ClickType.SHIFT_RIGHT ? -1 : 1);
         }
     }
 
@@ -539,6 +541,7 @@ public final class SettingsGui implements Listener {
         inventory.setItem(21, item("COMPASS", "COMPASS", 1, (short) 0,
             ChatColor.AQUA + "팀 자동 배정",
             ChatColor.GRAY + "/gw autoteam"));
+        inventory.setItem(23, eliminatedPlayerActionItem(config));
     }
 
     private void fillTeam(Inventory inventory, Player player) {
@@ -703,6 +706,28 @@ public final class SettingsGui implements Listener {
             ChatColor.DARK_GRAY + "상품은 GUI 또는 /gw gamblereward로 편집");
     }
 
+    private ItemStack eliminatedPlayerActionItem(FileConfiguration config) {
+        String action = normalizedEliminatedPlayerAction(config);
+        return item(eliminatedPlayerActionIcon(action), "ENDER_PEARL", 1, (short) 0,
+            ChatColor.YELLOW + "탈락자 처리: " + ChatColor.WHITE + eliminatedPlayerActionLabel(action),
+            ChatColor.GRAY + "좌클릭: 다음 방식",
+            ChatColor.GRAY + "우클릭: 이전 방식",
+            ChatColor.GRAY + "관전: 탈락자를 관전 모드로 전환",
+            ChatColor.GRAY + "킥: 탈락자를 서버에서 내보냄",
+            ChatColor.GRAY + "자동 중간참여: 남은 팀이 2개 이상이면 자동 이적",
+            ChatColor.DARK_GRAY + "game.eliminated-player-action");
+    }
+
+    private String eliminatedPlayerActionIcon(String action) {
+        if ("kick".equals(action)) {
+            return "BARRIER";
+        }
+        if ("midjoin".equals(action)) {
+            return "ENDER_PEARL";
+        }
+        return "SPYGLASS";
+    }
+
     private ItemStack teamListItem(GodTeam team) {
         ChatColor color = gameManager.teamColor(team);
         boolean enabled = gameManager.isTeamEnabled(team);
@@ -837,6 +862,46 @@ public final class SettingsGui implements Listener {
         FileConfiguration config = plugin.getConfig();
         config.set(path, !config.getBoolean(path, defaultToggleValue(path)));
         plugin.saveConfig();
+    }
+
+    private void cycleEliminatedPlayerAction(int delta) {
+        String[] actions = new String[] {"spectator", "kick", "midjoin"};
+        String current = normalizedEliminatedPlayerAction(plugin.getConfig());
+        int index = 0;
+        for (int i = 0; i < actions.length; i++) {
+            if (actions[i].equals(current)) {
+                index = i;
+                break;
+            }
+        }
+        int next = (index + delta) % actions.length;
+        if (next < 0) {
+            next += actions.length;
+        }
+        plugin.getConfig().set("game.eliminated-player-action", actions[next]);
+        plugin.saveConfig();
+    }
+
+    private String normalizedEliminatedPlayerAction(FileConfiguration config) {
+        String action = config.getString("game.eliminated-player-action", "spectator");
+        if (action == null) {
+            return "spectator";
+        }
+        action = action.toLowerCase().trim();
+        if ("kick".equals(action) || "midjoin".equals(action) || "spectator".equals(action)) {
+            return action;
+        }
+        return "spectator";
+    }
+
+    private String eliminatedPlayerActionLabel(String action) {
+        if ("kick".equals(action)) {
+            return "킥";
+        }
+        if ("midjoin".equals(action)) {
+            return "자동 중간참여";
+        }
+        return "관전";
     }
 
     private boolean defaultToggleValue(String path) {

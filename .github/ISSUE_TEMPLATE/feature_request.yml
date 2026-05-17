@@ -1,0 +1,51 @@
+name: Feature request
+description: 새 기능이나 기존 기능 개선을 제안합니다.
+title: "[Feature] "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: 해결하고 싶은 문제
+      description: 어떤 불편함이나 필요가 있는지 설명해 주세요.
+      placeholder: 예) 게임 시작 전에 특정 팀만 자동 배정에서 제외하고 싶습니다.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: 제안하는 기능
+      description: 원하는 동작을 구체적으로 적어 주세요.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: 관련 영역
+      options:
+        - 게임 진행
+        - 팀 / 스폰 / 코어
+        - 능력 시스템
+        - 도박 시스템
+        - 설정 / GUI
+        - 호환성
+        - 빌드 / 배포
+        - 문서
+        - 기타
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: 대안
+      description: 이미 시도한 설정, 명령, 우회 방법이 있으면 적어 주세요.
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: 추가 정보
+      description: 스크린샷, 예시 명령어, 참고 플러그인 등을 적어 주세요.

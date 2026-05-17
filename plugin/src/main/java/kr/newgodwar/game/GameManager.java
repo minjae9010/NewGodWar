@@ -341,10 +341,14 @@ public final class GameManager {
     }
 
     public AbilityDefinition joinMidGame(Player player, GodTeam requestedTeam) {
+        return joinMidGame(player, requestedTeam, true);
+    }
+
+    private AbilityDefinition joinMidGame(Player player, GodTeam requestedTeam, boolean requireEnabled) {
         if (state != GameState.RUNNING) {
             throw new IllegalStateException("게임 진행 중에만 중간 참여를 사용할 수 있습니다.");
         }
-        if (!plugin.getConfig().getBoolean("game.allow-mid-join", true)) {
+        if (requireEnabled && !plugin.getConfig().getBoolean("game.allow-mid-join", true)) {
             throw new IllegalStateException("현재 설정에서 중간 참여가 꺼져 있습니다.");
         }
         GodTeam currentTeam = teamOf(player);
@@ -419,13 +423,60 @@ public final class GameManager {
         eliminatedTeams.add(team);
         String message = plugin.messages().get("team-eliminated").replace("{team}", teamColoredName(team));
         Bukkit.broadcastMessage(plugin.messages().prefix() + message);
+        List<Player> eliminatedPlayers = new ArrayList<Player>();
         for (Player player : BukkitCompat.onlinePlayers()) {
             if (team.equals(teamOf(player))) {
-                setSpectator(player);
+                eliminatedPlayers.add(player);
             }
+        }
+        for (Player player : eliminatedPlayers) {
+            handleEliminatedPlayer(player, team);
         }
         refreshAllPlayerDisplays();
         checkWinner();
+    }
+
+    public boolean handleEliminatedJoin(Player player) {
+        GodTeam team = teamOf(player);
+        if (team == null || !eliminatedTeams.contains(team)) {
+            return false;
+        }
+        handleEliminatedPlayer(player, team);
+        return true;
+    }
+
+    private void handleEliminatedPlayer(Player player, GodTeam team) {
+        String action = eliminatedPlayerAction();
+        if ("kick".equals(action)) {
+            kickEliminatedPlayer(player, team);
+            return;
+        }
+        if ("midjoin".equals(action) && aliveTeamCount() > 1) {
+            try {
+                joinMidGame(player, null, false);
+                return;
+            } catch (IllegalStateException ex) {
+                player.sendMessage(ChatColor.RED + "자동 중간 참여 실패: " + ex.getMessage());
+            }
+        }
+        setSpectator(player);
+    }
+
+    private void kickEliminatedPlayer(Player player, GodTeam team) {
+        String message = plugin.messages().get("team-eliminated-kick").replace("{team}", teamColoredName(team));
+        player.kickPlayer(message);
+    }
+
+    private String eliminatedPlayerAction() {
+        String action = plugin.getConfig().getString("game.eliminated-player-action", "spectator");
+        if (action == null) {
+            return "spectator";
+        }
+        action = action.toLowerCase(Locale.ROOT).trim();
+        if ("kick".equals(action) || "midjoin".equals(action) || "spectator".equals(action)) {
+            return action;
+        }
+        return "spectator";
     }
 
     public void setSpectator(Player player) {
@@ -1047,12 +1098,7 @@ public final class GameManager {
     }
 
     private void checkWinner() {
-        Set<GodTeam> alive = new HashSet<GodTeam>();
-        for (GodTeam team : activeTeams()) {
-            if (!eliminatedTeams.contains(team)) {
-                alive.add(team);
-            }
-        }
+        Set<GodTeam> alive = aliveTeams();
         if (alive.size() == 1) {
             GodTeam winner = alive.iterator().next();
             String message = plugin.messages().get("winner").replace("{team}", teamColoredName(winner));
@@ -1065,6 +1111,20 @@ public final class GameManager {
             }
             stop(false);
         }
+    }
+
+    private int aliveTeamCount() {
+        return aliveTeams().size();
+    }
+
+    private Set<GodTeam> aliveTeams() {
+        Set<GodTeam> alive = new HashSet<GodTeam>();
+        for (GodTeam team : activeTeams()) {
+            if (!eliminatedTeams.contains(team)) {
+                alive.add(team);
+            }
+        }
+        return alive;
     }
 
     private void startWaterHealTask() {
