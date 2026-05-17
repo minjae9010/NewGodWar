@@ -11,6 +11,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.Difficulty;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Animals;
@@ -56,8 +57,11 @@ public final class GameManager {
     private int waterHealTask = -1;
     private int abilityNoticeTask = -1;
     private int readyTask = -1;
+    private int gameTipTask = -1;
     private int readySecondsRemaining = 0;
     private int readyReminder = 0;
+    private int nextGameTipIndex = 0;
+    private long runningStartedAtMillis = 0L;
 
     public GameManager(NewGodWarPlugin plugin, AbilityManager abilityManager, NmsAdapter nmsAdapter) {
         this.plugin = plugin;
@@ -147,6 +151,13 @@ public final class GameManager {
 
     public boolean isRunning() {
         return state == GameState.RUNNING;
+    }
+
+    public long runningElapsedSeconds() {
+        if (state != GameState.RUNNING || runningStartedAtMillis <= 0L) {
+            return 0L;
+        }
+        return Math.max(0L, (System.currentTimeMillis() - runningStartedAtMillis) / 1000L);
     }
 
     public boolean isEliminated(GodTeam team) {
@@ -286,7 +297,7 @@ public final class GameManager {
 
         Bukkit.broadcastMessage(plugin.messages().prefix() + ChatColor.GOLD + "게임 시작 준비를 시작합니다.");
         broadcastStartSettings();
-        GameTips.broadcast(plugin);
+        nextGameTipIndex = GameTips.broadcastOnStart(plugin);
 
         int rerollCount = abilityRerollCount();
         for (Player player : participants) {
@@ -314,6 +325,7 @@ public final class GameManager {
         }
 
         state = GameState.RUNNING;
+        runningStartedAtMillis = System.currentTimeMillis();
         eliminatedTeams.clear();
         kills.clear();
         abilityManager.clear();
@@ -382,6 +394,7 @@ public final class GameManager {
 
     public void stop(boolean announce) {
         state = GameState.ENDED;
+        runningStartedAtMillis = 0L;
         if (readyTask != -1) {
             Bukkit.getScheduler().cancelTask(readyTask);
             readyTask = -1;
@@ -394,12 +407,17 @@ public final class GameManager {
             Bukkit.getScheduler().cancelTask(abilityNoticeTask);
             abilityNoticeTask = -1;
         }
+        if (gameTipTask != -1) {
+            Bukkit.getScheduler().cancelTask(gameTipTask);
+            gameTipTask = -1;
+        }
         pendingSelection.clear();
-        abilityManager.clear();
-        clearPotionEffects(BukkitCompat.onlinePlayers());
         if (announce) {
             Bukkit.broadcastMessage(plugin.messages().prefix() + plugin.messages().get("game-stop"));
         }
+        revealAbilitiesOnEnd();
+        abilityManager.clear();
+        clearPotionEffects(BukkitCompat.onlinePlayers());
         gameRuleController.restorePreviousRules();
         restoreWorldSettings();
         refreshAllPlayerDisplays();
@@ -661,6 +679,9 @@ public final class GameManager {
         setLine(objective, score--, ChatColor.YELLOW + "상태 " + ChatColor.WHITE + stateLabel());
         setLine(objective, score--, ChatColor.YELLOW + "팀 " + (team == null ? ChatColor.GRAY + "미참가" : teamColoredName(team)));
         setLine(objective, score--, ChatColor.YELLOW + "능력 " + ChatColor.WHITE + (ability == null ? "없음" : ability.name()));
+        if (ability != null) {
+            setLine(objective, score--, ChatColor.YELLOW + "등급 " + ChatColor.WHITE + ability.grade().symbol());
+        }
         if (hasSkill(ability == null ? null : ability.normalSkill())) {
             setLine(objective, score--, ChatColor.AQUA + "일반 " + cooldownStatus(player, ability, 1));
         }
@@ -926,6 +947,7 @@ public final class GameManager {
             readyTask = -1;
         }
         state = GameState.RUNNING;
+        runningStartedAtMillis = System.currentTimeMillis();
         gameRuleController.applyConfiguredRules();
         applyWorldStartSettings();
         clearConfiguredEntities();
@@ -938,6 +960,7 @@ public final class GameManager {
         refreshAllPlayerDisplays();
         Bukkit.broadcastMessage(plugin.messages().prefix() + plugin.messages().get("game-start"));
         startWaterHealTask();
+        startGameTipTask();
     }
 
     private void broadcastPendingSelection() {
@@ -978,11 +1001,107 @@ public final class GameManager {
         Bukkit.broadcastMessage(ChatColor.WHITE + "기본 아이템 지급 : " + state(plugin.getConfig().getBoolean("game.give-skyblock-items", true)));
         Bukkit.broadcastMessage(ChatColor.WHITE + "엔티티 삭제 : " + state(plugin.getConfig().getBoolean("game.remove-entities", true)));
         Bukkit.broadcastMessage(ChatColor.WHITE + "침대 무시 : " + state(plugin.getConfig().getBoolean("game.ignore-bed", true)));
+        Bukkit.broadcastMessage(ChatColor.WHITE + "종료 후 능력 공개 : " + state(plugin.getConfig().getBoolean("game.reveal-abilities-on-end", true)));
         Bukkit.broadcastMessage(ChatColor.WHITE + "도박 : " + state(plugin.getConfig().getBoolean("gambling.enabled", true)));
         Bukkit.broadcastMessage(ChatColor.WHITE + "코어 폭파 보호 : " + state(plugin.getConfig().getBoolean("core.protect-diamond-from-explosion", true)));
         Bukkit.broadcastMessage(ChatColor.WHITE + "코어 맨손 파괴 : " + state(plugin.getConfig().getBoolean("core.require-empty-hand", true)));
         Bukkit.broadcastMessage(ChatColor.WHITE + "다이아 곡괭이 금지 : " + state(plugin.getConfig().getBoolean("core.forbid-diamond-pickaxe", true)));
+        Bukkit.broadcastMessage(ChatColor.WHITE + "곡괭이 시간 해제 : " + pickaxeUnlockSummary());
         Bukkit.broadcastMessage(ChatColor.GREEN + "***************************");
+    }
+
+    private String pickaxeUnlockSummary() {
+        String summary = pickaxeUnlockLabel("나무", "core.pickaxe-unlock.wooden-seconds")
+            + ChatColor.GRAY + " / " + pickaxeUnlockLabel("돌", "core.pickaxe-unlock.stone-seconds")
+            + ChatColor.GRAY + " / " + pickaxeUnlockLabel("철", "core.pickaxe-unlock.iron-seconds")
+            + ChatColor.GRAY + " / " + pickaxeUnlockLabel("금", "core.pickaxe-unlock.gold-seconds")
+            + ChatColor.GRAY + " / " + pickaxeUnlockLabel("다이아", "core.pickaxe-unlock.diamond-seconds");
+        return summary;
+    }
+
+    private String pickaxeUnlockLabel(String name, String path) {
+        int seconds = plugin.getConfig().getInt(path, -1);
+        if (seconds < 0) {
+            return ChatColor.DARK_GRAY + name + " 꺼짐";
+        }
+        if (seconds == 0) {
+            return ChatColor.GREEN + name + " 즉시";
+        }
+        return ChatColor.YELLOW + name + " " + formatSeconds(seconds);
+    }
+
+    private String formatSeconds(int seconds) {
+        int minutes = seconds / 60;
+        int remain = seconds % 60;
+        if (minutes <= 0) {
+            return remain + "초";
+        }
+        if (remain == 0) {
+            return minutes + "분";
+        }
+        return minutes + "분 " + remain + "초";
+    }
+
+    private void revealAbilitiesOnEnd() {
+        if (!plugin.getConfig().getBoolean("game.reveal-abilities-on-end", true)) {
+            return;
+        }
+        Map<UUID, AbilityDefinition> assignments = abilityManager.assignedAbilities();
+        if (assignments.isEmpty()) {
+            return;
+        }
+
+        List<UUID> players = new ArrayList<UUID>(assignments.keySet());
+        sortAbilityRevealPlayers(players);
+        Bukkit.broadcastMessage(plugin.messages().prefix() + ChatColor.GOLD + "게임 종료 능력 공개");
+        for (UUID uuid : players) {
+            AbilityDefinition ability = assignments.get(uuid);
+            if (ability == null) {
+                continue;
+            }
+            GodTeam team = teams.get(uuid);
+            Bukkit.broadcastMessage(ChatColor.GRAY + "- " + teamColor(team) + playerName(uuid)
+                + ChatColor.DARK_GRAY + " [" + revealTeamName(team) + "] "
+                + ChatColor.WHITE + ability.name()
+                + ChatColor.DARK_GRAY + " (" + ability.id() + ")");
+        }
+    }
+
+    private void sortAbilityRevealPlayers(List<UUID> players) {
+        for (int i = 1; i < players.size(); i++) {
+            UUID current = players.get(i);
+            int cursor = i - 1;
+            while (cursor >= 0 && compareAbilityRevealPlayers(players.get(cursor), current) > 0) {
+                players.set(cursor + 1, players.get(cursor));
+                cursor--;
+            }
+            players.set(cursor + 1, current);
+        }
+    }
+
+    private int compareAbilityRevealPlayers(UUID left, UUID right) {
+        GodTeam leftTeam = teams.get(left);
+        GodTeam rightTeam = teams.get(right);
+        int leftTeamOrder = leftTeam == null ? GodTeam.values().length : leftTeam.ordinal();
+        int rightTeamOrder = rightTeam == null ? GodTeam.values().length : rightTeam.ordinal();
+        if (leftTeamOrder != rightTeamOrder) {
+            return leftTeamOrder - rightTeamOrder;
+        }
+        return playerName(left).compareToIgnoreCase(playerName(right));
+    }
+
+    private String playerName(UUID uuid) {
+        Player online = Bukkit.getPlayer(uuid);
+        if (online != null) {
+            return online.getName();
+        }
+        OfflinePlayer offline = Bukkit.getOfflinePlayer(uuid);
+        String name = offline == null ? null : offline.getName();
+        return name == null ? uuid.toString() : name;
+    }
+
+    private String revealTeamName(GodTeam team) {
+        return team == null ? "미배정" : teamDisplayName(team);
     }
 
     private void preparePlayerForGame(Player player) {
@@ -1150,6 +1269,43 @@ public final class GameManager {
                 abilityManager.tickCountdownAlerts(BukkitCompat.onlinePlayers());
             }
         }, 20L, 20L);
+    }
+
+    private void startGameTipTask() {
+        if (gameTipTask != -1) {
+            Bukkit.getScheduler().cancelTask(gameTipTask);
+            gameTipTask = -1;
+        }
+        if (!GameTips.timedTipsEnabled(plugin) || GameTips.count(plugin) == 0) {
+            return;
+        }
+        if (!GameTips.repeatTimedTips(plugin) && nextGameTipIndex >= GameTips.count(plugin)) {
+            return;
+        }
+
+        long initialDelay = GameTips.timedInitialDelaySeconds(plugin) * 20L;
+        long interval = GameTips.timedIntervalSeconds(plugin) * 20L;
+        gameTipTask = Bukkit.getScheduler().scheduleSyncRepeatingTask(plugin, () -> {
+            if (state != GameState.RUNNING || !GameTips.timedTipsEnabled(plugin) || GameTips.count(plugin) == 0) {
+                cancelGameTipTask();
+                return;
+            }
+            if (!GameTips.repeatTimedTips(plugin) && nextGameTipIndex >= GameTips.count(plugin)) {
+                cancelGameTipTask();
+                return;
+            }
+            nextGameTipIndex = GameTips.broadcastTip(plugin, nextGameTipIndex);
+            if (!GameTips.repeatTimedTips(plugin) && nextGameTipIndex >= GameTips.count(plugin)) {
+                cancelGameTipTask();
+            }
+        }, initialDelay, interval);
+    }
+
+    private void cancelGameTipTask() {
+        if (gameTipTask != -1) {
+            Bukkit.getScheduler().cancelTask(gameTipTask);
+            gameTipTask = -1;
+        }
     }
 
     private static final class WorldSnapshot {

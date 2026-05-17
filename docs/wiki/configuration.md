@@ -21,6 +21,7 @@
 | `game.skip-ready-countdown-seconds` | `5` | 능력 확정 자동 skip 및 관리자 skip 기본 초 |
 | `game.select-right` | `true` | 능력 재추첨 선택 사용 여부 |
 | `game.ability-reroll-count` | `1` | 플레이어별 재추첨 가능 횟수 |
+| `game.reveal-abilities-on-end` | `true` | 게임 종료 시 플레이어별 능력 공개 여부 |
 | `game.announce-radius` | `0` | 공지 반경용 예약 설정 |
 | `game.ability-roll-message` | `true` | 능력 배정 타이틀 표시 여부 |
 | `game.ability-tick-interval-seconds` | `1` | 능력 반복 처리 주기 |
@@ -48,6 +49,13 @@
 | `core.protect-diamond-from-explosion` | `true` | 등록된 다이아 심장 폭발 보호 |
 | `core.require-empty-hand` | `true` | 심장을 맨손으로만 파괴 가능 |
 | `core.forbid-diamond-pickaxe` | `true` | 다이아몬드 곡괭이 심장 파괴 금지 |
+| `core.pickaxe-unlock.wooden-seconds` | `-1` | 게임 시작 후 나무 곡괭이 코어 파괴 허용 시간. `-1`이면 자동 해제 안 함 |
+| `core.pickaxe-unlock.stone-seconds` | `-1` | 게임 시작 후 돌 곡괭이 코어 파괴 허용 시간. `-1`이면 자동 해제 안 함 |
+| `core.pickaxe-unlock.iron-seconds` | `-1` | 게임 시작 후 철 곡괭이 코어 파괴 허용 시간. `-1`이면 자동 해제 안 함 |
+| `core.pickaxe-unlock.gold-seconds` | `-1` | 게임 시작 후 금 곡괭이 코어 파괴 허용 시간. `-1`이면 자동 해제 안 함 |
+| `core.pickaxe-unlock.diamond-seconds` | `-1` | 게임 시작 후 다이아 곡괭이 코어 파괴 허용 시간. `-1`이면 자동 해제 안 함 |
+
+곡괭이 시간 해제 값이 `0` 이상이면 `core.require-empty-hand`가 켜져 있어도 해당 시간이 지난 뒤 그 곡괭이로 코어를 파괴할 수 있습니다. 월드 / 코어 설정 GUI에서 각 곡괭이를 좌클릭/우클릭해 1분 단위로, 쉬프트 좌클릭/쉬프트 우클릭해 5분 단위로 조정할 수 있습니다.
 
 ## abilities
 
@@ -95,12 +103,16 @@
 
 ## tips
 
-`/godwar tips`와 게임 시작 준비 때 표시할 안내 문구입니다. 색상 코드는 `&` 문법을 사용할 수 있습니다.
+`/godwar tips`와 게임 시작 준비, 게임 진행 중 시간차 안내에 사용할 팁 문구입니다. 색상 코드는 `&` 문법을 사용할 수 있습니다.
 
 | 키 | 기본값 | 설명 |
 | --- | --- | --- |
 | `tips.enabled` | `true` | 팁 기능 사용 여부 |
-| `tips.show-on-start` | `true` | 시작 준비 시 팁 표시 |
+| `tips.show-on-start` | `true` | 시작 준비 시 첫 번째 팁 표시 |
+| `tips.timed.enabled` | `true` | 게임 진행 중 시간차 팁 표시 |
+| `tips.timed.initial-delay-seconds` | `60` | 게임 시작 후 첫 시간차 팁까지 대기할 초 |
+| `tips.timed.interval-seconds` | `180` | 다음 팁을 표시할 간격(초) |
+| `tips.timed.repeat` | `true` | 모든 팁을 보여준 뒤 처음부터 반복할지 여부 |
 | `tips.lines` | 목록 | 표시할 팁 문구 |
 
 ## gamerules

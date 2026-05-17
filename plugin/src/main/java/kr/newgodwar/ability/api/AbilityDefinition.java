@@ -12,6 +12,7 @@ public final class AbilityDefinition {
     private final int advancedStoneCost;
     private final int advancedCooldownSeconds;
     private final String passiveSkill;
+    private final AbilityGrade grade;
     private final String author;
     private final boolean enabledByDefault;
     private final AbilityFactory factory;
@@ -25,6 +26,10 @@ public final class AbilityDefinition {
     }
 
     public AbilityDefinition(String id, String name, String description, String normalSkill, int normalStoneCost, int normalCooldownSeconds, String advancedSkill, int advancedStoneCost, int advancedCooldownSeconds, String passiveSkill, String author, boolean enabledByDefault, AbilityFactory factory) {
+        this(id, name, description, normalSkill, normalStoneCost, normalCooldownSeconds, advancedSkill, advancedStoneCost, advancedCooldownSeconds, passiveSkill, AbilityGrade.UNRATED, author, enabledByDefault, factory);
+    }
+
+    public AbilityDefinition(String id, String name, String description, String normalSkill, int normalStoneCost, int normalCooldownSeconds, String advancedSkill, int advancedStoneCost, int advancedCooldownSeconds, String passiveSkill, AbilityGrade grade, String author, boolean enabledByDefault, AbilityFactory factory) {
         this.id = id;
         this.name = name;
         this.description = description;
@@ -35,6 +40,7 @@ public final class AbilityDefinition {
         this.advancedStoneCost = advancedStoneCost;
         this.advancedCooldownSeconds = advancedCooldownSeconds;
         this.passiveSkill = passiveSkill;
+        this.grade = grade == null ? AbilityGrade.UNRATED : grade;
         this.author = author;
         this.enabledByDefault = enabledByDefault;
         this.factory = factory;
@@ -86,6 +92,14 @@ public final class AbilityDefinition {
 
     public String passiveSkill() {
         return passiveSkill;
+    }
+
+    public AbilityGrade grade() {
+        return grade;
+    }
+
+    public String gradeText() {
+        return grade.displayText();
     }
 
     public String author() {

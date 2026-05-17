@@ -181,7 +181,7 @@ public final class SettingsGui implements Listener {
         } else if (view == SettingsView.TEAM_DETAIL) {
             handleTeamDetail(player, slot, click);
         } else if (view == SettingsView.WORLD_CORE) {
-            handleWorldCore(player, slot);
+            handleWorldCore(player, slot, click);
         } else if (view == SettingsView.DISPLAY) {
             handleDisplay(player, slot, click);
         } else if (view == SettingsView.GAMBLING) {
@@ -293,6 +293,8 @@ public final class SettingsGui implements Listener {
             } catch (IllegalStateException ex) {
                 plugin.messages().send(player, "&c" + ex.getMessage());
             }
+        } else if (slot == 19) {
+            toggle("game.reveal-abilities-on-end");
         } else if (slot == 20) {
             gameManager.stop(true);
         } else if (slot == 21) {
@@ -303,7 +305,7 @@ public final class SettingsGui implements Listener {
         }
     }
 
-    private void handleWorldCore(Player player, int slot) {
+    private void handleWorldCore(Player player, int slot, ClickType click) {
         if (slot == 3) {
             toggle("game.remove-entities");
         } else if (slot == 4) {
@@ -327,6 +329,16 @@ public final class SettingsGui implements Listener {
             toggle("gamerules.enabled");
         } else if (slot == 17) {
             toggle("gamerules.restore-on-stop");
+        } else if (slot == 18) {
+            changePickaxeUnlockSeconds("core.pickaxe-unlock.wooden-seconds", click);
+        } else if (slot == 19) {
+            changePickaxeUnlockSeconds("core.pickaxe-unlock.stone-seconds", click);
+        } else if (slot == 20) {
+            changePickaxeUnlockSeconds("core.pickaxe-unlock.iron-seconds", click);
+        } else if (slot == 21) {
+            changePickaxeUnlockSeconds("core.pickaxe-unlock.gold-seconds", click);
+        } else if (slot == 23) {
+            changePickaxeUnlockSeconds("core.pickaxe-unlock.diamond-seconds", click);
         }
     }
 
@@ -535,6 +547,7 @@ public final class SettingsGui implements Listener {
         inventory.setItem(18, item("EMERALD_BLOCK", "EMERALD_BLOCK", 1, (short) 0,
             ChatColor.GREEN + "게임 시작",
             ChatColor.GRAY + "/t start"));
+        inventory.setItem(19, toggleItem("game.reveal-abilities-on-end", "종료 후 능력 공개", "ENCHANTED_BOOK"));
         inventory.setItem(20, item("REDSTONE_BLOCK", "REDSTONE_BLOCK", 1, (short) 0,
             ChatColor.RED + "게임 종료",
             ChatColor.GRAY + "/t stop"));
@@ -601,6 +614,12 @@ public final class SettingsGui implements Listener {
         inventory.setItem(15, toggleItem("core.require-empty-hand", "코어 맨손 파괴", "BARRIER"));
         inventory.setItem(16, toggleItem("gamerules.enabled", "게임룰 자동 적용", "COMMAND_BLOCK"));
         inventory.setItem(17, toggleItem("gamerules.restore-on-stop", "종료 시 게임룰 복구", "REDSTONE_COMPARATOR"));
+
+        inventory.setItem(18, pickaxeUnlockItem("WOODEN_PICKAXE", "WOOD_PICKAXE", "나무 곡괭이", "core.pickaxe-unlock.wooden-seconds"));
+        inventory.setItem(19, pickaxeUnlockItem("STONE_PICKAXE", "STONE_PICKAXE", "돌 곡괭이", "core.pickaxe-unlock.stone-seconds"));
+        inventory.setItem(20, pickaxeUnlockItem("IRON_PICKAXE", "IRON_PICKAXE", "철 곡괭이", "core.pickaxe-unlock.iron-seconds"));
+        inventory.setItem(21, pickaxeUnlockItem("GOLDEN_PICKAXE", "GOLD_PICKAXE", "금 곡괭이", "core.pickaxe-unlock.gold-seconds"));
+        inventory.setItem(23, pickaxeUnlockItem("DIAMOND_PICKAXE", "DIAMOND_PICKAXE", "다이아 곡괭이", "core.pickaxe-unlock.diamond-seconds"));
     }
 
     private void fillDisplay(Inventory inventory) {
@@ -905,7 +924,9 @@ public final class SettingsGui implements Listener {
     }
 
     private boolean defaultToggleValue(String path) {
-        return path != null && (path.startsWith("abilities.messages.") || path.equals("core.require-empty-hand"));
+        return path != null && (path.startsWith("abilities.messages.")
+            || path.equals("core.require-empty-hand")
+            || path.equals("game.reveal-abilities-on-end"));
     }
 
     private void changeInt(String path, int delta, int min, int max) {
@@ -914,6 +935,57 @@ public final class SettingsGui implements Listener {
         value = Math.max(min, Math.min(max, value + delta));
         config.set(path, value);
         plugin.saveConfig();
+    }
+
+    private void changePickaxeUnlockSeconds(String path, ClickType click) {
+        int delta = 0;
+        if (click == ClickType.LEFT) {
+            delta = 60;
+        } else if (click == ClickType.RIGHT) {
+            delta = -60;
+        } else if (click == ClickType.SHIFT_LEFT) {
+            delta = 300;
+        } else if (click == ClickType.SHIFT_RIGHT) {
+            delta = -300;
+        } else if (click == ClickType.MIDDLE) {
+            plugin.getConfig().set(path, -1);
+            plugin.saveConfig();
+            return;
+        }
+        if (delta != 0) {
+            changeInt(path, delta, -1, 7200);
+        }
+    }
+
+    private ItemStack pickaxeUnlockItem(String modernMaterial, String legacyMaterial, String title, String path) {
+        int seconds = plugin.getConfig().getInt(path, -1);
+        ChatColor color = seconds < 0 ? ChatColor.RED : ChatColor.GREEN;
+        return item(modernMaterial, legacyMaterial, 1, (short) 0,
+            color + title + " 허용 시간: " + pickaxeUnlockText(seconds),
+            ChatColor.GRAY + "게임 시작 후 이 시간이 지나면",
+            ChatColor.GRAY + "코어를 이 곡괭이로 파괴할 수 있습니다.",
+            ChatColor.GRAY + "좌클릭 +1분 / 우클릭 -1분",
+            ChatColor.GRAY + "쉬프트 좌클릭 +5분 / 쉬프트 우클릭 -5분",
+            ChatColor.GRAY + "가운데 클릭: 해제 안 함",
+            ChatColor.DARK_GRAY + path);
+    }
+
+    private String pickaxeUnlockText(int seconds) {
+        if (seconds < 0) {
+            return "해제 안 함";
+        }
+        if (seconds == 0) {
+            return "즉시";
+        }
+        int minutes = seconds / 60;
+        int remain = seconds % 60;
+        if (minutes <= 0) {
+            return remain + "초";
+        }
+        if (remain == 0) {
+            return minutes + "분";
+        }
+        return minutes + "분 " + remain + "초";
     }
 
     private void changeRewardChance(String path, int index, int delta) {

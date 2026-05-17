@@ -25,19 +25,47 @@ public final class GameTips {
         }
     }
 
-    public static void broadcast(NewGodWarPlugin plugin) {
+    public static int broadcastOnStart(NewGodWarPlugin plugin) {
         if (!plugin.getConfig().getBoolean("tips.enabled", true)
             || !plugin.getConfig().getBoolean("tips.show-on-start", true)) {
-            return;
+            return 0;
+        }
+        return broadcastTip(plugin, 0);
+    }
+
+    public static int broadcastTip(NewGodWarPlugin plugin, int index) {
+        if (!plugin.getConfig().getBoolean("tips.enabled", true)) {
+            return index;
         }
         List<String> tips = tips(plugin);
         if (tips.isEmpty()) {
-            return;
+            return index;
         }
-        Bukkit.broadcastMessage(plugin.messages().prefix() + ChatColor.GOLD + "서버 플레이 팁");
-        for (String tip : tips) {
-            Bukkit.broadcastMessage(ChatColor.DARK_GRAY + " - " + plugin.messages().color(tip));
-        }
+        int normalizedIndex = Math.floorMod(index, tips.size());
+        Bukkit.broadcastMessage(plugin.messages().prefix() + ChatColor.GOLD + "게임 팁");
+        Bukkit.broadcastMessage(ChatColor.DARK_GRAY + " - " + plugin.messages().color(tips.get(normalizedIndex)));
+        return Math.max(0, index) + 1;
+    }
+
+    public static boolean timedTipsEnabled(NewGodWarPlugin plugin) {
+        return plugin.getConfig().getBoolean("tips.enabled", true)
+            && plugin.getConfig().getBoolean("tips.timed.enabled", true);
+    }
+
+    public static long timedInitialDelaySeconds(NewGodWarPlugin plugin) {
+        return Math.max(0L, plugin.getConfig().getLong("tips.timed.initial-delay-seconds", 60L));
+    }
+
+    public static long timedIntervalSeconds(NewGodWarPlugin plugin) {
+        return Math.max(1L, plugin.getConfig().getLong("tips.timed.interval-seconds", 180L));
+    }
+
+    public static boolean repeatTimedTips(NewGodWarPlugin plugin) {
+        return plugin.getConfig().getBoolean("tips.timed.repeat", true);
+    }
+
+    public static int count(NewGodWarPlugin plugin) {
+        return tips(plugin).size();
     }
 
     private static List<String> tips(NewGodWarPlugin plugin) {

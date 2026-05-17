@@ -348,6 +348,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             + plugin.getConfig().getInt("game.ability-reroll-count", 1) + "회"
             + ChatColor.DARK_GRAY + " | " + ChatColor.GRAY + "자동 Skip "
             + ChatColor.YELLOW + plugin.getConfig().getInt("game.skip-ready-countdown-seconds", 5) + "초");
+        sender.sendMessage(ChatColor.GRAY + "  종료 공개  " + state(plugin.getConfig().getBoolean("game.reveal-abilities-on-end", true)));
         sender.sendMessage(ChatColor.GRAY + "  게임룰     " + state(plugin.getConfig().getBoolean("gamerules.enabled", true)));
         sender.sendMessage(ChatColor.GRAY + "  블랙리스트 " + ChatColor.YELLOW + abilityManager.blacklistedAbilityIds().size() + ChatColor.GRAY + "개");
         sender.sendMessage(ChatColor.GRAY + "  원문       " + gameManager.statusLine());
@@ -660,6 +661,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             return;
         }
         plugin.messages().send(sender, "&a" + target.getName() + " 님의 능력: " + ability.name()
+            + ChatColor.GRAY + " | 등급 " + ChatColor.YELLOW + ability.gradeText()
             + ChatColor.GRAY + " - " + ability.description());
     }
 
@@ -773,6 +775,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         for (AssignedAbilityView view : assigned) {
             sender.sendMessage(ChatColor.WHITE + view.playerName + ChatColor.GRAY + " : "
                 + ChatColor.YELLOW + view.ability.name() + ChatColor.DARK_GRAY + " (" + view.ability.id() + ")"
+                + ChatColor.GRAY + " | 등급 " + ChatColor.YELLOW + view.ability.grade().symbol()
                 + (view.online ? "" : ChatColor.DARK_GRAY + " [오프라인]"));
         }
     }
@@ -827,7 +830,8 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         if (ability == null) {
             return ChatColor.GRAY + "미배정";
         }
-        return ChatColor.YELLOW + ability.name() + ChatColor.DARK_GRAY + " (" + ability.id() + ")";
+        return ChatColor.YELLOW + ability.name() + ChatColor.DARK_GRAY + " (" + ability.id() + ")"
+            + ChatColor.GRAY + " [" + ability.grade().symbol() + "]";
     }
 
     private String teamName(GodTeam team) {
@@ -853,6 +857,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             String state = enabled ? "활성" : "비활성";
             sender.sendMessage(ChatColor.GOLD + ability.id() + ChatColor.GRAY + " | "
                 + ChatColor.WHITE + ability.name() + ChatColor.GRAY + " | "
+                + ChatColor.YELLOW + ability.gradeText() + ChatColor.GRAY + " | "
                 + stateColor + state + ChatColor.GRAY + " - " + ability.description());
         }
     }
@@ -1694,7 +1699,9 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             || contains(ability.normalSkill(), normalized)
             || contains(ability.advancedSkill(), normalized)
             || contains(ability.passiveSkill(), normalized)
-            || contains(ability.author(), normalized);
+            || contains(ability.author(), normalized)
+            || contains(ability.grade().symbol(), normalized)
+            || contains(ability.grade().label(), normalized);
     }
 
     private boolean contains(String text, String query) {

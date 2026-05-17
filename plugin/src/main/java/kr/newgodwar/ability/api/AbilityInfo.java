@@ -31,6 +31,8 @@ public @interface AbilityInfo {
 
     String passiveSkill() default "";
 
+    AbilityGrade grade() default AbilityGrade.UNRATED;
+
     String author() default "NewGodWar";
 
     boolean enabledByDefault() default true;

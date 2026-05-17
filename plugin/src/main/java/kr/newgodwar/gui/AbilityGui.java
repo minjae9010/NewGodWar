@@ -3,6 +3,7 @@ package kr.newgodwar.gui;
 import kr.newgodwar.NewGodWarPlugin;
 import kr.newgodwar.ability.AbilityManager;
 import kr.newgodwar.ability.api.AbilityDefinition;
+import kr.newgodwar.ability.api.AbilityGrade;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -179,6 +180,7 @@ public final class AbilityGui implements Listener {
             inventory.setItem(24, item("PAPER", "PAPER", 1, (short) 0,
                 ChatColor.GOLD + "" + ChatColor.BOLD + "세부 정보",
                 ChatColor.GRAY + "ID: " + ChatColor.WHITE + current.id(),
+                ChatColor.GRAY + "등급: " + gradeColor(current.grade()) + current.gradeText(),
                 ChatColor.GRAY + "제작자: " + ChatColor.WHITE + current.author(),
                 ChatColor.GRAY + "타이머: " + currentTimerText(shown)));
         }
@@ -239,6 +241,7 @@ public final class AbilityGui implements Listener {
             ChatColor.AQUA + "" + ChatColor.BOLD + ability.name(),
             ChatColor.WHITE + target.getName() + ChatColor.GRAY + " 님의 현재 능력",
             ChatColor.GRAY + "종류: " + ChatColor.YELLOW + "신의 능력",
+            ChatColor.GRAY + "등급: " + gradeColor(ability.grade()) + ability.gradeText(),
             "",
             ChatColor.GRAY + ability.description(),
             "",
@@ -269,6 +272,7 @@ public final class AbilityGui implements Listener {
         String state = blacklisted ? "블랙리스트" : (enabled ? "사용 가능" : "비활성");
         ArrayList<String> lore = new ArrayList<String>();
         lore.add(ChatColor.WHITE + "상태: " + (enabled ? ChatColor.GREEN : ChatColor.RED) + state);
+        lore.add(ChatColor.WHITE + "등급: " + gradeColor(ability.grade()) + ability.gradeText());
         lore.add("");
         lore.add(ChatColor.WHITE + ability.description());
         lore.add("");
@@ -346,7 +350,9 @@ public final class AbilityGui implements Listener {
             || contains(ability.normalSkill(), query)
             || contains(ability.advancedSkill(), query)
             || contains(ability.passiveSkill(), query)
-            || contains(ability.author(), query);
+            || contains(ability.author(), query)
+            || contains(ability.grade().symbol(), query)
+            || contains(ability.grade().label(), query);
     }
 
     private boolean contains(String text, String query) {
@@ -414,6 +420,15 @@ public final class AbilityGui implements Listener {
 
     private String cooldown(String cooldown) {
         return hasCooldown(cooldown) ? cooldown : "없음";
+    }
+
+    private ChatColor gradeColor(AbilityGrade grade) {
+        if (grade == AbilityGrade.S) return ChatColor.LIGHT_PURPLE;
+        if (grade == AbilityGrade.A) return ChatColor.GOLD;
+        if (grade == AbilityGrade.B) return ChatColor.GREEN;
+        if (grade == AbilityGrade.C) return ChatColor.YELLOW;
+        if (grade == AbilityGrade.D) return ChatColor.RED;
+        return ChatColor.GRAY;
     }
 
     private boolean hasCooldown(String cooldown) {

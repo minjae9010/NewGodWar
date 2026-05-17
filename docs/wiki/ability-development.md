@@ -73,6 +73,7 @@ com.example.godwar.SampleAbilityRegistrar
     advancedStoneCost = 20,
     advancedCooldownSeconds = 90,
     passiveSkill = "패시브 능력 설명",
+    grade = AbilityGrade.B,
     author = "작성자",
     enabledByDefault = true
 )
@@ -88,6 +89,7 @@ com.example.godwar.SampleAbilityRegistrar
 - `advancedStoneCost`: 고급 능력 돌 소모량
 - `advancedCooldownSeconds`: 고급 능력 쿨타임. `0`은 쿨타임 없음, 음수는 제한/특수 처리 용도로 사용할 수 있습니다.
 - `passiveSkill`: 패시브 능력 설명
+- `grade`: 밸런스를 기준으로 정한 능력 등급. `S`, `A`, `B`, `C`, `D`, `UNRATED` 중 하나입니다.
 - `author`: 능력 작성자
 - `enabledByDefault`: config에 값이 없을 때 기본 활성화 여부
 

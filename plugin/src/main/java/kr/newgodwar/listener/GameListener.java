@@ -145,21 +145,113 @@ public final class GameListener implements Listener {
             return;
         }
         ItemStack itemInHand = BukkitCompat.mainHandItem(event.getPlayer());
-        if (plugin.getConfig().getBoolean("core.require-empty-hand", true) && !BukkitCompat.isEmptyItem(itemInHand)) {
+        if (!canBreakCoreWithItem(itemInHand)) {
             event.setCancelled(true);
-            plugin.messages().send(event.getPlayer(), "&c코어는 맨손으로만 파괴할 수 있습니다.");
-            return;
-        }
-        if (plugin.getConfig().getBoolean("core.forbid-diamond-pickaxe", true)
-            && !BukkitCompat.isEmptyItem(itemInHand)
-            && itemInHand.getType() == Material.DIAMOND_PICKAXE) {
-            event.setCancelled(true);
-            Bukkit.broadcastMessage(plugin.messages().prefix() + ChatColor.RED + event.getPlayer().getName()
-                + ChatColor.WHITE + " 님이 다이아 곡괭이로 코어를 파괴하려다 적발되었습니다.");
+            sendCoreBreakRestriction(event.getPlayer(), itemInHand);
             return;
         }
         gameManager.eliminate(team, event.getPlayer());
         abilityManager.handleBlockBreak(event.getPlayer(), event);
+    }
+
+    private boolean canBreakCoreWithItem(ItemStack itemInHand) {
+        if (BukkitCompat.isEmptyItem(itemInHand)) {
+            return true;
+        }
+        Material material = itemInHand.getType();
+        if (isPickaxe(material) && isPickaxeUnlocked(material)) {
+            return true;
+        }
+        if (plugin.getConfig().getBoolean("core.require-empty-hand", true)) {
+            return false;
+        }
+        return !isDiamondPickaxe(material) || !plugin.getConfig().getBoolean("core.forbid-diamond-pickaxe", true);
+    }
+
+    private void sendCoreBreakRestriction(Player player, ItemStack itemInHand) {
+        Material material = itemInHand == null ? null : itemInHand.getType();
+        if (isPickaxe(material)) {
+            String message = pickaxeUnlockMessage(material);
+            if (message != null) {
+                plugin.messages().send(player, message);
+                return;
+            }
+        }
+        if (isDiamondPickaxe(material) && plugin.getConfig().getBoolean("core.forbid-diamond-pickaxe", true)) {
+            Bukkit.broadcastMessage(plugin.messages().prefix() + ChatColor.RED + player.getName()
+                + ChatColor.WHITE + " 님이 다이아 곡괭이로 코어를 파괴하려다 적발되었습니다.");
+            return;
+        }
+        plugin.messages().send(player, "&c코어는 맨손으로만 파괴할 수 있습니다.");
+    }
+
+    private String pickaxeUnlockMessage(Material material) {
+        String path = pickaxeUnlockPath(material);
+        if (path == null) {
+            return null;
+        }
+        int seconds = plugin.getConfig().getInt(path, -1);
+        if (seconds < 0) {
+            return "&c이 곡괭이는 코어 파괴에 아직 허용되지 않았습니다.";
+        }
+        long remaining = seconds - gameManager.runningElapsedSeconds();
+        if (remaining <= 0L) {
+            return null;
+        }
+        return "&c이 곡괭이는 " + formatSeconds(remaining) + " 후 코어 파괴에 허용됩니다.";
+    }
+
+    private boolean isPickaxeUnlocked(Material material) {
+        String path = pickaxeUnlockPath(material);
+        if (path == null) {
+            return false;
+        }
+        int seconds = plugin.getConfig().getInt(path, -1);
+        return seconds >= 0 && gameManager.runningElapsedSeconds() >= seconds;
+    }
+
+    private String pickaxeUnlockPath(Material material) {
+        if (material == null) {
+            return null;
+        }
+        String name = material.name();
+        if ("WOOD_PICKAXE".equals(name) || "WOODEN_PICKAXE".equals(name) || "LEGACY_WOOD_PICKAXE".equals(name)) {
+            return "core.pickaxe-unlock.wooden-seconds";
+        }
+        if (material == Material.STONE_PICKAXE) {
+            return "core.pickaxe-unlock.stone-seconds";
+        }
+        if (material == Material.IRON_PICKAXE) {
+            return "core.pickaxe-unlock.iron-seconds";
+        }
+        if ("GOLD_PICKAXE".equals(name) || "GOLDEN_PICKAXE".equals(name) || "LEGACY_GOLD_PICKAXE".equals(name)) {
+            return "core.pickaxe-unlock.gold-seconds";
+        }
+        if (isDiamondPickaxe(material)) {
+            return "core.pickaxe-unlock.diamond-seconds";
+        }
+        return null;
+    }
+
+    private boolean isPickaxe(Material material) {
+        return pickaxeUnlockPath(material) != null;
+    }
+
+    private boolean isDiamondPickaxe(Material material) {
+        return material == Material.DIAMOND_PICKAXE;
+    }
+
+    private String formatSeconds(long seconds) {
+        long safeSeconds = Math.max(0L, seconds);
+        long minutes = safeSeconds / 60L;
+        long remain = safeSeconds % 60L;
+        if (minutes <= 0L) {
+            return remain + "초";
+        }
+        if (remain == 0L) {
+            return minutes + "분";
+        }
+        return minutes + "분 " + remain + "초";
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)

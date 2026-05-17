@@ -70,6 +70,7 @@
 - `game.ignore-bed`: 리스폰 시 침대 대신 팀 스폰 사용
 - `game.fast-start`, `game.ready-countdown-seconds`: 시작 준비 카운트다운
 - `game.select-right`: 능력 재추첨 기회 사용 여부
+- `game.reveal-abilities-on-end`: 게임 종료 시 플레이어별 능력 공개 여부
 - `game.ability-roll-message`: 능력 배정 타이틀 표시 여부
 - `game.ability-tick-interval-seconds`: 능력 반복 처리 주기
 - `game.urf`: 우르프 모드 사용 여부와 능력 쿨타임 배율
@@ -82,7 +83,7 @@
 - `scoreboard.enabled`: 우측 스코어보드에 내 팀, 능력, 킬 상태 표시
 - `scoreboard.team-prefixes`: 탭 목록과 머리 위 이름에 팀 Prefix 표시
 - `blacklist.abilities`: 랜덤 배정에서 제외할 능력 ID 목록
-- `tips`: `/godwar tips`와 게임 시작 준비 때 표시할 서버 플레이 팁
+- `tips`: `/godwar tips`, 게임 시작 준비, 게임 진행 중 시간차로 표시할 서버 플레이 팁
 - `gamerules`: 게임 시작 시 모든 월드에 적용할 마인크래프트 게임룰과 종료 시 복구 여부
 
 ## 지원 버전

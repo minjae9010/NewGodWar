@@ -239,6 +239,7 @@ public final class AbilityManager {
         player.sendMessage(ChatColor.GOLD + "" + ChatColor.BOLD + "능력이 배정되었습니다: "
             + ChatColor.WHITE + definition.name() + ChatColor.DARK_GRAY + " (" + definition.id() + ")");
         player.sendMessage(ChatColor.GRAY + "설명: " + ChatColor.YELLOW + definition.description());
+        player.sendMessage(ChatColor.GRAY + "등급: " + ChatColor.YELLOW + definition.gradeText());
         if (hasSkill(definition.normalSkill())) {
             player.sendMessage(ChatColor.GRAY + "일반: " + ChatColor.WHITE + skillLine(definition.normalSkill(), definition.normalStoneCost(), definition.normalCooldown()));
         }
