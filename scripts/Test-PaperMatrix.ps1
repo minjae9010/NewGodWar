@@ -28,6 +28,7 @@ $RootDir = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $WorkRoot = Join-Path $RootDir $WorkDir
 $FillApiBase = "https://fill.papermc.io/v3/projects/paper"
 $LegacyApiBase = "https://api.papermc.io/v2/projects/paper"
+$MojangVersionManifestUri = "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json"
 $PaperUserAgent = "NewGodWar compatibility smoke test (https://github.com/minjae9010/NewGodWar)"
 $IsWindowsPlatform = [System.IO.Path]::DirectorySeparatorChar -eq "\"
 
@@ -229,6 +230,43 @@ function Get-PaperJar {
     return $jarPath
 }
 
+function Ensure-MojangServerJar {
+    param(
+        [string] $MinecraftVersion,
+        [string] $VersionDir
+    )
+
+    $cacheDir = Join-Path $VersionDir "cache"
+    New-Item -ItemType Directory -Force -Path $cacheDir | Out-Null
+
+    $mojangJar = Join-Path $cacheDir "mojang_$MinecraftVersion.jar"
+    if (Test-Path $mojangJar) {
+        return
+    }
+
+    $manifest = Invoke-PaperApi -Uri $MojangVersionManifestUri
+    $versionEntry = $manifest.versions | Where-Object { $_.id -eq $MinecraftVersion } | Select-Object -First 1
+    if ($null -eq $versionEntry) {
+        Write-Warning "Could not find Minecraft $MinecraftVersion in Mojang version manifest."
+        return
+    }
+
+    $versionMetadata = Invoke-PaperApi -Uri $versionEntry.url
+    if ($null -eq $versionMetadata.downloads -or $null -eq $versionMetadata.downloads.server -or [string]::IsNullOrWhiteSpace($versionMetadata.downloads.server.url)) {
+        Write-Warning "Could not find server jar download for Minecraft $MinecraftVersion in Mojang version metadata."
+        return
+    }
+
+    $tempJar = "$mojangJar.tmp"
+    if (Test-Path $tempJar) {
+        Remove-Item -LiteralPath $tempJar -Force
+    }
+
+    Write-Host "Preloading Mojang server jar for Minecraft $MinecraftVersion"
+    Invoke-PaperDownload -Uri $versionMetadata.downloads.server.url -OutFile $tempJar
+    Move-Item -LiteralPath $tempJar -Destination $mojangJar -Force
+}
+
 function Stop-ServerProcess {
     param([System.Diagnostics.Process] $Process)
 
@@ -279,6 +317,7 @@ function Test-PaperVersion {
     )
 
     $paperJar = Get-PaperJar -MinecraftVersion $MinecraftVersion -VersionDir $versionDir
+    Ensure-MojangServerJar -MinecraftVersion $MinecraftVersion -VersionDir $versionDir
     $logPath = Join-Path $versionDir "server.log"
     $latestLogPath = Join-Path (Join-Path $versionDir "logs") "latest.log"
     if (Test-Path $logPath) {
