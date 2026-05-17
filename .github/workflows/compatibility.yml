@@ -81,9 +81,9 @@ jobs:
           - minecraft: "1.16.5"
             java: "8"
           - minecraft: "1.17"
-            java: "17"
+            java: "16"
           - minecraft: "1.17.1"
-            java: "17"
+            java: "16"
           - minecraft: "1.18"
             java: "17"
           - minecraft: "1.18.1"
@@ -135,9 +135,9 @@ jobs:
           - minecraft: "1.21.11"
             java: "21"
           - minecraft: "26.1.1"
-            java: "21"
+            java: "25"
           - minecraft: "26.1.2"
-            java: "21"
+            java: "25"
 
     steps:
       - name: Checkout
@@ -170,7 +170,7 @@ jobs:
           if-no-files-found: ignore
 
   smoke-latest:
-    name: Latest supported Paper / Java 21
+    name: Latest supported Paper / Java 25
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -189,7 +189,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: "21"
+          java-version: "25"
 
       - name: Smoke test latest supported Paper startup
         shell: pwsh

@@ -30,7 +30,7 @@ body:
     id: java-version
     attributes:
       label: Java 버전
-      placeholder: 예) Java 17, Java 21
+      placeholder: 예) Java 16, Java 21, Java 25
     validations:
       required: true
 
