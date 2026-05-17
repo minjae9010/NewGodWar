@@ -22,7 +22,8 @@ import java.util.List;
     advancedSkill = "주변 적의 뒤로 이동합니다.",
     advancedStoneCost = 15,
     advancedCooldownSeconds = 15,
-    passiveSkill = "없음"
+    passiveSkill = "없음",
+    grade = AbilityGrade.A
 )
 final class AssasinAbility extends BaseAbility {
     @Override

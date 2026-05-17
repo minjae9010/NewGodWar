@@ -23,7 +23,8 @@ import java.util.List;
     advancedSkill = "제한 횟수 안에서 인챈트 테이블을 생성합니다.",
     advancedStoneCost = 64,
     advancedCooldownSeconds = -1,
-    passiveSkill = "다른 플레이어가 사망하면 경험 레벨을 얻습니다."
+    passiveSkill = "다른 플레이어가 사망하면 경험 레벨을 얻습니다.",
+    grade = AbilityGrade.A
 )
 final class AthenaAbility extends BaseAbility {
     private int enchantTables = 2;

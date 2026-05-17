@@ -21,7 +21,8 @@ import java.util.List;
     normalStoneCost = 0,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "화염 피해를 받으면 신속 효과를 얻습니다."
+    passiveSkill = "화염 피해를 받으면 신속 효과를 얻습니다.",
+    grade = AbilityGrade.C
 )
 final class GasolinAbility extends BaseAbility {
     @Override

@@ -22,7 +22,8 @@ import java.util.List;
     normalCooldownSeconds = 30,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "실패 시 들고 있던 아이템을 잃을 수 있습니다."
+    passiveSkill = "실패 시 들고 있던 아이템을 잃을 수 있습니다.",
+    grade = AbilityGrade.B
 )
 final class NasdaqAbility extends BaseAbility {
     @Override

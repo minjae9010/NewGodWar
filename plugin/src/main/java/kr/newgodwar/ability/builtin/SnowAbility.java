@@ -21,7 +21,8 @@ import java.util.List;
     normalStoneCost = 1,
     advancedSkill = "현재 공격 지수를 확인합니다.",
     advancedStoneCost = 0,
-    passiveSkill = "눈덩이 피해가 공격 지수를 따르고 사망할 때 성장합니다."
+    passiveSkill = "눈덩이 피해가 공격 지수를 따르고 사망할 때 성장합니다.",
+    grade = AbilityGrade.S
 )
 final class SnowAbility extends BaseAbility {
     private int snowAttack;

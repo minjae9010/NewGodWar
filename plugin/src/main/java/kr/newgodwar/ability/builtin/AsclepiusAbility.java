@@ -23,7 +23,8 @@ import java.util.List;
     advancedSkill = "주변 아군을 완전히 회복합니다.",
     advancedStoneCost = 15,
     advancedCooldownSeconds = 120,
-    passiveSkill = "없음"
+    passiveSkill = "없음",
+    grade = AbilityGrade.A
 )
 final class AsclepiusAbility extends BaseAbility {
     @Override

@@ -9,6 +9,7 @@ import kr.newgodwar.gui.AbilityGui;
 import kr.newgodwar.gui.SettingsGui;
 import kr.newgodwar.util.BukkitCompat;
 import kr.newgodwar.util.GameTips;
+import kr.newgodwar.util.PluginUpdater;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -38,7 +39,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
     private static final List<String> SUBCOMMANDS = Arrays.asList(
         "help", "autoteam", "join", "leave", "settemple", "setspawn", "start", "stop", "status",
         "tips", "ability", "abilities", "assignedabilities", "assignments", "participants", "players", "rerolls", "skip", "skipseconds", "blacklist", "gamerule", "target", "setability", "spectate", "unspectate", "observer",
-        "reload", "gui", "settings", "test", "midjoin", "info", "yes", "no", "clear", "gamble", "gamblereward", "urf"
+        "reload", "update", "gui", "settings", "test", "midjoin", "info", "yes", "no", "clear", "gamble", "gamblereward", "urf"
     );
     private static final int HELP_LINES_PER_PAGE = 7;
 
@@ -227,6 +228,10 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             plugin.messages().send(sender, "&a설정을 다시 불러왔습니다.");
             return true;
         }
+        if (sub.equals("update")) {
+            update(sender, args);
+            return true;
+        }
         if (sub.equals("gui") || sub.equals("settings")) {
             openSettings(sender);
             return true;
@@ -328,6 +333,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             entries.add(new HelpEntry("운영 설정", "gamblereward <normal|tajja> <번호|add> hand|message|<material> [값]", "도박 당첨 아이템/멘트 변경"));
             entries.add(new HelpEntry("운영 설정", "blacklist <list|add|remove|toggle> [ability]", "랜덤 제외 능력 관리"));
             entries.add(new HelpEntry("운영 설정", "gamerule <apply|restore>", "게임룰 수동 적용 / 복구"));
+            entries.add(new HelpEntry("운영 설정", "update [check|download]", "최신 버전 확인 / 업데이트 jar 다운로드"));
             entries.add(new HelpEntry("운영 설정", "reload", "config.yml 다시 불러오기"));
             entries.add(new HelpEntry("운영 설정", "spectate|unspectate <player>", "관전 모드 전환"));
         }
@@ -350,6 +356,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             + ChatColor.YELLOW + plugin.getConfig().getInt("game.skip-ready-countdown-seconds", 5) + "초");
         sender.sendMessage(ChatColor.GRAY + "  종료 공개  " + state(plugin.getConfig().getBoolean("game.reveal-abilities-on-end", true)));
         sender.sendMessage(ChatColor.GRAY + "  게임룰     " + state(plugin.getConfig().getBoolean("gamerules.enabled", true)));
+        sender.sendMessage(ChatColor.GRAY + "  플러그인   " + ChatColor.YELLOW + plugin.getDescription().getVersion() + updateStatusSuffix());
         sender.sendMessage(ChatColor.GRAY + "  블랙리스트 " + ChatColor.YELLOW + abilityManager.blacklistedAbilityIds().size() + ChatColor.GRAY + "개");
         sender.sendMessage(ChatColor.GRAY + "  원문       " + gameManager.statusLine());
         line(sender);
@@ -376,6 +383,18 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
     private String urfStatus() {
         return state(abilityManager.urfEnabled()) + ChatColor.GRAY + " / 쿨타임 감소 "
             + ChatColor.YELLOW + abilityManager.urfCooldownPercent() + "%";
+    }
+
+    private String updateStatusSuffix() {
+        PluginUpdater.UpdateInfo info = plugin.updater().lastInfo();
+        if (info == null || info.errorMessage() != null || !info.updateAvailable()) {
+            return "";
+        }
+        String suffix = ChatColor.GRAY + " | 최신 " + ChatColor.GREEN + info.latestVersion();
+        if (info.downloadedFile() != null) {
+            suffix += ChatColor.GRAY + " | 재시작 대기";
+        }
+        return suffix;
     }
 
     private void rerolls(CommandSender sender, String[] args) {
@@ -1120,6 +1139,27 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         settingsGui.open(player);
     }
 
+    private void update(CommandSender sender, String[] args) {
+        String action = args.length < 2 ? "check" : args[1].toLowerCase(Locale.ROOT);
+        boolean download = action.equals("download") || action.equals("install") || action.equals("auto") || action.equals("다운로드");
+        if (!download
+            && !action.equals("check")
+            && !action.equals("status")
+            && !action.equals("확인")) {
+            plugin.messages().send(sender, "&e/godwar update [check|download]");
+            return;
+        }
+
+        plugin.messages().send(sender, download
+            ? "&7최신 릴리즈를 확인하고 업데이트 jar를 다운로드합니다..."
+            : "&7최신 릴리즈를 확인합니다...");
+
+        boolean started = plugin.updater().checkNow(download, info -> plugin.updater().sendStatus(sender, info));
+        if (!started) {
+            plugin.messages().send(sender, "&e이미 업데이트 확인이 진행 중입니다. 잠시 후 다시 시도하세요.");
+        }
+    }
+
     private void gamblingReward(CommandSender sender, String[] args) {
         if (args.length < 4) {
             plugin.messages().send(sender, "&e/godwar gamblereward <normal|tajja> <번호|add> hand|<material> [수량]");
@@ -1404,6 +1444,9 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         String sub = normalizeSubcommand(args[0]);
         if (args.length == 2 && sub.equals("help")) {
             return startsWith(Arrays.asList("1", "2", "3", "4", "5", "game", "team", "ability", "admin"), args[1]);
+        }
+        if (args.length == 2 && sub.equals("update")) {
+            return startsWith(Arrays.asList("check", "download", "status"), args[1]);
         }
         if (isThemachyAbilityCommand(alias, args[0])) {
             if (args.length == 2) {
@@ -1867,6 +1910,9 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         }
         if (lower.equals("tip") || lower.equals("tips") || lower.equals("팁")) {
             return "tips";
+        }
+        if (lower.equals("update") || lower.equals("updates") || lower.equals("업데이트")) {
+            return "update";
         }
         if (lower.equals("clear") || lower.equals("c")) {
             return "clear";

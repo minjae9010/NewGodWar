@@ -22,7 +22,8 @@ import java.util.List;
     normalCooldownSeconds = 150,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "피격 시 확률로 공격자에게 독을 겁니다."
+    passiveSkill = "피격 시 확률로 공격자에게 독을 겁니다.",
+    grade = AbilityGrade.A
 )
 final class QueenBeeAbility extends BaseAbility {
     @Override

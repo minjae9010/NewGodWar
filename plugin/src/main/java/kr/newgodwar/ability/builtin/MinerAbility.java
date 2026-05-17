@@ -21,7 +21,8 @@ import java.util.List;
     normalStoneCost = 0,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "코블스톤 채굴 보너스와 곡괭이 고정 피해를 가집니다."
+    passiveSkill = "코블스톤 채굴 보너스와 곡괭이 고정 피해를 가집니다.",
+    grade = AbilityGrade.A
 )
 final class MinerAbility extends BaseAbility {
     @Override

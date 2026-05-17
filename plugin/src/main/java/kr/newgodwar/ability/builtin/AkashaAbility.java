@@ -23,7 +23,8 @@ import java.util.List;
     advancedSkill = "주변 적에게 혼란과 피해를 줍니다.",
     advancedStoneCost = 20,
     advancedCooldownSeconds = 80,
-    passiveSkill = "없음"
+    passiveSkill = "없음",
+    grade = AbilityGrade.A
 )
 final class AkashaAbility extends BaseAbility {
     @Override

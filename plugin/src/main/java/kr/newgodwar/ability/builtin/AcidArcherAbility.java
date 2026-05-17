@@ -23,7 +23,8 @@ import java.util.List;
     advancedSkill = "활을 생성합니다.",
     advancedStoneCost = 15,
     advancedCooldownSeconds = 60,
-    passiveSkill = "화살 피해 대신 독을 부여합니다."
+    passiveSkill = "화살 피해 대신 독을 부여합니다.",
+    grade = AbilityGrade.A
 )
 final class AcidArcherAbility extends BaseAbility {
     @Override

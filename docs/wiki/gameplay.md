@@ -54,7 +54,8 @@ NewGodWar의 기본 승리 조건은 자기 팀의 다이아몬드 심장을 지
 - 등록된 다이아몬드 심장만 팀 탈락 판정 대상입니다.
 - 자기 팀 심장은 파괴할 수 없습니다.
 - `core.require-empty-hand`가 켜져 있으면 심장은 맨손으로만 파괴할 수 있습니다.
-- `core.forbid-diamond-pickaxe`가 켜져 있으면 다이아몬드 곡괭이로 심장을 파괴할 수 없습니다.
+- `core.pickaxe-unlock.*-seconds`가 `0` 이상이면 게임 시작 후 지정 시간이 지난 뒤 해당 곡괭이로 심장을 파괴할 수 있습니다.
+- `core.forbid-diamond-pickaxe`가 켜져 있으면 다이아몬드 곡괭이로 심장을 파괴할 수 없습니다. 다만 다이아 곡괭이 시간 해제가 설정되어 있고 시간이 지났다면 허용됩니다.
 - `core.protect-diamond-from-explosion`이 켜져 있으면 폭발로 심장이 제거되지 않습니다.
 
 ## 탈락과 중간 참여

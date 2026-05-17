@@ -21,7 +21,8 @@ import java.util.List;
     normalStoneCost = 0,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "받는 피해가 크게 줄고 자신이 주는 피해는 0이 됩니다."
+    passiveSkill = "받는 피해가 크게 줄고 자신이 주는 피해는 0이 됩니다.",
+    grade = AbilityGrade.A
 )
 final class DarknessAbility extends BaseAbility {
     @Override

@@ -22,7 +22,8 @@ import java.util.List;
     normalCooldownSeconds = 60,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "번개를 맞으면 다음 자폭 폭발력이 증가합니다."
+    passiveSkill = "번개를 맞으면 다음 자폭 폭발력이 증가합니다.",
+    grade = AbilityGrade.B
 )
 final class CreeperAbility extends BaseAbility {
     private boolean plasma;

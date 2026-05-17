@@ -56,6 +56,7 @@ public final class GameListener implements Listener {
     @EventHandler
     public void onJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
+        plugin.updater().notifyAdminIfOutdated(player);
         if (gameManager.isRunning() && gameManager.teamOf(player) != null) {
             if (gameManager.handleEliminatedJoin(player)) {
                 gameManager.refreshPlayerDisplay(player);

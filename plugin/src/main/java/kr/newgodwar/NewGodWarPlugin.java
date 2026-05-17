@@ -12,6 +12,7 @@ import kr.newgodwar.listener.GameListener;
 import kr.newgodwar.nms.NmsAdapter;
 import kr.newgodwar.nms.NmsAdapters;
 import kr.newgodwar.util.Messages;
+import kr.newgodwar.util.PluginUpdater;
 import kr.newgodwar.util.ServerVersionSupport;
 import org.bstats.bukkit.Metrics;
 import org.bstats.charts.SimplePie;
@@ -27,6 +28,7 @@ public final class NewGodWarPlugin extends JavaPlugin {
     private AbilityManager abilityManager;
     private GameManager gameManager;
     private ServerVersionSupport versionSupport;
+    private PluginUpdater updater;
     private SettingsGui settingsGui;
     private AbilityGui abilityGui;
     private GamblingGui gamblingGui;
@@ -37,6 +39,7 @@ public final class NewGodWarPlugin extends JavaPlugin {
 
         this.messages = new Messages(this);
         this.versionSupport = ServerVersionSupport.detect();
+        this.updater = new PluginUpdater(this);
         Metrics metrics = new Metrics(this, BSTATS_PLUGIN_ID);
         metrics.addCustomChart(new SimplePie("paper_download_target", () -> versionSupport.paperDownloadVersion() ? "supported" : "unsupported"));
 
@@ -63,6 +66,7 @@ public final class NewGodWarPlugin extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(abilityGui, this);
         Bukkit.getPluginManager().registerEvents(gamblingGui, this);
         BlazeRodRecipes.register(this);
+        updater.start();
 
         if (versionSupport.paperDownloadVersion()) {
             getLogger().info("Detected Paper downloadable version target: " + versionSupport.summary());
@@ -74,6 +78,9 @@ public final class NewGodWarPlugin extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        if (updater != null) {
+            updater.shutdown();
+        }
         if (gameManager != null) {
             gameManager.shutdown();
         }
@@ -97,5 +104,9 @@ public final class NewGodWarPlugin extends JavaPlugin {
 
     public ServerVersionSupport versionSupport() {
         return versionSupport;
+    }
+
+    public PluginUpdater updater() {
+        return updater;
     }
 }

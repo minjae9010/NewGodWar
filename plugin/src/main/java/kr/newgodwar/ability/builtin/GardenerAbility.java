@@ -21,7 +21,8 @@ import java.util.List;
     normalStoneCost = 0,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "배정 시 묘목과 염료를 받고 나무 채굴 시 보상을 얻습니다."
+    passiveSkill = "배정 시 묘목과 염료를 받고 나무 채굴 시 보상을 얻습니다.",
+    grade = AbilityGrade.B
 )
 final class GardenerAbility extends BaseAbility {
     @Override

@@ -23,7 +23,8 @@ import java.util.List;
     advancedSkill = "주변 적을 밀쳐내고 약화/감속을 부여합니다.",
     advancedStoneCost = 20,
     advancedCooldownSeconds = 150,
-    passiveSkill = "없음"
+    passiveSkill = "없음",
+    grade = AbilityGrade.A
 )
 final class AeolusAbility extends BaseAbility {
     @Override

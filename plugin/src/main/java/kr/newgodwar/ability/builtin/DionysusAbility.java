@@ -21,7 +21,8 @@ import java.util.List;
     normalStoneCost = 0,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "피격 시 확률로 공격자에게 감속, 약화, 혼란을 부여합니다."
+    passiveSkill = "피격 시 확률로 공격자에게 감속, 약화, 혼란을 부여합니다.",
+    grade = AbilityGrade.B
 )
 final class DionysusAbility extends BaseAbility {
     @Override

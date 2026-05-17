@@ -22,7 +22,8 @@ import java.util.List;
     normalCooldownSeconds = 150,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "준비 후 맨손 공격 시 큰 피해와 자기 디버프를 발생시킵니다."
+    passiveSkill = "준비 후 맨손 공격 시 큰 피해와 자기 디버프를 발생시킵니다.",
+    grade = AbilityGrade.A
 )
 final class MidoriyaAbility extends BaseAbility {
     @Override

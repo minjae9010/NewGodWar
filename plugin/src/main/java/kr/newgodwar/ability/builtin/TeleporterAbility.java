@@ -23,7 +23,8 @@ import java.util.List;
     advancedSkill = "지정한 아군과 위치를 바꿉니다.",
     advancedStoneCost = 25,
     advancedCooldownSeconds = 30,
-    passiveSkill = "타깃 지정 명령을 사용할 수 있습니다."
+    passiveSkill = "타깃 지정 명령을 사용할 수 있습니다.",
+    grade = AbilityGrade.A
 )
 final class TeleporterAbility extends BaseAbility {
     @Override

@@ -13,35 +13,44 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
 import java.util.List;
+
 @AbilityInfo(
-    id = "frost",
-    name = "잭프로스트",
-    description = "얼음을 만들고 지정한 적을 얼음 안에 가둡니다.",
-    normalSkill = "바라보는 위치에 얼음 구체를 만듭니다.",
-    normalStoneCost = 10,
-    normalCooldownSeconds = 8,
-    advancedSkill = "지정한 적을 얼음 구체 안에 가둡니다.",
+    id = "hecate",
+    name = "헤카테",
+    description = "짧은 은신과 지정한 적에게 약한 저주를 사용합니다.",
+    normalSkill = "잠시 투명화하고 신속을 얻습니다.",
+    normalStoneCost = 14,
+    normalCooldownSeconds = 75,
+    advancedSkill = "지정한 적에게 실명과 감속을 짧게 부여합니다.",
     advancedStoneCost = 20,
-    advancedCooldownSeconds = 140,
+    advancedCooldownSeconds = 115,
     passiveSkill = "타깃 지정 명령을 사용할 수 있습니다.",
-    grade = AbilityGrade.A
+    grade = AbilityGrade.B
 )
-final class FrostAbility extends BaseAbility {
+final class HecateAbility extends BaseAbility {
+    @Override
+    public boolean requiresTarget() {
+        return true;
+    }
+
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
         if (useNormal(context, player)) {
-            iceSphere(context, targetLocation(player, 15), 3, 5);
+            effect(player, PotionEffectType.INVISIBILITY, 6, 0);
+            effect(player, PotionEffectType.SPEED, 6, 0);
         }
     }
 
     @Override
     protected void onStaffRight(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
-        Player target = targetPlayerInSight(context, player, 20, false);
+        Player target = commandTargetPlayerInRange(context, player, 20, false);
         if (target == null) {
             return;
         }
         if (useAdvanced(context, player)) {
-            iceSphere(context, target.getLocation(), 5, 8);
+            effect(target, PotionEffectType.BLINDNESS, 4, 0);
+            effect(target, "SLOWNESS", "SLOW", 5, 1);
+            target.sendMessage(ChatColor.DARK_PURPLE + "헤카테의 저주가 시야를 흐립니다.");
         }
     }
 }

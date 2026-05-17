@@ -22,7 +22,8 @@ import java.util.List;
     normalCooldownSeconds = 60,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "맨손 공격에 숨긴 검 피해를 제한 횟수만큼 싣습니다."
+    passiveSkill = "맨손 공격에 숨긴 검 피해를 제한 횟수만큼 싣습니다.",
+    grade = AbilityGrade.B
 )
 final class TajjaAbility extends BaseAbility {
     private int tajjaDamage;

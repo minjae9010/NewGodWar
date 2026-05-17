@@ -29,6 +29,16 @@ world:
   difficulty: EASY
   start-time: 6000
 
+updates:
+  enabled: true
+  auto-download: true
+  notify-admins: true
+  initial-delay-seconds: 10
+  check-interval-minutes: 60
+  github:
+    owner: minjae9010
+    repo: NewGodWar
+
 core:
   protect-diamond-from-explosion: true
   require-empty-hand: true

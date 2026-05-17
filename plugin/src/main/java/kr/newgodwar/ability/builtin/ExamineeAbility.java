@@ -22,7 +22,8 @@ import java.util.List;
     normalCooldownSeconds = 60,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "채팅으로 정답을 맞히면 무작위 능력으로 바뀝니다."
+    passiveSkill = "채팅으로 정답을 맞히면 무작위 능력으로 바뀝니다.",
+    grade = AbilityGrade.C
 )
 final class ExamineeAbility extends BaseAbility {
     @Override

@@ -23,7 +23,8 @@ import java.util.List;
     advancedSkill = "팀원 전체에게 무작위 축복을 부여합니다.",
     advancedStoneCost = 45,
     advancedCooldownSeconds = 90,
-    passiveSkill = "없음"
+    passiveSkill = "없음",
+    grade = AbilityGrade.B
 )
 final class PriestAbility extends BaseAbility {
     @Override

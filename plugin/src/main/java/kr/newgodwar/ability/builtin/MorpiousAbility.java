@@ -22,7 +22,8 @@ import java.util.List;
     normalCooldownSeconds = 100,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "타깃 지정 명령을 사용할 수 있습니다."
+    passiveSkill = "타깃 지정 명령을 사용할 수 있습니다.",
+    grade = AbilityGrade.B
 )
 final class MorpiousAbility extends BaseAbility {
     @Override

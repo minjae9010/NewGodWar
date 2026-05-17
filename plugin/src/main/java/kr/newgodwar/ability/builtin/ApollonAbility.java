@@ -23,7 +23,8 @@ import java.util.List;
     advancedSkill = "햇빛 아래 다른 플레이어를 일정 시간 불태웁니다.",
     advancedStoneCost = 15,
     advancedCooldownSeconds = 90,
-    passiveSkill = "없음"
+    passiveSkill = "없음",
+    grade = AbilityGrade.A
 )
 final class ApollonAbility extends BaseAbility {
     @Override

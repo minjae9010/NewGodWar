@@ -21,7 +21,8 @@ import java.util.List;
     normalStoneCost = 0,
     advancedSkill = "준비 후 화살 발사 시 매우 빠른 화살을 발사합니다.",
     advancedStoneCost = 5,
-    passiveSkill = "배정 시 활과 화살을 받습니다."
+    passiveSkill = "배정 시 활과 화살을 받습니다.",
+    grade = AbilityGrade.S
 )
 final class SniperAbility extends BaseAbility {
     @Override

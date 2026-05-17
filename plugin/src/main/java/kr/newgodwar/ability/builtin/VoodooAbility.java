@@ -22,7 +22,8 @@ import java.util.List;
     normalCooldownSeconds = 180,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "연결은 잠시 유지되며 팻말이 자동 제거됩니다."
+    passiveSkill = "연결은 잠시 유지되며 팻말이 자동 제거됩니다.",
+    grade = AbilityGrade.B
 )
 final class VoodooAbility extends BaseAbility {
     private Block postSign;

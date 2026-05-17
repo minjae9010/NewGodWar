@@ -21,7 +21,8 @@ import java.util.List;
     normalStoneCost = 0,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "피격 시 확률로 공격자를 다른 위치로 이동시킵니다."
+    passiveSkill = "피격 시 확률로 공격자를 다른 위치로 이동시킵니다.",
+    grade = AbilityGrade.B
 )
 final class ErisAbility extends BaseAbility {
     @Override

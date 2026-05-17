@@ -21,7 +21,8 @@ import java.util.List;
     normalStoneCost = 0,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "배정 시 낚싯대를 받고 낚시 성공 시 광물/아이템을 얻습니다."
+    passiveSkill = "배정 시 낚싯대를 받고 낚시 성공 시 광물/아이템을 얻습니다.",
+    grade = AbilityGrade.B
 )
 final class FisherAbility extends BaseAbility {
     @Override

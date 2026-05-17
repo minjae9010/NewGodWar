@@ -22,7 +22,8 @@ import java.util.List;
     normalCooldownSeconds = 20,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "재생 효과를 유지하고 허기가 감소하지 않습니다."
+    passiveSkill = "재생 효과를 유지하고 허기가 감소하지 않습니다.",
+    grade = AbilityGrade.B
 )
 final class GalbiAbility extends BaseAbility {
     @Override

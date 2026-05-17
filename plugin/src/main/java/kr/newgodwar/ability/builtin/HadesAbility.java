@@ -23,7 +23,8 @@ import java.util.List;
     advancedSkill = "더 넓은 범위의 주변 생물을 나락으로 떨어뜨립니다.",
     advancedStoneCost = 35,
     advancedCooldownSeconds = 150,
-    passiveSkill = "사망 시 확률로 인벤토리와 방어구를 보존합니다."
+    passiveSkill = "사망 시 확률로 인벤토리와 방어구를 보존합니다.",
+    grade = AbilityGrade.A
 )
 final class HadesAbility extends BaseAbility {
     private ItemStack[] savedInventory;

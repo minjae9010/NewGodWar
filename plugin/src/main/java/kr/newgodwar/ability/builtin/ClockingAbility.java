@@ -22,7 +22,8 @@ import java.util.List;
     normalCooldownSeconds = 60,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "투명화 중 공격 시 확률로 큰 피해를 줍니다."
+    passiveSkill = "투명화 중 공격 시 확률로 큰 피해를 줍니다.",
+    grade = AbilityGrade.A
 )
 final class ClockingAbility extends BaseAbility {
     private boolean invisible;

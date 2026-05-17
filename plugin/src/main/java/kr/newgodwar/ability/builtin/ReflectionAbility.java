@@ -21,7 +21,8 @@ import java.util.List;
     normalStoneCost = 0,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "피격 시 확률로 받은 피해를 공격자에게 반사합니다."
+    passiveSkill = "피격 시 확률로 받은 피해를 공격자에게 반사합니다.",
+    grade = AbilityGrade.A
 )
 final class ReflectionAbility extends BaseAbility {
     @Override

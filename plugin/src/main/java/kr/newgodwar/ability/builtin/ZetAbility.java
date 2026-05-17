@@ -21,7 +21,8 @@ import java.util.List;
     normalStoneCost = 0,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "화염 피해를 받으면 확률적으로 더 강한 신속 효과를 얻습니다."
+    passiveSkill = "화염 피해를 받으면 확률적으로 더 강한 신속 효과를 얻습니다.",
+    grade = AbilityGrade.B
 )
 final class ZetAbility extends BaseAbility {
     @Override

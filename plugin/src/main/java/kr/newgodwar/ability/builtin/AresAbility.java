@@ -21,7 +21,8 @@ import java.util.List;
     normalStoneCost = 0,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "공격 피해가 증가하고 피격 시 확률로 회피합니다."
+    passiveSkill = "공격 피해가 증가하고 피격 시 확률로 회피합니다.",
+    grade = AbilityGrade.S
 )
 final class AresAbility extends BaseAbility {
     @Override

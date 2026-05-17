@@ -21,7 +21,8 @@ import java.util.List;
     normalStoneCost = 0,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "블록 폭발 이벤트를 취소합니다."
+    passiveSkill = "블록 폭발 이벤트를 취소합니다.",
+    grade = AbilityGrade.C
 )
 final class BulterAbility extends BaseAbility {
     @Override

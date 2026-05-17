@@ -23,7 +23,8 @@ import java.util.List;
     advancedSkill = "지정 위치 주변에 연속 번개를 내립니다.",
     advancedStoneCost = 25,
     advancedCooldownSeconds = 150,
-    passiveSkill = "번개와 폭발 피해를 무시합니다."
+    passiveSkill = "번개와 폭발 피해를 무시합니다.",
+    grade = AbilityGrade.S
 )
 final class ZeusAbility extends BaseAbility {
     @Override

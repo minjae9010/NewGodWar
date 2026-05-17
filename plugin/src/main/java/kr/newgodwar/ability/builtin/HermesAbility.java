@@ -22,7 +22,8 @@ import java.util.List;
     normalCooldownSeconds = 60,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "상시 신속 효과를 받습니다."
+    passiveSkill = "상시 신속 효과를 받습니다.",
+    grade = AbilityGrade.A
 )
 final class HermesAbility extends BaseAbility {
     @Override

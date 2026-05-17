@@ -22,7 +22,8 @@ import java.util.List;
     normalCooldownSeconds = 100,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "없음"
+    passiveSkill = "없음",
+    grade = AbilityGrade.B
 )
 final class AproditeAbility extends BaseAbility {
     @Override

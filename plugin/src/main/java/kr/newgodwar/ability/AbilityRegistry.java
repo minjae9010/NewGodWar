@@ -48,7 +48,7 @@ public final class AbilityRegistry {
             info.advancedStoneCost(),
             info.advancedCooldownSeconds(),
             info.passiveSkill(),
-            AbilityRatings.grade(info.id(), info.grade()),
+            info.grade(),
             info.author(),
             info.enabledByDefault(),
             reflectionFactory(abilityClass, constructor)

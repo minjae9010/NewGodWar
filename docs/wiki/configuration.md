@@ -42,6 +42,22 @@
 | `world.difficulty` | `EASY` | 시작 후 난이도 |
 | `world.start-time` | `6000` | 시작 후 월드 시간 |
 
+## updates
+
+서버가 켜져 있는 동안 GitHub Release를 확인하고, 새 버전이 있으면 업데이트 jar를 `plugins/update/`에 준비합니다. 준비된 jar는 서버 재시작 후 적용됩니다.
+
+| 키 | 기본값 | 설명 |
+| --- | --- | --- |
+| `updates.enabled` | `true` | 자동 업데이트 확인 사용 여부 |
+| `updates.auto-download` | `true` | 새 릴리즈 발견 시 jar 자동 다운로드 여부 |
+| `updates.notify-admins` | `true` | 관리자 접속 시 구버전 알림 여부 |
+| `updates.initial-delay-seconds` | `10` | 서버 시작 후 첫 업데이트 확인 지연 시간 |
+| `updates.check-interval-minutes` | `60` | 반복 확인 간격. `0` 이하이면 시작 시 한 번만 확인 |
+| `updates.github.owner` | `minjae9010` | GitHub 릴리즈 저장소 소유자 |
+| `updates.github.repo` | `NewGodWar` | GitHub 릴리즈 저장소 이름 |
+
+관리자는 `/godwar update check`로 즉시 확인하고, `/godwar update download`로 서버 실행 중 최신 jar를 내려받을 수 있습니다.
+
 ## core
 
 | 키 | 기본값 | 설명 |

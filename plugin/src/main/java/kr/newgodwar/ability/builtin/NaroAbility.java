@@ -22,7 +22,8 @@ import java.util.List;
     normalCooldownSeconds = 10,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "낙하 피해를 무시합니다."
+    passiveSkill = "낙하 피해를 무시합니다.",
+    grade = AbilityGrade.B
 )
 final class NaroAbility extends BaseAbility {
     @Override

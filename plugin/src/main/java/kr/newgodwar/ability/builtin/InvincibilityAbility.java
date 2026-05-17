@@ -23,7 +23,8 @@ import java.util.List;
     advancedSkill = "재생 효과를 얻습니다.",
     advancedStoneCost = 50,
     advancedCooldownSeconds = 90,
-    passiveSkill = "무적 상태일 때 피해를 취소합니다."
+    passiveSkill = "무적 상태일 때 피해를 취소합니다.",
+    grade = AbilityGrade.S
 )
 final class InvincibilityAbility extends BaseAbility {
     @Override

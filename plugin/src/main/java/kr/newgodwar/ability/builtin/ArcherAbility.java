@@ -23,7 +23,8 @@ import java.util.List;
     advancedSkill = "활을 생성합니다.",
     advancedStoneCost = 15,
     advancedCooldownSeconds = 60,
-    passiveSkill = "활 피해가 증가합니다."
+    passiveSkill = "활 피해가 증가합니다.",
+    grade = AbilityGrade.B
 )
 final class ArcherAbility extends BaseAbility {
     @Override

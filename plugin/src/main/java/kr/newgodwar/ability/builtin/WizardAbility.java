@@ -23,7 +23,8 @@ import java.util.List;
     advancedSkill = "주변 플레이어를 띄운 뒤 번개를 내립니다.",
     advancedStoneCost = 10,
     advancedCooldownSeconds = 300,
-    passiveSkill = "없음"
+    passiveSkill = "없음",
+    grade = AbilityGrade.S
 )
 final class WizardAbility extends BaseAbility {
     @Override

@@ -53,7 +53,8 @@
 
 - 자기 팀 심장은 파괴할 수 없습니다.
 - `core.require-empty-hand: true`이면 손에 아이템이 없어야 합니다.
-- `core.forbid-diamond-pickaxe: true`이면 다이아몬드 곡괭이는 금지됩니다.
+- `core.pickaxe-unlock.*-seconds`가 설정된 곡괭이는 게임 시작 후 해당 시간이 지나야 코어 파괴에 사용할 수 있습니다.
+- `core.forbid-diamond-pickaxe: true`이면 다이아몬드 곡괭이는 금지됩니다. 다이아 곡괭이 시간 해제가 끝난 뒤에는 허용됩니다.
 - 등록되지 않은 다이아몬드 블록은 팀 탈락을 발생시키지 않습니다.
 - 폭발로 심장이 제거되지 않는 것은 `core.protect-diamond-from-explosion` 설정 때문입니다.
 

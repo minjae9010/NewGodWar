@@ -22,7 +22,8 @@ import java.util.List;
     advancedSkill = "설치한 폭탄을 폭발시킵니다.",
     advancedStoneCost = 25,
     advancedCooldownSeconds = 30,
-    passiveSkill = "없음"
+    passiveSkill = "없음",
+    grade = AbilityGrade.A
 )
 final class BomberAbility extends BaseAbility {
     private Location bombLocation;

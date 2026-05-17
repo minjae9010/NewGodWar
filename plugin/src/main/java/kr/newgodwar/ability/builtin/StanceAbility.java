@@ -21,7 +21,8 @@ import java.util.List;
     normalStoneCost = 0,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "공격과 투사체 피해의 넉백/증폭을 억제합니다."
+    passiveSkill = "공격과 투사체 피해의 넉백/증폭을 억제합니다.",
+    grade = AbilityGrade.B
 )
 final class StanceAbility extends BaseAbility {
     @Override

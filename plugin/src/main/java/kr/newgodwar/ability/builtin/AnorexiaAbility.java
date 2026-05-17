@@ -21,7 +21,8 @@ import java.util.List;
     normalStoneCost = 0,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "허기가 항상 절반으로 유지됩니다."
+    passiveSkill = "허기가 항상 절반으로 유지됩니다.",
+    grade = AbilityGrade.C
 )
 final class AnorexiaAbility extends BaseAbility {
     @Override

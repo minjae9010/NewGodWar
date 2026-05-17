@@ -21,7 +21,8 @@ import java.util.List;
     normalStoneCost = 25,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "게임 중 한 번만 사용할 수 있습니다."
+    passiveSkill = "게임 중 한 번만 사용할 수 있습니다.",
+    grade = AbilityGrade.C
 )
 final class MeguminAbility extends BaseAbility {
     private boolean oneTimeUsed;

@@ -23,7 +23,8 @@ import java.util.List;
     advancedSkill = "철괴를 다이아몬드로 바꿉니다.",
     advancedStoneCost = 0,
     advancedCooldownSeconds = 600,
-    passiveSkill = "없음"
+    passiveSkill = "없음",
+    grade = AbilityGrade.B
 )
 final class BlacksmithAbility extends BaseAbility {
     @Override

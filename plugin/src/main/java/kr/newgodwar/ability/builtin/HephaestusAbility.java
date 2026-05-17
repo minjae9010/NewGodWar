@@ -21,7 +21,8 @@ import java.util.List;
     normalStoneCost = 1,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "화염 피해를 무시하고 익사 피해가 증가합니다."
+    passiveSkill = "화염 피해를 무시하고 익사 피해가 증가합니다.",
+    grade = AbilityGrade.A
 )
 final class HephaestusAbility extends BaseAbility {
     @Override

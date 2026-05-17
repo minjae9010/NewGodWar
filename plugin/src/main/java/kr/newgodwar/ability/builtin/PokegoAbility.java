@@ -21,7 +21,8 @@ import java.util.List;
     normalStoneCost = 0,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "일정 거리 이상 이동하면 무작위 능력으로 바뀝니다."
+    passiveSkill = "일정 거리 이상 이동하면 무작위 능력으로 바뀝니다.",
+    grade = AbilityGrade.C
 )
 final class PokegoAbility extends BaseAbility {
     private int steps;
