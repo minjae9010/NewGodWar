@@ -43,7 +43,7 @@ final class AthenaAbility extends BaseAbility {
         }
         if (use(context, player, 2, COBBLESTONE, 64, enchantTables > 1 ? 3 : 0)) {
             enchantTables--;
-            give(player, Material.ENCHANTMENT_TABLE, 1);
+            give(player, material("ENCHANTING_TABLE", "ENCHANTMENT_TABLE"), 1);
             player.sendMessage("남은 교환 횟수 : " + enchantTables);
         }
     }

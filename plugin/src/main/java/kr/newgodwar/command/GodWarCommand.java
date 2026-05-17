@@ -37,7 +37,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
 
     private static final List<String> SUBCOMMANDS = Arrays.asList(
         "help", "autoteam", "join", "leave", "settemple", "setspawn", "start", "stop", "status",
-        "tips", "ability", "abilities", "assignedabilities", "assignments", "participants", "players", "rerolls", "skipseconds", "blacklist", "gamerule", "target", "setability", "spectate", "unspectate", "observer",
+        "tips", "ability", "abilities", "assignedabilities", "assignments", "participants", "players", "rerolls", "skip", "skipseconds", "blacklist", "gamerule", "target", "setability", "spectate", "unspectate", "observer",
         "reload", "gui", "settings", "test", "midjoin", "info", "yes", "no", "clear", "gamble", "gamblereward", "urf"
     );
     private static final int HELP_LINES_PER_PAGE = 7;
@@ -185,6 +185,10 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             rerolls(sender, args);
             return true;
         }
+        if (sub.equals("skip")) {
+            skipAbilitySelection(sender, args, 1);
+            return true;
+        }
         if (sub.equals("skipseconds")) {
             skipSeconds(sender, args);
             return true;
@@ -317,6 +321,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             entries.add(new HelpEntry("운영 설정", "setability <player> <ability>", "능력 수동 지정"));
             entries.add(new HelpEntry("운영 설정", "assignedabilities [검색어]", "플레이어별 배정 능력 확인"));
             entries.add(new HelpEntry("운영 설정", "participants [검색어|팀]", "참가자 팀/능력 현황 확인"));
+            entries.add(new HelpEntry("운영 설정", "skip [초]", "능력 확정 대기 종료 및 시작 카운트다운 조정"));
             entries.add(new HelpEntry("운영 설정", "rerolls <횟수>", "능력 재추첨 가능 횟수 설정"));
             entries.add(new HelpEntry("운영 설정", "skipseconds <초>", "관리자 skip 기본 카운트다운 설정"));
             entries.add(new HelpEntry("운영 설정", "urf <on|off|toggle|80%>", "우르프 모드 및 쿨타임 감소율 설정"));
@@ -341,7 +346,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(ChatColor.GRAY + "  우르프     " + urfStatus());
         sender.sendMessage(ChatColor.GRAY + "  재추첨     " + ChatColor.YELLOW
             + plugin.getConfig().getInt("game.ability-reroll-count", 1) + "회"
-            + ChatColor.DARK_GRAY + " | " + ChatColor.GRAY + "Skip "
+            + ChatColor.DARK_GRAY + " | " + ChatColor.GRAY + "자동 Skip "
             + ChatColor.YELLOW + plugin.getConfig().getInt("game.skip-ready-countdown-seconds", 5) + "초");
         sender.sendMessage(ChatColor.GRAY + "  게임룰     " + state(plugin.getConfig().getBoolean("gamerules.enabled", true)));
         sender.sendMessage(ChatColor.GRAY + "  블랙리스트 " + ChatColor.YELLOW + abilityManager.blacklistedAbilityIds().size() + ChatColor.GRAY + "개");
@@ -393,7 +398,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
     private void skipSeconds(CommandSender sender, String[] args) {
         if (args.length < 2) {
             plugin.messages().send(sender, "&e/godwar skipseconds <초>");
-            plugin.messages().send(sender, "&7현재 관리자 skip 기본 카운트다운: &f"
+            plugin.messages().send(sender, "&7현재 능력 확정 자동/관리자 skip 초: &f"
                 + plugin.getConfig().getInt("game.skip-ready-countdown-seconds", 5) + "초");
             return;
         }
@@ -404,8 +409,25 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         }
         plugin.getConfig().set("game.skip-ready-countdown-seconds", Math.min(600, seconds.intValue()));
         plugin.saveConfig();
-        plugin.messages().send(sender, "&a관리자 skip 기본 카운트다운을 &f"
+        plugin.messages().send(sender, "&a능력 확정 자동/관리자 skip 초를 &f"
             + plugin.getConfig().getInt("game.skip-ready-countdown-seconds", 5) + "초&a로 설정했습니다.");
+    }
+
+    private void skipAbilitySelection(CommandSender sender, String[] args, int secondsIndex) {
+        Integer seconds = null;
+        if (args.length > secondsIndex) {
+            seconds = parseWholeNumber(args[secondsIndex]);
+            if (seconds == null || seconds.intValue() < 0) {
+                plugin.messages().send(sender, "&c초는 0 이상의 숫자여야 합니다.");
+                return;
+            }
+        }
+        int countdown = seconds == null
+            ? plugin.getConfig().getInt("game.skip-ready-countdown-seconds", 5)
+            : Math.min(600, seconds.intValue());
+        int skipped = gameManager.skipAbilitySelection(countdown);
+        Bukkit.broadcastMessage(plugin.messages().prefix() + ChatColor.YELLOW
+            + "능력 확정 대기를 종료했습니다. 대상: " + skipped + "명, 시작까지 " + countdown + "초");
     }
 
     private void join(CommandSender sender, String[] args) {
@@ -885,20 +907,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             return;
         }
         if (args[1].equalsIgnoreCase("skip")) {
-            Integer seconds = null;
-            if (args.length >= 3) {
-                seconds = parseWholeNumber(args[2]);
-                if (seconds == null || seconds.intValue() < 0) {
-                    plugin.messages().send(sender, "&c초는 0 이상의 숫자여야 합니다.");
-                    return;
-                }
-            }
-            int countdown = seconds == null
-                ? plugin.getConfig().getInt("game.skip-ready-countdown-seconds", 5)
-                : Math.min(600, seconds.intValue());
-            int skipped = gameManager.skipAbilitySelection(countdown);
-            Bukkit.broadcastMessage(plugin.messages().prefix() + ChatColor.YELLOW
-                + "능력 확정 대기를 종료했습니다. 대상: " + skipped + "명, 시작까지 " + countdown + "초");
+            skipAbilitySelection(sender, args, 2);
             return;
         }
         if (args[1].equalsIgnoreCase("cutin")) {
@@ -1478,6 +1487,9 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         if (args.length == 2 && sub.equals("rerolls")) {
             return startsWith(Arrays.asList("0", "1", "2", "3", "5"), args[1]);
         }
+        if (args.length == 2 && sub.equals("skip")) {
+            return startsWith(Arrays.asList("0", "3", "5", "10", "15", "30"), args[1]);
+        }
         if (args.length == 2 && sub.equals("skipseconds")) {
             return startsWith(Arrays.asList("0", "3", "5", "10", "15", "30"), args[1]);
         }
@@ -1823,6 +1835,9 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         if (lower.equals("skipsecond") || lower.equals("skipseconds")
             || lower.equals("skiptime") || lower.equals("스킵초") || lower.equals("스킵시간")) {
             return "skipseconds";
+        }
+        if (lower.equals("skip") || lower.equals("스킵")) {
+            return "skip";
         }
         if (lower.equals("alist")) {
             return "assignedabilities";

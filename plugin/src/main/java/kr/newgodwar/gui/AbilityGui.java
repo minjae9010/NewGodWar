@@ -164,11 +164,15 @@ public final class AbilityGui implements Listener {
         if (current == null) {
             inventory.setItem(13, noAbilityItem(shown));
         } else {
-            inventory.setItem(10, skillItem("LIGHT_BLUE_STAINED_GLASS", (short) 3, ChatColor.AQUA + "일반 능력",
-                current.normalSkill(), current.normalStoneCost(), current.normalCooldown(), cooldownLine(shown, current, 1)));
+            if (hasSkill(current.normalSkill())) {
+                inventory.setItem(10, skillItem("LIGHT_BLUE_STAINED_GLASS", (short) 3, ChatColor.AQUA + "일반 능력",
+                    current.normalSkill(), current.normalStoneCost(), current.normalCooldown(), cooldownLine(shown, current, 1)));
+            }
             inventory.setItem(13, currentAbilityItem(shown, current));
-            inventory.setItem(16, skillItem("RED_STAINED_GLASS", (short) 14, ChatColor.RED + "고급 능력",
-                current.advancedSkill(), current.advancedStoneCost(), current.advancedCooldown(), cooldownLine(shown, current, 2)));
+            if (hasSkill(current.advancedSkill())) {
+                inventory.setItem(16, skillItem("RED_STAINED_GLASS", (short) 14, ChatColor.RED + "고급 능력",
+                    current.advancedSkill(), current.advancedStoneCost(), current.advancedCooldown(), cooldownLine(shown, current, 2)));
+            }
             inventory.setItem(20, item("EMERALD", "EMERALD", 1, (short) 0,
                 ChatColor.GREEN + "" + ChatColor.BOLD + "패시브",
                 ChatColor.WHITE + current.passiveSkill()));
@@ -268,12 +272,16 @@ public final class AbilityGui implements Listener {
         lore.add("");
         lore.add(ChatColor.WHITE + ability.description());
         lore.add("");
-        lore.add(ChatColor.AQUA + "일반: " + ChatColor.GRAY + ability.normalSkill());
-        lore.add(ChatColor.GRAY + "조약돌: " + ChatColor.WHITE + stoneCost(ability.normalStoneCost()));
-        lore.add(ChatColor.GRAY + "쿨타임: " + ChatColor.WHITE + cooldown(ability.normalCooldown()));
-        lore.add(ChatColor.RED + "고급: " + ChatColor.GRAY + ability.advancedSkill());
-        lore.add(ChatColor.GRAY + "조약돌: " + ChatColor.WHITE + stoneCost(ability.advancedStoneCost()));
-        lore.add(ChatColor.GRAY + "쿨타임: " + ChatColor.WHITE + cooldown(ability.advancedCooldown()));
+        if (hasSkill(ability.normalSkill())) {
+            lore.add(ChatColor.AQUA + "일반: " + ChatColor.GRAY + ability.normalSkill());
+            lore.add(ChatColor.GRAY + "조약돌: " + ChatColor.WHITE + stoneCost(ability.normalStoneCost()));
+            lore.add(ChatColor.GRAY + "쿨타임: " + ChatColor.WHITE + cooldown(ability.normalCooldown()));
+        }
+        if (hasSkill(ability.advancedSkill())) {
+            lore.add(ChatColor.RED + "고급: " + ChatColor.GRAY + ability.advancedSkill());
+            lore.add(ChatColor.GRAY + "조약돌: " + ChatColor.WHITE + stoneCost(ability.advancedStoneCost()));
+            lore.add(ChatColor.GRAY + "쿨타임: " + ChatColor.WHITE + cooldown(ability.advancedCooldown()));
+        }
         lore.add(ChatColor.AQUA + "패시브: " + ChatColor.GRAY + ability.passiveSkill());
         lore.add(ChatColor.DARK_GRAY + "ID: " + ability.id());
         if (showAdminState) {
@@ -410,6 +418,10 @@ public final class AbilityGui implements Listener {
 
     private boolean hasCooldown(String cooldown) {
         return cooldown != null && cooldown.trim().length() > 0 && !"없음".equals(cooldown.trim());
+    }
+
+    private boolean hasSkill(String skill) {
+        return skill != null && skill.trim().length() > 0 && !"없음".equals(skill.trim());
     }
 
     private void fill(Inventory inventory, ItemStack item) {

@@ -20,7 +20,7 @@ import java.util.List;
     normalSkill = "자신에게 무작위 축복을 부여합니다.",
     normalStoneCost = 30,
     normalCooldownSeconds = 35,
-    advancedSkill = "주변 아군에게 무작위 축복을 부여합니다.",
+    advancedSkill = "팀원 전체에게 무작위 축복을 부여합니다.",
     advancedStoneCost = 45,
     advancedCooldownSeconds = 90,
     passiveSkill = "없음"
@@ -35,8 +35,13 @@ final class PriestAbility extends BaseAbility {
 
     @Override
     protected void onStaffRight(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
+        List<Player> targets = alliedPlayers(context, player, true);
+        if (targets.isEmpty()) {
+            player.sendMessage("능력을 사용할 팀원이 없습니다!");
+            return;
+        }
         if (useAdvanced(context, player)) {
-            for (Player target : nearbyPlayers(context, player, 30, true)) {
+            for (Player target : targets) {
                 bless(target);
             }
         }

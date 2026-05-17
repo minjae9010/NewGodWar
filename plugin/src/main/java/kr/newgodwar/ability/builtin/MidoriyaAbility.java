@@ -39,10 +39,10 @@ final class MidoriyaAbility extends BaseAbility {
         if (attacker && ready && player.getItemInHand().getType() == Material.AIR && useNormal(context, player, 0)) {
             ready = false;
             event.setDamage(200.0D);
-            effect(player, PotionEffectType.CONFUSION, 10, 0);
+            effect(player, "NAUSEA", "CONFUSION", 10, 0);
             effect(player, PotionEffectType.HUNGER, 10, 0);
             effect(player, PotionEffectType.WEAKNESS, 10, 0);
-            effect(player, PotionEffectType.SLOW, 10, 0);
+            effect(player, "SLOWNESS", "SLOW", 10, 0);
         }
     }
 }

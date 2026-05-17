@@ -11,6 +11,7 @@ import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryView;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scoreboard.Team;
@@ -52,6 +53,26 @@ public final class BukkitCompat {
         } catch (Throwable ignored) {
             return true;
         }
+    }
+
+    @SuppressWarnings("deprecation")
+    public static ItemStack mainHandItem(Player player) {
+        if (player == null) {
+            return null;
+        }
+        try {
+            Method getInventory = player.getClass().getMethod("getInventory");
+            Object inventory = getInventory.invoke(player);
+            Method getItemInMainHand = inventory.getClass().getMethod("getItemInMainHand");
+            Object item = getItemInMainHand.invoke(inventory);
+            return item instanceof ItemStack ? (ItemStack) item : null;
+        } catch (Throwable ignored) {
+            return player.getItemInHand();
+        }
+    }
+
+    public static boolean isEmptyItem(ItemStack item) {
+        return item == null || item.getType() == Material.AIR || item.getAmount() <= 0;
     }
 
     public static boolean hasOpenContainer(Player player) {
@@ -116,6 +137,19 @@ public final class BukkitCompat {
         PotionEffect effect = createPotionEffect(type, duration, amplifier, ambient, particles);
         if (effect != null) {
             player.addPotionEffect(effect, true);
+        }
+    }
+
+    public static void clearPotionEffects(Player player) {
+        if (player == null) {
+            return;
+        }
+        List<PotionEffectType> types = new ArrayList<PotionEffectType>();
+        for (PotionEffect effect : player.getActivePotionEffects()) {
+            types.add(effect.getType());
+        }
+        for (PotionEffectType type : types) {
+            player.removePotionEffect(type);
         }
     }
 

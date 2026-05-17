@@ -13,10 +13,14 @@ import kr.newgodwar.nms.NmsAdapter;
 import kr.newgodwar.nms.NmsAdapters;
 import kr.newgodwar.util.Messages;
 import kr.newgodwar.util.ServerVersionSupport;
+import org.bstats.bukkit.Metrics;
+import org.bstats.charts.SimplePie;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public final class NewGodWarPlugin extends JavaPlugin {
+
+    private static final int BSTATS_PLUGIN_ID = 31354;
 
     private Messages messages;
     private NmsAdapter nmsAdapter;
@@ -33,6 +37,9 @@ public final class NewGodWarPlugin extends JavaPlugin {
 
         this.messages = new Messages(this);
         this.versionSupport = ServerVersionSupport.detect();
+        Metrics metrics = new Metrics(this, BSTATS_PLUGIN_ID);
+        metrics.addCustomChart(new SimplePie("paper_download_target", () -> versionSupport.paperDownloadVersion() ? "supported" : "unsupported"));
+
         this.nmsAdapter = NmsAdapters.create(this);
         this.abilityManager = new AbilityManager(this);
         this.gameManager = new GameManager(this, abilityManager, nmsAdapter);

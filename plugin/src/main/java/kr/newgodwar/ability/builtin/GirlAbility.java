@@ -28,9 +28,10 @@ final class GirlAbility extends BaseAbility {
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
         if (useNormal(context, player, 0)) {
-            for (Player target : nearbyPlayers(context, player, 5, false)) {
+            for (Player target : nearbyPlayers(context, player, 5, 0, 5, false)) {
                 target.teleport(player);
                 target.setFoodLevel(0);
+                effectTicks(target, "SLOWNESS", "SLOW", 2, 200);
             }
         }
     }

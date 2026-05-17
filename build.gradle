@@ -4,7 +4,7 @@ plugins {
 
 allprojects {
     group = "kr.newgodwar"
-    version = "0.1.0-SNAPSHOT"
+    version = "0.1.3"
     description = "Modern Gods War minigame plugin with modular compatibility support."
 }
 
@@ -35,8 +35,8 @@ subprojects {
 tasks.register("pluginJar", Copy) {
     group = "build"
     description = "Builds the final NewGodWar plugin jar."
-    dependsOn(":plugin:jar")
-    from(project(":plugin").tasks.named("jar"))
+    dependsOn(":plugin:shadowJar")
+    from(project(":plugin").tasks.named("shadowJar"))
     into(layout.buildDirectory.dir("libs"))
 }
 

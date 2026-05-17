@@ -273,14 +273,20 @@ public final class GameManager {
         if (participants.size() < minPlayers) {
             throw new IllegalStateException("최소 " + minPlayers + "명 이상 팀에 배정되어야 합니다.");
         }
+        restoreTempleBlocks();
         validateStartSettings();
 
         state = GameState.READY;
         eliminatedTeams.clear();
         kills.clear();
         pendingSelection.clear();
+        clearPotionEffects(participants);
         abilityManager.clear();
         setupScoreboard();
+
+        Bukkit.broadcastMessage(plugin.messages().prefix() + ChatColor.GOLD + "게임 시작 준비를 시작합니다.");
+        broadcastStartSettings();
+        GameTips.broadcast(plugin);
 
         int rerollCount = abilityRerollCount();
         for (Player player : participants) {
@@ -294,9 +300,6 @@ public final class GameManager {
         }
         refreshAllPlayerDisplays();
 
-        Bukkit.broadcastMessage(plugin.messages().prefix() + ChatColor.GOLD + "게임 시작 준비를 시작합니다.");
-        broadcastStartSettings();
-        GameTips.broadcast(plugin);
         if (!pendingSelection.isEmpty()) {
             Bukkit.broadcastMessage(ChatColor.YELLOW + "능력 재추첨 기회가 주어졌습니다. "
                 + ChatColor.AQUA + "/t yes" + ChatColor.WHITE + " 또는 " + ChatColor.RED + "/t no"
@@ -314,6 +317,7 @@ public final class GameManager {
         eliminatedTeams.clear();
         kills.clear();
         abilityManager.clear();
+        BukkitCompat.clearPotionEffects(player);
         gameRuleController.applyConfiguredRules();
         setupScoreboard();
 
@@ -382,6 +386,7 @@ public final class GameManager {
         }
         pendingSelection.clear();
         abilityManager.clear();
+        clearPotionEffects(BukkitCompat.onlinePlayers());
         if (announce) {
             Bukkit.broadcastMessage(plugin.messages().prefix() + plugin.messages().get("game-stop"));
         }
@@ -614,8 +619,10 @@ public final class GameManager {
         }
         setLine(objective, score--, ChatColor.YELLOW + "킬 " + ChatColor.WHITE + killsOf(player));
         setLine(objective, score--, ChatColor.YELLOW + "도박 " + state(plugin.getConfig().getBoolean("gambling.enabled", true)));
-        setLine(objective, score, ChatColor.YELLOW + "우르프 " + state(abilityManager.urfEnabled())
-            + ChatColor.GRAY + " 감소 " + abilityManager.urfCooldownPercent() + "%");
+        if (abilityManager.urfEnabled()) {
+            setLine(objective, score, ChatColor.YELLOW + "우르프 " + state(true)
+                + ChatColor.GRAY + " 감소 " + abilityManager.urfCooldownPercent() + "%");
+        }
     }
 
     private void setLine(Objective objective, int score, String text) {
@@ -680,6 +687,13 @@ public final class GameManager {
             return ChatColor.GRAY + "미배정" + ChatColor.RESET;
         }
         return teamColor(team) + teamDisplayName(team) + ChatColor.RESET;
+    }
+
+    public String playerColoredName(Player player) {
+        if (player == null) {
+            return ChatColor.GRAY + "알 수 없음" + ChatColor.RESET;
+        }
+        return teamColor(teamOf(player)) + player.getName() + ChatColor.RESET;
     }
 
     private String stateLabel() {
@@ -784,6 +798,16 @@ public final class GameManager {
         }
     }
 
+    private void restoreTempleBlocks() {
+        for (GodTeam team : activeTeams()) {
+            TempleLocation temple = temples.get(team);
+            Location location = temple == null ? null : temple.toLocation();
+            if (location != null && location.getBlock().getType() != Material.DIAMOND_BLOCK) {
+                location.getBlock().setType(Material.DIAMOND_BLOCK);
+            }
+        }
+    }
+
     private String joinLabels(List<String> labels) {
         StringBuilder builder = new StringBuilder();
         for (int i = 0; i < labels.size(); i++) {
@@ -819,6 +843,12 @@ public final class GameManager {
             readyReminder++;
             if (readyReminder == 1 || readyReminder % 15 == 0) {
                 broadcastPendingSelection();
+            }
+            int autoSkipSeconds = abilitySelectionAutoSkipSeconds();
+            if (autoSkipSeconds > 0 && readyReminder >= autoSkipSeconds) {
+                int skipped = skipAbilitySelection(readySecondsRemaining);
+                Bukkit.broadcastMessage(plugin.messages().prefix() + ChatColor.YELLOW
+                    + "능력 확정 대기를 자동으로 종료했습니다. 대상: " + skipped + "명");
             }
             refreshAllPlayerDisplays();
             return;
@@ -865,10 +895,24 @@ public final class GameManager {
         }
         Bukkit.broadcastMessage(ChatColor.WHITE + "능력을 확정하려면 " + ChatColor.AQUA + "/t yes"
             + ChatColor.WHITE + " 또는 " + ChatColor.RED + "/t no" + ChatColor.WHITE + " 를 입력하세요.");
+        sendAdminPendingSkipTip();
     }
 
     private int abilityRerollCount() {
         return Math.max(0, plugin.getConfig().getInt("game.ability-reroll-count", 1));
+    }
+
+    private int abilitySelectionAutoSkipSeconds() {
+        return Math.max(0, plugin.getConfig().getInt("game.skip-ready-countdown-seconds", 5));
+    }
+
+    private void sendAdminPendingSkipTip() {
+        for (Player player : BukkitCompat.onlinePlayers()) {
+            if (player.hasPermission("newgodwar.admin")) {
+                player.sendMessage(ChatColor.GRAY + "관리자: " + ChatColor.YELLOW + "/t skip [초]"
+                    + ChatColor.GRAY + " 로 남은 능력 확정 대기를 종료할 수 있습니다.");
+            }
+        }
     }
 
     private void broadcastStartSettings() {
@@ -879,12 +923,14 @@ public final class GameManager {
         Bukkit.broadcastMessage(ChatColor.WHITE + "침대 무시 : " + state(plugin.getConfig().getBoolean("game.ignore-bed", true)));
         Bukkit.broadcastMessage(ChatColor.WHITE + "도박 : " + state(plugin.getConfig().getBoolean("gambling.enabled", true)));
         Bukkit.broadcastMessage(ChatColor.WHITE + "코어 폭파 보호 : " + state(plugin.getConfig().getBoolean("core.protect-diamond-from-explosion", true)));
+        Bukkit.broadcastMessage(ChatColor.WHITE + "코어 맨손 파괴 : " + state(plugin.getConfig().getBoolean("core.require-empty-hand", true)));
         Bukkit.broadcastMessage(ChatColor.WHITE + "다이아 곡괭이 금지 : " + state(plugin.getConfig().getBoolean("core.forbid-diamond-pickaxe", true)));
         Bukkit.broadcastMessage(ChatColor.GREEN + "***************************");
     }
 
     private void preparePlayerForGame(Player player) {
         BukkitCompat.setSurvival(player);
+        BukkitCompat.clearPotionEffects(player);
         if (plugin.getConfig().getBoolean("game.clear-inventory", true)) {
             player.getInventory().clear();
             player.getInventory().setHelmet(null);
@@ -988,9 +1034,15 @@ public final class GameManager {
         }
     }
 
+    private void clearPotionEffects(Iterable<? extends Player> players) {
+        for (Player player : players) {
+            BukkitCompat.clearPotionEffects(player);
+        }
+    }
+
     private void checkWinner() {
         Set<GodTeam> alive = new HashSet<GodTeam>();
-        for (GodTeam team : teams.values()) {
+        for (GodTeam team : activeTeams()) {
             if (!eliminatedTeams.contains(team)) {
                 alive.add(team);
             }

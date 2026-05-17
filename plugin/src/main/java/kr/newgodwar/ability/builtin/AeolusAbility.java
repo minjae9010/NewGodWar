@@ -35,12 +35,16 @@ final class AeolusAbility extends BaseAbility {
 
     @Override
     protected void onStaffRight(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
+        List<Player> targets = nearbyPlayers(context, player, 10, false);
+        if (targets.isEmpty()) {
+            player.sendMessage("능력을 사용할 수 있는 대상이 없습니다.");
+            return;
+        }
         if (useAdvanced(context, player)) {
-            List<Player> targets = nearbyPlayers(context, player, 10, false);
-            push(player, targets, 2.4D);
+            push(context, player, targets, 2.4D, 20L);
             for (Player target : targets) {
                 effect(target, PotionEffectType.WEAKNESS, 5, 0);
-                effect(target, PotionEffectType.SLOW, 5, 0);
+                effect(target, "SLOWNESS", "SLOW", 5, 0);
             }
         }
     }

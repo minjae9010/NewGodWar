@@ -17,10 +17,10 @@ import java.util.List;
     id = "wizard",
     name = "마법사",
     description = "주변 플레이어를 날리거나 신의 심판을 내립니다.",
-    normalSkill = "주변 적을 밀쳐냅니다.",
+    normalSkill = "주변 플레이어를 밀쳐냅니다.",
     normalStoneCost = 5,
     normalCooldownSeconds = 180,
-    advancedSkill = "주변 적을 띄운 뒤 번개를 내립니다.",
+    advancedSkill = "주변 플레이어를 띄운 뒤 번개를 내립니다.",
     advancedStoneCost = 10,
     advancedCooldownSeconds = 300,
     passiveSkill = "없음"
@@ -28,13 +28,22 @@ import java.util.List;
 final class WizardAbility extends BaseAbility {
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
+        List<Player> targets = nearbyPlayers(player, 10);
+        if (targets.isEmpty()) {
+            player.sendMessage("능력을 사용할 수 있는 대상이 없습니다.");
+            return;
+        }
         if (useNormal(context, player)) {
-            push(player, nearbyPlayers(context, player, 10, false), 2.4D);
+            push(context, player, targets, 2.4D, 4L);
         }
     }
 
     @Override
     protected void onStaffRight(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
+        if (nearbyPlayers(player, 5).isEmpty()) {
+            player.sendMessage("능력을 사용할 수 있는 대상이 없습니다.");
+            return;
+        }
         if (useAdvanced(context, player)) {
             judgment(context, player);
         }

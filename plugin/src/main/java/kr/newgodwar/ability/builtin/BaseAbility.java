@@ -252,6 +252,17 @@ abstract class BaseAbility implements GodAbility {
         player.getInventory().addItem(new ItemStack(material, amount));
     }
 
+    protected Material material(String modernName, String legacyName) {
+        Material material = Material.matchMaterial(modernName);
+        if (material == null) {
+            material = Material.matchMaterial(legacyName);
+        }
+        if (material == null) {
+            material = Material.matchMaterial("LEGACY_" + legacyName);
+        }
+        return material == null ? Material.STONE : material;
+    }
+
     protected void dropNaturally(Player player, ItemStack item) {
         if (item != null && item.getType() != Material.AIR && item.getAmount() > 0) {
             player.getWorld().dropItemNaturally(player.getLocation(), item.clone());
@@ -270,6 +281,35 @@ abstract class BaseAbility implements GodAbility {
 
     protected void effect(Player player, PotionEffectType type, int seconds, int amplifier) {
         BukkitCompat.addPotionEffect(player, type, seconds * 20, amplifier, true, false);
+    }
+
+    protected void effect(Player player, String modernName, String legacyName, int seconds, int amplifier) {
+        PotionEffectType type = effectType(modernName, legacyName);
+        if (type != null) {
+            effect(player, type, seconds, amplifier);
+        }
+    }
+
+    protected void effectTicks(Player player, String modernName, String legacyName, int ticks, int amplifier) {
+        PotionEffectType type = effectType(modernName, legacyName);
+        if (type != null) {
+            BukkitCompat.addPotionEffect(player, type, ticks, amplifier, true, false);
+        }
+    }
+
+    protected void removeEffect(Player player, String modernName, String legacyName) {
+        PotionEffectType type = effectType(modernName, legacyName);
+        if (type != null) {
+            player.removePotionEffect(type);
+        }
+    }
+
+    protected PotionEffectType effectType(String modernName, String legacyName) {
+        PotionEffectType type = PotionEffectType.getByName(modernName);
+        if (type == null) {
+            type = PotionEffectType.getByName(legacyName);
+        }
+        return type;
     }
 
     protected void heal(Player player) {
@@ -342,6 +382,46 @@ abstract class BaseAbility implements GodAbility {
                 if (sameTeam == sameTeam(context, player, target)) {
                     players.add(target);
                 }
+            }
+        }
+        return players;
+    }
+
+    protected List<Player> nearbyPlayers(Player player, int range) {
+        List<Player> players = new ArrayList<Player>();
+        for (Entity entity : player.getNearbyEntities(range, range, range)) {
+            if (entity instanceof Player) {
+                players.add((Player) entity);
+            }
+        }
+        return players;
+    }
+
+    protected List<Player> nearbyPlayers(AbilityPlayerContext context, Player player, double x, double y, double z, boolean sameTeam) {
+        List<Player> players = new ArrayList<Player>();
+        for (Entity entity : player.getNearbyEntities(x, y, z)) {
+            if (entity instanceof Player) {
+                Player target = (Player) entity;
+                if (sameTeam == sameTeam(context, player, target)) {
+                    players.add(target);
+                }
+            }
+        }
+        return players;
+    }
+
+    protected List<Player> alliedPlayers(AbilityPlayerContext context, Player player, boolean includeSelf) {
+        List<Player> players = new ArrayList<Player>();
+        GodTeam team = context.plugin().game().teamOf(player);
+        if (team == null) {
+            return players;
+        }
+        for (Player target : BukkitCompat.onlinePlayers()) {
+            if (!includeSelf && target.equals(player)) {
+                continue;
+            }
+            if (team == context.plugin().game().teamOf(target)) {
+                players.add(target);
             }
         }
         return players;
@@ -599,7 +679,7 @@ abstract class BaseAbility implements GodAbility {
 
     protected void sleepTarget(Player target) {
         effect(target, PotionEffectType.BLINDNESS, 30, 0);
-        effect(target, PotionEffectType.SLOW, 30, 3);
+        effect(target, "SLOWNESS", "SLOW", 30, 3);
     }
 
     protected void teamBuff(AbilityPlayerContext context, Player player) {
@@ -607,8 +687,6 @@ abstract class BaseAbility implements GodAbility {
             effect(target, PotionEffectType.SPEED, 15, 0);
             effect(target, PotionEffectType.REGENERATION, 15, 0);
         }
-        effect(player, PotionEffectType.SPEED, 15, 0);
-        effect(player, PotionEffectType.REGENERATION, 15, 0);
     }
 
     protected void recall(final AbilityPlayerContext context, final Player player) {
@@ -682,6 +760,23 @@ abstract class BaseAbility implements GodAbility {
         }
     }
 
+    protected void push(AbilityPlayerContext context, Player player, List<Player> targets, double power, long delayTicks) {
+        Vector up = new Vector(0, 0.5D, 0);
+        for (Player target : targets) {
+            target.setVelocity(up);
+        }
+        Vector horizontal = player.getEyeLocation().getDirection().setY(0.0D);
+        if (horizontal.lengthSquared() == 0.0D) {
+            return;
+        }
+        final Vector vector = horizontal.normalize().multiply(power * 1.4D);
+        Bukkit.getScheduler().scheduleSyncDelayedTask(context.plugin(), () -> {
+            for (Player target : targets) {
+                target.setVelocity(vector);
+            }
+        }, delayTicks);
+    }
+
     protected void dash(Player player) {
         Vector vector = player.getEyeLocation().getDirection();
         vector.setY(0.5D);
@@ -699,7 +794,7 @@ abstract class BaseAbility implements GodAbility {
     }
 
     protected void judgment(AbilityPlayerContext context, final Player player) {
-        final List<Player> targets = nearbyPlayers(context, player, 5, false);
+        final List<Player> targets = nearbyPlayers(player, 5);
         if (targets.isEmpty()) {
             player.sendMessage("능력을 사용할 수 있는 대상이 없습니다.");
             return;
@@ -708,19 +803,20 @@ abstract class BaseAbility implements GodAbility {
         for (Player target : targets) {
             target.setVelocity(new Vector(0, 1.6D, 0));
         }
-        later(context, 1, "심판 발동", "심판 발동", () -> {
+        Bukkit.getScheduler().scheduleSyncDelayedTask(context.plugin(), () -> {
             for (Player target : targets) {
                 target.getWorld().strikeLightning(target.getLocation());
+                target.setFireTicks(100);
             }
-        });
+        }, 4L);
     }
 
     protected void bless(Player player) {
-        if (RANDOM.nextBoolean()) effect(player, PotionEffectType.DAMAGE_RESISTANCE, 30, 0);
-        if (RANDOM.nextBoolean()) effect(player, PotionEffectType.INCREASE_DAMAGE, 30, 0);
+        if (RANDOM.nextBoolean()) effect(player, "RESISTANCE", "DAMAGE_RESISTANCE", 30, 0);
+        if (RANDOM.nextBoolean()) effect(player, "STRENGTH", "INCREASE_DAMAGE", 30, 0);
         if (RANDOM.nextBoolean()) effect(player, PotionEffectType.REGENERATION, 30, 0);
         if (RANDOM.nextBoolean()) effect(player, PotionEffectType.SPEED, 30, 0);
-        if (RANDOM.nextBoolean()) effect(player, PotionEffectType.FAST_DIGGING, 30, 0);
+        if (RANDOM.nextBoolean()) effect(player, "HASTE", "FAST_DIGGING", 30, 0);
     }
 
     protected void curse(List<Player> players) {
@@ -732,8 +828,8 @@ abstract class BaseAbility implements GodAbility {
     protected void curse(Player player) {
         effect(player, PotionEffectType.HUNGER, 10, 0);
         effect(player, PotionEffectType.POISON, 10, 0);
-        effect(player, PotionEffectType.SLOW, 10, 0);
-        effect(player, PotionEffectType.SLOW_DIGGING, 10, 0);
+        effect(player, "SLOWNESS", "SLOW", 10, 0);
+        effect(player, "MINING_FATIGUE", "SLOW_DIGGING", 10, 0);
     }
 
     protected boolean pullTarget(AbilityPlayerContext context, Player player, int range) {
@@ -776,7 +872,7 @@ abstract class BaseAbility implements GodAbility {
             if (useAdvanced(context, player)) {
                 for (Player target : nearbyPlayers(context, player, 10, false)) {
                     if (RANDOM.nextBoolean()) {
-                        effect(target, PotionEffectType.SLOW, 8, harry ? 1 : 2);
+                        effect(target, "SLOWNESS", "SLOW", 8, harry ? 1 : 2);
                     }
                 }
             }
@@ -840,15 +936,22 @@ abstract class BaseAbility implements GodAbility {
     }
 
     protected boolean isPickaxe(Material material) {
-        return material == Material.WOOD_PICKAXE || material == Material.STONE_PICKAXE || material == Material.IRON_PICKAXE || material == Material.DIAMOND_PICKAXE;
+        String name = material == null ? "" : material.name();
+        return "WOOD_PICKAXE".equals(name) || "WOODEN_PICKAXE".equals(name) || "LEGACY_WOOD_PICKAXE".equals(name)
+            || material == Material.STONE_PICKAXE || material == Material.IRON_PICKAXE || material == Material.DIAMOND_PICKAXE;
     }
 
     protected boolean isSword(Material material) {
-        return material == Material.WOOD_SWORD || material == Material.GOLD_SWORD || material == Material.STONE_SWORD || material == Material.IRON_SWORD || material == Material.DIAMOND_SWORD;
+        String name = material == null ? "" : material.name();
+        return "WOOD_SWORD".equals(name) || "WOODEN_SWORD".equals(name) || "LEGACY_WOOD_SWORD".equals(name)
+            || "GOLD_SWORD".equals(name) || "GOLDEN_SWORD".equals(name) || "LEGACY_GOLD_SWORD".equals(name)
+            || material == Material.STONE_SWORD || material == Material.IRON_SWORD || material == Material.DIAMOND_SWORD;
     }
 
     protected int swordDamage(Material material) {
-        if (material == Material.WOOD_SWORD || material == Material.GOLD_SWORD) return 4;
+        String name = material == null ? "" : material.name();
+        if ("WOOD_SWORD".equals(name) || "WOODEN_SWORD".equals(name) || "LEGACY_WOOD_SWORD".equals(name)
+            || "GOLD_SWORD".equals(name) || "GOLDEN_SWORD".equals(name) || "LEGACY_GOLD_SWORD".equals(name)) return 4;
         if (material == Material.STONE_SWORD) return 5;
         if (material == Material.IRON_SWORD) return 6;
         if (material == Material.DIAMOND_SWORD) return 7;

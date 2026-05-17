@@ -1,9 +1,11 @@
 plugins {
     id "xyz.jpenilla.run-paper" version "3.0.2"
+    id "com.gradleup.shadow" version "9.3.1"
 }
 
 dependencies {
     implementation project(":compatibility:common")
+    implementation "org.bstats:bstats-bukkit:3.2.1"
     runtimeOnly project(":compatibility:reflection")
 }
 
@@ -40,6 +42,7 @@ tasks.jar {
     dependsOn(":compatibility:common:jar", ":compatibility:reflection:jar")
 
     archiveBaseName = "NewGodWar"
+    archiveClassifier = "plain"
     manifest {
         attributes(
             "Built-By": "Codex",
@@ -50,8 +53,56 @@ tasks.jar {
 
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from {
-        configurations.runtimeClasspath.collect { file ->
-            file.isDirectory() ? file : zipTree(file)
+        configurations.runtimeClasspath.resolvedConfiguration.resolvedArtifacts
+            .findAll { artifact -> artifact.moduleVersion.id.group != "org.bstats" }
+            .collect { artifact ->
+                artifact.file.isDirectory() ? artifact.file : zipTree(artifact.file)
+            }
+    }
+}
+
+tasks.shadowJar {
+    configurations = [project.configurations.runtimeClasspath]
+
+    relocate("org.bstats", "${project.group}.libs.bstats")
+
+    archiveBaseName = "NewGodWar"
+    archiveClassifier = ""
+    manifest {
+        attributes(
+            "Built-By": "Codex",
+            "Implementation-Title": rootProject.name,
+            "Implementation-Version": project.version
+        )
+    }
+
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+tasks.register("verifyShadowJarContents") {
+    dependsOn("shadowJar")
+
+    doLast {
+        def archive = tasks.shadowJar.archiveFile.get().asFile
+        def requiredEntries = [
+            "kr/newgodwar/libs/bstats/MetricsBase.class",
+            "kr/newgodwar/libs/bstats/json/JsonObjectBuilder.class",
+            "kr/newgodwar/libs/bstats/json/JsonObjectBuilder\$JsonObject.class"
+        ]
+
+        def zip = new java.util.zip.ZipFile(archive)
+        try {
+            requiredEntries.each { entry ->
+                if (zip.getEntry(entry) == null) {
+                    throw new GradleException("Missing required shaded bStats class in ${archive.name}: ${entry}")
+                }
+            }
+        } finally {
+            zip.close()
         }
     }
+}
+
+tasks.named("build") {
+    dependsOn("shadowJar", "verifyShadowJarContents")
 }

@@ -28,13 +28,13 @@ final class SnowAbility extends BaseAbility {
 
     @Override
     public void onAssign(AbilityPlayerContext context) {
-        give(context.player(), Material.SNOW_BALL, 1);
+        give(context.player(), material("SNOWBALL", "SNOW_BALL"), 1);
     }
 
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
         if (useNormal(context, player, 0)) {
-            give(player, Material.SNOW_BALL, 1);
+            give(player, material("SNOWBALL", "SNOW_BALL"), 1);
         }
     }
 

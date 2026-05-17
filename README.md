@@ -19,7 +19,8 @@
 - `/t` Themachy 스타일 짧은 명령어 도움말
 - `/a` 자신의 현재 능력 빠른 확인
 - `/t a <ability> <player>` Themachy 스타일 능력 수동 지정
-- `/t a random|reset|remove|skip|cutin` Themachy 스타일 능력 배정 보조 명령
+- `/t skip [초]` 또는 `/t a skip [초]` 능력 확정 대기 스킵
+- `/t a random|reset|remove|cutin` Themachy 스타일 능력 배정 보조 명령
 - `/t yes` 또는 `/t no` 능력 재추첨 확정 / 다시 뽑기
 - `/godwar autoteam` 온라인 플레이어 자동 팀 배정
 - `/godwar join <red|blue|green> [player]` 팀 수동 배정
@@ -72,7 +73,7 @@
 - `game.ability-tick-interval-seconds`: 능력 반복 처리 주기
 - `game.urf`: 우르프 모드 사용 여부와 능력 쿨타임 배율
 - `world`: 시작 시 autosave, 동물/몬스터 스폰, 난이도, 시작 시간을 적용하고 종료 시 복구
-- `core`: 코어 폭파 보호와 다이아 곡괭이 파괴 금지
+- `core`: 코어 폭파 보호, 맨손 파괴 제한, 다이아 곡괭이 파괴 금지
 - `gambling.enabled`: 도박 GUI 사용 여부
 - `gambling.rewards`: 일반/타짜 도박 당첨 아이템, 수량, 메시지, 확률 가중치
 - `scoreboard.enabled`: 우측 스코어보드에 내 팀, 능력, 킬 상태 표시

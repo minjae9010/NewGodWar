@@ -25,6 +25,20 @@ powershell -ExecutionPolicy Bypass -File .\scripts\Test-PaperMatrix.ps1
 .\scripts\Test-PaperMatrix.ps1 -Versions 1.12.2,1.20.6,1.21.1
 ```
 
+지원 목록 전체를 확인하려면 다음처럼 실행합니다.
+
+```powershell
+.\scripts\Test-PaperMatrix.ps1 -AllSupportedVersions
+```
+
+지원 목록에서 가장 최신 버전만 확인하려면 다음처럼 실행합니다.
+
+```powershell
+.\scripts\Test-PaperMatrix.ps1 -LatestVersion
+```
+
+로컬 전체 검사는 지정한 `-JavaExecutable` 하나로 모든 서버를 실행합니다. Java 요구 버전이 갈리는 구간은 GitHub Actions 매트릭스가 Java 8/17/21로 나눠 확인합니다.
+
 로컬 테스트는 기본적으로 `PATH`의 `java`를 사용합니다. 구버전 서버를 로컬에서 확인할 때는 해당 버전에 맞는 Java 실행 파일을 직접 지정할 수 있습니다.
 
 ```powershell
@@ -43,19 +57,16 @@ powershell -ExecutionPolicy Bypass -File .\scripts\Test-PaperMatrix.ps1
 
 `.github/workflows/compatibility.yml` 워크플로가 브랜치 push, pull request, 수동 실행에서 동작합니다.
 
-기본 매트릭스는 대표 Paper 버전들을 대상으로 합니다.
+기본 매트릭스는 지원 목록 전체의 Paper 버전을 대상으로 합니다.
+별도 `Latest supported Paper / Java 21` job은 지원 목록의 가장 최신 버전, 현재 `26.1.2`, 서버 기동을 한 번 더 확인합니다.
 
 | Minecraft | Java |
 | --- | --- |
-| 1.12.2 | 8 |
-| 1.16.5 | 11 |
-| 1.17.1 | 17 |
-| 1.18.2 | 17 |
-| 1.19.4 | 17 |
-| 1.20.6 | 21 |
-| 1.21.1 | 21 |
+| 1.7.10 ~ 1.16.5 | 8 |
+| 1.17 ~ 1.20.4 | 17 |
+| 1.20.5 이상 | 21 |
 
-더 촘촘하게 확인해야 하면 워크플로의 `matrix.include`에 버전을 추가하거나, 로컬 스크립트의 `-Versions`에 원하는 Paper 버전을 넘겨 실행하면 됩니다.
+일부 버전만 빠르게 확인해야 하면 로컬 스크립트의 `-Versions`에 원하는 Paper 버전을 넘겨 실행하면 됩니다.
 
 ## 자동 릴리즈
 

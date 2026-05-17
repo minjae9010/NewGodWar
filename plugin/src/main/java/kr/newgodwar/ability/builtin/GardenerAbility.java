@@ -26,15 +26,41 @@ import java.util.List;
 final class GardenerAbility extends BaseAbility {
     @Override
     public void onAssign(AbilityPlayerContext context) {
-        give(context.player(), Material.SAPLING, 5);
-        context.player().getInventory().addItem(new ItemStack(351, 1, (short) 10));
+        give(context.player(), material("OAK_SAPLING", "SAPLING"), 5);
+        context.player().getInventory().addItem(dye("LIME_DYE", (short) 10));
     }
 
     @Override
     public void onBlockBreak(AbilityPlayerContext context, BlockBreakEvent event) {
-        if (event.getBlock().getType() == Material.LOG) {
-            event.getBlock().getWorld().dropItemNaturally(event.getBlock().getLocation(), new ItemStack(Material.RED_ROSE, 1));
+        if (isLog(event.getBlock())) {
+            event.getBlock().getWorld().dropItemNaturally(event.getBlock().getLocation(), new ItemStack(material("POPPY", "RED_ROSE"), 1));
             event.getBlock().getWorld().dropItemNaturally(event.getBlock().getLocation(), new ItemStack(Material.COBBLESTONE, 1));
         }
+    }
+
+    private static ItemStack dye(String modernName, short legacyDamage) {
+        Material modern = Material.matchMaterial(modernName);
+        if (modern != null) {
+            return new ItemStack(modern, 1);
+        }
+        ItemStack stack = new ItemStack(resolveMaterial("INK_SAC", "INK_SACK"), 1);
+        stack.setDurability(legacyDamage);
+        return stack;
+    }
+
+    private static boolean isLog(Block block) {
+        if (block == null) {
+            return false;
+        }
+        String name = block.getType().name();
+        return "LOG".equals(name) || "LOG_2".equals(name) || name.endsWith("_LOG") || name.endsWith("_STEM");
+    }
+
+    private static Material resolveMaterial(String modernName, String legacyName) {
+        Material material = Material.matchMaterial(modernName);
+        if (material == null) {
+            material = Material.matchMaterial(legacyName);
+        }
+        return material == null ? Material.AIR : material;
     }
 }

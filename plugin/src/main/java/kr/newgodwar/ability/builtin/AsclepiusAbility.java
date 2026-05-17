@@ -35,8 +35,13 @@ final class AsclepiusAbility extends BaseAbility {
 
     @Override
     protected void onStaffRight(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
+        List<Player> targets = nearbyPlayers(context, player, 5, true);
+        if (targets.isEmpty()) {
+            player.sendMessage("사용 가능한 대상이 없습니다.");
+            return;
+        }
         if (useAdvanced(context, player)) {
-            for (Player target : nearbyPlayers(context, player, 5, true)) {
+            for (Player target : targets) {
                 heal(target);
             }
         }

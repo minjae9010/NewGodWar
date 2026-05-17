@@ -5,6 +5,7 @@ import kr.newgodwar.ability.AbilityManager;
 import kr.newgodwar.game.GameManager;
 import kr.newgodwar.game.GodTeam;
 import kr.newgodwar.nms.NmsAdapter;
+import kr.newgodwar.util.BukkitCompat;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -139,9 +140,15 @@ public final class GameListener implements Listener {
             plugin.messages().send(event.getPlayer(), "&c자기 팀의 다이아 심장은 파괴할 수 없습니다.");
             return;
         }
+        ItemStack itemInHand = BukkitCompat.mainHandItem(event.getPlayer());
+        if (plugin.getConfig().getBoolean("core.require-empty-hand", true) && !BukkitCompat.isEmptyItem(itemInHand)) {
+            event.setCancelled(true);
+            plugin.messages().send(event.getPlayer(), "&c코어는 맨손으로만 파괴할 수 있습니다.");
+            return;
+        }
         if (plugin.getConfig().getBoolean("core.forbid-diamond-pickaxe", true)
-            && event.getPlayer().getItemInHand() != null
-            && event.getPlayer().getItemInHand().getType() == Material.DIAMOND_PICKAXE) {
+            && !BukkitCompat.isEmptyItem(itemInHand)
+            && itemInHand.getType() == Material.DIAMOND_PICKAXE) {
             event.setCancelled(true);
             Bukkit.broadcastMessage(plugin.messages().prefix() + ChatColor.RED + event.getPlayer().getName()
                 + ChatColor.WHITE + " 님이 다이아 곡괭이로 코어를 파괴하려다 적발되었습니다.");
@@ -250,8 +257,8 @@ public final class GameListener implements Listener {
         if (killer != null && gameManager.isRunning()) {
             gameManager.recordKill(killer);
             abilityManager.handleKill(killer, event.getEntity(), event);
-            event.setDeathMessage(plugin.messages().prefix() + ChatColor.RED + event.getEntity().getName()
-                + ChatColor.GRAY + " 님이 " + ChatColor.YELLOW + killer.getName() + ChatColor.GRAY + " 님에게 쓰러졌습니다.");
+            event.setDeathMessage(plugin.messages().prefix() + gameManager.playerColoredName(event.getEntity())
+                + ChatColor.GRAY + " 님이 " + gameManager.playerColoredName(killer) + ChatColor.GRAY + " 님에게 쓰러졌습니다.");
         }
     }
 

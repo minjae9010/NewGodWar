@@ -39,7 +39,7 @@ final class FisherAbility extends BaseAbility {
             if (roll < 5) {
                 give(context.player(), Material.DIAMOND, 1);
             } else if (roll < 20) {
-                give(context.player(), Material.LOG, 3);
+                give(context.player(), material("OAK_LOG", "LOG"), 3);
             } else if (roll < 35) {
                 give(context.player(), STAFF, 1);
             } else if (roll < 99) {

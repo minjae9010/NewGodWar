@@ -37,7 +37,7 @@ final class AkashaAbility extends BaseAbility {
     protected void onStaffRight(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
         if (useAdvanced(context, player)) {
             for (Player target : nearbyPlayers(context, player, 10, false)) {
-                effect(target, PotionEffectType.CONFUSION, 6, 0);
+                effect(target, "NAUSEA", "CONFUSION", 6, 0);
                 damage(target, 4.0D, player);
             }
         }

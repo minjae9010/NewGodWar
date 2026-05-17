@@ -16,11 +16,11 @@ import java.util.List;
 @AbilityInfo(
     id = "apollon",
     name = "아폴론",
-    description = "태양을 띄우고 주변 적을 불태웁니다.",
+    description = "태양을 띄우고 햇빛 아래 플레이어를 불태웁니다.",
     normalSkill = "시간을 낮으로 바꿉니다.",
     normalStoneCost = 1,
     normalCooldownSeconds = 30,
-    advancedSkill = "햇빛 아래 주변 적을 불태우고 피해를 줍니다.",
+    advancedSkill = "햇빛 아래 다른 플레이어를 일정 시간 불태웁니다.",
     advancedStoneCost = 15,
     advancedCooldownSeconds = 90,
     passiveSkill = "없음"
@@ -38,13 +38,36 @@ final class ApollonAbility extends BaseAbility {
     @Override
     protected void onStaffRight(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
         if (useAdvanced(context, player)) {
-            setWorldTime(context, player, 6000);
-            for (Player target : nearbyPlayers(context, player, 15, false)) {
-                if (target.getLocation().getBlock().getLightFromSky() > 10) {
-                    target.setFireTicks(80);
-                    target.damage(2.0D, player);
-                }
+            if (setWorldTime(context, player, 6000)) {
+                player.getWorld().setStorm(false);
+                scorchPlayers(context, player);
             }
         }
+    }
+
+    private void scorchPlayers(final AbilityPlayerContext context, final Player player) {
+        Bukkit.broadcastMessage(ChatColor.RED + "태양이 매우 뜨거워집니다.");
+        final String playerName = player.getName();
+        final int[] count = new int[] {15};
+        final int[] taskId = new int[1];
+        taskId[0] = Bukkit.getScheduler().scheduleSyncRepeatingTask(context.plugin(), () -> {
+            Player caster = Bukkit.getPlayer(playerName);
+            if (caster == null || !caster.isOnline()) {
+                Bukkit.getScheduler().cancelTask(taskId[0]);
+                return;
+            }
+            if (count[0] > 0) {
+                for (Player target : caster.getWorld().getPlayers()) {
+                    if (!target.equals(caster) && target.getLocation().getBlock().getLightLevel() == 15) {
+                        target.setFireTicks(100);
+                    }
+                }
+            } else {
+                Bukkit.broadcastMessage("태양이 힘을 잃었습니다.");
+                caster.getWorld().setTime(18000);
+                Bukkit.getScheduler().cancelTask(taskId[0]);
+            }
+            count[0]--;
+        }, 100L, 40L);
     }
 }

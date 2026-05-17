@@ -36,7 +36,7 @@ final class VoodooAbility extends BaseAbility {
             }
             return;
         }
-        if (postSign == null && holding(context.player(), Material.SIGN) && isLeft(event.getAction())) {
+        if (postSign == null && holdingSign(context.player()) && isLeft(event.getAction())) {
             Player player = context.player();
             if (readyNormal(context, player, 0) && hasNormalCost(context, player)) {
                 player.sendMessage("스킬을 사용 할 수 있습니다.");
@@ -46,7 +46,7 @@ final class VoodooAbility extends BaseAbility {
 
     @Override
     public void onBlockPlace(AbilityPlayerContext context, BlockPlaceEvent event) {
-        if (event.getBlock().getType() == Material.SIGN && (!readyNormal(context, context.player(), 0) || !hasNormalCost(context, context.player()))) {
+        if (isSign(event.getBlock()) && (!readyNormal(context, context.player(), 0) || !hasNormalCost(context, context.player()))) {
             event.setCancelled(true);
         }
     }
@@ -68,5 +68,23 @@ final class VoodooAbility extends BaseAbility {
                 }
             });
         }
+    }
+
+    private boolean holdingSign(Player player) {
+        ItemStack item = player.getItemInHand();
+        return item != null && isSignMaterial(item.getType());
+    }
+
+    private boolean isSign(Block block) {
+        return block != null && isSignMaterial(block.getType());
+    }
+
+    private boolean isSignMaterial(Material material) {
+        if (material == null) {
+            return false;
+        }
+        String name = material.name();
+        return "SIGN".equals(name) || "SIGN_POST".equals(name) || "LEGACY_SIGN".equals(name) || "LEGACY_SIGN_POST".equals(name)
+            || name.endsWith("_SIGN") || name.endsWith("_WALL_SIGN") || name.endsWith("_HANGING_SIGN") || name.endsWith("_WALL_HANGING_SIGN");
     }
 }

@@ -39,7 +39,7 @@ final class GalbiAbility extends BaseAbility {
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
         if (useNormal(context, player, 0)) {
-            give(player, Material.GRILLED_PORK, 3);
+            give(player, material("COOKED_PORKCHOP", "GRILLED_PORK"), 3);
         }
     }
 

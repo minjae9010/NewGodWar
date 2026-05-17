@@ -63,6 +63,7 @@ public final class AbilityManager {
             Player player = plugin.getServer().getPlayer(entry.getKey());
             if (player != null) {
                 entry.getValue().ability().onRemove(playerContext(player, entry.getValue().definition()));
+                BukkitCompat.clearPotionEffects(player);
             }
         }
         assignments.clear();
@@ -83,6 +84,7 @@ public final class AbilityManager {
         if (previous != null) {
             previous.ability().onRemove(playerContext(player, previous.definition()));
         }
+        BukkitCompat.clearPotionEffects(player);
 
         AbilitySession session = new AbilitySession(definition, definition.create());
         assignments.put(player.getUniqueId(), session);
@@ -102,6 +104,7 @@ public final class AbilityManager {
             return false;
         }
         previous.ability().onRemove(playerContext(player, previous.definition()));
+        BukkitCompat.clearPotionEffects(player);
         if (plugin.game() != null) {
             plugin.game().refreshPlayerDisplay(player);
         }
@@ -236,8 +239,12 @@ public final class AbilityManager {
         player.sendMessage(ChatColor.GOLD + "" + ChatColor.BOLD + "능력이 배정되었습니다: "
             + ChatColor.WHITE + definition.name() + ChatColor.DARK_GRAY + " (" + definition.id() + ")");
         player.sendMessage(ChatColor.GRAY + "설명: " + ChatColor.YELLOW + definition.description());
-        player.sendMessage(ChatColor.GRAY + "일반: " + ChatColor.WHITE + skillLine(definition.normalSkill(), definition.normalStoneCost(), definition.normalCooldown()));
-        player.sendMessage(ChatColor.GRAY + "고급: " + ChatColor.WHITE + skillLine(definition.advancedSkill(), definition.advancedStoneCost(), definition.advancedCooldown()));
+        if (hasSkill(definition.normalSkill())) {
+            player.sendMessage(ChatColor.GRAY + "일반: " + ChatColor.WHITE + skillLine(definition.normalSkill(), definition.normalStoneCost(), definition.normalCooldown()));
+        }
+        if (hasSkill(definition.advancedSkill())) {
+            player.sendMessage(ChatColor.GRAY + "고급: " + ChatColor.WHITE + skillLine(definition.advancedSkill(), definition.advancedStoneCost(), definition.advancedCooldown()));
+        }
         player.sendMessage(ChatColor.GRAY + "패시브: " + ChatColor.WHITE + emptySkill(definition.passiveSkill()));
         player.sendMessage(ChatColor.DARK_GRAY + "/a 로 다시 확인할 수 있습니다.");
     }
@@ -256,6 +263,10 @@ public final class AbilityManager {
 
     private String emptySkill(String skill) {
         return skill == null || skill.trim().length() == 0 ? "없음" : skill;
+    }
+
+    private boolean hasSkill(String skill) {
+        return skill != null && skill.trim().length() > 0 && !"없음".equals(skill.trim());
     }
 
     private String stoneCost(int cost) {
