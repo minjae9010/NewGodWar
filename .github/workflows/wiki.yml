@@ -31,9 +31,15 @@ jobs:
 
           wiki_dir="$(mktemp -d)"
           wiki_url="https://x-access-token:${GH_TOKEN}@github.com/${REPOSITORY}.wiki.git"
+          wiki_enabled="$(gh api "repos/${REPOSITORY}" --jq ".has_wiki")"
+
+          if [ "$wiki_enabled" != "true" ]; then
+            echo "::error::GitHub Wiki 기능이 꺼져 있어 ${REPOSITORY}.wiki.git 저장소가 없습니다. 저장소 Settings > Features에서 Wiki를 켠 뒤 이 워크플로를 다시 실행하세요."
+            exit 1
+          fi
 
           if ! git clone "$wiki_url" "$wiki_dir"; then
-            echo "::warning::GitHub Wiki 저장소를 clone하지 못했습니다. 비어 있는 Wiki일 수 있어 새 저장소로 초기화한 뒤 push를 시도합니다."
+            echo "::warning::GitHub Wiki 저장소를 clone하지 못했습니다. Wiki가 비어 있거나 아직 초기화되지 않았을 수 있어 첫 push를 시도합니다."
             rm -rf "$wiki_dir"
             mkdir -p "$wiki_dir"
             git -C "$wiki_dir" init -b master
@@ -58,6 +64,6 @@ jobs:
           git -C "$wiki_dir" add .
           git -C "$wiki_dir" commit -m "Update wiki from docs/wiki"
           if ! git -C "$wiki_dir" push origin HEAD:master; then
-            echo "::error::GitHub Wiki에 push하지 못했습니다. 저장소 Settings > Features에서 Wiki가 켜져 있는지 확인한 뒤 다시 실행하세요."
+            echo "::error::GitHub Wiki에 push하지 못했습니다. Actions 권한 또는 Wiki 저장소 접근 권한을 확인하세요."
             exit 1
           fi

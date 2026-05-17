@@ -10,7 +10,9 @@
 - [설정](docs/wiki/configuration.md)
 - [능력 목록](docs/wiki/abilities.md)
 
-`docs/wiki` 문서는 `Wiki` GitHub Actions 워크플로를 통해 GitHub Wiki에 자동 반영됩니다. GitHub Wiki의 첫 화면은 `Home.md`입니다. 저장소 Settings > Features에서 Wiki 기능이 켜져 있어야 배포가 완료됩니다.
+`docs/wiki` 문서는 `Wiki` GitHub Actions 워크플로를 통해 GitHub Wiki에 자동 반영됩니다. GitHub Wiki의 첫 화면은 `Home.md`입니다.
+
+Wiki 배포 전 저장소 Settings > Features에서 Wiki 기능을 켜야 합니다. Wiki가 꺼져 있으면 GitHub가 `<owner>/<repo>.wiki.git` 저장소를 만들지 않아 워크플로가 배포할 수 없습니다.
 
 ## 핵심 기능
 
