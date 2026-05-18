@@ -1,6 +1,6 @@
 # 명령어
 
-기본 명령어는 `/godwar`이며 alias로 `/gw`, `/t`, `/godswar`, `/신들의전쟁`을 사용할 수 있습니다. 별도 단축 명령으로 `/a`, `/x`, `/teamchat`, `/도박`도 제공됩니다.
+기본 명령어는 `/godwar`이며 alias로 `/gw`, `/godswar`, `/신들의전쟁`을 사용할 수 있습니다. `/t`는 Themachy 스타일 호환 명령어로 별도 제공되며, `/t`에 있는 기능은 `/gw` 원본 명령으로도 사용할 수 있습니다. 별도 단축 명령으로 `/a`, `/x`, `/teamchat`, `/도박`도 제공됩니다.
 
 ## 권한
 
@@ -22,7 +22,7 @@
 | `/godwar leave` | 자신의 팀 배정을 해제합니다. |
 | `/godwar midjoin [team|auto]` | 진행 중인 게임에 중간 참여합니다. |
 | `/godwar info [team]` | 팀원 목록을 확인합니다. |
-| `/godwar ability [player]` | 자신의 현재 능력을 확인합니다. 플레이어 이름을 지정하면 해당 플레이어의 능력 GUI를 봅니다. |
+| `/godwar ability [player]` 또는 `/godwar a [player]` | 자신의 현재 능력을 확인합니다. 플레이어 이름을 지정하면 해당 플레이어의 능력 GUI를 봅니다. |
 | `/godwar abilities [검색어]` | 등록된 능력 도감 GUI를 엽니다. |
 | `/godwar target <player>` | 타깃형 능력의 대상을 지정합니다. |
 | `/godwar yes` 또는 `/t yes` | 배정된 능력을 확정합니다. |
@@ -46,8 +46,14 @@
 | `/godwar start` | 게임 시작 준비를 시작하고 능력을 배정합니다. |
 | `/godwar test [ability]` | 혼자 능력 테스트를 시작합니다. |
 | `/godwar stop` | 게임을 종료하고 적용된 게임룰/월드 설정을 복구합니다. |
-| `/godwar setability <player> <ability>` | 플레이어에게 특정 능력을 지정합니다. |
-| `/godwar assignedabilities [검색어]` | 플레이어별 배정 능력을 확인합니다. |
+| `/godwar a set <player> <ability>` | 플레이어에게 특정 능력을 지정합니다. |
+| `/godwar a list [검색어]` | 플레이어별 배정 능력을 확인합니다. |
+| `/godwar a catalog [검색어]` | 등록된 능력 도감을 능력 그룹에서 검색합니다. |
+| `/godwar a random [player]` | 특정 플레이어 또는 참가자 전체에게 랜덤 능력을 배정합니다. |
+| `/godwar a remove <player>` | 플레이어의 능력을 삭제합니다. |
+| `/godwar a reset [player]` | 특정 플레이어 또는 전체 능력 배정을 초기화합니다. |
+| `/godwar a skip [초]` | 능력 확정 대기를 종료하고 시작 카운트다운을 지정합니다. |
+| `/godwar a cutin <player|team|auto> [team|auto]` | 진행 중 중간 참여를 능력 그룹에서 처리합니다. |
 | `/godwar participants [검색어|팀]` | 참가자, 팀, 능력, 킬, 관전 상태를 확인합니다. |
 | `/godwar clear [player]` | 능력 쿨타임을 초기화합니다. |
 | `/godwar rerolls <횟수>` | 능력 재추첨 가능 횟수를 설정합니다. |
@@ -64,24 +70,24 @@
 
 ## Themachy 호환 명령어
 
-`/t` alias는 기존 Themachy 스타일 명령을 일부 지원합니다.
+`/t`는 기존 Themachy 스타일 명령을 일부 지원합니다. 오른쪽의 `/gw` 명령이 원본입니다.
 
-| 명령어 | 대응 기능 |
+| 명령어 | `/gw` 원본 |
 | --- | --- |
-| `/t <team> [player]` | 팀 수동 배정 |
-| `/t spawn <team>` 또는 `/t s <team>` | 팀 스폰 등록 |
-| `/t dia <team>` 또는 `/t d <team>` | 팀 다이아 심장 등록 |
-| `/t set` | 설정 GUI 열기 |
-| `/t info [team]` | 팀원 목록 |
-| `/t alist [검색어]` | 플레이어별 배정 능력 확인 |
-| `/t a <ability> <player>` | 능력 수동 지정 |
-| `/t a random [player]` | 무작위 능력 지정 |
-| `/t a remove <player>` | 능력 제거 |
-| `/t a reset [player]` | 능력 재배정 |
-| `/t a skip [초]` | 능력 확정 대기 종료 |
-| `/t a cutin <player|team|auto> [team|auto]` | 진행 중 중간 참여 보조 |
-| `/t observer [list]` | 옵저버 전환 또는 목록 |
-| `/t con` | 도박 GUI 열기 |
+| `/t <team> [player]` | `/gw join <team> [player]` |
+| `/t spawn <team>` 또는 `/t s <team>` | `/gw setspawn <team>` |
+| `/t dia <team>` 또는 `/t d <team>` | `/gw settemple <team>` |
+| `/t set` | `/gw settings` |
+| `/t info [team]` | `/gw info [team]` |
+| `/t a list [검색어]` | `/gw a list [검색어]` |
+| `/t a <ability> <player>` | `/gw a set <player> <ability>` |
+| `/t a random [player]` | `/gw a random [player]` |
+| `/t a remove <player>` | `/gw a remove <player>` |
+| `/t a reset [player]` | `/gw a reset [player]` |
+| `/t a skip [초]` | `/gw a skip [초]` |
+| `/t a cutin <player|team|auto> [team|auto]` | `/gw a cutin <player|team|auto> [team|auto]` |
+| `/t observer [list]` | `/gw observer [list]` |
+| `/t con` | `/gw gamble` |
 
 ## 값 입력 팁
 

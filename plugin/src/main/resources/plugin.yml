@@ -5,9 +5,12 @@ author: minjae9010
 description: 신들의 전쟁 스타일 팀 기반 미니게임 플러그인
 commands:
   godwar:
-    aliases: [gw, t, godswar, 신들의전쟁]
+    aliases: [gw, godswar, 신들의전쟁]
     description: 신들의 전쟁 게임을 관리합니다.
     usage: /godwar help
+  t:
+    description: Themachy 스타일 신들의 전쟁 호환 명령어입니다.
+    usage: /t help
   teamchat:
     aliases: [tc, 팀채팅]
     description: 팀원에게만 채팅을 보내거나 팀 채팅 모드를 전환합니다.

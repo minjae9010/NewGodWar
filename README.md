@@ -28,11 +28,13 @@ Wiki 배포 전 저장소 Settings > Features에서 Wiki 기능을 켜야 합니
 ## 명령어
 
 - `/godwar help` 도움말
-- `/t` Themachy 스타일 짧은 명령어 도움말
+- `/gw` 또는 `/godwar` 기본 명령어, `/t` Themachy 스타일 호환 명령어 도움말
 - `/a` 자신의 현재 능력 빠른 확인
-- `/t a <ability> <player>` Themachy 스타일 능력 수동 지정
-- `/t skip [초]` 또는 `/t a skip [초]` 능력 확정 대기 스킵
-- `/t a random|reset|remove|cutin` Themachy 스타일 능력 배정 보조 명령
+- `/godwar a set <player> <ability>` 또는 `/t a <ability> <player>` 능력 수동 지정
+- `/godwar a list [검색어]` 또는 `/t a list [검색어]` 플레이어별 배정 능력 확인
+- `/godwar a skip [초]` 또는 `/t a skip [초]` 능력 확정 대기 스킵
+- `/godwar a random|reset|remove` 원본과 `/t a random|reset|remove` 호환 명령
+- `/godwar a cutin` 원본과 `/t a cutin` 진행 중 중간 참여 보조 명령
 - `/t yes` 또는 `/t no` 능력 재추첨 확정 / 다시 뽑기
 - `/godwar autoteam` 온라인 플레이어 자동 팀 배정
 - `/godwar join <red|blue|green> [player]` 팀 수동 배정
@@ -57,7 +59,7 @@ Wiki 배포 전 저장소 Settings > Features에서 Wiki 기능을 켜야 합니
 - `/godwar blacklist <list|add|remove|toggle> [ability]` 랜덤 배정에서 제외할 능력 관리
 - `/godwar gamerule <apply|restore>` 설정된 게임룰 수동 적용 또는 복구
 - `/godwar target <player>` 또는 `/x <player>` 타깃형 능력 대상 지정
-- `/godwar setability <player> <ability>` 능력 수동 지정
+- `/godwar a set <player> <ability>` 능력 수동 지정
 - `/godwar spectate <player>` 관전 모드
 - `/godwar unspectate <player>` 관전 해제
 - `/teamchat <message>` 팀 채팅, `/tc` 팀 채팅 모드 전환

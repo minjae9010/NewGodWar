@@ -55,6 +55,8 @@ public final class NewGodWarPlugin extends JavaPlugin {
         GodWarCommand godWarCommand = new GodWarCommand(this, gameManager, abilityManager, settingsGui, abilityGui);
         getCommand("godwar").setExecutor(godWarCommand);
         getCommand("godwar").setTabCompleter(godWarCommand);
+        getCommand("t").setExecutor(godWarCommand);
+        getCommand("t").setTabCompleter(godWarCommand);
         getCommand("x").setExecutor(godWarCommand);
         getCommand("x").setTabCompleter(godWarCommand);
         getCommand("a").setExecutor(godWarCommand);

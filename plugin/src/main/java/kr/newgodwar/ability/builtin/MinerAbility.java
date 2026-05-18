@@ -21,10 +21,25 @@ import java.util.List;
     normalStoneCost = 0,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "코블스톤 채굴 보너스와 곡괭이 고정 피해를 가집니다.",
+    passiveSkill = "상시 성급함 효과를 받고 코블스톤 채굴 보너스와 곡괭이 고정 피해를 가집니다.",
     grade = AbilityGrade.A
 )
 final class MinerAbility extends BaseAbility {
+    @Override
+    public void onAssign(AbilityPlayerContext context) {
+        effect(context.player(), "HASTE", "FAST_DIGGING", 24 * 60 * 60, 0);
+    }
+
+    @Override
+    public void onRemove(AbilityPlayerContext context) {
+        removeEffect(context.player(), "HASTE", "FAST_DIGGING");
+    }
+
+    @Override
+    public void onTick(AbilityPlayerContext context) {
+        effect(context.player(), "HASTE", "FAST_DIGGING", 3, 0);
+    }
+
     @Override
     public void onDamageByEntity(AbilityPlayerContext context, EntityDamageByEntityEvent event, Player opponent, boolean attacker) {
         if (attacker && isPickaxe(context.player().getItemInHand().getType())) {

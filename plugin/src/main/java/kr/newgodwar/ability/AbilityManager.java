@@ -48,6 +48,7 @@ public final class AbilityManager {
     private final Random random = new Random();
     private final AbilityRegistry registry = new AbilityRegistry();
     private final Map<UUID, AbilitySession> assignments = new ConcurrentHashMap<UUID, AbilitySession>();
+    private final Map<UUID, Long> suppressedUntil = new ConcurrentHashMap<UUID, Long>();
 
     public AbilityManager(NewGodWarPlugin plugin) {
         this.plugin = plugin;
@@ -67,6 +68,7 @@ public final class AbilityManager {
             }
         }
         assignments.clear();
+        suppressedUntil.clear();
     }
 
     public AbilityDefinition assignRandom(Player player) {
@@ -84,6 +86,7 @@ public final class AbilityManager {
         if (previous != null) {
             previous.ability().onRemove(playerContext(player, previous.definition()));
         }
+        suppressedUntil.remove(player.getUniqueId());
         BukkitCompat.clearPotionEffects(player);
 
         AbilitySession session = new AbilitySession(definition, definition.create());
@@ -104,6 +107,7 @@ public final class AbilityManager {
             return false;
         }
         previous.ability().onRemove(playerContext(player, previous.definition()));
+        suppressedUntil.remove(player.getUniqueId());
         BukkitCompat.clearPotionEffects(player);
         if (plugin.game() != null) {
             plugin.game().refreshPlayerDisplay(player);
@@ -113,6 +117,42 @@ public final class AbilityManager {
 
     public AbilitySession session(Player player) {
         return assignments.get(player.getUniqueId());
+    }
+
+    public boolean suppressAbility(final Player player, final int seconds) {
+        final AbilitySession session = session(player);
+        if (session == null || seconds <= 0 || isAbilitySuppressed(player)) {
+            return false;
+        }
+
+        final long until = System.currentTimeMillis() + seconds * 1000L;
+        suppressedUntil.put(player.getUniqueId(), until);
+        session.ability().onRemove(playerContext(player, session.definition()));
+        BukkitCompat.clearPotionEffects(player);
+        player.sendMessage(ChatColor.DARK_PURPLE + "능력이 " + seconds + "초 동안 봉인되었습니다.");
+        if (plugin.game() != null) {
+            plugin.game().refreshPlayerDisplay(player);
+        }
+
+        plugin.getServer().getScheduler().runTaskLater(plugin, new Runnable() {
+            @Override
+            public void run() {
+                restoreSuppressedAbility(player.getUniqueId(), until);
+            }
+        }, seconds * 20L);
+        return true;
+    }
+
+    public boolean isAbilitySuppressed(Player player) {
+        Long until = suppressedUntil.get(player.getUniqueId());
+        if (until == null) {
+            return false;
+        }
+        if (until <= System.currentTimeMillis()) {
+            restoreSuppressedAbility(player.getUniqueId(), until);
+            return false;
+        }
+        return true;
     }
 
     public AbilityDefinition get(Player player) {
@@ -129,12 +169,12 @@ public final class AbilityManager {
     }
 
     public long cooldownRemainingMillis(Player player, int slot) {
-        AbilitySession session = session(player);
+        AbilitySession session = activeSession(player);
         return session == null ? 0L : session.ability().cooldownRemainingMillis(slot);
     }
 
     public List<String> activeTimerLines(Player player) {
-        AbilitySession session = session(player);
+        AbilitySession session = activeSession(player);
         return session == null ? Collections.<String>emptyList() : session.ability().activeTimerLines();
     }
 
@@ -279,25 +319,25 @@ public final class AbilityManager {
     }
 
     public void handleDamage(Player damager, Player victim, EntityDamageByEntityEvent event) {
-        AbilitySession session = session(damager);
+        AbilitySession session = activeSession(damager);
         if (session != null) {
             session.ability().onDamage(new AbilityDamageContext(plugin, damager, victim, session.definition(), event));
             session.ability().onDamageByEntity(playerContext(damager, session.definition()), event, victim, true);
         }
 
-        AbilitySession victimSession = session(victim);
+        AbilitySession victimSession = activeSession(victim);
         if (victimSession != null) {
             victimSession.ability().onDamageByEntity(playerContext(victim, victimSession.definition()), event, damager, false);
         }
     }
 
     public void handleKill(Player killer, Player victim, PlayerDeathEvent event) {
-        AbilitySession session = session(killer);
+        AbilitySession session = activeSession(killer);
         if (session != null) {
             session.ability().onKill(new AbilityKillContext(plugin, killer, victim, session.definition(), event));
         }
 
-        AbilitySession victimSession = session(victim);
+        AbilitySession victimSession = activeSession(victim);
         if (victimSession != null) {
             victimSession.ability().onKill(new AbilityKillContext(plugin, killer, victim, victimSession.definition(), event));
         }
@@ -307,6 +347,9 @@ public final class AbilityManager {
         for (Map.Entry<UUID, AbilitySession> entry : assignments.entrySet()) {
             Player player = plugin.getServer().getPlayer(entry.getKey());
             if (player != null) {
+                if (isAbilitySuppressed(player)) {
+                    continue;
+                }
                 AbilitySession session = entry.getValue();
                 session.ability().onDeath(playerContext(player, session.definition()), event);
             }
@@ -314,7 +357,7 @@ public final class AbilityManager {
     }
 
     public void reapply(Player player) {
-        AbilitySession session = session(player);
+        AbilitySession session = activeSession(player);
         if (session != null) {
             session.ability().onAssign(playerContext(player, session.definition()));
         }
@@ -322,7 +365,7 @@ public final class AbilityManager {
 
     public void tick(Iterable<? extends Player> players) {
         for (Player player : players) {
-            AbilitySession session = session(player);
+            AbilitySession session = activeSession(player);
             if (session != null) {
                 session.ability().onTick(playerContext(player, session.definition()));
             }
@@ -331,7 +374,7 @@ public final class AbilityManager {
 
     public void tickCountdownAlerts(Iterable<? extends Player> players) {
         for (Player player : players) {
-            AbilitySession session = session(player);
+            AbilitySession session = activeSession(player);
             if (session != null) {
                 session.ability().onCountdownTick(playerContext(player, session.definition()));
             }
@@ -348,7 +391,7 @@ public final class AbilityManager {
         if (event.isCancelled() && !isAirInteract(event.getAction())) {
             return;
         }
-        AbilitySession session = session(player);
+        AbilitySession session = activeSession(player);
         if (session != null) {
             session.ability().onInteract(playerContext(player, session.definition()), event);
         }
@@ -359,14 +402,14 @@ public final class AbilityManager {
     }
 
     public void handleGenericDamage(Player player, EntityDamageEvent event) {
-        AbilitySession session = session(player);
+        AbilitySession session = activeSession(player);
         if (session != null) {
             session.ability().onGenericDamage(playerContext(player, session.definition()), event);
         }
     }
 
     public void handleProjectileHit(Player shooter, Player victim, EntityDamageByEntityEvent event) {
-        AbilitySession session = session(shooter);
+        AbilitySession session = activeSession(shooter);
         if (session != null) {
             session.ability().onProjectileHit(playerContext(shooter, session.definition()), event, victim);
         }
@@ -381,62 +424,66 @@ public final class AbilityManager {
             return;
         }
         Player player = (Player) projectile.getShooter();
-        AbilitySession session = session(player);
+        AbilitySession session = activeSession(player);
         if (session != null) {
             session.ability().onProjectileLaunch(playerContext(player, session.definition()), event);
         }
     }
 
     public void handleBlockBreak(Player player, BlockBreakEvent event) {
-        AbilitySession session = session(player);
+        AbilitySession session = activeSession(player);
         if (session != null) {
             session.ability().onBlockBreak(playerContext(player, session.definition()), event);
         }
     }
 
     public void handleBlockPlace(Player player, BlockPlaceEvent event) {
-        AbilitySession session = session(player);
+        AbilitySession session = activeSession(player);
         if (session != null) {
             session.ability().onBlockPlace(playerContext(player, session.definition()), event);
         }
     }
 
     public void handleBlockExplode(BlockExplodeEvent event) {
-        for (AbilitySession session : assignments.values()) {
-            session.ability().onBlockExplode(event);
+        for (Map.Entry<UUID, AbilitySession> entry : assignments.entrySet()) {
+            Player player = plugin.getServer().getPlayer(entry.getKey());
+            if (player != null && isAbilitySuppressed(player)) {
+                continue;
+            }
+            entry.getValue().ability().onBlockExplode(event);
         }
     }
 
     public void handleSignChange(Player player, SignChangeEvent event) {
-        AbilitySession session = session(player);
+        AbilitySession session = activeSession(player);
         if (session != null) {
             session.ability().onSignChange(playerContext(player, session.definition()), event);
         }
     }
 
     public void handleFoodLevelChange(Player player, FoodLevelChangeEvent event) {
-        AbilitySession session = session(player);
+        AbilitySession session = activeSession(player);
         if (session != null) {
             session.ability().onFoodLevelChange(playerContext(player, session.definition()), event);
         }
     }
 
     public void handleRegainHealth(Player player, EntityRegainHealthEvent event) {
-        AbilitySession session = session(player);
+        AbilitySession session = activeSession(player);
         if (session != null) {
             session.ability().onRegainHealth(playerContext(player, session.definition()), event);
         }
     }
 
     public void handleRespawn(Player player, PlayerRespawnEvent event) {
-        AbilitySession session = session(player);
+        AbilitySession session = activeSession(player);
         if (session != null) {
             session.ability().onRespawn(playerContext(player, session.definition()), event);
         }
     }
 
     public void handleMove(Player player, PlayerMoveEvent event) {
-        AbilitySession session = session(player);
+        AbilitySession session = activeSession(player);
         if (session != null) {
             session.ability().onMove(playerContext(player, session.definition()), event);
         }
@@ -447,21 +494,25 @@ public final class AbilityManager {
     }
 
     public void handleChatMessage(Player player, String message) {
-        AbilitySession session = session(player);
+        AbilitySession session = activeSession(player);
         if (session != null) {
             session.ability().onChatMessage(playerContext(player, session.definition()), message);
         }
     }
 
     public void handleFish(Player player, PlayerFishEvent event) {
-        AbilitySession session = session(player);
+        AbilitySession session = activeSession(player);
         if (session != null) {
             session.ability().onFish(playerContext(player, session.definition()), event);
         }
     }
 
     public void setTarget(Player player, CommandSender sender, String targetName) {
-        AbilitySession session = session(player);
+        if (isAbilitySuppressed(player)) {
+            plugin.messages().send(sender, "&c능력이 봉인되어 타깃을 지정할 수 없습니다.");
+            return;
+        }
+        AbilitySession session = activeSession(player);
         if (session == null) {
             plugin.messages().send(sender, "&c아직 능력이 없습니다.");
             return;
@@ -471,6 +522,34 @@ public final class AbilityManager {
 
     private AbilityPlayerContext playerContext(Player player, AbilityDefinition definition) {
         return new AbilityPlayerContext(plugin, player, definition);
+    }
+
+    private AbilitySession activeSession(Player player) {
+        if (isAbilitySuppressed(player)) {
+            return null;
+        }
+        return session(player);
+    }
+
+    private void restoreSuppressedAbility(UUID uuid, Long expectedUntil) {
+        Long current = suppressedUntil.get(uuid);
+        if (current == null || !current.equals(expectedUntil)) {
+            return;
+        }
+        suppressedUntil.remove(uuid);
+
+        Player player = plugin.getServer().getPlayer(uuid);
+        if (player == null) {
+            return;
+        }
+        AbilitySession session = session(player);
+        if (session != null) {
+            session.ability().onAssign(playerContext(player, session.definition()));
+            player.sendMessage(ChatColor.LIGHT_PURPLE + "봉인되었던 능력이 돌아왔습니다.");
+            if (plugin.game() != null) {
+                plugin.game().refreshPlayerDisplay(player);
+            }
+        }
     }
 
     private AbilityDefinition chooseLeastDuplicated(List<AbilityDefinition> enabled) {
