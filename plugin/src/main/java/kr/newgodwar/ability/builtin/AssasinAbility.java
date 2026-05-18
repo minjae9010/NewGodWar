@@ -18,7 +18,8 @@ import java.util.List;
     name = "암살자",
     description = "더블 점프와 기습 이동을 사용합니다.",
     normalSkill = "앞으로 도약합니다.",
-    normalStoneCost = 0,
+    normalStoneCost = 2,
+    normalCooldownSeconds = 0,
     advancedSkill = "주변 적의 뒤로 이동합니다.",
     advancedStoneCost = 15,
     advancedCooldownSeconds = 15,
@@ -26,9 +27,24 @@ import java.util.List;
     grade = AbilityGrade.A
 )
 final class AssasinAbility extends BaseAbility {
+    private boolean dashLocked;
+
+    @Override
+    public void onRemove(AbilityPlayerContext context) {
+        dashLocked = false;
+    }
+
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
-        dash(player);
+        if (dashLocked) {
+            sendAbilityMessage(context, player, "failure", ChatColor.YELLOW + "아직 도약할 수 없습니다.");
+            return;
+        }
+        if (useNormal(context, player)) {
+            dash(player);
+            dashLocked = true;
+            Bukkit.getScheduler().scheduleSyncDelayedTask(context.plugin(), () -> dashLocked = false, 15L);
+        }
     }
 
     @Override
