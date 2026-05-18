@@ -298,40 +298,38 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
 
     private List<HelpEntry> helpEntries(String label, boolean admin) {
         List<HelpEntry> entries = new ArrayList<HelpEntry>();
-        entries.add(new HelpEntry("게임 진행", "gui", "관리자 설정 GUI 열기"));
-        entries.add(new HelpEntry("게임 진행", "start", "게임 시작 및 능력 배정"));
-        entries.add(new HelpEntry("게임 진행", "test [ability]", "혼자 능력 테스트 시작"));
-        entries.add(new HelpEntry("게임 진행", "stop", "게임 종료"));
         entries.add(new HelpEntry("게임 진행", "status", "현재 상태 보기"));
         entries.add(new HelpEntry("게임 진행", "tips", "서버 플레이 팁 보기"));
-        entries.add(new HelpEntry("게임 진행", "autoteam", "온라인 플레이어 자동 팀 배정"));
-        entries.add(new HelpEntry("팀 / 신전", "join <team> [player]", "팀 수동 배정"));
-        entries.add(new HelpEntry("팀 / 신전", "midjoin [player] [team|auto]", "진행 중인 게임에 중간 참여"));
-        entries.add(new HelpEntry("팀 / 신전", "leave [player]", "팀 배정 해제"));
-        entries.add(new HelpEntry("팀 / 신전", "setspawn <team>", "현재 위치를 팀 스폰으로 등록"));
-        entries.add(new HelpEntry("팀 / 신전", "settemple <team>", "바라보는 다이아 블록을 심장으로 등록"));
-        entries.add(new HelpEntry("팀 / 신전", "info [team]", "팀원 목록 확인"));
+        entries.add(new HelpEntry("팀", "join <team>", "팀 참가"));
+        entries.add(new HelpEntry("팀", "midjoin [team|auto]", "진행 중인 게임에 중간 참여"));
+        entries.add(new HelpEntry("팀", "leave", "팀 배정 해제"));
+        entries.add(new HelpEntry("팀", "info [team]", "팀원 목록 확인"));
         entries.add(new HelpEntry("능력", "yes|no", "능력 재추첨 확정 / 다시 뽑기"));
-        entries.add(new HelpEntry("능력", "abilities [검색어]", "능력 도감 검색"));
         entries.add(new HelpEntry("능력", "ability [player]", "현재 능력만 보기"));
+        entries.add(new HelpEntry("능력", "a [player]", "현재 능력만 보기"));
+        entries.add(new HelpEntry("능력", "a catalog [검색어]", "능력 도감 검색"));
         entries.add(new HelpEntry("능력", "target <player>", "타깃형 능력 대상 지정"));
-        entries.add(new HelpEntry("능력", "clear [player]", "쿨타임 초기화"));
         entries.add(new HelpEntry("능력", "gamble", "도박 GUI 열기"));
-        entries.add(new HelpEntry("Themachy 호환", "/t <team> [player]", "팀 수동 배정 (/gw join 원본)"));
-        entries.add(new HelpEntry("Themachy 호환", "/t spawn|s <team>", "팀 스폰 등록 (/gw setspawn 원본)"));
-        entries.add(new HelpEntry("Themachy 호환", "/t dia|d <team>", "다이아 심장 등록 (/gw settemple 원본)"));
-        entries.add(new HelpEntry("Themachy 호환", "/t set", "설정 GUI 열기 (/gw settings 원본)"));
-        entries.add(new HelpEntry("Themachy 호환", "/t a list [검색어]", "플레이어별 배정 능력 확인 (/gw a list 원본)"));
-        entries.add(new HelpEntry("Themachy 호환", "/t a skip [초]", "능력 확정 대기 종료 (/gw a skip 원본)"));
-        entries.add(new HelpEntry("Themachy 호환", "/t a <ability> <player>", "능력 수동 지정 (/gw a set 원본)"));
-        entries.add(new HelpEntry("Themachy 호환", "/t observer [list]", "옵저버 전환 / 목록 (/gw observer 원본)"));
+        entries.add(new HelpEntry("Themachy 호환", "/t <team>", "팀 참가 (/gw join 원본)"));
+        entries.add(new HelpEntry("Themachy 호환", "/t info [team]", "팀원 목록 (/gw info 원본)"));
         entries.add(new HelpEntry("Themachy 호환", "/t con", "도박 GUI 열기 (/gw gamble 원본)"));
         if (admin) {
+            entries.add(new HelpEntry("운영 진행", "gui", "관리자 설정 GUI 열기"));
+            entries.add(new HelpEntry("운영 진행", "start", "게임 시작 및 능력 배정"));
+            entries.add(new HelpEntry("운영 진행", "test [ability]", "혼자 능력 테스트 시작"));
+            entries.add(new HelpEntry("운영 진행", "stop", "게임 종료"));
+            entries.add(new HelpEntry("운영 팀", "autoteam", "온라인 플레이어 자동 팀 배정"));
+            entries.add(new HelpEntry("운영 팀", "join <team> [player]", "플레이어 팀 수동 배정"));
+            entries.add(new HelpEntry("운영 팀", "leave [player]", "플레이어 팀 배정 해제"));
+            entries.add(new HelpEntry("운영 팀", "setspawn <team>", "현재 위치를 팀 스폰으로 등록"));
+            entries.add(new HelpEntry("운영 팀", "settemple <team>", "바라보는 다이아 블록을 심장으로 등록"));
             entries.add(new HelpEntry("운영 설정", "a set <player> <ability>", "능력 수동 지정"));
             entries.add(new HelpEntry("운영 설정", "a list [검색어]", "플레이어별 배정 능력 확인"));
             entries.add(new HelpEntry("운영 설정", "a random [player]", "랜덤 능력 배정"));
             entries.add(new HelpEntry("운영 설정", "a remove <player>", "플레이어 능력 삭제"));
             entries.add(new HelpEntry("운영 설정", "a reset [player]", "능력 초기화"));
+            entries.add(new HelpEntry("운영 설정", "a skip [초]", "능력 확정 대기 종료 및 시작 카운트다운 조정"));
+            entries.add(new HelpEntry("운영 설정", "a cutin [player] [team|auto]", "진행 중 중간 참여"));
             entries.add(new HelpEntry("운영 설정", "participants [검색어|팀]", "참가자 팀/능력 현황 확인"));
             entries.add(new HelpEntry("운영 설정", "skip [초]", "능력 확정 대기 종료 및 시작 카운트다운 조정"));
             entries.add(new HelpEntry("운영 설정", "rerolls <횟수>", "능력 재추첨 가능 횟수 설정"));
@@ -343,6 +341,14 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             entries.add(new HelpEntry("운영 설정", "update [check|download]", "최신 버전 확인 / 업데이트 jar 다운로드"));
             entries.add(new HelpEntry("운영 설정", "reload", "config.yml 다시 불러오기"));
             entries.add(new HelpEntry("운영 설정", "spectate|unspectate <player>", "관전 모드 전환"));
+            entries.add(new HelpEntry("운영 호환", "/t spawn|s <team>", "팀 스폰 등록 (/gw setspawn 원본)"));
+            entries.add(new HelpEntry("운영 호환", "/t dia|d <team>", "다이아 심장 등록 (/gw settemple 원본)"));
+            entries.add(new HelpEntry("운영 호환", "/t set", "설정 GUI 열기 (/gw settings 원본)"));
+            entries.add(new HelpEntry("운영 호환", "/t a list [검색어]", "플레이어별 배정 능력 확인 (/gw a list 원본)"));
+            entries.add(new HelpEntry("운영 호환", "/t a <ability> <player>", "능력 수동 지정 (/gw a set 원본)"));
+            entries.add(new HelpEntry("운영 호환", "/t a random|reset|remove", "능력 배정 보조 (/gw a 원본)"));
+            entries.add(new HelpEntry("운영 호환", "/t a skip|cutin", "스킵/중간 참여 (/gw a 원본)"));
+            entries.add(new HelpEntry("운영 호환", "/t observer [list]", "옵저버 전환 / 목록 (/gw observer 원본)"));
         }
         entries.add(new HelpEntry("단축 명령어", "/a", "내 능력 GUI 열기"));
         entries.add(new HelpEntry("단축 명령어", "/x <player>", "타깃형 능력 대상 빠른 지정"));
@@ -969,7 +975,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
                 plugin.messages().send(sender, "&c권한이 없습니다.");
                 return;
             }
-            sendAbilityGroupHelp(sender, usagePrefix, themachyRoot);
+            sendAbilityGroupHelp(sender, usagePrefix, themachyRoot, sender.hasPermission("newgodwar.admin"));
             return;
         }
         String action = args[1].toLowerCase(Locale.ROOT);
@@ -1024,20 +1030,34 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         setAbility(sender, new String[] {"setability", args[2], args[1]});
     }
 
-    private void sendAbilityGroupHelp(CommandSender sender, String usagePrefix, boolean themachyRoot) {
-        sender.sendMessage(ChatColor.YELLOW + usagePrefix + ChatColor.WHITE + " 내 능력을 확인합니다.");
-        sender.sendMessage(ChatColor.YELLOW + usagePrefix + " <player> " + ChatColor.WHITE + "플레이어의 능력을 확인합니다.");
-        sender.sendMessage(ChatColor.YELLOW + usagePrefix + " catalog [검색어] " + ChatColor.WHITE + "모든 능력 ID를 확인합니다.");
-        sender.sendMessage(ChatColor.YELLOW + usagePrefix + " list [검색어] " + ChatColor.WHITE + "플레이어별 배정 능력을 확인합니다.");
-        sender.sendMessage(ChatColor.YELLOW + usagePrefix + " random [player] " + ChatColor.WHITE + "랜덤 능력을 배정합니다.");
-        sender.sendMessage(ChatColor.YELLOW + usagePrefix + " remove <player> " + ChatColor.WHITE + "해당 플레이어의 능력을 삭제합니다.");
-        sender.sendMessage(ChatColor.YELLOW + usagePrefix + " reset [player] " + ChatColor.WHITE + "능력을 초기화합니다.");
-        sender.sendMessage(ChatColor.YELLOW + usagePrefix + " skip [초] " + ChatColor.WHITE + "능력 확정을 강제로 넘기고 시작 카운트다운을 조정합니다.");
-        sender.sendMessage(ChatColor.YELLOW + usagePrefix + " cutin [player] [team|auto] " + ChatColor.WHITE + "진행 중 게임에 중간 참여합니다.");
-        sender.sendMessage(ChatColor.YELLOW + usagePrefix + " set <player> <ability> " + ChatColor.WHITE + "능력을 지정합니다.");
-        if (themachyRoot) {
-            sender.sendMessage(ChatColor.YELLOW + usagePrefix + " <ability|number> <player> " + ChatColor.WHITE + "Themachy 방식으로 능력을 지정합니다.");
+    private void sendAbilityGroupHelp(CommandSender sender, String usagePrefix, boolean themachyRoot, boolean admin) {
+        sender.sendMessage("");
+        line(sender);
+        sender.sendMessage(ChatColor.GOLD + "" + ChatColor.BOLD + " NewGodWar"
+            + ChatColor.DARK_GRAY + " | " + ChatColor.YELLOW + "능력 명령어"
+            + ChatColor.DARK_GRAY + " | " + ChatColor.GRAY + usagePrefix);
+        line(sender);
+        section(sender, "능력 조회");
+        command(sender, "", usagePrefix, "내 능력 확인");
+        command(sender, "", usagePrefix + " <player>", "플레이어 능력 확인");
+        command(sender, "", usagePrefix + " catalog [검색어]", "능력 도감 검색");
+        if (admin) {
+            command(sender, "", usagePrefix + " list [검색어]", "플레이어별 배정 능력 확인");
+            section(sender, "능력 운영");
+            command(sender, "", usagePrefix + " set <player> <ability>", "능력 수동 지정");
+            command(sender, "", usagePrefix + " random [player]", "랜덤 능력 배정");
+            command(sender, "", usagePrefix + " remove <player>", "플레이어 능력 삭제");
+            command(sender, "", usagePrefix + " reset [player]", "능력 초기화");
+            command(sender, "", usagePrefix + " skip [초]", "능력 확정 대기 종료");
+            command(sender, "", usagePrefix + " cutin [player] [team|auto]", "진행 중 중간 참여");
         }
+        if (themachyRoot) {
+            section(sender, "Themachy 호환");
+            command(sender, "", usagePrefix + " <ability|number> <player>", "/gw a set <player> <ability> 원본");
+        } else {
+            sender.sendMessage(ChatColor.DARK_GRAY + "  /gw ability = /gw a");
+        }
+        line(sender);
     }
 
     private void blacklist(CommandSender sender, String[] args) {
@@ -1474,36 +1494,21 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             return Collections.emptyList();
         }
         if (args.length == 1) {
-            List<String> values = new ArrayList<String>(SUBCOMMANDS);
-            if (isThemachyRoot(command, alias)) {
-                values.addAll(teamSuggestions(false));
-            }
-            values.add("a");
-            values.add("black");
-            values.add("cutin");
-            values.add("d");
-            values.add("dia");
-            values.add("info");
-            values.add("observer");
-            values.add("s");
-            values.add("set");
-            values.add("spawn");
-            values.add("t");
-            values.add("yes");
-            values.add("no");
-            values.add("clear");
-            values.add("con");
+            List<String> values = firstLevelSuggestions(sender, command, alias);
             return startsWith(values, args[0]);
         }
         String sub = normalizeSubcommand(args[0]);
+        if (isAbilityGroupRoot(isThemachyRoot(command, alias), args[0])) {
+            return abilityGroupTabComplete(sender, command, alias, args);
+        }
         if (args.length == 2 && sub.equals("help")) {
-            return startsWith(Arrays.asList("1", "2", "3", "4", "5", "game", "team", "ability", "admin"), args[1]);
+            return startsWith(Arrays.asList("1", "2", "3", "game", "team", "ability"), args[1]);
+        }
+        if (requiresAdmin(sub) && !sender.hasPermission("newgodwar.admin")) {
+            return Collections.emptyList();
         }
         if (args.length == 2 && sub.equals("update")) {
             return startsWith(Arrays.asList("check", "download", "status"), args[1]);
-        }
-        if (isAbilityGroupRoot(isThemachyRoot(command, alias), args[0])) {
-            return abilityGroupTabComplete(sender, command, alias, args);
         }
         if (args.length == 2 && (sub.equals("join") || sub.equals("settemple") || sub.equals("setspawn") || sub.equals("info"))) {
             return startsWith(teamSuggestions(false), args[1]);
@@ -1520,7 +1525,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             return startsWith(values, args[1]);
         }
         if (args.length == 3 && sub.equals("midjoin")) {
-            return startsWith(teamSuggestions(true), args[2]);
+            return sender.hasPermission("newgodwar.admin") ? startsWith(teamSuggestions(true), args[2]) : Collections.<String>emptyList();
         }
         if (args.length == 2 && sub.equals("ability")) {
             List<String> values = new ArrayList<String>();
@@ -1592,17 +1597,45 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         return Collections.emptyList();
     }
 
+    private List<String> firstLevelSuggestions(CommandSender sender, Command command, String alias) {
+        boolean admin = sender.hasPermission("newgodwar.admin");
+        List<String> values = new ArrayList<String>();
+        if (admin) {
+            values.addAll(SUBCOMMANDS);
+            values.addAll(Arrays.asList("a", "black", "cutin", "d", "dia", "info", "observer", "s", "set", "spawn", "t", "yes", "no", "clear", "con"));
+            if (isThemachyRoot(command, alias)) {
+                values.addAll(teamSuggestions(false));
+            }
+            return values;
+        }
+        values.addAll(Arrays.asList("help", "status", "tips", "join", "leave", "midjoin", "info", "yes", "no", "gamble", "ability", "a", "abilities", "target", "con"));
+        if (isThemachyRoot(command, alias)) {
+            values.addAll(teamSuggestions(false));
+        }
+        return values;
+    }
+
     private List<String> abilityGroupTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         boolean themachyRoot = isThemachyRoot(command, alias);
+        boolean admin = sender.hasPermission("newgodwar.admin");
+        if (themachyRoot && !admin) {
+            return Collections.emptyList();
+        }
         if (args.length == 2) {
             List<String> values = new ArrayList<String>();
-            values.addAll(Arrays.asList("help", "list", "catalog", "random", "remove", "reset", "skip", "cutin", "set"));
+            values.addAll(Arrays.asList("help", "catalog"));
+            if (admin) {
+                values.addAll(Arrays.asList("list", "random", "remove", "reset", "skip", "cutin", "set"));
+            }
             if (themachyRoot) {
                 values.addAll(abilityIdSuggestions());
             } else {
                 values.addAll(onlinePlayerNames());
             }
             return startsWith(values, args[1]);
+        }
+        if (!admin && !isAbilityCatalogAction(args[1])) {
+            return Collections.emptyList();
         }
         if (args.length == 3 && isAbilityListAction(args[1])) {
             return startsWith(assignedAbilitySuggestions(), args[2]);

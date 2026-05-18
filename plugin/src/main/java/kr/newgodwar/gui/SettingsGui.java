@@ -182,6 +182,8 @@ public final class SettingsGui implements Listener {
             handleTeamDetail(player, slot, click);
         } else if (view == SettingsView.WORLD_CORE) {
             handleWorldCore(player, slot, click);
+        } else if (view == SettingsView.PICKAXE_UNLOCK) {
+            handlePickaxeUnlock(slot, click);
         } else if (view == SettingsView.DISPLAY) {
             handleDisplay(player, slot, click);
         } else if (view == SettingsView.GAMBLING) {
@@ -306,38 +308,44 @@ public final class SettingsGui implements Listener {
     }
 
     private void handleWorldCore(Player player, int slot, ClickType click) {
-        if (slot == 3) {
+        if (slot == 1) {
             toggle("game.remove-entities");
-        } else if (slot == 4) {
+        } else if (slot == 2) {
             toggle("game.ignore-bed");
-        } else if (slot == 5) {
+        } else if (slot == 3) {
             toggle("game.friendly-fire");
             gameManager.reloadSettings();
-        } else if (slot == 9) {
+        } else if (slot == 6) {
             toggle("world.autosave");
-        } else if (slot == 10) {
+        } else if (slot == 7) {
             toggle("world.spawn-animals");
-        } else if (slot == 11) {
+        } else if (slot == 8) {
             toggle("world.spawn-monsters");
-        } else if (slot == 13) {
+        } else if (slot == 10) {
             toggle("core.protect-diamond-from-explosion");
-        } else if (slot == 14) {
+        } else if (slot == 11) {
             toggle("core.forbid-diamond-pickaxe");
-        } else if (slot == 15) {
+        } else if (slot == 12) {
             toggle("core.require-empty-hand");
-        } else if (slot == 16) {
+        } else if (slot == 15) {
             toggle("gamerules.enabled");
-        } else if (slot == 17) {
+        } else if (slot == 16) {
             toggle("gamerules.restore-on-stop");
         } else if (slot == 18) {
+            switchView(player, SettingsView.PICKAXE_UNLOCK);
+        }
+    }
+
+    private void handlePickaxeUnlock(int slot, ClickType click) {
+        if (slot == 10) {
             changePickaxeUnlockSeconds("core.pickaxe-unlock.wooden-seconds", click);
-        } else if (slot == 19) {
+        } else if (slot == 11) {
             changePickaxeUnlockSeconds("core.pickaxe-unlock.stone-seconds", click);
-        } else if (slot == 20) {
+        } else if (slot == 12) {
             changePickaxeUnlockSeconds("core.pickaxe-unlock.iron-seconds", click);
-        } else if (slot == 21) {
+        } else if (slot == 19) {
             changePickaxeUnlockSeconds("core.pickaxe-unlock.gold-seconds", click);
-        } else if (slot == 23) {
+        } else if (slot == 20) {
             changePickaxeUnlockSeconds("core.pickaxe-unlock.diamond-seconds", click);
         }
     }
@@ -446,6 +454,9 @@ public final class SettingsGui implements Listener {
         if (view == SettingsView.GAMBLING_NORMAL || view == SettingsView.GAMBLING_TAJJA) {
             return SettingsView.GAMBLING;
         }
+        if (view == SettingsView.PICKAXE_UNLOCK) {
+            return SettingsView.WORLD_CORE;
+        }
         if (view == SettingsView.TEAM_DETAIL) {
             return SettingsView.TEAM;
         }
@@ -475,6 +486,8 @@ public final class SettingsGui implements Listener {
             fillTeamDetail(inventory, player);
         } else if (view == SettingsView.WORLD_CORE) {
             fillWorldCore(inventory);
+        } else if (view == SettingsView.PICKAXE_UNLOCK) {
+            fillPickaxeUnlock(inventory);
         } else if (view == SettingsView.DISPLAY) {
             fillDisplay(inventory);
         } else if (view == SettingsView.GAMBLING) {
@@ -608,25 +621,40 @@ public final class SettingsGui implements Listener {
     }
 
     private void fillWorldCore(Inventory inventory) {
-        inventory.setItem(3, toggleItem("game.remove-entities", "엔티티 제거", "ROTTEN_FLESH"));
-        inventory.setItem(4, toggleItem("game.ignore-bed", "침대 무시", "BED"));
-        inventory.setItem(5, toggleItem("game.friendly-fire", "팀킬 허용", "IRON_SWORD"));
+        inventory.setItem(0, sectionItem("게임 흐름", (short) 5,
+            ChatColor.GRAY + "게임 진행 중 서버 규칙"));
+        inventory.setItem(1, toggleItem("game.remove-entities", "엔티티 제거", "ROTTEN_FLESH"));
+        inventory.setItem(2, toggleItem("game.ignore-bed", "침대 무시", "BED"));
+        inventory.setItem(3, toggleItem("game.friendly-fire", "팀킬 허용", "IRON_SWORD"));
 
-        inventory.setItem(9, toggleItem("world.autosave", "서버 자동 저장", "BOOK"));
-        inventory.setItem(10, toggleItem("world.spawn-animals", "동물 스폰", "WHEAT"));
-        inventory.setItem(11, toggleItem("world.spawn-monsters", "몬스터 스폰", "BONE"));
+        inventory.setItem(5, sectionItem("월드 스폰", (short) 3,
+            ChatColor.GRAY + "저장과 자연 스폰"));
+        inventory.setItem(6, toggleItem("world.autosave", "서버 자동 저장", "BOOK"));
+        inventory.setItem(7, toggleItem("world.spawn-animals", "동물 스폰", "WHEAT"));
+        inventory.setItem(8, toggleItem("world.spawn-monsters", "몬스터 스폰", "BONE"));
 
-        inventory.setItem(13, toggleItem("core.protect-diamond-from-explosion", "코어 폭파 보호", "DIAMOND_BLOCK"));
-        inventory.setItem(14, toggleItem("core.forbid-diamond-pickaxe", "다이아 곡괭이 금지", "DIAMOND_PICKAXE"));
-        inventory.setItem(15, toggleItem("core.require-empty-hand", "코어 맨손 파괴", "BARRIER"));
-        inventory.setItem(16, toggleItem("gamerules.enabled", "게임룰 자동 적용", "COMMAND_BLOCK"));
-        inventory.setItem(17, toggleItem("gamerules.restore-on-stop", "종료 시 게임룰 복구", "REDSTONE_COMPARATOR"));
+        inventory.setItem(9, sectionItem("코어 보호", (short) 11,
+            ChatColor.GRAY + "심장 파괴 조건"));
+        inventory.setItem(10, toggleItem("core.protect-diamond-from-explosion", "코어 폭파 보호", "DIAMOND_BLOCK"));
+        inventory.setItem(11, toggleItem("core.forbid-diamond-pickaxe", "다이아 곡괭이 금지", "DIAMOND_PICKAXE"));
+        inventory.setItem(12, toggleItem("core.require-empty-hand", "코어 맨손 파괴", "BARRIER"));
 
-        inventory.setItem(18, pickaxeUnlockItem("WOODEN_PICKAXE", "WOOD_PICKAXE", "나무 곡괭이", "core.pickaxe-unlock.wooden-seconds"));
-        inventory.setItem(19, pickaxeUnlockItem("STONE_PICKAXE", "STONE_PICKAXE", "돌 곡괭이", "core.pickaxe-unlock.stone-seconds"));
-        inventory.setItem(20, pickaxeUnlockItem("IRON_PICKAXE", "IRON_PICKAXE", "철 곡괭이", "core.pickaxe-unlock.iron-seconds"));
-        inventory.setItem(21, pickaxeUnlockItem("GOLDEN_PICKAXE", "GOLD_PICKAXE", "금 곡괭이", "core.pickaxe-unlock.gold-seconds"));
-        inventory.setItem(23, pickaxeUnlockItem("DIAMOND_PICKAXE", "DIAMOND_PICKAXE", "다이아 곡괭이", "core.pickaxe-unlock.diamond-seconds"));
+        inventory.setItem(14, sectionItem("게임룰", (short) 4,
+            ChatColor.GRAY + "시작/종료 시 게임룰 적용"));
+        inventory.setItem(15, toggleItem("gamerules.enabled", "게임룰 자동 적용", "COMMAND_BLOCK"));
+        inventory.setItem(16, toggleItem("gamerules.restore-on-stop", "종료 시 게임룰 복구", "REDSTONE_COMPARATOR"));
+
+        inventory.setItem(18, pickaxeUnlockMenuItem());
+    }
+
+    private void fillPickaxeUnlock(Inventory inventory) {
+        inventory.setItem(4, sectionItem("곡괭이 허용 시간", (short) 6,
+            ChatColor.GRAY + "게임 시작 후 코어 파괴 허용 시점"));
+        inventory.setItem(10, pickaxeUnlockItem("WOODEN_PICKAXE", "WOOD_PICKAXE", "나무 곡괭이", "core.pickaxe-unlock.wooden-seconds"));
+        inventory.setItem(11, pickaxeUnlockItem("STONE_PICKAXE", "STONE_PICKAXE", "돌 곡괭이", "core.pickaxe-unlock.stone-seconds"));
+        inventory.setItem(12, pickaxeUnlockItem("IRON_PICKAXE", "IRON_PICKAXE", "철 곡괭이", "core.pickaxe-unlock.iron-seconds"));
+        inventory.setItem(19, pickaxeUnlockItem("GOLDEN_PICKAXE", "GOLD_PICKAXE", "금 곡괭이", "core.pickaxe-unlock.gold-seconds"));
+        inventory.setItem(20, pickaxeUnlockItem("DIAMOND_PICKAXE", "DIAMOND_PICKAXE", "다이아 곡괭이", "core.pickaxe-unlock.diamond-seconds"));
     }
 
     private void fillDisplay(Inventory inventory) {
@@ -897,6 +925,11 @@ public final class SettingsGui implements Listener {
         return item(icon, icon, 1, (short) 0, ChatColor.YELLOW + title, lore);
     }
 
+    private ItemStack sectionItem(String title, short damage, String... lore) {
+        return item("LIGHT_BLUE_STAINED_GLASS_PANE", "STAINED_GLASS_PANE", 1, damage,
+            ChatColor.AQUA + "■ " + title, lore);
+    }
+
     private ItemStack backItem() {
         return item("ARROW", "ARROW", 1, (short) 0,
             ChatColor.AQUA + "뒤로",
@@ -1004,6 +1037,21 @@ public final class SettingsGui implements Listener {
             ChatColor.GRAY + "쉬프트 좌클릭 +5분 / 쉬프트 우클릭 -5분",
             ChatColor.GRAY + "가운데 클릭: 해제 안 함",
             ChatColor.DARK_GRAY + path);
+    }
+
+    private ItemStack pickaxeUnlockMenuItem() {
+        return item("IRON_PICKAXE", "IRON_PICKAXE", 1, (short) 0,
+            ChatColor.YELLOW + "곡괭이 허용 시간",
+            ChatColor.GRAY + "나무: " + ChatColor.WHITE + pickaxeUnlockText(configSeconds("core.pickaxe-unlock.wooden-seconds")),
+            ChatColor.GRAY + "돌: " + ChatColor.WHITE + pickaxeUnlockText(configSeconds("core.pickaxe-unlock.stone-seconds")),
+            ChatColor.GRAY + "철: " + ChatColor.WHITE + pickaxeUnlockText(configSeconds("core.pickaxe-unlock.iron-seconds")),
+            ChatColor.GRAY + "금: " + ChatColor.WHITE + pickaxeUnlockText(configSeconds("core.pickaxe-unlock.gold-seconds")),
+            ChatColor.GRAY + "다이아: " + ChatColor.WHITE + pickaxeUnlockText(configSeconds("core.pickaxe-unlock.diamond-seconds")),
+            ChatColor.DARK_GRAY + "클릭해서 곡괭이별로 조정");
+    }
+
+    private int configSeconds(String path) {
+        return plugin.getConfig().getInt(path, -1);
     }
 
     private String pickaxeUnlockText(int seconds) {
