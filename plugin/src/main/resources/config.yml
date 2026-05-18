@@ -19,6 +19,7 @@ game:
   ability-roll-message: true
   ability-tick-interval-seconds: 1
   killtime-bossbar: false
+  killtime-seconds: 300
   urf:
     enabled: false
     cooldown-multiplier: 0.2
@@ -33,6 +34,8 @@ world:
 updates:
   enabled: true
   auto-download: true
+  apply-without-restart: true
+  apply-delay-seconds: 10
   notify-admins: true
   initial-delay-seconds: 10
   check-interval-minutes: 60

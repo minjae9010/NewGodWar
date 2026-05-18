@@ -48,7 +48,7 @@ Wiki 배포 전 저장소 Settings > Features에서 Wiki 기능을 켜야 합니
 - `/godwar test [ability]` 혼자 능력 테스트 시작
 - `/godwar stop` 게임 종료
 - `/godwar status` 현재 게임 상태
-- `/godwar update [check|download]` 최신 릴리즈 확인 및 서버 실행 중 업데이트 jar 준비
+- `/godwar update [check|download]` 최신 릴리즈 확인 및 서버 실행 중 업데이트 적용
 - `/godwar tips` 서버 플레이 팁 확인
 - `/godwar gui` 또는 `/godwar settings` 관리자용 상자 GUI 설정 열기
 - `/godwar gamblereward <normal|tajja> <번호|add> hand|message|<material> [값]` 도박 당첨 아이템 변경/추가 및 멘트 수정
@@ -87,6 +87,7 @@ Wiki 배포 전 저장소 Settings > Features에서 Wiki 기능을 켜야 합니
 - `game.ability-roll-message`: 능력 배정 타이틀 표시 여부
 - `game.ability-tick-interval-seconds`: 능력 반복 처리 주기
 - `game.killtime-bossbar`: 게임 시작 후 킬타임 상단 보스바 표시 여부
+- `game.killtime-seconds`: 게임 시작 후 공격 금지 안내 킬타임 초
 - `game.urf`: 우르프 모드 사용 여부와 능력 쿨타임 배율
 - `abilities.voodoo.damage`, `abilities.voodoo.hit-interval-millis`: 부두술사 연결 피해량과 피해 간격
 - `abilities.darkness.incoming-damage-multiplier`: 다크니스가 받는 피해 배율
@@ -131,7 +132,7 @@ Windows PowerShell에서는 다음처럼 실행할 수 있습니다.
 .\gradlew.bat clean build
 ```
 
-빌드 결과물은 `build/libs/NewGodWar-0.1.5.jar`에 복사되며, 모듈 산출물은 `plugin/build/libs/NewGodWar-0.1.5.jar`에서도 확인할 수 있습니다.
+빌드 결과물은 `build/libs/NewGodWar-0.1.6.jar`에 복사되며, 모듈 산출물은 `plugin/build/libs/NewGodWar-0.1.6.jar`에서도 확인할 수 있습니다.
 
 ## 라이선스
 

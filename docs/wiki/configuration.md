@@ -26,6 +26,7 @@
 | `game.ability-roll-message` | `true` | 능력 배정 타이틀 표시 여부 |
 | `game.ability-tick-interval-seconds` | `1` | 능력 반복 처리 주기 |
 | `game.killtime-bossbar` | `false` | 게임 시작 후 킬타임을 상단 보스바로 표시할지 여부 |
+| `game.killtime-seconds` | `300` | 게임 시작 후 공격 금지 안내 킬타임 초 |
 | `game.urf.enabled` | `false` | 우르프 모드 사용 여부 |
 | `game.urf.cooldown-multiplier` | `0.2` | 우르프 모드 쿨타임 배율 |
 
@@ -45,12 +46,14 @@
 
 ## updates
 
-서버가 켜져 있는 동안 GitHub Release를 확인하고, 새 버전이 있으면 업데이트 jar를 `plugins/update/`에 준비합니다. 준비된 jar는 서버 재시작 후 적용됩니다.
+서버가 켜져 있는 동안 GitHub Release를 확인하고, 새 버전이 있으면 업데이트 jar를 `plugins/update/`에 준비합니다. 기본값에서는 다운로드 완료 후 서버 전체 재시작 없이 Bukkit reload로 적용합니다.
 
 | 키 | 기본값 | 설명 |
 | --- | --- | --- |
 | `updates.enabled` | `true` | 자동 업데이트 확인 사용 여부 |
 | `updates.auto-download` | `true` | 새 릴리즈 발견 시 jar 자동 다운로드 여부 |
+| `updates.apply-without-restart` | `true` | 다운로드 완료 후 서버 재시작 대신 reload로 즉시 적용 |
+| `updates.apply-delay-seconds` | `10` | 업데이트 다운로드 완료 후 reload까지 대기할 초 |
 | `updates.notify-admins` | `true` | 관리자 접속 시 구버전 알림 여부 |
 | `updates.initial-delay-seconds` | `10` | 서버 시작 후 첫 업데이트 확인 지연 시간 |
 | `updates.check-interval-minutes` | `60` | 반복 확인 간격. `0` 이하이면 시작 시 한 번만 확인 |

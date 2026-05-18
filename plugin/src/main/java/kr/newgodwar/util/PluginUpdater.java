@@ -31,6 +31,7 @@ public final class PluginUpdater {
 
     private final NewGodWarPlugin plugin;
     private final AtomicBoolean checking = new AtomicBoolean(false);
+    private final AtomicBoolean applying = new AtomicBoolean(false);
 
     private volatile UpdateInfo lastInfo;
     private volatile BukkitTask scheduledTask;
@@ -97,6 +98,7 @@ public final class PluginUpdater {
 
             lastInfo = info;
             runCallback(callback, info);
+            scheduleApplyWithoutRestart(info);
         });
         return true;
     }
@@ -146,7 +148,11 @@ public final class PluginUpdater {
             + info.currentVersion() + " &7-> &a" + info.latestVersion());
         if (info.downloadedFile() != null) {
             plugin.messages().send(sender, "&a업데이트 jar 준비 완료: &f" + info.downloadedFile().getPath());
-            plugin.messages().send(sender, "&7서버를 재시작하면 새 버전이 적용됩니다.");
+            if (plugin.getConfig().getBoolean("updates.apply-without-restart", true)) {
+                plugin.messages().send(sender, "&7잠시 후 서버 reload로 재시작 없이 적용됩니다.");
+            } else {
+                plugin.messages().send(sender, "&7서버를 재시작하면 새 버전이 적용됩니다.");
+            }
         } else {
             plugin.messages().send(sender, "&e/godwar update download &7명령으로 서버 실행 중에 업데이트 jar를 받을 수 있습니다.");
         }
@@ -162,9 +168,38 @@ public final class PluginUpdater {
             }
             plugin.getLogger().warning("NewGodWar " + info.latestVersion() + " is available. Current version: " + info.currentVersion());
             if (info.downloadedFile() != null) {
-                plugin.getLogger().warning("Downloaded update jar to " + info.downloadedFile().getPath() + ". Restart the server to apply it.");
+                plugin.getLogger().warning("Downloaded update jar to " + info.downloadedFile().getPath() + ".");
             }
             notifyOnlineAdminsOnce(info);
+        });
+    }
+
+    private void scheduleApplyWithoutRestart(UpdateInfo info) {
+        if (info == null
+            || !info.enabled()
+            || !info.updateAvailable()
+            || info.downloadedFile() == null
+            || info.errorMessage() != null) {
+            return;
+        }
+        if (!plugin.getConfig().getBoolean("updates.apply-without-restart", true)) {
+            return;
+        }
+        if (!applying.compareAndSet(false, true)) {
+            return;
+        }
+
+        long delaySeconds = Math.max(1L, plugin.getConfig().getLong("updates.apply-delay-seconds", 10L));
+        long delayTicks = delaySeconds * 20L;
+        Bukkit.getScheduler().runTask(plugin, () -> {
+            Bukkit.broadcastMessage(plugin.messages().prefix() + ChatColor.YELLOW
+                + "NewGodWar 업데이트 다운로드가 완료되었습니다. " + delaySeconds + "초 후 reload로 적용합니다.");
+            Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                plugin.getLogger().warning("Applying NewGodWar update without a full server restart by running Bukkit reload.");
+                Bukkit.broadcastMessage(plugin.messages().prefix() + ChatColor.YELLOW
+                    + "NewGodWar 업데이트를 적용하기 위해 서버 reload를 시작합니다.");
+                Bukkit.reload();
+            }, delayTicks);
         });
     }
 

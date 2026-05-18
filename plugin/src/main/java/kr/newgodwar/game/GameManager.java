@@ -67,6 +67,7 @@ public final class GameManager {
     private int nextGameTipIndex = 0;
     private long runningStartedAtMillis = 0L;
     private BossBar gameTimerBar;
+    private boolean killtimeEndAnnounced = false;
 
     public GameManager(NewGodWarPlugin plugin, AbilityManager abilityManager, NmsAdapter nmsAdapter) {
         this.plugin = plugin;
@@ -163,6 +164,13 @@ public final class GameManager {
             return 0L;
         }
         return Math.max(0L, (System.currentTimeMillis() - runningStartedAtMillis) / 1000L);
+    }
+
+    public long killtimeRemainingSeconds() {
+        if (state != GameState.RUNNING) {
+            return 0L;
+        }
+        return Math.max(0L, killtimeDurationSeconds() - runningElapsedSeconds());
     }
 
     public void refreshGameTimerBar() {
@@ -343,6 +351,7 @@ public final class GameManager {
 
         state = GameState.RUNNING;
         runningStartedAtMillis = System.currentTimeMillis();
+        killtimeEndAnnounced = false;
         eliminatedTeams.clear();
         kills.clear();
         abilityManager.clear();
@@ -395,11 +404,19 @@ public final class GameManager {
             throw new IllegalStateException("참여 가능한 팀이 없습니다.");
         }
 
+        AbilityDefinition existingAbility = abilityManager.get(player);
         observers.remove(player.getUniqueId());
         assign(player, team);
         preparePlayerForGame(player);
         teleportToTeamSpawn(player, team);
-        AbilityDefinition ability = abilityManager.assignRandom(player);
+        AbilityDefinition ability;
+        if (existingAbility == null) {
+            ability = abilityManager.assignRandom(player);
+        } else {
+            ability = existingAbility;
+            abilityManager.reapply(player);
+            player.sendMessage(ChatColor.GREEN + "기존 능력을 유지한 채 중간 참여했습니다.");
+        }
         BukkitCompat.setSurvival(player);
         player.setHealth(player.getMaxHealth());
         player.setFoodLevel(20);
@@ -413,6 +430,7 @@ public final class GameManager {
     public void stop(boolean announce) {
         state = GameState.ENDED;
         runningStartedAtMillis = 0L;
+        killtimeEndAnnounced = false;
         if (readyTask != -1) {
             Bukkit.getScheduler().cancelTask(readyTask);
             readyTask = -1;
@@ -718,8 +736,9 @@ public final class GameManager {
         if (timers.size() > 1) {
             setLine(objective, score--, ChatColor.LIGHT_PURPLE + "타이머 " + timers.get(1));
         }
-        if (state == GameState.RUNNING) {
-            setLine(objective, score--, ChatColor.YELLOW + "킬타임 " + ChatColor.WHITE + formatClock(runningElapsedSeconds()));
+        long killtimeRemaining = killtimeRemainingSeconds();
+        if (killtimeRemaining > 0L) {
+            setLine(objective, score--, ChatColor.RED + "공격금지 " + ChatColor.WHITE + formatClock(killtimeRemaining));
         }
         setLine(objective, score--, ChatColor.YELLOW + "킬 " + ChatColor.WHITE + killsOf(player));
         setLine(objective, score--, ChatColor.YELLOW + "도박 " + state(plugin.getConfig().getBoolean("gambling.enabled", true)));
@@ -974,6 +993,7 @@ public final class GameManager {
         }
         state = GameState.RUNNING;
         runningStartedAtMillis = System.currentTimeMillis();
+        killtimeEndAnnounced = false;
         gameRuleController.applyConfiguredRules();
         applyWorldStartSettings();
         clearConfiguredEntities();
@@ -986,9 +1006,10 @@ public final class GameManager {
         startGameTimerTask();
         refreshAllPlayerDisplays();
         Bukkit.broadcastMessage(plugin.messages().prefix() + plugin.messages().get("game-start"));
-        if (gameTimerBossBarEnabled()) {
+        if (gameTimerBossBarEnabled() && killtimeDurationSeconds() > 0) {
             Bukkit.broadcastMessage(plugin.messages().prefix() + ChatColor.AQUA
-                + "킬타임 보스바가 시작되었습니다. 상단 보스바와 스코어보드에서 확인하세요.");
+                + "킬타임 공격 금지 타이머가 시작되었습니다. "
+                + ChatColor.YELLOW + formatSeconds(killtimeDurationSeconds()) + ChatColor.AQUA + " 동안 공격하지 마세요.");
         }
         startWaterHealTask();
         startGameTipTask();
@@ -1034,6 +1055,7 @@ public final class GameManager {
         Bukkit.broadcastMessage(ChatColor.WHITE + "침대 무시 : " + state(plugin.getConfig().getBoolean("game.ignore-bed", true)));
         Bukkit.broadcastMessage(ChatColor.WHITE + "종료 후 능력 공개 : " + state(plugin.getConfig().getBoolean("game.reveal-abilities-on-end", true)));
         Bukkit.broadcastMessage(ChatColor.WHITE + "킬타임 보스바 : " + state(gameTimerBossBarEnabled()));
+        Bukkit.broadcastMessage(ChatColor.WHITE + "킬타임 공격 금지 : " + ChatColor.YELLOW + formatSeconds(killtimeDurationSeconds()));
         Bukkit.broadcastMessage(ChatColor.WHITE + "도박 : " + state(plugin.getConfig().getBoolean("gambling.enabled", true)));
         Bukkit.broadcastMessage(ChatColor.WHITE + "코어 폭파 보호 : " + state(plugin.getConfig().getBoolean("core.protect-diamond-from-explosion", true)));
         Bukkit.broadcastMessage(ChatColor.WHITE + "코어 맨손 파괴 : " + state(plugin.getConfig().getBoolean("core.require-empty-hand", true)));
@@ -1290,11 +1312,11 @@ public final class GameManager {
 
     private void startGameTimerTask() {
         cancelGameTimerTask();
-        if (!gameTimerBossBarEnabled()) {
+        if (!gameTimerBossBarEnabled() || killtimeDurationSeconds() <= 0 || killtimeRemainingSeconds() <= 0L) {
             return;
         }
         gameTimerBar = Bukkit.createBossBar(timerBarTitle(), BarColor.YELLOW, BarStyle.SOLID);
-        gameTimerBar.setProgress(1.0D);
+        gameTimerBar.setProgress(timerBarProgress());
         syncGameTimerBarPlayers();
         gameTimerTask = Bukkit.getScheduler().scheduleSyncRepeatingTask(plugin, () -> tickGameTimerBar(), 0L, 20L);
     }
@@ -1304,20 +1326,48 @@ public final class GameManager {
             cancelGameTimerTask();
             return;
         }
+        if (killtimeRemainingSeconds() <= 0L) {
+            announceKilltimeEnded();
+            cancelGameTimerTask();
+            refreshAllPlayerDisplays();
+            return;
+        }
         if (gameTimerBar == null) {
             gameTimerBar = Bukkit.createBossBar(timerBarTitle(), BarColor.YELLOW, BarStyle.SOLID);
         }
         gameTimerBar.setTitle(timerBarTitle());
-        gameTimerBar.setProgress(1.0D);
+        gameTimerBar.setProgress(timerBarProgress());
         syncGameTimerBarPlayers();
     }
 
     private String timerBarTitle() {
-        return ChatColor.GOLD + "킬타임 " + ChatColor.WHITE + formatClock(runningElapsedSeconds());
+        return ChatColor.RED + "킬타임 공격 금지 " + ChatColor.WHITE + formatClock(killtimeRemainingSeconds());
     }
 
     private boolean gameTimerBossBarEnabled() {
         return plugin.getConfig().getBoolean("game.killtime-bossbar", false);
+    }
+
+    private int killtimeDurationSeconds() {
+        return Math.max(0, plugin.getConfig().getInt("game.killtime-seconds", 300));
+    }
+
+    private double timerBarProgress() {
+        int duration = killtimeDurationSeconds();
+        if (duration <= 0) {
+            return 0.0D;
+        }
+        double progress = killtimeRemainingSeconds() / (double) duration;
+        return Math.max(0.0D, Math.min(1.0D, progress));
+    }
+
+    private void announceKilltimeEnded() {
+        if (killtimeEndAnnounced || killtimeDurationSeconds() <= 0) {
+            return;
+        }
+        killtimeEndAnnounced = true;
+        Bukkit.broadcastMessage(plugin.messages().prefix() + ChatColor.GREEN
+            + "킬타임이 종료되었습니다. 이제 공격할 수 있습니다.");
     }
 
     private void syncGameTimerBarPlayers() {

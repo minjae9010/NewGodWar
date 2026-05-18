@@ -19,6 +19,7 @@ import java.util.List;
     description = "용암을 만들고 화염 피해를 무시합니다.",
     normalSkill = "바라보는 위치에 잠시 용암을 만듭니다.",
     normalStoneCost = 1,
+    normalCooldownSeconds = 10,
     advancedSkill = "없음",
     advancedStoneCost = 0,
     passiveSkill = "화염 피해를 무시하고 익사 피해가 증가합니다.",

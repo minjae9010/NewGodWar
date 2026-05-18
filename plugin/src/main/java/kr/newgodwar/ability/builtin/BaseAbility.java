@@ -647,13 +647,52 @@ abstract class BaseAbility implements GodAbility {
         Block base = targetBlock(player, 5);
         final Block block = base.getLocation().add(0, 1, 0).getBlock();
         if (block.getType() == Material.AIR && useNormal(context, player, 0)) {
+            final Map<Location, Material> cleanupBlocks = temporaryLavaCleanupBlocks(block);
             block.setType(Material.LAVA);
             later(context, 2, "용암 제거", "용암 제거", () -> {
-                if (block.getType() == Material.LAVA) {
-                    block.setType(Material.AIR);
+                for (Map.Entry<Location, Material> entry : cleanupBlocks.entrySet()) {
+                    Block cleanupBlock = entry.getKey().getBlock();
+                    Material current = cleanupBlock.getType();
+                    Material original = entry.getValue();
+                    if (isTemporaryLavaProduct(current)) {
+                        cleanupBlock.setType(original);
+                    } else if (isLava(current) && original == Material.AIR) {
+                        cleanupBlock.setType(Material.AIR);
+                    } else if (isLava(current) && isWater(original)) {
+                        cleanupBlock.setType(original);
+                    }
                 }
             });
         }
+    }
+
+    private Map<Location, Material> temporaryLavaCleanupBlocks(Block center) {
+        Map<Location, Material> blocks = new LinkedHashMap<Location, Material>();
+        Location location = center.getLocation();
+        for (int x = -1; x <= 1; x++) {
+            for (int y = -1; y <= 1; y++) {
+                for (int z = -1; z <= 1; z++) {
+                    Block block = location.clone().add(x, y, z).getBlock();
+                    Material type = block.getType();
+                    if (type == Material.AIR || isWater(type)) {
+                        blocks.put(block.getLocation(), type);
+                    }
+                }
+            }
+        }
+        return blocks;
+    }
+
+    private boolean isTemporaryLavaProduct(Material material) {
+        return material == Material.OBSIDIAN || material == Material.COBBLESTONE || material == Material.STONE;
+    }
+
+    private boolean isLava(Material material) {
+        return material == Material.LAVA || "STATIONARY_LAVA".equals(material.name());
+    }
+
+    private boolean isWater(Material material) {
+        return material == Material.WATER || "STATIONARY_WATER".equals(material.name());
     }
 
     protected void fly(final AbilityPlayerContext context, final Player player, int seconds) {

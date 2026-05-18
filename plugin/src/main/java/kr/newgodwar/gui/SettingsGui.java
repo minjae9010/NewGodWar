@@ -371,6 +371,10 @@ public final class SettingsGui implements Listener {
         } else if (slot == 18) {
             toggle("game.killtime-bossbar");
             gameManager.refreshGameTimerBar();
+        } else if (slot == 19) {
+            changeKilltimeSeconds(click == ClickType.SHIFT_LEFT || click == ClickType.SHIFT_RIGHT ? -60 : -10);
+        } else if (slot == 21) {
+            changeKilltimeSeconds(click == ClickType.SHIFT_LEFT || click == ClickType.SHIFT_RIGHT ? 60 : 10);
         }
     }
 
@@ -626,6 +630,7 @@ public final class SettingsGui implements Listener {
     }
 
     private void fillDisplay(Inventory inventory) {
+        FileConfiguration config = plugin.getConfig();
         inventory.setItem(10, toggleItem("scoreboard.enabled", "스코어보드 안내 사용", "ITEM_FRAME"));
         inventory.setItem(11, toggleItem("scoreboard.team-prefixes", "팀 Prefix 표시", "NAME_TAG"));
         inventory.setItem(12, toggleItem("game.ability-roll-message", "능력 배정 타이틀", "PAPER"));
@@ -635,6 +640,15 @@ public final class SettingsGui implements Listener {
         inventory.setItem(16, toggleItem("abilities.messages.failure", "능력 실패/제한 문구", "REDSTONE"));
         inventory.setItem(17, toggleItem("abilities.messages.timer", "능력 타이머 채팅", "WATCH"));
         inventory.setItem(18, toggleItem("game.killtime-bossbar", "킬타임 보스바", "WATCH"));
+        inventory.setItem(19, item("REDSTONE_TORCH", "REDSTONE_TORCH_ON", 1, (short) 0,
+            ChatColor.RED + "킬타임 -10초",
+            ChatColor.GRAY + "Shift 클릭: -60초",
+            ChatColor.GRAY + "현재: " + ChatColor.YELLOW + durationText(config.getInt("game.killtime-seconds", 300))));
+        inventory.setItem(20, killtimeSecondsItem(config));
+        inventory.setItem(21, item("TORCH", "TORCH", 1, (short) 0,
+            ChatColor.GREEN + "킬타임 +10초",
+            ChatColor.GRAY + "Shift 클릭: +60초",
+            ChatColor.GRAY + "현재: " + ChatColor.YELLOW + durationText(config.getInt("game.killtime-seconds", 300))));
     }
 
     private void fillGambling(Inventory inventory) {
@@ -711,6 +725,18 @@ public final class SettingsGui implements Listener {
             ChatColor.GRAY + "우클릭: 감소율 +5%",
             ChatColor.GRAY + "쉬프트+우클릭: 감소율 -5%",
             ChatColor.DARK_GRAY + "game.urf.enabled");
+    }
+
+    private ItemStack killtimeSecondsItem(FileConfiguration config) {
+        int seconds = Math.max(0, config.getInt("game.killtime-seconds", 300));
+        return item("WATCH", "WATCH", Math.max(1, Math.min(64, seconds <= 0 ? 1 : seconds / 10)), (short) 0,
+            ChatColor.YELLOW + "킬타임 공격 금지 시간",
+            ChatColor.GRAY + "게임 시작 후 이 시간이 끝날 때까지",
+            ChatColor.GRAY + "공격하지 말라는 안내 타이머입니다.",
+            ChatColor.GRAY + "현재: " + ChatColor.YELLOW + durationText(seconds),
+            ChatColor.GRAY + "좌우 버튼: 10초 단위",
+            ChatColor.GRAY + "Shift 클릭: 60초 단위",
+            ChatColor.DARK_GRAY + "game.killtime-seconds");
     }
 
     private ItemStack gamblingItem(FileConfiguration config) {
@@ -941,6 +967,12 @@ public final class SettingsGui implements Listener {
         plugin.saveConfig();
     }
 
+    private void changeKilltimeSeconds(int delta) {
+        changeInt("game.killtime-seconds", delta, 0, 7200);
+        gameManager.refreshGameTimerBar();
+        gameManager.refreshAllPlayerDisplays();
+    }
+
     private void changePickaxeUnlockSeconds(String path, ClickType click) {
         int delta = 0;
         if (click == ClickType.LEFT) {
@@ -980,6 +1012,16 @@ public final class SettingsGui implements Listener {
         }
         if (seconds == 0) {
             return "즉시";
+        }
+        return durationText(seconds);
+    }
+
+    private String durationText(int seconds) {
+        if (seconds < 0) {
+            return "해제 안 함";
+        }
+        if (seconds == 0) {
+            return "0초";
         }
         int minutes = seconds / 60;
         int remain = seconds % 60;
