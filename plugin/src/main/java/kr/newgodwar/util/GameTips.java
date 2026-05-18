@@ -75,7 +75,7 @@ public final class GameTips {
 
     private static List<String> defaultTips() {
         return Arrays.asList(
-            "&f블막 조합: &e막대기 2개&7를 일자/사선으로 놓으면 &6블레이즈 막대기 1개&7를 만들 수 있습니다.",
+            "&f블막 조합: &e막대기 3개&7를 일자/사선으로 놓으면 &6블레이즈 막대기 1개&7를 만들 수 있습니다.",
             "&f능력 확인: &b/a&7로 내 능력 설명과 쿨타임을 확인하세요.",
             "&f재추첨: &b/t yes&7로 확정, &c/t no&7로 다시 뽑기를 선택합니다.",
             "&f타깃 능력: &b/x <닉네임>&7으로 대상을 빠르게 지정합니다.",
