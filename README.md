@@ -134,7 +134,7 @@ Windows PowerShell에서는 다음처럼 실행할 수 있습니다.
 .\gradlew.bat clean build
 ```
 
-빌드 결과물은 `build/libs/NewGodWar-0.1.6.jar`에 복사되며, 모듈 산출물은 `plugin/build/libs/NewGodWar-0.1.6.jar`에서도 확인할 수 있습니다.
+빌드 결과물은 `build/libs/NewGodWar-0.1.7.jar`에 복사되며, 모듈 산출물은 `plugin/build/libs/NewGodWar-0.1.7.jar`에서도 확인할 수 있습니다.
 
 ## 라이선스
 
