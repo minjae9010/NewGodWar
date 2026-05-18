@@ -10,8 +10,8 @@ commands:
     usage: /godwar help
   teamchat:
     aliases: [tc, 팀채팅]
-    description: 팀원에게만 채팅을 보냅니다.
-    usage: /teamchat <message>
+    description: 팀원에게만 채팅을 보내거나 팀 채팅 모드를 전환합니다.
+    usage: /teamchat [message]
   x:
     description: 타깃형 능력의 대상을 지정합니다.
     usage: /x <player>

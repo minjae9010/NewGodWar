@@ -330,11 +330,23 @@ public final class GameListener implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onChat(AsyncPlayerChatEvent event) {
-        if (gameManager.isRunning()) {
-            final Player player = event.getPlayer();
-            final String message = event.getMessage();
-            Bukkit.getScheduler().runTask(plugin, () -> abilityManager.handleChatMessage(player, message));
+        final Player player = event.getPlayer();
+        final String message = event.getMessage();
+        final boolean running = gameManager.isRunning();
+        if (!running && !gameManager.isTeamChatMode(player)) {
+            return;
         }
+        if (gameManager.isTeamChatMode(player)) {
+            event.setCancelled(true);
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                if (running) {
+                    abilityManager.handleChatMessage(player, message);
+                }
+                gameManager.sendTeamChat(player, message);
+            });
+            return;
+        }
+        Bukkit.getScheduler().runTask(plugin, () -> abilityManager.handleChatMessage(player, message));
     }
 
     @EventHandler(ignoreCancelled = true)

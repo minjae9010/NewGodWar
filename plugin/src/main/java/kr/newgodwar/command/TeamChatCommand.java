@@ -24,7 +24,17 @@ public final class TeamChatCommand implements CommandExecutor {
             return true;
         }
         if (args.length == 0) {
-            plugin.messages().send(sender, "&e/" + label + " <message>");
+            Player player = (Player) sender;
+            if (gameManager.teamOf(player) == null) {
+                plugin.messages().send(sender, "&c팀에 소속되어 있지 않습니다.");
+                return true;
+            }
+            boolean enabled = gameManager.toggleTeamChatMode(player);
+            if (enabled) {
+                plugin.messages().send(sender, "&b팀 채팅 모드가 켜졌습니다. 이제 일반 채팅이 팀챗으로 전송됩니다.");
+            } else {
+                plugin.messages().send(sender, "&e팀 채팅 모드가 꺼졌습니다.");
+            }
             return true;
         }
         StringBuilder builder = new StringBuilder();

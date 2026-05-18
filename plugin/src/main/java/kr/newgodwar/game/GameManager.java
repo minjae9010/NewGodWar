@@ -51,6 +51,7 @@ public final class GameManager {
     private final Map<GodTeam, GameLocation> spawns = new LinkedHashMap<GodTeam, GameLocation>();
     private final Set<GodTeam> eliminatedTeams = new HashSet<GodTeam>();
     private final Set<UUID> observers = new HashSet<UUID>();
+    private final Set<UUID> teamChatModePlayers = Collections.synchronizedSet(new HashSet<UUID>());
     private final Map<UUID, Integer> pendingSelection = new HashMap<UUID, Integer>();
     private final Map<UUID, Integer> kills = new HashMap<UUID, Integer>();
     private final Map<UUID, Scoreboard> playerScoreboards = new HashMap<UUID, Scoreboard>();
@@ -116,6 +117,7 @@ public final class GameManager {
         }
         for (UUID uuid : removedPlayers) {
             teams.remove(uuid);
+            teamChatModePlayers.remove(uuid);
         }
         List<GodTeam> removedEliminated = new ArrayList<GodTeam>();
         for (GodTeam team : eliminatedTeams) {
@@ -214,6 +216,7 @@ public final class GameManager {
 
     public void leave(Player player) {
         teams.remove(player.getUniqueId());
+        teamChatModePlayers.remove(player.getUniqueId());
         playerScoreboards.remove(player.getUniqueId());
         ScoreboardManager manager = Bukkit.getScoreboardManager();
         if (manager != null) {
@@ -449,6 +452,7 @@ public final class GameManager {
             gameTipTask = -1;
         }
         pendingSelection.clear();
+        teamChatModePlayers.clear();
         if (announce) {
             Bukkit.broadcastMessage(plugin.messages().prefix() + plugin.messages().get("game-stop"));
         }
@@ -616,6 +620,25 @@ public final class GameManager {
             if (team.equals(teamOf(player))) {
                 player.sendMessage(formatted);
             }
+        }
+    }
+
+    public boolean isTeamChatMode(Player player) {
+        return player != null && teamChatModePlayers.contains(player.getUniqueId());
+    }
+
+    public boolean toggleTeamChatMode(Player player) {
+        if (player == null || teamOf(player) == null) {
+            return false;
+        }
+        UUID uuid = player.getUniqueId();
+        synchronized (teamChatModePlayers) {
+            if (teamChatModePlayers.contains(uuid)) {
+                teamChatModePlayers.remove(uuid);
+                return false;
+            }
+            teamChatModePlayers.add(uuid);
+            return true;
         }
     }
 

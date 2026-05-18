@@ -60,7 +60,7 @@ Wiki 배포 전 저장소 Settings > Features에서 Wiki 기능을 켜야 합니
 - `/godwar setability <player> <ability>` 능력 수동 지정
 - `/godwar spectate <player>` 관전 모드
 - `/godwar unspectate <player>` 관전 해제
-- `/teamchat <message>` 팀 채팅
+- `/teamchat <message>` 팀 채팅, `/tc` 팀 채팅 모드 전환
 
 ## 내장 능력
 
