@@ -25,6 +25,7 @@
 | `game.announce-radius` | `0` | 공지 반경용 예약 설정 |
 | `game.ability-roll-message` | `true` | 능력 배정 타이틀 표시 여부 |
 | `game.ability-tick-interval-seconds` | `1` | 능력 반복 처리 주기 |
+| `game.killtime-bossbar` | `false` | 게임 시작 후 킬타임을 상단 보스바로 표시할지 여부 |
 | `game.urf.enabled` | `false` | 우르프 모드 사용 여부 |
 | `game.urf.cooldown-multiplier` | `0.2` | 우르프 모드 쿨타임 배율 |
 

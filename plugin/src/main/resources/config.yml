@@ -18,6 +18,7 @@ game:
   announce-radius: 0
   ability-roll-message: true
   ability-tick-interval-seconds: 1
+  killtime-bossbar: false
   urf:
     enabled: false
     cooldown-multiplier: 0.2

@@ -14,6 +14,9 @@ import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.World;
 import org.bukkit.block.Block;
+import org.bukkit.boss.BarColor;
+import org.bukkit.boss.BarStyle;
+import org.bukkit.boss.BossBar;
 import org.bukkit.entity.Animals;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Item;
@@ -56,12 +59,14 @@ public final class GameManager {
     private GameState state = GameState.WAITING;
     private int waterHealTask = -1;
     private int abilityNoticeTask = -1;
+    private int gameTimerTask = -1;
     private int readyTask = -1;
     private int gameTipTask = -1;
     private int readySecondsRemaining = 0;
     private int readyReminder = 0;
     private int nextGameTipIndex = 0;
     private long runningStartedAtMillis = 0L;
+    private BossBar gameTimerBar;
 
     public GameManager(NewGodWarPlugin plugin, AbilityManager abilityManager, NmsAdapter nmsAdapter) {
         this.plugin = plugin;
@@ -158,6 +163,18 @@ public final class GameManager {
             return 0L;
         }
         return Math.max(0L, (System.currentTimeMillis() - runningStartedAtMillis) / 1000L);
+    }
+
+    public void refreshGameTimerBar() {
+        if (state != GameState.RUNNING) {
+            cancelGameTimerTask();
+            return;
+        }
+        if (gameTimerBossBarEnabled()) {
+            startGameTimerTask();
+        } else {
+            cancelGameTimerTask();
+        }
     }
 
     public boolean isEliminated(GodTeam team) {
@@ -347,6 +364,7 @@ public final class GameManager {
         player.setHealth(player.getMaxHealth());
         player.setFoodLevel(20);
         nmsAdapter.sendTitle(player, ChatColor.GOLD + "능력 테스트", ability.name(), 10, 60, 10);
+        startGameTimerTask();
         refreshAllPlayerDisplays();
         startWaterHealTask();
         return ability;
@@ -407,6 +425,7 @@ public final class GameManager {
             Bukkit.getScheduler().cancelTask(abilityNoticeTask);
             abilityNoticeTask = -1;
         }
+        cancelGameTimerTask();
         if (gameTipTask != -1) {
             Bukkit.getScheduler().cancelTask(gameTipTask);
             gameTipTask = -1;
@@ -638,6 +657,7 @@ public final class GameManager {
         playerScoreboards.put(player.getUniqueId(), board);
         player.setScoreboard(board);
         updatePlayerListName(player);
+        syncGameTimerBarPlayer(player);
     }
 
     public void forgetPlayer(Player player) {
@@ -645,6 +665,9 @@ public final class GameManager {
             return;
         }
         playerScoreboards.remove(player.getUniqueId());
+        if (gameTimerBar != null) {
+            gameTimerBar.removePlayer(player);
+        }
         resetPlayerListName(player);
         refreshAllPlayerDisplays();
     }
@@ -694,6 +717,9 @@ public final class GameManager {
         }
         if (timers.size() > 1) {
             setLine(objective, score--, ChatColor.LIGHT_PURPLE + "타이머 " + timers.get(1));
+        }
+        if (state == GameState.RUNNING) {
+            setLine(objective, score--, ChatColor.YELLOW + "킬타임 " + ChatColor.WHITE + formatClock(runningElapsedSeconds()));
         }
         setLine(objective, score--, ChatColor.YELLOW + "킬 " + ChatColor.WHITE + killsOf(player));
         setLine(objective, score--, ChatColor.YELLOW + "도박 " + state(plugin.getConfig().getBoolean("gambling.enabled", true)));
@@ -957,8 +983,13 @@ public final class GameManager {
             teleportToTeamSpawn(player, teamOf(player));
             abilityManager.reapply(player);
         }
+        startGameTimerTask();
         refreshAllPlayerDisplays();
         Bukkit.broadcastMessage(plugin.messages().prefix() + plugin.messages().get("game-start"));
+        if (gameTimerBossBarEnabled()) {
+            Bukkit.broadcastMessage(plugin.messages().prefix() + ChatColor.AQUA
+                + "킬타임 보스바가 시작되었습니다. 상단 보스바와 스코어보드에서 확인하세요.");
+        }
         startWaterHealTask();
         startGameTipTask();
     }
@@ -1002,6 +1033,7 @@ public final class GameManager {
         Bukkit.broadcastMessage(ChatColor.WHITE + "엔티티 삭제 : " + state(plugin.getConfig().getBoolean("game.remove-entities", true)));
         Bukkit.broadcastMessage(ChatColor.WHITE + "침대 무시 : " + state(plugin.getConfig().getBoolean("game.ignore-bed", true)));
         Bukkit.broadcastMessage(ChatColor.WHITE + "종료 후 능력 공개 : " + state(plugin.getConfig().getBoolean("game.reveal-abilities-on-end", true)));
+        Bukkit.broadcastMessage(ChatColor.WHITE + "킬타임 보스바 : " + state(gameTimerBossBarEnabled()));
         Bukkit.broadcastMessage(ChatColor.WHITE + "도박 : " + state(plugin.getConfig().getBoolean("gambling.enabled", true)));
         Bukkit.broadcastMessage(ChatColor.WHITE + "코어 폭파 보호 : " + state(plugin.getConfig().getBoolean("core.protect-diamond-from-explosion", true)));
         Bukkit.broadcastMessage(ChatColor.WHITE + "코어 맨손 파괴 : " + state(plugin.getConfig().getBoolean("core.require-empty-hand", true)));
@@ -1040,6 +1072,16 @@ public final class GameManager {
             return minutes + "분";
         }
         return minutes + "분 " + remain + "초";
+    }
+
+    private String formatClock(long seconds) {
+        long hours = seconds / 3600L;
+        long minutes = (seconds % 3600L) / 60L;
+        long remain = seconds % 60L;
+        if (hours > 0L) {
+            return String.format(Locale.ROOT, "%d:%02d:%02d", hours, minutes, remain);
+        }
+        return String.format(Locale.ROOT, "%02d:%02d", minutes, remain);
     }
 
     private void revealAbilitiesOnEnd() {
@@ -1244,6 +1286,78 @@ public final class GameManager {
             }
         }
         return alive;
+    }
+
+    private void startGameTimerTask() {
+        cancelGameTimerTask();
+        if (!gameTimerBossBarEnabled()) {
+            return;
+        }
+        gameTimerBar = Bukkit.createBossBar(timerBarTitle(), BarColor.YELLOW, BarStyle.SOLID);
+        gameTimerBar.setProgress(1.0D);
+        syncGameTimerBarPlayers();
+        gameTimerTask = Bukkit.getScheduler().scheduleSyncRepeatingTask(plugin, () -> tickGameTimerBar(), 0L, 20L);
+    }
+
+    private void tickGameTimerBar() {
+        if (state != GameState.RUNNING) {
+            cancelGameTimerTask();
+            return;
+        }
+        if (gameTimerBar == null) {
+            gameTimerBar = Bukkit.createBossBar(timerBarTitle(), BarColor.YELLOW, BarStyle.SOLID);
+        }
+        gameTimerBar.setTitle(timerBarTitle());
+        gameTimerBar.setProgress(1.0D);
+        syncGameTimerBarPlayers();
+    }
+
+    private String timerBarTitle() {
+        return ChatColor.GOLD + "킬타임 " + ChatColor.WHITE + formatClock(runningElapsedSeconds());
+    }
+
+    private boolean gameTimerBossBarEnabled() {
+        return plugin.getConfig().getBoolean("game.killtime-bossbar", false);
+    }
+
+    private void syncGameTimerBarPlayers() {
+        if (gameTimerBar == null) {
+            return;
+        }
+        for (Player player : new ArrayList<Player>(gameTimerBar.getPlayers())) {
+            if (player == null || !player.isOnline() || state != GameState.RUNNING) {
+                gameTimerBar.removePlayer(player);
+            }
+        }
+        if (state == GameState.RUNNING) {
+            for (Player player : BukkitCompat.onlinePlayers()) {
+                syncGameTimerBarPlayer(player);
+            }
+        }
+    }
+
+    private void syncGameTimerBarPlayer(Player player) {
+        if (gameTimerBar == null || player == null) {
+            return;
+        }
+        if (state == GameState.RUNNING && player.isOnline()) {
+            gameTimerBar.addPlayer(player);
+        } else {
+            gameTimerBar.removePlayer(player);
+        }
+    }
+
+    private void cancelGameTimerTask() {
+        if (gameTimerTask != -1) {
+            Bukkit.getScheduler().cancelTask(gameTimerTask);
+            gameTimerTask = -1;
+        }
+        if (gameTimerBar != null) {
+            for (Player player : new ArrayList<Player>(gameTimerBar.getPlayers())) {
+                gameTimerBar.removePlayer(player);
+            }
+            gameTimerBar = null;
+        }
     }
 
     private void startWaterHealTask() {

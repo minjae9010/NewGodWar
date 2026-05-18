@@ -16,7 +16,7 @@ import java.util.List;
 @AbilityInfo(
     id = "athena",
     name = "아테나",
-    description = "책과 인챈트 테이블을 만들고 사망자를 통해 경험을 얻습니다.",
+    description = "책과 인챈트 테이블을 만들고 청금석 없이 인챈트하며 사망자를 통해 경험을 얻습니다.",
     normalSkill = "책을 생성합니다.",
     normalStoneCost = 5,
     normalCooldownSeconds = 10,

@@ -368,6 +368,9 @@ public final class SettingsGui implements Listener {
             toggle("abilities.messages.failure");
         } else if (slot == 17) {
             toggle("abilities.messages.timer");
+        } else if (slot == 18) {
+            toggle("game.killtime-bossbar");
+            gameManager.refreshGameTimerBar();
         }
     }
 
@@ -495,7 +498,7 @@ public final class SettingsGui implements Listener {
             ChatColor.GRAY + "월드 규칙, 신전 보호, 팀킬",
             ChatColor.DARK_GRAY + "클릭해서 열기"));
         inventory.setItem(15, categoryItem("ITEM_FRAME", "표시 / 우르프",
-            ChatColor.GRAY + "스코어보드, Prefix, 우르프",
+            ChatColor.GRAY + "스코어보드, Prefix, 보스바, 우르프",
             ChatColor.DARK_GRAY + "클릭해서 열기"));
         inventory.setItem(16, categoryItem("GOLD_INGOT", "도박",
             ChatColor.GRAY + "도박 사용, 가격, 상품 설정",
@@ -631,6 +634,7 @@ public final class SettingsGui implements Listener {
         inventory.setItem(15, toggleItem("abilities.messages.success", "능력 사용 완료 문구", "INK_SACK"));
         inventory.setItem(16, toggleItem("abilities.messages.failure", "능력 실패/제한 문구", "REDSTONE"));
         inventory.setItem(17, toggleItem("abilities.messages.timer", "능력 타이머 채팅", "WATCH"));
+        inventory.setItem(18, toggleItem("game.killtime-bossbar", "킬타임 보스바", "WATCH"));
     }
 
     private void fillGambling(Inventory inventory) {
