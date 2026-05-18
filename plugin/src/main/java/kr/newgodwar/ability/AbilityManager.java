@@ -32,13 +32,11 @@ import org.bukkit.event.player.PlayerRespawnEvent;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 import java.util.ServiceLoader;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -49,6 +47,7 @@ public final class AbilityManager {
     private final AbilityRegistry registry = new AbilityRegistry();
     private final Map<UUID, AbilitySession> assignments = new ConcurrentHashMap<UUID, AbilitySession>();
     private final Map<UUID, Long> suppressedUntil = new ConcurrentHashMap<UUID, Long>();
+    private final List<String> recentRandomAbilityIds = Collections.synchronizedList(new ArrayList<String>());
 
     public AbilityManager(NewGodWarPlugin plugin) {
         this.plugin = plugin;
@@ -69,12 +68,14 @@ public final class AbilityManager {
         }
         assignments.clear();
         suppressedUntil.clear();
+        recentRandomAbilityIds.clear();
     }
 
     public AbilityDefinition assignRandom(Player player) {
         List<AbilityDefinition> enabled = enabledAbilities(player);
-        AbilityDefinition definition = chooseLeastDuplicated(enabled);
+        AbilityDefinition definition = chooseDiverseRandom(enabled, player);
         set(player, definition);
+        rememberRandomAbility(definition);
         return definition;
     }
 
@@ -552,26 +553,109 @@ public final class AbilityManager {
         }
     }
 
-    private AbilityDefinition chooseLeastDuplicated(List<AbilityDefinition> enabled) {
+    private AbilityDefinition chooseDiverseRandom(List<AbilityDefinition> enabled, Player player) {
         if (enabled.isEmpty()) {
             return registry.get("ares");
         }
 
-        Set<String> used = new HashSet<String>();
-        for (AbilitySession session : assignments.values()) {
-            used.add(session.definition().id());
+        UUID playerId = player.getUniqueId();
+        String currentAbilityId = null;
+        Map<String, Integer> counts = new ConcurrentHashMap<String, Integer>();
+        for (Map.Entry<UUID, AbilitySession> entry : assignments.entrySet()) {
+            String abilityId = entry.getValue().definition().id();
+            if (entry.getKey().equals(playerId)) {
+                currentAbilityId = abilityId;
+                continue;
+            }
+            Integer count = counts.get(abilityId);
+            counts.put(abilityId, count == null ? 1 : count.intValue() + 1);
         }
 
-        List<AbilityDefinition> unused = new ArrayList<AbilityDefinition>();
+        int lowestCount = Integer.MAX_VALUE;
         for (AbilityDefinition definition : enabled) {
-            if (!used.contains(definition.id())) {
-                unused.add(definition);
+            int count = countFor(counts, definition.id());
+            if (count < lowestCount) {
+                lowestCount = count;
             }
         }
 
-        List<AbilityDefinition> pool = unused.isEmpty() ? enabled : unused;
-        Collections.shuffle(pool, random);
+        List<AbilityDefinition> pool = new ArrayList<AbilityDefinition>();
+        for (AbilityDefinition definition : enabled) {
+            if (countFor(counts, definition.id()) == lowestCount) {
+                pool.add(definition);
+            }
+        }
+
+        pool = withoutAbility(pool, currentAbilityId);
+        pool = withoutRecentAbilities(pool, enabled.size());
         return pool.get(0);
+    }
+
+    private int countFor(Map<String, Integer> counts, String abilityId) {
+        Integer count = counts.get(abilityId);
+        return count == null ? 0 : count.intValue();
+    }
+
+    private List<AbilityDefinition> withoutAbility(List<AbilityDefinition> source, String abilityId) {
+        if (abilityId == null || source.size() <= 1) {
+            return shuffledCopy(source);
+        }
+        List<AbilityDefinition> filtered = new ArrayList<AbilityDefinition>();
+        for (AbilityDefinition definition : source) {
+            if (!definition.id().equals(abilityId)) {
+                filtered.add(definition);
+            }
+        }
+        return filtered.isEmpty() ? shuffledCopy(source) : shuffledCopy(filtered);
+    }
+
+    private List<AbilityDefinition> withoutRecentAbilities(List<AbilityDefinition> source, int enabledCount) {
+        if (source.size() <= 1 || enabledCount <= 2) {
+            return shuffledCopy(source);
+        }
+
+        List<String> recent = recentRandomAbilitySnapshot(Math.min(source.size() - 1, Math.max(1, enabledCount / 4)));
+        if (recent.isEmpty()) {
+            return shuffledCopy(source);
+        }
+
+        List<AbilityDefinition> filtered = new ArrayList<AbilityDefinition>();
+        for (AbilityDefinition definition : source) {
+            if (!recent.contains(definition.id())) {
+                filtered.add(definition);
+            }
+        }
+        return filtered.isEmpty() ? shuffledCopy(source) : shuffledCopy(filtered);
+    }
+
+    private List<AbilityDefinition> shuffledCopy(List<AbilityDefinition> source) {
+        List<AbilityDefinition> copy = new ArrayList<AbilityDefinition>(source);
+        Collections.shuffle(copy, random);
+        return copy;
+    }
+
+    private List<String> recentRandomAbilitySnapshot(int limit) {
+        List<String> recent = new ArrayList<String>();
+        synchronized (recentRandomAbilityIds) {
+            int start = Math.max(0, recentRandomAbilityIds.size() - limit);
+            for (int i = start; i < recentRandomAbilityIds.size(); i++) {
+                recent.add(recentRandomAbilityIds.get(i));
+            }
+        }
+        return recent;
+    }
+
+    private void rememberRandomAbility(AbilityDefinition definition) {
+        if (definition == null) {
+            return;
+        }
+        synchronized (recentRandomAbilityIds) {
+            recentRandomAbilityIds.add(definition.id());
+            int limit = Math.max(8, registry.all().size() / 3);
+            while (recentRandomAbilityIds.size() > limit) {
+                recentRandomAbilityIds.remove(0);
+            }
+        }
     }
 
     private void loadRegistrars() {
