@@ -88,7 +88,7 @@
 이미 빌드된 jar 확인:
 
 ```powershell
-.\scripts\Test-PaperMatrix.ps1 -SkipBuild -PluginJar .\build\libs\NewGodWar-0.1.4.jar -LatestVersion
+.\scripts\Test-PaperMatrix.ps1 -SkipBuild -PluginJar .\build\libs\NewGodWar-0.1.5.jar -LatestVersion
 ```
 
 테스트 서버 파일은 `.paper-smoke/` 아래에 생성됩니다.
