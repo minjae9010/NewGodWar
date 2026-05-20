@@ -6,10 +6,10 @@
 
 | 권한 | 기본값 | 설명 |
 | --- | --- | --- |
-| `newgodwar.play` | 모든 플레이어 | 게임 참여와 기본 플레이 명령 |
+| `newgodwar.play` | 모든 플레이어 | 기본 플레이 명령 |
 | `newgodwar.admin` | OP | 게임 운영, 설정, 강제 지정 명령 |
 
-다른 플레이어의 팀, 능력, 관전 상태를 바꾸는 명령은 대부분 `newgodwar.admin` 권한이 필요합니다.
+팀 참가, 팀 해제, 중간 참여, 능력, 관전 상태를 바꾸는 운영 명령은 `newgodwar.admin` 권한이 필요합니다.
 
 ## 플레이어 명령어
 
@@ -18,11 +18,8 @@
 | `/godwar help [페이지|섹션]` | 도움말을 봅니다. |
 | `/godwar status` | 현재 게임 상태와 주요 설정을 확인합니다. |
 | `/godwar tips` | 서버 플레이 팁을 확인합니다. |
-| `/godwar join <team>` | 자신을 팀에 배정합니다. 진행 중에는 중간 참여로 처리될 수 있습니다. |
-| `/godwar leave` | 자신의 팀 배정을 해제합니다. |
-| `/godwar midjoin [team|auto]` | 진행 중인 게임에 중간 참여합니다. |
 | `/godwar info [team]` | 팀원 목록을 확인합니다. |
-| `/godwar ability [player]` 또는 `/godwar a [player]` | 자신의 현재 능력을 확인합니다. 플레이어 이름을 지정하면 해당 플레이어의 능력 GUI를 봅니다. |
+| `/godwar ability [player]` 또는 `/godwar a [player]` | 본인 또는 같은 팀 플레이어의 현재 능력을 확인합니다. 관리자는 모든 플레이어를 볼 수 있습니다. |
 | `/godwar abilities [검색어]` | 등록된 능력 도감 GUI를 엽니다. |
 | `/godwar target <player>` | 타깃형 능력의 대상을 지정합니다. |
 | `/godwar yes` 또는 `/t yes` | 배정된 능력을 확정합니다. |
@@ -39,8 +36,9 @@
 | --- | --- |
 | `/godwar gui` 또는 `/godwar settings` | 관리자 설정 GUI를 엽니다. |
 | `/godwar autoteam` | 온라인 플레이어를 활성 팀에 자동 배정합니다. |
-| `/godwar join <team> [player]` | 플레이어를 팀에 배정합니다. |
-| `/godwar leave [player]` | 플레이어의 팀 배정을 해제합니다. |
+| `/godwar join <team> <player>` | 플레이어를 팀에 배정합니다. 진행 중에는 중간 참여로 처리될 수 있습니다. |
+| `/godwar midjoin <player> [team|auto]` | 진행 중인 게임에 플레이어를 중간 참여시킵니다. |
+| `/godwar leave <player>` | 플레이어의 팀 배정을 해제합니다. |
 | `/godwar setspawn <team>` | 현재 위치를 팀 스폰으로 저장합니다. |
 | `/godwar settemple <team>` | 바라보는 다이아몬드 블록을 팀 심장으로 저장합니다. |
 | `/godwar start` | 게임 시작 준비를 시작하고 능력을 배정합니다. |
@@ -53,7 +51,7 @@
 | `/godwar a remove <player>` | 플레이어의 능력을 삭제합니다. |
 | `/godwar a reset [player]` | 특정 플레이어 또는 전체 능력 배정을 초기화합니다. |
 | `/godwar a skip [초]` | 능력 확정 대기를 종료하고 시작 카운트다운을 지정합니다. |
-| `/godwar a cutin <player|team|auto> [team|auto]` | 진행 중 중간 참여를 능력 그룹에서 처리합니다. |
+| `/godwar a cutin <player> [team|auto]` | 진행 중 중간 참여를 능력 그룹에서 처리합니다. |
 | `/godwar participants [검색어|팀]` | 참가자, 팀, 능력, 킬, 관전 상태를 확인합니다. |
 | `/godwar clear [player]` | 능력 쿨타임을 초기화합니다. |
 | `/godwar rerolls <횟수>` | 능력 재추첨 가능 횟수를 설정합니다. |
@@ -74,7 +72,7 @@
 
 | 명령어 | `/gw` 원본 |
 | --- | --- |
-| `/t <team> [player]` | `/gw join <team> [player]` |
+| `/t <team> <player>` | `/gw join <team> <player>` |
 | `/t spawn <team>` 또는 `/t s <team>` | `/gw setspawn <team>` |
 | `/t dia <team>` 또는 `/t d <team>` | `/gw settemple <team>` |
 | `/t set` | `/gw settings` |
@@ -85,7 +83,7 @@
 | `/t a remove <player>` | `/gw a remove <player>` |
 | `/t a reset [player]` | `/gw a reset [player]` |
 | `/t a skip [초]` | `/gw a skip [초]` |
-| `/t a cutin <player|team|auto> [team|auto]` | `/gw a cutin <player|team|auto> [team|auto]` |
+| `/t a cutin <player> [team|auto]` | `/gw a cutin <player> [team|auto]` |
 | `/t observer [list]` | `/gw observer [list]` |
 | `/t con` | `/gw gamble` |
 

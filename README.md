@@ -37,9 +37,9 @@ Wiki 배포 전 저장소 Settings > Features에서 Wiki 기능을 켜야 합니
 - `/godwar a cutin` 원본과 `/t a cutin` 진행 중 중간 참여 보조 명령
 - `/t yes` 또는 `/t no` 능력 재추첨 확정 / 다시 뽑기
 - `/godwar autoteam` 온라인 플레이어 자동 팀 배정
-- `/godwar join <red|blue|green> [player]` 팀 수동 배정
-- `/godwar midjoin [red|blue|green]` 진행 중인 게임에 중간 참여. 탈락 팀 플레이어도 살아있는 팀으로 재참여할 수 있습니다.
-- `/godwar leave [player]` 팀 제거
+- `/godwar join <red|blue|green> <player>` 관리자가 플레이어 팀 수동 배정
+- `/godwar midjoin <player> [red|blue|green|auto]` 관리자가 진행 중인 게임에 중간 참여 지정. 탈락 팀 플레이어도 살아있는 팀으로 재참여할 수 있습니다.
+- `/godwar leave <player>` 관리자가 플레이어 팀 제거
 - `/godwar setspawn <red|blue|green>` 현재 위치를 팀 스폰으로 등록
 - `/godwar settemple <red|blue|green>` 바라보는 다이아 블록을 팀 심장으로 등록
 - `/t info [team]` 팀원 목록 확인
@@ -54,7 +54,7 @@ Wiki 배포 전 저장소 Settings > Features에서 Wiki 기능을 켜야 합니
 - `/godwar tips` 서버 플레이 팁 확인
 - `/godwar gui` 또는 `/godwar settings` 관리자용 상자 GUI 설정 열기
 - `/godwar gamblereward <normal|tajja> <번호|add> hand|message|<material> [값]` 도박 당첨 아이템 변경/추가 및 멘트 수정
-- `/godwar ability [player]` 현재 능력만 확인
+- `/godwar ability [player]` 본인 또는 같은 팀의 현재 능력만 확인
 - `/godwar abilities` 등록된 능력 도감 GUI 열기
 - `/godwar blacklist <list|add|remove|toggle> [ability]` 랜덤 배정에서 제외할 능력 관리
 - `/godwar gamerule <apply|restore>` 설정된 게임룰 수동 적용 또는 복구

@@ -83,6 +83,10 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             return true;
         }
         if (themachyLabel && GodTeam.parse(args[0]) != null) {
+            if (!sender.hasPermission("newgodwar.admin")) {
+                plugin.messages().send(sender, "&c권한이 없습니다.");
+                return true;
+            }
             join(sender, prependSubcommand("join", args));
             return true;
         }
@@ -300,17 +304,13 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         List<HelpEntry> entries = new ArrayList<HelpEntry>();
         entries.add(new HelpEntry("게임 진행", "status", "현재 상태 보기"));
         entries.add(new HelpEntry("게임 진행", "tips", "서버 플레이 팁 보기"));
-        entries.add(new HelpEntry("팀", "join <team>", "팀 참가"));
-        entries.add(new HelpEntry("팀", "midjoin [team|auto]", "진행 중인 게임에 중간 참여"));
-        entries.add(new HelpEntry("팀", "leave", "팀 배정 해제"));
         entries.add(new HelpEntry("팀", "info [team]", "팀원 목록 확인"));
         entries.add(new HelpEntry("능력", "yes|no", "능력 재추첨 확정 / 다시 뽑기"));
-        entries.add(new HelpEntry("능력", "ability [player]", "현재 능력만 보기"));
-        entries.add(new HelpEntry("능력", "a [player]", "현재 능력만 보기"));
+        entries.add(new HelpEntry("능력", "ability [player]", "본인/같은 팀 능력 보기"));
+        entries.add(new HelpEntry("능력", "a [player]", "본인/같은 팀 능력 보기"));
         entries.add(new HelpEntry("능력", "a catalog [검색어]", "능력 도감 검색"));
         entries.add(new HelpEntry("능력", "target <player>", "타깃형 능력 대상 지정"));
         entries.add(new HelpEntry("능력", "gamble", "도박 GUI 열기"));
-        entries.add(new HelpEntry("Themachy 호환", "/t <team>", "팀 참가 (/gw join 원본)"));
         entries.add(new HelpEntry("Themachy 호환", "/t info [team]", "팀원 목록 (/gw info 원본)"));
         entries.add(new HelpEntry("Themachy 호환", "/t con", "도박 GUI 열기 (/gw gamble 원본)"));
         if (admin) {
@@ -319,17 +319,19 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             entries.add(new HelpEntry("운영 진행", "test [ability]", "혼자 능력 테스트 시작"));
             entries.add(new HelpEntry("운영 진행", "stop", "게임 종료"));
             entries.add(new HelpEntry("운영 팀", "autoteam", "온라인 플레이어 자동 팀 배정"));
-            entries.add(new HelpEntry("운영 팀", "join <team> [player]", "플레이어 팀 수동 배정"));
-            entries.add(new HelpEntry("운영 팀", "leave [player]", "플레이어 팀 배정 해제"));
+            entries.add(new HelpEntry("운영 팀", "join <team> <player>", "플레이어 팀 수동 배정"));
+            entries.add(new HelpEntry("운영 팀", "midjoin <player> [team|auto]", "진행 중 플레이어 중간 참여"));
+            entries.add(new HelpEntry("운영 팀", "leave <player>", "플레이어 팀 배정 해제"));
             entries.add(new HelpEntry("운영 팀", "setspawn <team>", "현재 위치를 팀 스폰으로 등록"));
             entries.add(new HelpEntry("운영 팀", "settemple <team>", "바라보는 다이아 블록을 심장으로 등록"));
+            entries.add(new HelpEntry("Themachy 호환", "/t <team> <player>", "플레이어 팀 수동 배정 (/gw join 원본)"));
             entries.add(new HelpEntry("운영 설정", "a set <player> <ability>", "능력 수동 지정"));
             entries.add(new HelpEntry("운영 설정", "a list [검색어]", "플레이어별 배정 능력 확인"));
             entries.add(new HelpEntry("운영 설정", "a random [player]", "랜덤 능력 배정"));
             entries.add(new HelpEntry("운영 설정", "a remove <player>", "플레이어 능력 삭제"));
             entries.add(new HelpEntry("운영 설정", "a reset [player]", "능력 초기화"));
             entries.add(new HelpEntry("운영 설정", "a skip [초]", "능력 확정 대기 종료 및 시작 카운트다운 조정"));
-            entries.add(new HelpEntry("운영 설정", "a cutin [player] [team|auto]", "진행 중 중간 참여"));
+            entries.add(new HelpEntry("운영 설정", "a cutin <player> [team|auto]", "진행 중 중간 참여"));
             entries.add(new HelpEntry("운영 설정", "participants [검색어|팀]", "참가자 팀/능력 현황 확인"));
             entries.add(new HelpEntry("운영 설정", "skip [초]", "능력 확정 대기 종료 및 시작 카운트다운 조정"));
             entries.add(new HelpEntry("운영 설정", "rerolls <횟수>", "능력 재추첨 가능 횟수 설정"));
@@ -464,8 +466,12 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
     }
 
     private void join(CommandSender sender, String[] args) {
-        if (args.length < 2) {
-            plugin.messages().send(sender, "&e/godwar join <team> [player]");
+        if (!sender.hasPermission("newgodwar.admin")) {
+            plugin.messages().send(sender, "&c권한이 없습니다.");
+            return;
+        }
+        if (args.length < 3) {
+            plugin.messages().send(sender, "&e/godwar join <team> <player>");
             plugin.messages().send(sender, "&7가능한 팀: &f" + teamUsage());
             return;
         }
@@ -478,13 +484,9 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             plugin.messages().send(sender, "&c비활성화된 팀에는 배정할 수 없습니다.");
             return;
         }
-        Player target = args.length >= 3 ? Bukkit.getPlayer(args[2]) : asPlayer(sender);
+        Player target = Bukkit.getPlayer(args[2]);
         if (target == null) {
             plugin.messages().send(sender, "&c대상 플레이어를 찾을 수 없습니다.");
-            return;
-        }
-        if (!target.equals(sender) && !sender.hasPermission("newgodwar.admin")) {
-            plugin.messages().send(sender, "&c다른 플레이어의 팀은 관리자만 변경할 수 있습니다.");
             return;
         }
         if (gameManager.isRunning()) {
@@ -502,39 +504,30 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
     }
 
     private void midJoin(CommandSender sender, String[] args) {
-        Player player = asPlayer(sender);
+        if (!sender.hasPermission("newgodwar.admin")) {
+            plugin.messages().send(sender, "&c권한이 없습니다.");
+            return;
+        }
+        if (args.length < 2) {
+            plugin.messages().send(sender, "&e/godwar midjoin <player> [team|auto]");
+            return;
+        }
+        Player player = Bukkit.getPlayer(args[1]);
         GodTeam team = null;
-        if (args.length >= 2) {
-            if (isTeamOrAuto(args[1])) {
-                team = GodTeam.parse(args[1]);
-                if (team != null && !gameManager.isTeamEnabled(team)) {
-                    plugin.messages().send(sender, "&c비활성화된 팀에는 중간 참여할 수 없습니다.");
-                    return;
-                }
-            } else {
-                player = Bukkit.getPlayer(args[1]);
-                if (args.length >= 3) {
-                    if (!isTeamOrAuto(args[2])) {
-                        plugin.messages().send(sender, "&c팀은 " + teamUsage() + ", auto 중 하나여야 합니다.");
-                        return;
-                    }
-                    team = GodTeam.parse(args[2]);
-                    if (team != null && !gameManager.isTeamEnabled(team)) {
-                        plugin.messages().send(sender, "&c비활성화된 팀에는 중간 참여할 수 없습니다.");
-                        return;
-                    }
-                }
-            }
-        }
         if (player == null) {
-            plugin.messages().send(sender, args.length >= 2 && !isTeamOrAuto(args[1])
-                ? "&c대상 플레이어를 찾을 수 없습니다."
-                : "&c플레이어만 사용할 수 있습니다.");
+            plugin.messages().send(sender, "&c대상 플레이어를 찾을 수 없습니다.");
             return;
         }
-        if (!player.equals(sender) && !sender.hasPermission("newgodwar.admin")) {
-            plugin.messages().send(sender, "&c다른 플레이어의 중간 참여는 관리자만 처리할 수 있습니다.");
-            return;
+        if (args.length >= 3) {
+            if (!isTeamOrAuto(args[2])) {
+                plugin.messages().send(sender, "&c팀은 " + teamUsage() + ", auto 중 하나여야 합니다.");
+                return;
+            }
+            team = GodTeam.parse(args[2]);
+            if (team != null && !gameManager.isTeamEnabled(team)) {
+                plugin.messages().send(sender, "&c비활성화된 팀에는 중간 참여할 수 없습니다.");
+                return;
+            }
         }
         try {
             AbilityDefinition ability = gameManager.joinMidGame(player, team);
@@ -547,13 +540,17 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
     }
 
     private void leave(CommandSender sender, String[] args) {
-        Player target = args.length >= 2 ? Bukkit.getPlayer(args[1]) : asPlayer(sender);
-        if (target == null) {
-            plugin.messages().send(sender, "&c대상 플레이어를 찾을 수 없습니다.");
+        if (!sender.hasPermission("newgodwar.admin")) {
+            plugin.messages().send(sender, "&c권한이 없습니다.");
             return;
         }
-        if (!target.equals(sender) && !sender.hasPermission("newgodwar.admin")) {
-            plugin.messages().send(sender, "&c다른 플레이어의 팀은 관리자만 변경할 수 있습니다.");
+        if (args.length < 2) {
+            plugin.messages().send(sender, "&e/godwar leave <player>");
+            return;
+        }
+        Player target = Bukkit.getPlayer(args[1]);
+        if (target == null) {
+            plugin.messages().send(sender, "&c대상 플레이어를 찾을 수 없습니다.");
             return;
         }
         gameManager.leave(target);
@@ -682,6 +679,10 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             plugin.messages().send(sender, "&c대상 플레이어를 찾을 수 없습니다.");
             return;
         }
+        if (!canViewAbility(sender, target)) {
+            plugin.messages().send(sender, "&c상대 팀 플레이어의 능력은 볼 수 없습니다.");
+            return;
+        }
         Player viewer = asPlayer(sender);
         if (viewer != null) {
             abilityGui.open(viewer, target);
@@ -695,6 +696,21 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         plugin.messages().send(sender, "&a" + target.getName() + " 님의 능력: " + ability.name()
             + ChatColor.GRAY + " | 등급 " + ChatColor.YELLOW + ability.gradeText()
             + ChatColor.GRAY + " - " + ability.description());
+    }
+
+    private boolean canViewAbility(CommandSender sender, Player target) {
+        if (sender.hasPermission("newgodwar.admin")) {
+            return true;
+        }
+        Player viewer = asPlayer(sender);
+        if (viewer == null) {
+            return false;
+        }
+        if (viewer.equals(target)) {
+            return true;
+        }
+        GodTeam viewerTeam = gameManager.teamOf(viewer);
+        return viewerTeam != null && viewerTeam.equals(gameManager.teamOf(target));
     }
 
     private void abilityShortcut(CommandSender sender) {
@@ -1049,7 +1065,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             command(sender, "", usagePrefix + " remove <player>", "플레이어 능력 삭제");
             command(sender, "", usagePrefix + " reset [player]", "능력 초기화");
             command(sender, "", usagePrefix + " skip [초]", "능력 확정 대기 종료");
-            command(sender, "", usagePrefix + " cutin [player] [team|auto]", "진행 중 중간 참여");
+            command(sender, "", usagePrefix + " cutin <player> [team|auto]", "진행 중 중간 참여");
         }
         if (themachyRoot) {
             section(sender, "Themachy 호환");
@@ -1443,9 +1459,6 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             && !sub.equals("target")
             && !sub.equals("status")
             && !sub.equals("tips")
-            && !sub.equals("join")
-            && !sub.equals("leave")
-            && !sub.equals("midjoin")
             && !sub.equals("info")
             && !sub.equals("yes")
             && !sub.equals("no")
@@ -1517,20 +1530,15 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             return startsWith(onlinePlayerNames(), args[2]);
         }
         if (args.length == 2 && sub.equals("midjoin")) {
-            List<String> values = new ArrayList<String>();
-            values.addAll(teamSuggestions(true));
-            if (sender.hasPermission("newgodwar.admin")) {
-                values.addAll(onlinePlayerNames());
-            }
-            return startsWith(values, args[1]);
+            return startsWith(onlinePlayerNames(), args[1]);
         }
         if (args.length == 3 && sub.equals("midjoin")) {
-            return sender.hasPermission("newgodwar.admin") ? startsWith(teamSuggestions(true), args[2]) : Collections.<String>emptyList();
+            return startsWith(teamSuggestions(true), args[2]);
         }
         if (args.length == 2 && sub.equals("ability")) {
             List<String> values = new ArrayList<String>();
             values.add("list");
-            values.addAll(onlinePlayerNames());
+            values.addAll(abilityTargetNames(sender));
             return startsWith(values, args[1]);
         }
         if (args.length == 2 && sub.equals("abilities")) {
@@ -1608,10 +1616,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             }
             return values;
         }
-        values.addAll(Arrays.asList("help", "status", "tips", "join", "leave", "midjoin", "info", "yes", "no", "gamble", "ability", "a", "abilities", "target", "con"));
-        if (isThemachyRoot(command, alias)) {
-            values.addAll(teamSuggestions(false));
-        }
+        values.addAll(Arrays.asList("help", "status", "tips", "info", "yes", "no", "gamble", "ability", "a", "abilities", "target", "con"));
         return values;
     }
 
@@ -1630,7 +1635,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             if (themachyRoot) {
                 values.addAll(abilityIdSuggestions());
             } else {
-                values.addAll(onlinePlayerNames());
+                values.addAll(admin ? onlinePlayerNames() : abilityTargetNames(sender));
             }
             return startsWith(values, args[1]);
         }
@@ -1685,6 +1690,24 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         List<String> players = new ArrayList<String>();
         for (Player player : BukkitCompat.onlinePlayers()) {
             players.add(player.getName());
+        }
+        return players;
+    }
+
+    private List<String> abilityTargetNames(CommandSender sender) {
+        if (sender.hasPermission("newgodwar.admin")) {
+            return onlinePlayerNames();
+        }
+        Player viewer = asPlayer(sender);
+        if (viewer == null) {
+            return Collections.emptyList();
+        }
+        GodTeam viewerTeam = gameManager.teamOf(viewer);
+        List<String> players = new ArrayList<String>();
+        for (Player player : BukkitCompat.onlinePlayers()) {
+            if (player.equals(viewer) || (viewerTeam != null && viewerTeam.equals(gameManager.teamOf(player)))) {
+                players.add(player.getName());
+            }
         }
         return players;
     }

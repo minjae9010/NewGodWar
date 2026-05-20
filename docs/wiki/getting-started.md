@@ -53,7 +53,7 @@ Linux/macOS에서는 다음처럼 실행합니다.
 2. 사용할 팀이 켜져 있는지 확인합니다.
 3. 각 팀 스폰 위치에 서서 `/godwar setspawn <team>`을 실행합니다.
 4. 각 팀의 다이아몬드 블록 심장을 바라보고 `/godwar settemple <team>`을 실행합니다.
-5. 플레이어를 `/godwar autoteam`으로 자동 배정하거나 `/godwar join <team> [player]`로 수동 배정합니다.
+5. 플레이어를 `/godwar autoteam`으로 자동 배정하거나 `/godwar join <team> <player>`로 수동 배정합니다.
 6. `/godwar start`로 게임 시작 준비를 시작합니다.
 7. 플레이어는 능력 배정 후 `/t yes`로 확정하거나 `/t no`로 재추첨합니다.
 8. 카운트다운이 끝나면 전원이 팀 스폰으로 이동하고 게임이 시작됩니다.

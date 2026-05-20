@@ -113,7 +113,7 @@ public final class AthenaEnchantListener implements Listener {
 
     private void ensureFreeLapis(EnchantingInventory inventory) {
         ItemStack secondary = inventory.getSecondary();
-        if (isEmpty(secondary) || isFakeLapis(secondary)) {
+        if (isEmpty(secondary)) {
             inventory.setSecondary(fakeLapis());
         }
     }
