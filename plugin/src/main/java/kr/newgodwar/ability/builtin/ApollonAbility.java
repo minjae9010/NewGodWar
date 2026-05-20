@@ -16,13 +16,13 @@ import java.util.List;
 @AbilityInfo(
     id = "apollon",
     name = "아폴론",
-    description = "태양을 띄우고 햇빛 아래 플레이어를 불태웁니다.",
+    description = "태양을 띄우고 밝은 곳의 플레이어를 장시간 불태웁니다.",
     normalSkill = "시간을 낮으로 바꿉니다.",
-    normalStoneCost = 1,
-    normalCooldownSeconds = 30,
-    advancedSkill = "햇빛 아래 다른 플레이어를 일정 시간 불태웁니다.",
-    advancedStoneCost = 15,
-    advancedCooldownSeconds = 90,
+    normalStoneCost = 3,
+    normalCooldownSeconds = 45,
+    advancedSkill = "밝기 15인 곳의 다른 플레이어를 반복해서 불태웁니다.",
+    advancedStoneCost = 18,
+    advancedCooldownSeconds = 110,
     passiveSkill = "없음",
     grade = AbilityGrade.A
 )

@@ -19,14 +19,14 @@ import java.util.Map;
 @AbilityInfo(
     id = "poseidon",
     name = "포세이돈",
-    description = "전장을 바다로 바꾸고 해일로 적을 무력화하며 물속에서 강해집니다.",
-    normalSkill = "바라보는 위치에 잠시 3x3 해역을 만듭니다.",
-    normalStoneCost = 10,
-    normalCooldownSeconds = 30,
-    advancedSkill = "주변 적에게 해일 피해를 주고 크게 밀쳐내며 약화/감속시킵니다.",
-    advancedStoneCost = 22,
-    advancedCooldownSeconds = 90,
-    passiveSkill = "익사 피해를 무시하고 물속에서 신속, 재생, 저항을 얻으며 물 전투 피해가 증가합니다.",
+    description = "물을 만들어 전장을 바꾸고 물가에서 전투 능력이 크게 올라갑니다.",
+    normalSkill = "10블록 안의 바라보는 위치에 8초 동안 3x3 해역을 만듭니다.",
+    normalStoneCost = 12,
+    normalCooldownSeconds = 45,
+    advancedSkill = "반경 12블록 적에게 해일 피해를 주고 밀쳐내며 약화/감속시킵니다.",
+    advancedStoneCost = 28,
+    advancedCooldownSeconds = 115,
+    passiveSkill = "익사를 무시하고 물속에서 신속, 재생, 저항과 물 전투 피해 증가를 얻습니다.",
     grade = AbilityGrade.S
 )
 final class PoseidonAbility extends BaseAbility {

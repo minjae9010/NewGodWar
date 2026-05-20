@@ -16,14 +16,14 @@ import java.util.List;
 @AbilityInfo(
     id = "invincibility",
     name = "무적",
-    description = "잠시 무적이 되거나 재생 효과를 얻습니다.",
-    normalSkill = "잠시 모든 피해를 무시합니다.",
-    normalStoneCost = 30,
-    normalCooldownSeconds = 50,
-    advancedSkill = "재생 효과를 얻습니다.",
-    advancedStoneCost = 50,
-    advancedCooldownSeconds = 90,
-    passiveSkill = "무적 상태일 때 피해를 취소합니다.",
+    description = "짧은 완전 무적과 긴 재생으로 위기 상황을 버팁니다.",
+    normalSkill = "7초 동안 모든 피해를 무시합니다.",
+    normalStoneCost = 35,
+    normalCooldownSeconds = 75,
+    advancedSkill = "25초 동안 재생 효과를 얻습니다.",
+    advancedStoneCost = 40,
+    advancedCooldownSeconds = 100,
+    passiveSkill = "무적 상태일 때 피해와 화염을 취소합니다.",
     grade = AbilityGrade.S
 )
 final class InvincibilityAbility extends BaseAbility {

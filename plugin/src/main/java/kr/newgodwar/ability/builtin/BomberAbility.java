@@ -16,12 +16,12 @@ import java.util.List;
 @AbilityInfo(
     id = "bomber",
     name = "봄버",
-    description = "보이지 않는 폭탄을 설치하고 원격 폭발시킵니다.",
-    normalSkill = "바라보는 위치에 폭탄을 설치합니다.",
+    description = "짧은 거리의 위치에 폭탄을 숨겨 설치하고 원격으로 폭발시킵니다.",
+    normalSkill = "5블록 안의 바라보는 위치 위에 폭탄을 설치합니다.",
     normalStoneCost = 0,
-    advancedSkill = "설치한 폭탄을 폭발시킵니다.",
-    advancedStoneCost = 25,
-    advancedCooldownSeconds = 30,
+    advancedSkill = "설치한 폭탄을 폭발력 2로 폭발시킵니다.",
+    advancedStoneCost = 30,
+    advancedCooldownSeconds = 50,
     passiveSkill = "없음",
     grade = AbilityGrade.A
 )

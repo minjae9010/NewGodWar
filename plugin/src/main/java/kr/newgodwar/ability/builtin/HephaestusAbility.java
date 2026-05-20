@@ -16,13 +16,13 @@ import java.util.List;
 @AbilityInfo(
     id = "hephaestus",
     name = "헤파이토스",
-    description = "용암을 만들고 화염 피해를 무시합니다.",
-    normalSkill = "바라보는 위치에 잠시 용암을 만듭니다.",
-    normalStoneCost = 1,
-    normalCooldownSeconds = 10,
+    description = "짧은 용암 장악과 화염 면역으로 근접 전장을 압박합니다.",
+    normalSkill = "5블록 안의 바라보는 위치에 2초 동안 용암을 만듭니다.",
+    normalStoneCost = 4,
+    normalCooldownSeconds = 20,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "화염 피해를 무시하고 익사 피해가 증가합니다.",
+    passiveSkill = "화염 피해를 무시하지만 익사 피해를 2배로 받습니다.",
     grade = AbilityGrade.A
 )
 final class HephaestusAbility extends BaseAbility {

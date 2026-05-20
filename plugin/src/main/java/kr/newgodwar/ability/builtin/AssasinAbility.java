@@ -16,13 +16,13 @@ import java.util.List;
 @AbilityInfo(
     id = "assasin",
     name = "암살자",
-    description = "더블 점프와 기습 이동을 사용합니다.",
-    normalSkill = "앞으로 도약합니다.",
-    normalStoneCost = 2,
-    normalCooldownSeconds = 0,
-    advancedSkill = "주변 적의 뒤로 이동합니다.",
-    advancedStoneCost = 15,
-    advancedCooldownSeconds = 15,
+    description = "짧은 도약으로 거리를 좁히고 근처 적의 뒤로 파고듭니다.",
+    normalSkill = "바라보는 방향으로 도약합니다.",
+    normalStoneCost = 3,
+    normalCooldownSeconds = 1,
+    advancedSkill = "반경 10블록 안의 적 뒤로 이동합니다.",
+    advancedStoneCost = 18,
+    advancedCooldownSeconds = 30,
     passiveSkill = "없음",
     grade = AbilityGrade.A
 )

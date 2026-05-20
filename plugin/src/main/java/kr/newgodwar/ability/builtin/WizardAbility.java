@@ -16,13 +16,13 @@ import java.util.List;
 @AbilityInfo(
     id = "wizard",
     name = "마법사",
-    description = "주변 플레이어를 날리거나 신의 심판을 내립니다.",
-    normalSkill = "주변 플레이어를 밀쳐냅니다.",
-    normalStoneCost = 5,
-    normalCooldownSeconds = 180,
-    advancedSkill = "주변 플레이어를 띄운 뒤 번개를 내립니다.",
-    advancedStoneCost = 10,
-    advancedCooldownSeconds = 300,
+    description = "주변 플레이어를 밀쳐내거나 공중에 띄운 뒤 번개 심판을 내립니다.",
+    normalSkill = "반경 10블록 플레이어를 강하게 밀쳐냅니다.",
+    normalStoneCost = 12,
+    normalCooldownSeconds = 110,
+    advancedSkill = "반경 5블록 플레이어를 띄운 뒤 번개와 화염을 발생시킵니다.",
+    advancedStoneCost = 24,
+    advancedCooldownSeconds = 210,
     passiveSkill = "없음",
     grade = AbilityGrade.S
 )

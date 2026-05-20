@@ -16,13 +16,13 @@ import java.util.List;
 @AbilityInfo(
     id = "queenbee",
     name = "여왕벌",
-    description = "독침과 페로몬 끌어오기를 사용합니다.",
-    normalSkill = "지정한 적을 자신의 위치로 끌어옵니다.",
+    description = "가까운 지정 대상을 끌어오고 피격 시 독으로 반격합니다.",
+    normalSkill = "10블록 안의 지정한 적을 자신의 위치로 끌어옵니다.",
     normalStoneCost = 30,
     normalCooldownSeconds = 150,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "피격 시 확률로 공격자에게 독을 겁니다.",
+    passiveSkill = "피격 시 50% 확률로 공격자에게 5초 독을 겁니다.",
     grade = AbilityGrade.A
 )
 final class QueenBeeAbility extends BaseAbility {

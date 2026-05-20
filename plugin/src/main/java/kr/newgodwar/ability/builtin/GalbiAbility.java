@@ -16,13 +16,13 @@ import java.util.List;
 @AbilityInfo(
     id = "galbi",
     name = "명륜진사",
-    description = "익힌 돼지고기를 만들고 허기와 재생에 강합니다.",
-    normalSkill = "익힌 돼지고기를 생성합니다.",
-    normalStoneCost = 10,
-    normalCooldownSeconds = 20,
+    description = "구운 고기를 만들고 허기 감소를 막으며 상시 재생으로 버팁니다.",
+    normalSkill = "익힌 돼지고기 3개를 생성합니다.",
+    normalStoneCost = 12,
+    normalCooldownSeconds = 30,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "재생 효과를 유지하고 허기가 감소하지 않습니다.",
+    passiveSkill = "재생 효과를 유지하고 허기가 항상 20으로 유지됩니다.",
     grade = AbilityGrade.B
 )
 final class GalbiAbility extends BaseAbility {

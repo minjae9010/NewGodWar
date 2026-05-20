@@ -16,11 +16,12 @@ import java.util.List;
 @AbilityInfo(
     id = "sniper",
     name = "저격수",
-    description = "스나이핑 모드에서 매우 빠른 화살을 발사합니다.",
-    normalSkill = "활을 들고 웅크린 채 좌클릭하면 저격을 준비합니다.",
+    description = "웅크려 저격 자세를 잡은 뒤 다음 화살을 초고속으로 발사합니다.",
+    normalSkill = "활을 들고 웅크린 채 좌클릭하면 4초 후 저격 모드가 활성화됩니다.",
     normalStoneCost = 0,
-    advancedSkill = "준비 후 화살 발사 시 매우 빠른 화살을 발사합니다.",
-    advancedStoneCost = 5,
+    advancedSkill = "저격 모드에서 발사한 다음 화살의 속도를 크게 높입니다.",
+    advancedStoneCost = 10,
+    advancedCooldownSeconds = 25,
     passiveSkill = "배정 시 활과 화살을 받습니다.",
     grade = AbilityGrade.S
 )

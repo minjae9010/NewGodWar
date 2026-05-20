@@ -986,6 +986,10 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
 
     private void abilityGroup(CommandSender sender, String[] args, String label, boolean themachyRoot) {
         String usagePrefix = "/" + label + " " + args[0].toLowerCase(Locale.ROOT);
+        if (!themachyRoot && args.length < 2) {
+            ability(sender, args);
+            return;
+        }
         if (args.length < 2 || args[1].equalsIgnoreCase("help")) {
             if (themachyRoot && !sender.hasPermission("newgodwar.admin")) {
                 plugin.messages().send(sender, "&c권한이 없습니다.");

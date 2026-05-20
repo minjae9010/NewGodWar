@@ -11,14 +11,14 @@ import org.bukkit.util.Vector;
 @AbilityInfo(
     id = "onepunch",
     name = "원펀치",
-    description = "맨손 한 방에 모든 것을 싣는 인간 능력입니다.",
-    normalSkill = "다음 맨손 공격을 강력한 한 방으로 준비합니다.",
+    description = "맨손 한 방을 크게 강화하고 짧은 돌진으로 거리를 좁힙니다.",
+    normalSkill = "8초 안의 다음 맨손 공격에 추가 피해와 큰 밀침을 부여합니다.",
     normalStoneCost = 24,
     normalCooldownSeconds = 95,
-    advancedSkill = "앞으로 돌진하고 짧게 공격력이 증가합니다.",
+    advancedSkill = "앞으로 도약하고 5초 동안 공격력 증가를 얻습니다.",
     advancedStoneCost = 18,
     advancedCooldownSeconds = 55,
-    passiveSkill = "맨손 공격 시 적을 조금 더 밀쳐냅니다.",
+    passiveSkill = "맨손 공격 시 적을 추가로 밀쳐냅니다.",
     grade = AbilityGrade.A
 )
 final class OnePunchAbility extends BaseAbility {

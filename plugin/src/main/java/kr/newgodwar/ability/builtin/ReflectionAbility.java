@@ -16,18 +16,18 @@ import java.util.List;
 @AbilityInfo(
     id = "reflection",
     name = "반사",
-    description = "피격 시 확률로 받은 피해를 반사합니다.",
+    description = "피격 시 일정 확률로 받은 피해를 공격자에게 되돌립니다.",
     normalSkill = "없음",
     normalStoneCost = 0,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "피격 시 확률로 받은 피해를 공격자에게 반사합니다.",
+    passiveSkill = "피격 시 33% 확률로 받은 피해를 공격자에게 반사합니다.",
     grade = AbilityGrade.A
 )
 final class ReflectionAbility extends BaseAbility {
     @Override
     public void onDamageByEntity(AbilityPlayerContext context, EntityDamageByEntityEvent event, Player opponent, boolean attacker) {
-        if (!attacker && RANDOM.nextBoolean()) {
+        if (!attacker && oneIn(3)) {
             opponent.damage(event.getDamage(), context.player());
         }
     }

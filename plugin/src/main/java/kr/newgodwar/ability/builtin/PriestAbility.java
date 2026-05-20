@@ -16,13 +16,13 @@ import java.util.List;
 @AbilityInfo(
     id = "priest",
     name = "사제",
-    description = "자신 또는 팀원에게 무작위 축복을 부여합니다.",
-    normalSkill = "자신에게 무작위 축복을 부여합니다.",
-    normalStoneCost = 30,
-    normalCooldownSeconds = 35,
-    advancedSkill = "팀원 전체에게 무작위 축복을 부여합니다.",
-    advancedStoneCost = 45,
-    advancedCooldownSeconds = 90,
+    description = "자신과 팀원에게 여러 전투 축복 중 일부를 무작위로 부여합니다.",
+    normalSkill = "자신에게 30초짜리 무작위 축복들을 부여합니다.",
+    normalStoneCost = 22,
+    normalCooldownSeconds = 45,
+    advancedSkill = "팀원 전체에게 30초짜리 무작위 축복들을 부여합니다.",
+    advancedStoneCost = 40,
+    advancedCooldownSeconds = 105,
     passiveSkill = "없음",
     grade = AbilityGrade.B
 )
