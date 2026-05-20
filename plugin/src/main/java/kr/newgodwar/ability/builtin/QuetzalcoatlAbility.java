@@ -17,13 +17,13 @@ import java.util.List;
 @AbilityInfo(
     id = "quetzalcoatl",
     name = "케찰코아틀",
-    description = "바람과 깃털의 힘으로 도약하고 적을 날려보냅니다.",
+    description = "섬 사이를 넘나드는 도약과 광역 밀치기로 공중전을 장악합니다.",
     normalSkill = "바라보는 방향으로 크게 도약합니다.",
-    normalStoneCost = 8,
-    normalCooldownSeconds = 35,
-    advancedSkill = "주변 적을 공중으로 띄우고 밀쳐냅니다.",
-    advancedStoneCost = 22,
-    advancedCooldownSeconds = 110,
+    normalStoneCost = 10,
+    normalCooldownSeconds = 45,
+    advancedSkill = "반경 9블록 적을 공중으로 띄우고 밀쳐냅니다.",
+    advancedStoneCost = 24,
+    advancedCooldownSeconds = 120,
     passiveSkill = "낙하 피해를 무시합니다.",
     grade = AbilityGrade.A
 )

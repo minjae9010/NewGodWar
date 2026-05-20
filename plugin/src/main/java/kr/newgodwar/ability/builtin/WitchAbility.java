@@ -39,4 +39,17 @@ final class WitchAbility extends BaseAbility {
             curse(opponent);
         }
     }
+
+    private void curse(List<Player> players) {
+        for (Player player : players) {
+            curse(player);
+        }
+    }
+
+    private void curse(Player player) {
+        effect(player, PotionEffectType.HUNGER, 10, 0);
+        effect(player, PotionEffectType.POISON, 10, 0);
+        effect(player, "SLOWNESS", "SLOW", 10, 0);
+        effect(player, "MINING_FATIGUE", "SLOW_DIGGING", 10, 0);
+    }
 }

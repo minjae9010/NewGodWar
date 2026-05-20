@@ -6,6 +6,7 @@ import kr.newgodwar.ability.api.AbilityPlayerContext;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerRespawnEvent;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -42,6 +43,11 @@ final class CounterAbility extends BaseAbility {
     @Override
     public void onRemove(AbilityPlayerContext context) {
         removeEffect(context.player(), "HASTE", "FAST_DIGGING");
+    }
+
+    @Override
+    public void onRespawn(AbilityPlayerContext context, PlayerRespawnEvent event) {
+        respawnEffect(context, "HASTE", "FAST_DIGGING", 24 * 60 * 60, 0);
     }
 
     @Override

@@ -26,6 +26,8 @@ import java.util.List;
     grade = AbilityGrade.A
 )
 final class MidoriyaAbility extends BaseAbility {
+    private boolean ready;
+
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
         if (hasNormalCost(context, player) && readyNormal(context, player, 0)) {

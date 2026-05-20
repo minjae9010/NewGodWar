@@ -27,6 +27,8 @@ import java.util.List;
     grade = AbilityGrade.S
 )
 final class InvincibilityAbility extends BaseAbility {
+    private boolean invincible;
+
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
         if (useNormal(context, player)) {

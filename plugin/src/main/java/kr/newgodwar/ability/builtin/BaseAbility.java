@@ -6,20 +6,17 @@ import kr.newgodwar.game.GodTeam;
 import kr.newgodwar.util.BukkitCompat;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
-import org.bukkit.Effect;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;
-import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.BookMeta;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.BlockIterator;
 import org.bukkit.util.Vector;
@@ -43,10 +40,6 @@ abstract class BaseAbility implements GodAbility {
     private final Map<Integer, Long> cooldownAnnouncements = new LinkedHashMap<Integer, Long>();
     private final Map<String, Long> timerAnnouncements = new LinkedHashMap<String, Long>();
     protected String targetName;
-    protected boolean ready;
-    protected boolean invincible;
-    protected String pendingQuestion;
-    protected int pendingAnswer = -1;
 
     @Override
     public void onInteract(AbilityPlayerContext context, PlayerInteractEvent event) {
@@ -288,6 +281,33 @@ abstract class BaseAbility implements GodAbility {
         if (type != null) {
             effect(player, type, seconds, amplifier);
         }
+    }
+
+    protected void respawnEffect(final AbilityPlayerContext context, final PotionEffectType type, final int seconds, final int amplifier) {
+        effect(context.player(), type, seconds, amplifier);
+        Bukkit.getScheduler().runTaskLater(context.plugin(), () -> {
+            Player player = context.player();
+            if (player != null && player.isOnline()) {
+                effect(player, type, seconds, amplifier);
+            }
+        }, 1L);
+    }
+
+    protected void respawnEffect(AbilityPlayerContext context, String modernName, String legacyName, int seconds, int amplifier) {
+        PotionEffectType type = effectType(modernName, legacyName);
+        if (type != null) {
+            respawnEffect(context, type, seconds, amplifier);
+        }
+    }
+
+    protected void respawnFoodLevel(final AbilityPlayerContext context, final int foodLevel) {
+        context.player().setFoodLevel(foodLevel);
+        Bukkit.getScheduler().runTaskLater(context.plugin(), () -> {
+            Player player = context.player();
+            if (player != null && player.isOnline()) {
+                player.setFoodLevel(foodLevel);
+            }
+        }, 1L);
     }
 
     protected void effectTicks(Player player, String modernName, String legacyName, int ticks, int amplifier) {
@@ -630,175 +650,6 @@ abstract class BaseAbility implements GodAbility {
         return lines;
     }
 
-    protected void abyss(Player player, int radius, boolean includeSelf) {
-        Location destination = player.getLocation().clone();
-        destination.setY(-2.0D);
-        for (Entity entity : player.getNearbyEntities(radius, radius, radius)) {
-            if (entity instanceof LivingEntity) {
-                entity.teleport(destination);
-            }
-        }
-        if (includeSelf) {
-            player.teleport(destination);
-        }
-    }
-
-    protected void lava(Player player, AbilityPlayerContext context) {
-        Block base = targetBlock(player, 5);
-        final Block block = base.getLocation().add(0, 1, 0).getBlock();
-        if (block.getType() == Material.AIR && useNormal(context, player, 0)) {
-            final Map<Location, Material> cleanupBlocks = temporaryLavaCleanupBlocks(block);
-            block.setType(Material.LAVA);
-            later(context, 2, "용암 제거", "용암 제거", () -> {
-                for (Map.Entry<Location, Material> entry : cleanupBlocks.entrySet()) {
-                    Block cleanupBlock = entry.getKey().getBlock();
-                    Material current = cleanupBlock.getType();
-                    Material original = entry.getValue();
-                    if (isTemporaryLavaProduct(current)) {
-                        cleanupBlock.setType(original);
-                    } else if (isLava(current) && original == Material.AIR) {
-                        cleanupBlock.setType(Material.AIR);
-                    } else if (isLava(current) && isWater(original)) {
-                        cleanupBlock.setType(original);
-                    }
-                }
-            });
-        }
-    }
-
-    private Map<Location, Material> temporaryLavaCleanupBlocks(Block center) {
-        Map<Location, Material> blocks = new LinkedHashMap<Location, Material>();
-        Location location = center.getLocation();
-        for (int x = -1; x <= 1; x++) {
-            for (int y = -1; y <= 1; y++) {
-                for (int z = -1; z <= 1; z++) {
-                    Block block = location.clone().add(x, y, z).getBlock();
-                    Material type = block.getType();
-                    if (type == Material.AIR || isWater(type)) {
-                        blocks.put(block.getLocation(), type);
-                    }
-                }
-            }
-        }
-        return blocks;
-    }
-
-    private boolean isTemporaryLavaProduct(Material material) {
-        return material == Material.OBSIDIAN || material == Material.COBBLESTONE || material == Material.STONE;
-    }
-
-    private boolean isLava(Material material) {
-        return material == Material.LAVA || "STATIONARY_LAVA".equals(material.name());
-    }
-
-    private boolean isWater(Material material) {
-        return material == Material.WATER || "STATIONARY_WATER".equals(material.name());
-    }
-
-    protected void fly(final AbilityPlayerContext context, final Player player, int seconds) {
-        player.setAllowFlight(true);
-        player.setFlying(true);
-        later(context, seconds, "비행 종료", "비행 종료", () -> {
-            player.setFlying(false);
-            player.setAllowFlight(false);
-        });
-    }
-
-    protected void pullAll(Player player, int range) {
-        if (player.isSneaking() || player.getLocation().clone().add(0, -1, 0).getBlock().getType() == Material.AIR) {
-            player.sendMessage(ChatColor.RED + "웅크리고 있거나 발 밑의 블록이 없어 능력이 발동되지 않았습니다.");
-            return;
-        }
-        for (Entity entity : player.getNearbyEntities(range, range, range)) {
-            if (entity instanceof Player) {
-                entity.teleport(player);
-            }
-        }
-    }
-
-    protected void sleepTarget(Player target) {
-        effect(target, PotionEffectType.BLINDNESS, 30, 0);
-        effect(target, "SLOWNESS", "SLOW", 30, 3);
-    }
-
-    protected void teamBuff(AbilityPlayerContext context, Player player) {
-        for (Player target : nearbyPlayers(context, player, 20, true)) {
-            effect(target, PotionEffectType.SPEED, 15, 0);
-            effect(target, PotionEffectType.REGENERATION, 15, 0);
-        }
-    }
-
-    protected void recall(final AbilityPlayerContext context, final Player player) {
-        final Location location = player.getLocation();
-        later(context, 10, "귀환 발동", "귀환 발동", () -> {
-            player.teleport(location);
-            effect(player, PotionEffectType.INVISIBILITY, 3, 0);
-        });
-    }
-
-    protected void iceSphere(final AbilityPlayerContext context, Location center, int radius, int seconds) {
-        final Map<Location, Material> oldBlocks = new LinkedHashMap<Location, Material>();
-        for (Location location : sphere(center, radius)) {
-            Block block = location.getBlock();
-            if (block.getType() != Material.DIAMOND_BLOCK) {
-                oldBlocks.put(block.getLocation(), block.getType());
-                block.setType(Material.ICE);
-            }
-        }
-        later(context, seconds, "얼음 구체 복구", "얼음 구체 복구", () -> {
-            for (Map.Entry<Location, Material> entry : oldBlocks.entrySet()) {
-                entry.getKey().getBlock().setType(entry.getValue());
-            }
-        });
-    }
-
-    protected List<Location> sphere(Location center, int radius) {
-        List<Location> locations = new ArrayList<Location>();
-        int bx = center.getBlockX();
-        int by = center.getBlockY();
-        int bz = center.getBlockZ();
-        for (int x = bx - radius; x <= bx + radius; x++) {
-            for (int y = by - radius; y <= by + radius; y++) {
-                for (int z = bz - radius; z <= bz + radius; z++) {
-                    double distance = (bx - x) * (bx - x) + (by - y) * (by - y) + (bz - z) * (bz - z);
-                    if (distance < radius * radius && distance >= (radius - 1) * (radius - 1)) {
-                        locations.add(new Location(center.getWorld(), x, y, z));
-                    }
-                }
-            }
-        }
-        return locations;
-    }
-
-    protected void teleportToTargetBlock(Player player) {
-        Block block = targetBlock(player, 25);
-        Location location = block.getLocation().add(0.5D, 1.0D, 0.5D);
-        if (location.getBlock().getType() == Material.AIR && location.clone().add(0, 1, 0).getBlock().getType() == Material.AIR) {
-            location.setPitch(player.getLocation().getPitch());
-            location.setYaw(player.getLocation().getYaw());
-            player.teleport(location);
-        }
-    }
-
-    protected boolean swapTarget(AbilityPlayerContext context, Player player) {
-        Player target = targetPlayerInSight(context, player, 30, true);
-        if (target == null) {
-            return false;
-        }
-        Location first = player.getLocation();
-        Location second = target.getLocation();
-        player.teleport(second);
-        target.teleport(first);
-        return true;
-    }
-
-    protected void push(Player player, List<Player> targets, double power) {
-        Vector vector = player.getEyeLocation().getDirection().setY(0.5D).normalize().multiply(power);
-        for (Player target : targets) {
-            target.setVelocity(vector);
-        }
-    }
-
     protected void push(AbilityPlayerContext context, Player player, List<Player> targets, double power, long delayTicks) {
         Vector up = new Vector(0, 0.5D, 0);
         for (Player target : targets) {
@@ -814,164 +665,6 @@ abstract class BaseAbility implements GodAbility {
                 target.setVelocity(vector);
             }
         }, delayTicks);
-    }
-
-    protected void dash(Player player) {
-        Vector vector = player.getEyeLocation().getDirection();
-        vector.setY(0.5D);
-        player.setVelocity(vector);
-        player.getWorld().playEffect(player.getLocation(), Effect.ENDER_SIGNAL, 1);
-    }
-
-    protected void backstab(AbilityPlayerContext context, Player player) {
-        for (Player target : nearbyPlayers(context, player, 10, false)) {
-            Location location = target.getLocation().subtract(target.getLocation().getDirection().normalize());
-            player.teleport(location);
-            return;
-        }
-        player.sendMessage("스킬을 사용 할 수 있는 상대가 없습니다.");
-    }
-
-    protected void judgment(AbilityPlayerContext context, final Player player) {
-        final List<Player> targets = nearbyPlayers(player, 5);
-        if (targets.isEmpty()) {
-            player.sendMessage("능력을 사용할 수 있는 대상이 없습니다.");
-            return;
-        }
-        player.setHealth(Math.max(1.0D, player.getHealth() / 2.0D));
-        for (Player target : targets) {
-            target.setVelocity(new Vector(0, 1.6D, 0));
-        }
-        Bukkit.getScheduler().scheduleSyncDelayedTask(context.plugin(), () -> {
-            for (Player target : targets) {
-                target.getWorld().strikeLightning(target.getLocation());
-                target.setFireTicks(100);
-            }
-        }, 4L);
-    }
-
-    protected void bless(Player player) {
-        if (RANDOM.nextBoolean()) effect(player, "RESISTANCE", "DAMAGE_RESISTANCE", 30, 0);
-        if (RANDOM.nextBoolean()) effect(player, "STRENGTH", "INCREASE_DAMAGE", 30, 0);
-        if (RANDOM.nextBoolean()) effect(player, PotionEffectType.REGENERATION, 30, 0);
-        if (RANDOM.nextBoolean()) effect(player, PotionEffectType.SPEED, 30, 0);
-        if (RANDOM.nextBoolean()) effect(player, "HASTE", "FAST_DIGGING", 30, 0);
-    }
-
-    protected void curse(List<Player> players) {
-        for (Player player : players) {
-            curse(player);
-        }
-    }
-
-    protected void curse(Player player) {
-        effect(player, PotionEffectType.HUNGER, 10, 0);
-        effect(player, PotionEffectType.POISON, 10, 0);
-        effect(player, "SLOWNESS", "SLOW", 10, 0);
-        effect(player, "MINING_FATIGUE", "SLOW_DIGGING", 10, 0);
-    }
-
-    protected boolean pullTarget(AbilityPlayerContext context, Player player, int range) {
-        Player target = targetPlayerInSight(context, player, range, false);
-        if (target == null) {
-            return false;
-        }
-        target.teleport(player);
-        return true;
-    }
-
-    protected void giveSpellBook(Player player, boolean harry) {
-        ItemStack book = new ItemStack(Material.WRITTEN_BOOK);
-        BookMeta meta = (BookMeta) book.getItemMeta();
-        meta.setTitle("마법 스펠 암기장");
-        meta.setAuthor(harry ? "해리 포터" : "헤르미온느 진 그레인저");
-        meta.addPage("루모스/Lumos\n녹스/Nox\n봄바르다/Bombarda");
-        meta.addPage("스투페파이/Stupefy\n익스펙토 패트로눔/Expecto Patronum");
-        meta.addPage("엑스펠리아무스/Expelliarmus\n아바다 케다브라/Avada Kedavra");
-        book.setItemMeta(meta);
-        player.getInventory().addItem(book);
-    }
-
-    protected void castSpell(AbilityPlayerContext context, String spell, boolean harry) {
-        final Player player = context.player();
-        spell = normalizeSpell(spell);
-        if (spell.equals("루모스") || spell.equalsIgnoreCase("Lumos")) {
-            if (useNormal(context, player)) {
-                setWorldTime(context, player, 1000);
-            }
-        } else if (spell.equals("녹스") || spell.equalsIgnoreCase("Nox")) {
-            if (useNormal(context, player)) {
-                setWorldTime(context, player, 18000);
-            }
-        } else if (spell.equals("봄바르다") || spell.equalsIgnoreCase("Bombarda")) {
-            if (useNormal(context, player)) {
-                player.getWorld().createExplosion(targetLocation(player, 5), 1.0F);
-            }
-        } else if (spell.equals("스투페파이") || spell.equalsIgnoreCase("Stupefy")) {
-            if (useAdvanced(context, player)) {
-                for (Player target : nearbyPlayers(context, player, 10, false)) {
-                    if (RANDOM.nextBoolean()) {
-                        effect(target, "SLOWNESS", "SLOW", 8, harry ? 1 : 2);
-                    }
-                }
-            }
-        } else if (spell.equals("익스펙토 패트로눔") || spell.equalsIgnoreCase("Expecto Patronum")) {
-            if (useAdvanced(context, player) && rollChance(harry ? 3 : 2, 4)) {
-                invincible = true;
-                later(context, 5, "보호 주문 종료", "보호 주문 종료", () -> invincible = false);
-            }
-        } else if (spell.equals("엑스펠리아무스") || spell.equalsIgnoreCase("Expelliarmus")) {
-            Player target = targetPlayerInSight(context, player, 20, false);
-            if (target != null && useAdvanced(context, player) && rollPercent(harry ? 25 : 20)) {
-                dropHeldAndArmor(target);
-            }
-        } else if (spell.equals("아바다 케다브라") || spell.equalsIgnoreCase("Avada Kedavra")) {
-            Player target = targetPlayerInSight(context, player, 20, false);
-            if (target != null && useAdvanced(context, player) && rollPercent(harry ? 20 : 15)) {
-                target.setHealth(0.0D);
-            }
-        }
-    }
-
-    private String normalizeSpell(String spell) {
-        if (spell == null) {
-            return "";
-        }
-        String normalized = ChatColor.stripColor(spell).trim();
-        if (normalized.startsWith("/")) {
-            normalized = normalized.substring(1).trim();
-        }
-        return normalized;
-    }
-
-    protected void askQuestion(Player player) {
-        String[] questions = new String[] {
-            "15*12의 값을 구하시오.", "2+2*2+1의 값을 구하시오.", "가로 4, 세로 3인 직사각형의 넓이를 구하시오."
-        };
-        int[] answers = new int[] {180, 7, 12};
-        int index = RANDOM.nextInt(questions.length);
-        pendingQuestion = questions[index];
-        pendingAnswer = answers[index];
-        player.sendMessage(pendingQuestion);
-    }
-
-    protected void answerQuestion(AbilityPlayerContext context, String message) {
-        if (pendingAnswer < 0) {
-            return;
-        }
-        try {
-            int answer = Integer.parseInt(message.trim());
-            if (answer == pendingAnswer) {
-                context.plugin().abilities().assignRandom(context.player());
-                context.player().sendMessage(ChatColor.AQUA + "문제를 맞혀 새 능력을 얻었습니다!");
-            } else {
-                context.player().sendMessage("아쉽습니다! 정답은 " + pendingAnswer + "입니다.");
-            }
-            pendingAnswer = -1;
-            pendingQuestion = null;
-        } catch (NumberFormatException ex) {
-            context.player().sendMessage("0~999의 음이 아닌 정수만 입력하십시오.");
-        }
     }
 
     protected boolean isPickaxe(Material material) {

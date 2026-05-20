@@ -24,7 +24,7 @@ import java.util.List;
     advancedStoneCost = 24,
     advancedCooldownSeconds = 210,
     passiveSkill = "없음",
-    grade = AbilityGrade.S
+    grade = AbilityGrade.A
 )
 final class WizardAbility extends BaseAbility {
     @Override
@@ -48,5 +48,23 @@ final class WizardAbility extends BaseAbility {
         if (useAdvanced(context, player)) {
             judgment(context, player);
         }
+    }
+
+    private void judgment(AbilityPlayerContext context, final Player player) {
+        final List<Player> targets = nearbyPlayers(player, 5);
+        if (targets.isEmpty()) {
+            player.sendMessage("능력을 사용할 수 있는 대상이 없습니다.");
+            return;
+        }
+        player.setHealth(Math.max(1.0D, player.getHealth() / 2.0D));
+        for (Player target : targets) {
+            target.setVelocity(new Vector(0, 1.6D, 0));
+        }
+        Bukkit.getScheduler().scheduleSyncDelayedTask(context.plugin(), () -> {
+            for (Player target : targets) {
+                target.getWorld().strikeLightning(target.getLocation());
+                target.setFireTicks(100);
+            }
+        }, 4L);
     }
 }

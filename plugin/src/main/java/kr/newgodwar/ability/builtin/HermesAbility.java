@@ -16,10 +16,10 @@ import java.util.List;
 @AbilityInfo(
     id = "hermes",
     name = "헤르메스",
-    description = "빠른 이동과 짧은 비행을 사용합니다.",
-    normalSkill = "잠시 비행합니다.",
-    normalStoneCost = 10,
-    normalCooldownSeconds = 60,
+    description = "상시 빠른 이동과 짧은 비행으로 섬 사이 이동을 보조합니다.",
+    normalSkill = "7초 동안 비행합니다.",
+    normalStoneCost = 14,
+    normalCooldownSeconds = 75,
     advancedSkill = "없음",
     advancedStoneCost = 0,
     passiveSkill = "상시 신속 효과를 받습니다.",
@@ -43,8 +43,17 @@ final class HermesAbility extends BaseAbility {
         }
     }
 
+    private void fly(final AbilityPlayerContext context, final Player player, int seconds) {
+        player.setAllowFlight(true);
+        player.setFlying(true);
+        later(context, seconds, "비행 종료", "비행 종료", () -> {
+            player.setFlying(false);
+            player.setAllowFlight(false);
+        });
+    }
+
     @Override
     public void onRespawn(AbilityPlayerContext context, PlayerRespawnEvent event) {
-        effect(context.player(), PotionEffectType.SPEED, 24 * 60 * 60, 0);
+        respawnEffect(context, PotionEffectType.SPEED, 24 * 60 * 60, 0);
     }
 }

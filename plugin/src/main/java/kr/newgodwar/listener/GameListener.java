@@ -38,6 +38,7 @@ import org.bukkit.projectiles.ProjectileSource;
 
 import java.lang.reflect.Method;
 import java.util.Iterator;
+import java.util.List;
 
 public final class GameListener implements Listener {
 
@@ -277,9 +278,19 @@ public final class GameListener implements Listener {
         }
     }
 
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onBlockExplodeMonitor(BlockExplodeEvent event) {
+        eliminateExplodedTempleDiamonds(event.blockList());
+    }
+
     @EventHandler(ignoreCancelled = true)
     public void onEntityExplode(EntityExplodeEvent event) {
         protectTempleDiamonds(event.blockList());
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onEntityExplodeMonitor(EntityExplodeEvent event) {
+        eliminateExplodedTempleDiamonds(event.blockList());
     }
 
     @EventHandler(ignoreCancelled = true)
@@ -380,6 +391,21 @@ public final class GameListener implements Listener {
             Block block = iterator.next();
             if (block.getType() == Material.DIAMOND_BLOCK && gameManager.templeTeam(block) != null) {
                 iterator.remove();
+            }
+        }
+    }
+
+    private void eliminateExplodedTempleDiamonds(List<Block> blocks) {
+        if (!gameManager.isRunning() || plugin.getConfig().getBoolean("core.protect-diamond-from-explosion", true)) {
+            return;
+        }
+        for (Block block : blocks) {
+            if (block.getType() != Material.DIAMOND_BLOCK) {
+                continue;
+            }
+            GodTeam team = gameManager.templeTeam(block);
+            if (team != null) {
+                gameManager.eliminate(team, null);
             }
         }
     }

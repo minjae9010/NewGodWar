@@ -46,14 +46,14 @@
 
 ## updates
 
-서버가 켜져 있는 동안 GitHub Release를 확인하고, 새 버전이 있으면 업데이트 jar를 `plugins/update/`에 준비합니다. 기본값에서는 다운로드 완료 후 서버 전체 재시작 없이 Bukkit reload로 적용합니다.
+서버가 켜져 있는 동안 GitHub Release를 확인하고, 새 버전이 있으면 업데이트 jar를 `plugins/update/`에 준비합니다. 다운로드 완료 후 서버를 재시작하면 새 버전이 적용됩니다.
 
 | 키 | 기본값 | 설명 |
 | --- | --- | --- |
 | `updates.enabled` | `true` | 자동 업데이트 확인 사용 여부 |
 | `updates.auto-download` | `true` | 새 릴리즈 발견 시 jar 자동 다운로드 여부 |
-| `updates.apply-without-restart` | `true` | 다운로드 완료 후 서버 재시작 대신 reload로 즉시 적용 |
-| `updates.apply-delay-seconds` | `10` | 업데이트 다운로드 완료 후 reload까지 대기할 초 |
+| `updates.apply-without-restart` | `false` | 더 이상 사용하지 않는 이전 설정. 최신 Paper에서는 플러그인 업데이트 적용에 서버 재시작이 필요합니다. |
+| `updates.apply-delay-seconds` | `10` | 더 이상 사용하지 않는 이전 설정 |
 | `updates.notify-admins` | `true` | 관리자 접속 시 구버전 알림 여부 |
 | `updates.initial-delay-seconds` | `10` | 서버 시작 후 첫 업데이트 확인 지연 시간 |
 | `updates.check-interval-minutes` | `60` | 반복 확인 간격. `0` 이하이면 시작 시 한 번만 확인 |

@@ -24,7 +24,7 @@ import java.util.List;
     advancedStoneCost = 15,
     advancedCooldownSeconds = 180,
     passiveSkill = "화살 적중 시 확률로 큰 피해를 줍니다.",
-    grade = AbilityGrade.S
+    grade = AbilityGrade.A
 )
 final class ArtemisAbility extends BaseAbility {
     @Override

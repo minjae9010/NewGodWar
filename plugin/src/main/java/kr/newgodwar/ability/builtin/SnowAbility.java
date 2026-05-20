@@ -22,8 +22,8 @@ import java.util.List;
     normalCooldownSeconds = 3,
     advancedSkill = "현재 공격 지수를 확인합니다.",
     advancedStoneCost = 0,
-    passiveSkill = "눈덩이 피해가 공격 지수를 따르고 사망할 때 최대 8까지 성장합니다.",
-    grade = AbilityGrade.S
+    passiveSkill = "눈덩이 피해가 공격 지수를 따르고 사망할 때 최대 5까지 성장합니다.",
+    grade = AbilityGrade.A
 )
 final class SnowAbility extends BaseAbility {
     private int snowAttack;
@@ -63,7 +63,7 @@ final class SnowAbility extends BaseAbility {
 
     @Override
     public void onDeath(AbilityPlayerContext context, PlayerDeathEvent event) {
-        if (event.getEntity().equals(context.player()) && snowAttack < 8) {
+        if (event.getEntity().equals(context.player()) && snowAttack < 5) {
             snowAttack++;
         }
     }

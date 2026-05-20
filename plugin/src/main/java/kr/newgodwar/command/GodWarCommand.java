@@ -407,7 +407,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         }
         String suffix = ChatColor.GRAY + " | 최신 " + ChatColor.GREEN + info.latestVersion();
         if (info.downloadedFile() != null) {
-            suffix += ChatColor.GRAY + (plugin.getConfig().getBoolean("updates.apply-without-restart", true) ? " | reload 대기" : " | 재시작 대기");
+            suffix += ChatColor.GRAY + " | 재시작 대기";
         }
         return suffix;
     }

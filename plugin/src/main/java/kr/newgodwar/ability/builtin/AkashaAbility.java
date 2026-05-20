@@ -34,6 +34,13 @@ final class AkashaAbility extends BaseAbility {
         }
     }
 
+    private void teamBuff(AbilityPlayerContext context, Player player) {
+        for (Player target : nearbyPlayers(context, player, 20, true)) {
+            effect(target, PotionEffectType.SPEED, 15, 0);
+            effect(target, PotionEffectType.REGENERATION, 15, 0);
+        }
+    }
+
     @Override
     protected void onStaffRight(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
         if (useAdvanced(context, player)) {

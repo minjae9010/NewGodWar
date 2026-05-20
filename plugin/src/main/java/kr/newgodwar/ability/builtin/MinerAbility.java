@@ -36,6 +36,11 @@ final class MinerAbility extends BaseAbility {
     }
 
     @Override
+    public void onRespawn(AbilityPlayerContext context, PlayerRespawnEvent event) {
+        respawnEffect(context, "HASTE", "FAST_DIGGING", 24 * 60 * 60, 0);
+    }
+
+    @Override
     public void onTick(AbilityPlayerContext context) {
         effect(context.player(), "HASTE", "FAST_DIGGING", 3, 0);
     }

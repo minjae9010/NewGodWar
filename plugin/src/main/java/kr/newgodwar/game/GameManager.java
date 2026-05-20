@@ -56,11 +56,20 @@ public final class GameManager {
     private final Map<UUID, Integer> kills = new HashMap<UUID, Integer>();
     private final Map<UUID, Scoreboard> playerScoreboards = new HashMap<UUID, Scoreboard>();
     private final Map<String, WorldSnapshot> worldSnapshots = new HashMap<String, WorldSnapshot>();
+    private final Set<String> announcedPickaxeUnlocks = new HashSet<String>();
+    private static final PickaxeUnlockNotice[] PICKAXE_UNLOCK_NOTICES = new PickaxeUnlockNotice[] {
+        new PickaxeUnlockNotice("나무", "core.pickaxe-unlock.wooden-seconds"),
+        new PickaxeUnlockNotice("돌", "core.pickaxe-unlock.stone-seconds"),
+        new PickaxeUnlockNotice("철", "core.pickaxe-unlock.iron-seconds"),
+        new PickaxeUnlockNotice("금", "core.pickaxe-unlock.gold-seconds"),
+        new PickaxeUnlockNotice("다이아", "core.pickaxe-unlock.diamond-seconds")
+    };
 
     private GameState state = GameState.WAITING;
     private int waterHealTask = -1;
     private int abilityNoticeTask = -1;
     private int gameTimerTask = -1;
+    private int pickaxeUnlockNoticeTask = -1;
     private int readyTask = -1;
     private int gameTipTask = -1;
     private int readySecondsRemaining = 0;
@@ -377,6 +386,7 @@ public final class GameManager {
         player.setFoodLevel(20);
         nmsAdapter.sendTitle(player, ChatColor.GOLD + "능력 테스트", ability.name(), 10, 60, 10);
         startGameTimerTask();
+        startPickaxeUnlockNoticeTask();
         refreshAllPlayerDisplays();
         startWaterHealTask();
         return ability;
@@ -446,6 +456,7 @@ public final class GameManager {
             Bukkit.getScheduler().cancelTask(abilityNoticeTask);
             abilityNoticeTask = -1;
         }
+        cancelPickaxeUnlockNoticeTask();
         cancelGameTimerTask();
         if (gameTipTask != -1) {
             Bukkit.getScheduler().cancelTask(gameTipTask);
@@ -1035,6 +1046,7 @@ public final class GameManager {
                 + ChatColor.YELLOW + formatSeconds(killtimeDurationSeconds()) + ChatColor.AQUA + " 동안 공격하지 마세요.");
         }
         startWaterHealTask();
+        startPickaxeUnlockNoticeTask();
         startGameTipTask();
     }
 
@@ -1433,6 +1445,56 @@ public final class GameManager {
         }
     }
 
+    private void startPickaxeUnlockNoticeTask() {
+        cancelPickaxeUnlockNoticeTask();
+        announcedPickaxeUnlocks.clear();
+        tickPickaxeUnlockNotices();
+        if (state == GameState.RUNNING) {
+            pickaxeUnlockNoticeTask = Bukkit.getScheduler().scheduleSyncRepeatingTask(plugin, () -> tickPickaxeUnlockNotices(), 20L, 20L);
+        }
+    }
+
+    private void tickPickaxeUnlockNotices() {
+        if (state != GameState.RUNNING) {
+            cancelPickaxeUnlockNoticeTask();
+            return;
+        }
+        long elapsed = runningElapsedSeconds();
+        for (PickaxeUnlockNotice notice : PICKAXE_UNLOCK_NOTICES) {
+            int seconds = plugin.getConfig().getInt(notice.path, -1);
+            if (seconds < 0) {
+                announcedPickaxeUnlocks.remove(notice.path);
+                continue;
+            }
+            if (elapsed >= seconds) {
+                if (announcedPickaxeUnlocks.add(notice.path)) {
+                    announcePickaxeUnlocked(notice);
+                }
+            } else {
+                announcedPickaxeUnlocks.remove(notice.path);
+            }
+        }
+    }
+
+    private void announcePickaxeUnlocked(PickaxeUnlockNotice notice) {
+        String title = ChatColor.GREEN + notice.name + " 곡괭이 해제";
+        String subtitle = ChatColor.WHITE + "이제 코어 파괴에 사용할 수 있습니다.";
+        Bukkit.broadcastMessage(plugin.messages().prefix() + title + ChatColor.WHITE
+            + " - 이제 코어 파괴에 사용할 수 있습니다.");
+        for (Player player : BukkitCompat.onlinePlayers()) {
+            nmsAdapter.sendTitle(player, title, subtitle, 10, 60, 10);
+            BukkitCompat.playLevelUp(player);
+        }
+    }
+
+    private void cancelPickaxeUnlockNoticeTask() {
+        if (pickaxeUnlockNoticeTask != -1) {
+            Bukkit.getScheduler().cancelTask(pickaxeUnlockNoticeTask);
+            pickaxeUnlockNoticeTask = -1;
+        }
+        announcedPickaxeUnlocks.clear();
+    }
+
     private void startWaterHealTask() {
         if (waterHealTask != -1) {
             Bukkit.getScheduler().cancelTask(waterHealTask);
@@ -1492,6 +1554,16 @@ public final class GameManager {
         if (gameTipTask != -1) {
             Bukkit.getScheduler().cancelTask(gameTipTask);
             gameTipTask = -1;
+        }
+    }
+
+    private static final class PickaxeUnlockNotice {
+        private final String name;
+        private final String path;
+
+        private PickaxeUnlockNotice(String name, String path) {
+            this.name = name;
+            this.path = path;
         }
     }
 

@@ -17,14 +17,14 @@ import java.util.List;
 @AbilityInfo(
     id = "pan",
     name = "판",
-    description = "광란의 피리로 적을 혼란시키고 아군을 북돋습니다.",
-    normalSkill = "주변 적에게 혼란과 감속을 부여합니다.",
+    description = "광란의 피리로 적의 섬 이동을 방해하고 아군의 진입을 돕습니다.",
+    normalSkill = "반경 8블록 적에게 혼란과 감속을 부여합니다.",
     normalStoneCost = 12,
     normalCooldownSeconds = 60,
-    advancedSkill = "주변 아군에게 신속과 점프 강화 효과를 부여합니다.",
+    advancedSkill = "반경 9블록 아군에게 신속과 점프 강화 효과를 부여합니다.",
     advancedStoneCost = 18,
     advancedCooldownSeconds = 100,
-    passiveSkill = "피격 시 낮은 확률로 공격자를 밀쳐냅니다.",
+    passiveSkill = "피격 시 12.5% 확률로 공격자를 밀쳐냅니다.",
     grade = AbilityGrade.B
 )
 final class PanAbility extends BaseAbility {
@@ -57,7 +57,7 @@ final class PanAbility extends BaseAbility {
 
     @Override
     public void onDamageByEntity(AbilityPlayerContext context, EntityDamageByEntityEvent event, Player opponent, boolean attacker) {
-        if (!attacker && rollChance(1, 6)) {
+        if (!attacker && oneIn(8)) {
             Vector vector = opponent.getLocation().toVector().subtract(context.player().getLocation().toVector());
             if (vector.lengthSquared() > 0.0D) {
                 opponent.setVelocity(vector.normalize().multiply(1.2D));

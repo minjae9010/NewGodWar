@@ -16,13 +16,13 @@ import java.util.List;
 @AbilityInfo(
     id = "aeolus",
     name = "아이올로스",
-    description = "아군에게 바람의 축복을 주거나 적을 밀쳐냅니다.",
-    normalSkill = "주변 아군에게 신속과 재생을 부여합니다.",
+    description = "섬 전투에서 아군의 이동을 돕고 적을 바깥쪽으로 밀어냅니다.",
+    normalSkill = "반경 20블록 아군에게 15초 신속과 재생을 부여합니다.",
     normalStoneCost = 10,
     normalCooldownSeconds = 60,
-    advancedSkill = "주변 적을 밀쳐내고 약화/감속을 부여합니다.",
-    advancedStoneCost = 20,
-    advancedCooldownSeconds = 150,
+    advancedSkill = "반경 10블록 적을 밀쳐내고 5초 약화/감속을 부여합니다.",
+    advancedStoneCost = 24,
+    advancedCooldownSeconds = 170,
     passiveSkill = "없음",
     grade = AbilityGrade.A
 )
@@ -31,6 +31,13 @@ final class AeolusAbility extends BaseAbility {
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
         if (useNormal(context, player)) {
             teamBuff(context, player);
+        }
+    }
+
+    private void teamBuff(AbilityPlayerContext context, Player player) {
+        for (Player target : nearbyPlayers(context, player, 20, true)) {
+            effect(target, PotionEffectType.SPEED, 15, 0);
+            effect(target, PotionEffectType.REGENERATION, 15, 0);
         }
     }
 

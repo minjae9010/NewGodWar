@@ -12,7 +12,10 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 @AbilityInfo(
     id = "frost",
     name = "잭프로스트",
@@ -43,5 +46,39 @@ final class FrostAbility extends BaseAbility {
         if (useAdvanced(context, player)) {
             iceSphere(context, target.getLocation(), 5, 8);
         }
+    }
+
+    private void iceSphere(final AbilityPlayerContext context, Location center, int radius, int seconds) {
+        final Map<Location, Material> oldBlocks = new LinkedHashMap<Location, Material>();
+        for (Location location : sphere(center, radius)) {
+            Block block = location.getBlock();
+            if (block.getType() != Material.DIAMOND_BLOCK) {
+                oldBlocks.put(block.getLocation(), block.getType());
+                block.setType(Material.ICE);
+            }
+        }
+        later(context, seconds, "얼음 구체 복구", "얼음 구체 복구", () -> {
+            for (Map.Entry<Location, Material> entry : oldBlocks.entrySet()) {
+                entry.getKey().getBlock().setType(entry.getValue());
+            }
+        });
+    }
+
+    private List<Location> sphere(Location center, int radius) {
+        List<Location> locations = new ArrayList<Location>();
+        int bx = center.getBlockX();
+        int by = center.getBlockY();
+        int bz = center.getBlockZ();
+        for (int x = bx - radius; x <= bx + radius; x++) {
+            for (int y = by - radius; y <= by + radius; y++) {
+                for (int z = bz - radius; z <= bz + radius; z++) {
+                    double distance = (bx - x) * (bx - x) + (by - y) * (by - y) + (bz - z) * (bz - z);
+                    if (distance < radius * radius && distance >= (radius - 1) * (radius - 1)) {
+                        locations.add(new Location(center.getWorld(), x, y, z));
+                    }
+                }
+            }
+        }
+        return locations;
     }
 }

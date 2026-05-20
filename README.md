@@ -50,7 +50,7 @@ Wiki 배포 전 저장소 Settings > Features에서 Wiki 기능을 켜야 합니
 - `/godwar test [ability]` 혼자 능력 테스트 시작
 - `/godwar stop` 게임 종료
 - `/godwar status` 현재 게임 상태
-- `/godwar update [check|download]` 최신 릴리즈 확인 및 서버 실행 중 업데이트 적용
+- `/godwar update [check|download]` 최신 릴리즈 확인 및 다음 재시작에 적용할 업데이트 jar 다운로드
 - `/godwar tips` 서버 플레이 팁 확인
 - `/godwar gui` 또는 `/godwar settings` 관리자용 상자 GUI 설정 열기
 - `/godwar gamblereward <normal|tajja> <번호|add> hand|message|<material> [값]` 도박 당첨 아이템 변경/추가 및 멘트 수정
@@ -94,7 +94,7 @@ Wiki 배포 전 저장소 Settings > Features에서 Wiki 기능을 켜야 합니
 - `abilities.voodoo.damage`, `abilities.voodoo.hit-interval-millis`: 부두술사 연결 피해량과 피해 간격
 - `abilities.darkness.incoming-damage-multiplier`: 다크니스가 받는 피해 배율
 - `world`: 시작 시 autosave, 동물/몬스터 스폰, 난이도, 시작 시간을 적용하고 종료 시 복구
-- `updates`: GitHub Release 최신 버전 확인, 자동 다운로드, 관리자 접속 알림
+- `updates`: GitHub Release 최신 버전 확인, 자동 다운로드, 다음 재시작 적용 안내
 - `core`: 코어 폭파 보호, 맨손 파괴 제한, 다이아 곡괭이 파괴 금지
 - `gambling.enabled`: 도박 GUI 사용 여부
 - `gambling.rewards`: 일반/타짜 도박 당첨 아이템, 수량, 메시지, 확률 가중치

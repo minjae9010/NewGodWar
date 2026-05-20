@@ -45,6 +45,13 @@ final class OnePunchAbility extends BaseAbility {
         }
     }
 
+    private void dash(Player player) {
+        Vector vector = player.getEyeLocation().getDirection();
+        vector.setY(0.5D);
+        player.setVelocity(vector);
+        player.getWorld().playEffect(player.getLocation(), Effect.ENDER_SIGNAL, 1);
+    }
+
     @Override
     public void onDamageByEntity(AbilityPlayerContext context, EntityDamageByEntityEvent event, Player opponent, boolean attacker) {
         Player player = context.player();

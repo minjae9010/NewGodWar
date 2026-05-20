@@ -52,6 +52,7 @@ final class DemeterAbility extends BaseAbility {
 
     @Override
     public void onRespawn(AbilityPlayerContext context, PlayerRespawnEvent event) {
-        effect(context.player(), PotionEffectType.REGENERATION, 24 * 60 * 60, 0);
+        respawnEffect(context, PotionEffectType.REGENERATION, 24 * 60 * 60, 0);
+        respawnFoodLevel(context, 20);
     }
 }

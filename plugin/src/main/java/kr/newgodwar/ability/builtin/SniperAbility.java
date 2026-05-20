@@ -20,16 +20,23 @@ import java.util.List;
     normalSkill = "활을 들고 웅크린 채 좌클릭하면 4초 후 저격 모드가 활성화됩니다.",
     normalStoneCost = 0,
     advancedSkill = "저격 모드에서 발사한 다음 화살의 속도를 크게 높입니다.",
-    advancedStoneCost = 10,
-    advancedCooldownSeconds = 25,
-    passiveSkill = "배정 시 활과 화살을 받습니다.",
-    grade = AbilityGrade.S
+    advancedStoneCost = 6,
+    advancedCooldownSeconds = 18,
+    passiveSkill = "배정 시 활과 화살 10개를 받고 리스폰 시 화살 2개를 받습니다.",
+    grade = AbilityGrade.A
 )
 final class SniperAbility extends BaseAbility {
+    private boolean ready;
+
     @Override
     public void onAssign(AbilityPlayerContext context) {
         give(context.player(), Material.BOW, 1);
         give(context.player(), Material.ARROW, 10);
+    }
+
+    @Override
+    public void onRespawn(AbilityPlayerContext context, PlayerRespawnEvent event) {
+        give(context.player(), Material.ARROW, 2);
     }
 
     @Override

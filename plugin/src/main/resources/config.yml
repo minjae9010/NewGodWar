@@ -34,7 +34,7 @@ world:
 updates:
   enabled: true
   auto-download: true
-  apply-without-restart: true
+  apply-without-restart: false
   apply-delay-seconds: 10
   notify-admins: true
   initial-delay-seconds: 10

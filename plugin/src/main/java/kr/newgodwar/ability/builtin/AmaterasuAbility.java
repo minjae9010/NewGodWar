@@ -25,7 +25,7 @@ import java.util.List;
     advancedStoneCost = 24,
     advancedCooldownSeconds = 120,
     passiveSkill = "화염 피해를 무시합니다.",
-    grade = AbilityGrade.S
+    grade = AbilityGrade.A
 )
 final class AmaterasuAbility extends BaseAbility {
     @Override

@@ -16,10 +16,10 @@ import java.util.List;
 @AbilityInfo(
     id = "horeundal",
     name = "호른달",
-    description = "현재 위치를 기억하고 잠시 후 되돌아옵니다.",
-    normalSkill = "현재 위치를 저장하고 잠시 후 되돌아옵니다.",
-    normalStoneCost = 15,
-    normalCooldownSeconds = 80,
+    description = "위험한 섬 진입 후 10초 뒤 저장한 위치로 귀환합니다.",
+    normalSkill = "현재 위치를 저장하고 10초 후 되돌아옵니다.",
+    normalStoneCost = 18,
+    normalCooldownSeconds = 100,
     advancedSkill = "없음",
     advancedStoneCost = 0,
     passiveSkill = "없음",
@@ -31,5 +31,13 @@ final class HoreundalAbility extends BaseAbility {
         if (useNormal(context, player, 0)) {
             recall(context, player);
         }
+    }
+
+    private void recall(final AbilityPlayerContext context, final Player player) {
+        final Location location = player.getLocation();
+        later(context, 10, "귀환 발동", "귀환 발동", () -> {
+            player.teleport(location);
+            effect(player, PotionEffectType.INVISIBILITY, 3, 0);
+        });
     }
 }

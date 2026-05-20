@@ -24,7 +24,7 @@ import java.util.List;
     advancedStoneCost = 40,
     advancedCooldownSeconds = 105,
     passiveSkill = "없음",
-    grade = AbilityGrade.B
+    grade = AbilityGrade.A
 )
 final class PriestAbility extends BaseAbility {
     @Override
@@ -46,5 +46,13 @@ final class PriestAbility extends BaseAbility {
                 bless(target);
             }
         }
+    }
+
+    private void bless(Player player) {
+        if (RANDOM.nextBoolean()) effect(player, "RESISTANCE", "DAMAGE_RESISTANCE", 30, 0);
+        if (RANDOM.nextBoolean()) effect(player, "STRENGTH", "INCREASE_DAMAGE", 30, 0);
+        if (RANDOM.nextBoolean()) effect(player, PotionEffectType.REGENERATION, 30, 0);
+        if (RANDOM.nextBoolean()) effect(player, PotionEffectType.SPEED, 30, 0);
+        if (RANDOM.nextBoolean()) effect(player, "HASTE", "FAST_DIGGING", 30, 0);
     }
 }

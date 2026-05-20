@@ -53,4 +53,20 @@ final class AssasinAbility extends BaseAbility {
             backstab(context, player);
         }
     }
+
+    private void dash(Player player) {
+        Vector vector = player.getEyeLocation().getDirection();
+        vector.setY(0.5D);
+        player.setVelocity(vector);
+        player.getWorld().playEffect(player.getLocation(), Effect.ENDER_SIGNAL, 1);
+    }
+
+    private void backstab(AbilityPlayerContext context, Player player) {
+        for (Player target : nearbyPlayers(context, player, 10, false)) {
+            Location location = target.getLocation().subtract(target.getLocation().getDirection().normalize());
+            player.teleport(location);
+            return;
+        }
+        player.sendMessage("스킬을 사용 할 수 있는 상대가 없습니다.");
+    }
 }

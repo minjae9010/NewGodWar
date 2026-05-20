@@ -59,6 +59,6 @@ final class SeleneAbility extends BaseAbility {
 
     @Override
     public void onRespawn(AbilityPlayerContext context, PlayerRespawnEvent event) {
-        effect(context.player(), PotionEffectType.NIGHT_VISION, 24 * 60 * 60, 0);
+        respawnEffect(context, PotionEffectType.NIGHT_VISION, 24 * 60 * 60, 0);
     }
 }

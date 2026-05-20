@@ -112,7 +112,7 @@ final class PoseidonAbility extends BaseAbility {
 
     @Override
     public void onRespawn(AbilityPlayerContext context, PlayerRespawnEvent event) {
-        effect(context.player(), PotionEffectType.WATER_BREATHING, 24 * 60 * 60, 0);
+        respawnEffect(context, PotionEffectType.WATER_BREATHING, 24 * 60 * 60, 0);
     }
 
     private void createTemporarySea(final AbilityPlayerContext context, Location center, int radius, int seconds, String timerName, String triggerText) {

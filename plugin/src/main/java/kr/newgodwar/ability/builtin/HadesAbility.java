@@ -16,14 +16,14 @@ import java.util.List;
 @AbilityInfo(
     id = "hades",
     name = "하데스",
-    description = "주변 생물을 나락으로 떨어뜨리고 사망 시 확률로 아이템을 보존합니다.",
-    normalSkill = "주변 생물과 자신을 나락으로 떨어뜨립니다.",
-    normalStoneCost = 20,
-    normalCooldownSeconds = 100,
-    advancedSkill = "더 넓은 범위의 주변 생물을 나락으로 떨어뜨립니다.",
-    advancedStoneCost = 35,
-    advancedCooldownSeconds = 150,
-    passiveSkill = "사망 시 확률로 인벤토리와 방어구를 보존합니다.",
+    description = "공중 섬 아래 나락으로 적을 떨어뜨리고 사망 시 일부 장비 보존을 노립니다.",
+    normalSkill = "반경 2블록 생물과 자신을 나락으로 떨어뜨립니다.",
+    normalStoneCost = 24,
+    normalCooldownSeconds = 120,
+    advancedSkill = "반경 4블록 생물을 나락으로 떨어뜨립니다.",
+    advancedStoneCost = 42,
+    advancedCooldownSeconds = 190,
+    passiveSkill = "사망 시 40% 확률로 인벤토리와 방어구를 보존합니다.",
     grade = AbilityGrade.A
 )
 final class HadesAbility extends BaseAbility {
@@ -44,9 +44,22 @@ final class HadesAbility extends BaseAbility {
         }
     }
 
+    private void abyss(Player player, int radius, boolean includeSelf) {
+        Location destination = player.getLocation().clone();
+        destination.setY(-2.0D);
+        for (Entity entity : player.getNearbyEntities(radius, radius, radius)) {
+            if (entity instanceof LivingEntity) {
+                entity.teleport(destination);
+            }
+        }
+        if (includeSelf) {
+            player.teleport(destination);
+        }
+    }
+
     @Override
     public void onDeath(AbilityPlayerContext context, PlayerDeathEvent event) {
-        if (event.getEntity().equals(context.player()) && rollChance(6, 10)) {
+        if (event.getEntity().equals(context.player()) && rollChance(4, 10)) {
             savedInventory = context.player().getInventory().getContents();
             savedArmor = context.player().getInventory().getArmorContents();
             event.setKeepInventory(false);

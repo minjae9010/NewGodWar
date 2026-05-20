@@ -34,6 +34,16 @@ final class TeleporterAbility extends BaseAbility {
         }
     }
 
+    private void teleportToTargetBlock(Player player) {
+        Block block = targetBlock(player, 25);
+        Location location = block.getLocation().add(0.5D, 1.0D, 0.5D);
+        if (location.getBlock().getType() == Material.AIR && location.clone().add(0, 1, 0).getBlock().getType() == Material.AIR) {
+            location.setPitch(player.getLocation().getPitch());
+            location.setYaw(player.getLocation().getYaw());
+            player.teleport(location);
+        }
+    }
+
     @Override
     protected void onStaffRight(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
         Player target = targetPlayerInSight(context, player, 30, true);

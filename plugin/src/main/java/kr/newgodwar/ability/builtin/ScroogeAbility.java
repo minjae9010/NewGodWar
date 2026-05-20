@@ -22,7 +22,7 @@ import java.util.List;
     advancedSkill = "없음",
     advancedStoneCost = 0,
     passiveSkill = "같은 팀의 코블스톤 능력 비용을 절반으로 줄입니다.",
-    grade = AbilityGrade.A
+    grade = AbilityGrade.S
 )
 final class ScroogeAbility extends BaseAbility {
     @Override
