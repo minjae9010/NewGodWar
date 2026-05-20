@@ -5,10 +5,13 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 public final class GameTips {
+
+    private static final String BLAZE_ROD_RECIPE_TIP = "&f블막 조합: &e막대기 3개&7를 세로/가로/대각선으로 놓으면 &6블레이즈 막대기 1개&7를 만들 수 있습니다.";
 
     private GameTips() {
     }
@@ -68,14 +71,45 @@ public final class GameTips {
         return tips(plugin).size();
     }
 
+    public static boolean repairLegacyConfiguredTips(NewGodWarPlugin plugin) {
+        List<String> configured = plugin.getConfig().getStringList("tips.lines");
+        if (configured.isEmpty()) {
+            return false;
+        }
+
+        List<String> repaired = new ArrayList<String>(configured.size());
+        boolean changed = false;
+        for (String tip : configured) {
+            if (isLegacyBlazeRodRecipeTip(tip)) {
+                repaired.add(BLAZE_ROD_RECIPE_TIP);
+                changed = true;
+            } else {
+                repaired.add(tip);
+            }
+        }
+
+        if (changed) {
+            plugin.getConfig().set("tips.lines", repaired);
+            plugin.saveConfig();
+        }
+        return changed;
+    }
+
     private static List<String> tips(NewGodWarPlugin plugin) {
         List<String> configured = plugin.getConfig().getStringList("tips.lines");
         return configured.isEmpty() ? defaultTips() : configured;
     }
 
+    private static boolean isLegacyBlazeRodRecipeTip(String tip) {
+        return tip != null
+            && tip.contains("막대기 2개")
+            && (tip.contains("블막") || tip.contains("블레이즈 막대") || tip.contains("블레이즈막대"))
+            && (tip.contains("조합") || tip.contains("만들"));
+    }
+
     private static List<String> defaultTips() {
         return Arrays.asList(
-            "&f블막 조합: &e막대기 3개&7를 일자/사선으로 놓으면 &6블레이즈 막대기 1개&7를 만들 수 있습니다.",
+            BLAZE_ROD_RECIPE_TIP,
             "&f능력 확인: &b/a&7로 내 능력 설명과 쿨타임을 확인하세요.",
             "&f재추첨: &b/t yes&7로 확정, &c/t no&7로 다시 뽑기를 선택합니다.",
             "&f타깃 능력: &b/x <닉네임>&7으로 대상을 빠르게 지정합니다.",

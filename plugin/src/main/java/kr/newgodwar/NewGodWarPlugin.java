@@ -12,6 +12,7 @@ import kr.newgodwar.listener.AthenaEnchantListener;
 import kr.newgodwar.listener.GameListener;
 import kr.newgodwar.nms.NmsAdapter;
 import kr.newgodwar.nms.NmsAdapters;
+import kr.newgodwar.util.GameTips;
 import kr.newgodwar.util.Messages;
 import kr.newgodwar.util.PluginUpdater;
 import kr.newgodwar.util.ServerVersionSupport;
@@ -37,6 +38,9 @@ public final class NewGodWarPlugin extends JavaPlugin {
     @Override
     public void onEnable() {
         saveDefaultConfig();
+        if (GameTips.repairLegacyConfiguredTips(this)) {
+            getLogger().info("Updated legacy blaze rod recipe tip in config.yml.");
+        }
 
         this.messages = new Messages(this);
         this.versionSupport = ServerVersionSupport.detect();

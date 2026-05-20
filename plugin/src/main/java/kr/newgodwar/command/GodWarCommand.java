@@ -232,8 +232,11 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         }
         if (sub.equals("reload")) {
             plugin.reloadConfig();
+            boolean repairedTips = GameTips.repairLegacyConfiguredTips(plugin);
             gameManager.reloadSettings();
-            plugin.messages().send(sender, "&a설정을 다시 불러왔습니다.");
+            plugin.messages().send(sender, repairedTips
+                ? "&a설정을 다시 불러왔습니다. 오래된 블막 조합 팁도 함께 수정했습니다."
+                : "&a설정을 다시 불러왔습니다.");
             return true;
         }
         if (sub.equals("update")) {
