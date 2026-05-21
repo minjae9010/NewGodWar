@@ -48,7 +48,7 @@ final class YuGwanSunAbility extends BaseAbility {
     @Override
     protected void onStaffRight(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
         List<Player> allies = nearbyPlayers(context, player, 14, true);
-        List<Player> enemies = nearbyPlayers(context, player, 14, false);
+        List<Player> enemies = enemyPlayers(context, player);
         if (enemies.isEmpty()) {
             player.sendMessage("능력을 사용할 수 있는 대상이 없습니다.");
             return;

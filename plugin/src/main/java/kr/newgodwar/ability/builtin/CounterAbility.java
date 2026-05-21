@@ -25,7 +25,6 @@ import java.util.List;
     grade = AbilityGrade.S
 )
 final class CounterAbility extends BaseAbility {
-    private static final int NORMAL_RANGE = 30;
     private static final int ADVANCED_RANGE = 10;
     private static final int NORMAL_SUPPRESS_SECONDS = 12;
     private static final int ADVANCED_SUPPRESS_SECONDS = 6;
@@ -57,7 +56,7 @@ final class CounterAbility extends BaseAbility {
 
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
-        Player target = commandTargetPlayerInRange(context, player, NORMAL_RANGE, false);
+        Player target = commandTargetPlayer(context, player, false);
         if (target == null || !canSuppress(context, player, target)) {
             return;
         }

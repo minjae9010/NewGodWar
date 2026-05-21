@@ -43,7 +43,7 @@ final class HecateAbility extends BaseAbility {
 
     @Override
     protected void onStaffRight(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
-        Player target = commandTargetPlayerInRange(context, player, 20, false);
+        Player target = commandTargetPlayer(context, player, false);
         if (target == null) {
             return;
         }

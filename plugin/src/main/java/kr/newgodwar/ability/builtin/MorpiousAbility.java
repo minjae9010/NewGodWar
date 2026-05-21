@@ -27,8 +27,13 @@ import java.util.List;
 )
 final class MorpiousAbility extends BaseAbility {
     @Override
+    public boolean requiresTarget() {
+        return true;
+    }
+
+    @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
-        Player target = targetPlayerInSight(context, player, 20, false);
+        Player target = commandTargetPlayer(context, player, false);
         if (target == null) {
             return;
         }

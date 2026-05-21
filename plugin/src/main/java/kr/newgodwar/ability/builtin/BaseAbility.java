@@ -447,6 +447,16 @@ abstract class BaseAbility implements GodAbility {
         return players;
     }
 
+    protected List<Player> enemyPlayers(AbilityPlayerContext context, Player player) {
+        List<Player> players = new ArrayList<Player>();
+        for (Player target : BukkitCompat.onlinePlayers()) {
+            if (!target.equals(player) && !sameTeam(context, player, target)) {
+                players.add(target);
+            }
+        }
+        return players;
+    }
+
     protected boolean sameTeam(AbilityPlayerContext context, Player a, Player b) {
         GodTeam first = context.plugin().game().teamOf(a);
         GodTeam second = context.plugin().game().teamOf(b);
@@ -503,7 +513,7 @@ abstract class BaseAbility implements GodAbility {
         return target;
     }
 
-    private Player commandTargetPlayer(AbilityPlayerContext context, Player player, boolean sameTeam) {
+    protected Player commandTargetPlayer(AbilityPlayerContext context, Player player, boolean sameTeam) {
         if (targetName == null || targetName.trim().length() == 0) {
             sendAbilityMessage(context, player, "failure", ChatColor.RED + "먼저 /x <플레이어>로 타깃을 지정하세요.");
             return null;
