@@ -54,6 +54,7 @@ Wiki 배포 전 저장소 Settings > Features에서 Wiki 기능을 켜야 합니
 - `/godwar tips` 서버 플레이 팁 확인
 - `/godwar gui` 또는 `/godwar settings` 관리자용 상자 GUI 설정 열기
 - `/godwar gamblereward <normal|tajja> <번호|add> hand|message|<material> [값]` 도박 당첨 아이템 변경/추가 및 멘트 수정
+- `/godwar defaultitems` 게임 시작 기본 지급 아이템 가상 창고 열기
 - `/godwar ability [player]` 본인 또는 같은 팀의 현재 능력만 확인
 - `/godwar abilities` 등록된 능력 도감 GUI 열기
 - `/godwar blacklist <list|add|remove|toggle> [ability]` 랜덤 배정에서 제외할 능력 관리
@@ -81,7 +82,7 @@ Wiki 배포 전 저장소 Settings > Features에서 Wiki 기능을 켜야 합니
 - `game.auto-balance-teams`: 팀이 비어 있을 때 시작 시 자동 팀 배정
 - `game.allow-mid-join`: 진행 중인 게임의 중간 참여 허용 여부
 - `game.eliminated-player-action`: 팀 탈락 시 플레이어 처리 방식. `spectator`, `kick`, `midjoin`
-- `game.clear-inventory`, `game.give-skyblock-items`, `game.remove-entities`: 시작 시 인벤토리/기본 아이템/엔티티 정리
+- `game.clear-inventory`, `game.give-skyblock-items`, `game.skyblock-items`, `game.remove-entities`: 시작 시 인벤토리/기본 아이템/엔티티 정리
 - `game.ignore-bed`: 리스폰 시 침대 대신 팀 스폰 사용
 - `game.fast-start`, `game.ready-countdown-seconds`: 시작 준비 카운트다운
 - `game.select-right`: 능력 재추첨 기회 사용 여부
@@ -134,7 +135,7 @@ Windows PowerShell에서는 다음처럼 실행할 수 있습니다.
 .\gradlew.bat clean build
 ```
 
-빌드 결과물은 `build/libs/NewGodWar-0.2.0.jar`에 복사되며, 모듈 산출물은 `plugin/build/libs/NewGodWar-0.2.0.jar`에서도 확인할 수 있습니다.
+빌드 결과물은 `build/libs/NewGodWar-0.2.1.jar`에 복사되며, 모듈 산출물은 `plugin/build/libs/NewGodWar-0.2.1.jar`에서도 확인할 수 있습니다.
 
 ## 라이선스
 

@@ -8,6 +8,7 @@ import kr.newgodwar.game.GodTeam;
 import kr.newgodwar.game.StarterItems;
 import kr.newgodwar.gui.AbilityGui;
 import kr.newgodwar.gui.SettingsGui;
+import kr.newgodwar.gui.StarterItemsGui;
 import kr.newgodwar.util.BukkitCompat;
 import kr.newgodwar.util.GameTips;
 import kr.newgodwar.util.PluginUpdater;
@@ -48,13 +49,15 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
     private final GameManager gameManager;
     private final AbilityManager abilityManager;
     private final SettingsGui settingsGui;
+    private final StarterItemsGui starterItemsGui;
     private final AbilityGui abilityGui;
 
-    public GodWarCommand(NewGodWarPlugin plugin, GameManager gameManager, AbilityManager abilityManager, SettingsGui settingsGui, AbilityGui abilityGui) {
+    public GodWarCommand(NewGodWarPlugin plugin, GameManager gameManager, AbilityManager abilityManager, SettingsGui settingsGui, StarterItemsGui starterItemsGui, AbilityGui abilityGui) {
         this.plugin = plugin;
         this.gameManager = gameManager;
         this.abilityManager = abilityManager;
         this.settingsGui = settingsGui;
+        this.starterItemsGui = starterItemsGui;
         this.abilityGui = abilityGui;
     }
 
@@ -346,7 +349,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             entries.add(new HelpEntry("운영 설정", "skipseconds <초>", "관리자 skip 기본 카운트다운 설정"));
             entries.add(new HelpEntry("운영 설정", "urf <on|off|toggle|80%>", "우르프 모드 및 쿨타임 감소율 설정"));
             entries.add(new HelpEntry("운영 설정", "gamblereward <normal|tajja> <번호|add> hand|message|<material> [값]", "도박 당첨 아이템/멘트 변경"));
-            entries.add(new HelpEntry("운영 설정", "defaultitems <list|add|set|remove|clear|reset>", "게임 시작 기본 지급 아이템 관리"));
+            entries.add(new HelpEntry("운영 설정", "defaultitems", "게임 시작 기본 지급 아이템 창고 열기"));
             entries.add(new HelpEntry("운영 설정", "blacklist <list|add|remove|toggle> [ability]", "랜덤 제외 능력 관리"));
             entries.add(new HelpEntry("운영 설정", "gamerule <apply|restore>", "게임룰 수동 적용 / 복구"));
             entries.add(new HelpEntry("운영 설정", "update [check|download]", "최신 버전 확인 / 업데이트 jar 다운로드"));
@@ -1224,6 +1227,15 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         settingsGui.open(player);
     }
 
+    private void openDefaultItems(CommandSender sender) {
+        Player player = asPlayer(sender);
+        if (player == null) {
+            listDefaultItems(sender);
+            return;
+        }
+        starterItemsGui.open(player);
+    }
+
     private void update(CommandSender sender, String[] args) {
         String action = args.length < 2 ? "check" : args[1].toLowerCase(Locale.ROOT);
         boolean download = action.equals("download") || action.equals("install") || action.equals("auto") || action.equals("다운로드");
@@ -1246,7 +1258,11 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
     }
 
     private void defaultItems(CommandSender sender, String[] args) {
-        if (args.length < 2 || isListDefaultItemsAction(args[1])) {
+        if (args.length < 2 || isOpenDefaultItemsAction(args[1])) {
+            openDefaultItems(sender);
+            return;
+        }
+        if (isListDefaultItemsAction(args[1])) {
             listDefaultItems(sender);
             return;
         }
@@ -1324,7 +1340,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             plugin.messages().send(sender, "&a기본 지급 아이템을 &fCOOKED_BEEF 64개&a로 초기화했습니다.");
             return;
         }
-        plugin.messages().send(sender, "&e/godwar defaultitems <list|add|set|remove|clear|reset>");
+        plugin.messages().send(sender, "&e/godwar defaultitems [gui|list|add|set|remove|clear|reset]");
     }
 
     private void listDefaultItems(CommandSender sender) {
@@ -1379,10 +1395,19 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
     }
 
     private boolean isListDefaultItemsAction(String token) {
-        return token == null
-            || token.equalsIgnoreCase("list")
+        return token.equalsIgnoreCase("list")
             || token.equalsIgnoreCase("show")
             || token.equalsIgnoreCase("목록");
+    }
+
+    private boolean isOpenDefaultItemsAction(String token) {
+        return token == null
+            || token.equalsIgnoreCase("gui")
+            || token.equalsIgnoreCase("open")
+            || token.equalsIgnoreCase("chest")
+            || token.equalsIgnoreCase("warehouse")
+            || token.equalsIgnoreCase("창고")
+            || token.equalsIgnoreCase("열기");
     }
 
     private void saveDefaultItems(List<Map<String, Object>> entries) {
@@ -1732,7 +1757,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             return startsWith(values, args[3]);
         }
         if (args.length == 2 && sub.equals("defaultitems")) {
-            return startsWith(Arrays.asList("list", "add", "set", "remove", "clear", "reset"), args[1]);
+            return startsWith(Arrays.asList("gui", "list", "add", "set", "remove", "clear", "reset"), args[1]);
         }
         if (args.length == 3 && sub.equals("defaultitems")
             && (args[1].equalsIgnoreCase("add") || args[1].equalsIgnoreCase("추가"))) {

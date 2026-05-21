@@ -8,6 +8,7 @@ import kr.newgodwar.game.GameManager;
 import kr.newgodwar.gui.AbilityGui;
 import kr.newgodwar.gui.GamblingGui;
 import kr.newgodwar.gui.SettingsGui;
+import kr.newgodwar.gui.StarterItemsGui;
 import kr.newgodwar.listener.AthenaEnchantListener;
 import kr.newgodwar.listener.GameListener;
 import kr.newgodwar.nms.NmsAdapter;
@@ -32,6 +33,7 @@ public final class NewGodWarPlugin extends JavaPlugin {
     private ServerVersionSupport versionSupport;
     private PluginUpdater updater;
     private SettingsGui settingsGui;
+    private StarterItemsGui starterItemsGui;
     private AbilityGui abilityGui;
     private GamblingGui gamblingGui;
 
@@ -52,11 +54,12 @@ public final class NewGodWarPlugin extends JavaPlugin {
         this.abilityManager = new AbilityManager(this);
         this.gameManager = new GameManager(this, abilityManager, nmsAdapter);
 
-        this.settingsGui = new SettingsGui(this, gameManager);
+        this.starterItemsGui = new StarterItemsGui(this);
+        this.settingsGui = new SettingsGui(this, gameManager, starterItemsGui);
         this.abilityGui = new AbilityGui(this, abilityManager);
         this.gamblingGui = new GamblingGui(this);
 
-        GodWarCommand godWarCommand = new GodWarCommand(this, gameManager, abilityManager, settingsGui, abilityGui);
+        GodWarCommand godWarCommand = new GodWarCommand(this, gameManager, abilityManager, settingsGui, starterItemsGui, abilityGui);
         getCommand("godwar").setExecutor(godWarCommand);
         getCommand("godwar").setTabCompleter(godWarCommand);
         getCommand("t").setExecutor(godWarCommand);
@@ -71,6 +74,7 @@ public final class NewGodWarPlugin extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(new GameListener(this, gameManager, abilityManager, nmsAdapter), this);
         Bukkit.getPluginManager().registerEvents(new AthenaEnchantListener(this, abilityManager), this);
         Bukkit.getPluginManager().registerEvents(settingsGui, this);
+        Bukkit.getPluginManager().registerEvents(starterItemsGui, this);
         Bukkit.getPluginManager().registerEvents(abilityGui, this);
         Bukkit.getPluginManager().registerEvents(gamblingGui, this);
         BlazeRodRecipes.register(this);

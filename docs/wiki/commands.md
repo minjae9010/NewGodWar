@@ -64,6 +64,7 @@
 | `/godwar unspectate <player>` | 관전 상태를 해제합니다. |
 | `/godwar observer [list]` | 자신을 옵저버로 전환하거나 옵저버 목록을 봅니다. |
 | `/godwar gamblereward <normal|tajja> <번호|add> hand|message|<material> [값]` | 도박 보상 아이템 또는 멘트를 변경합니다. |
+| `/godwar defaultitems [gui|list|add|set|remove|clear|reset]` | 게임 시작 시 지급할 기본 아이템 창고를 열거나 목록을 관리합니다. |
 | `/godwar reload` | `config.yml`을 다시 불러오고 팀/스폰/심장 설정을 갱신합니다. |
 | `/godwar update [check|download]` | 최신 릴리즈를 확인하고 다음 서버 재시작 때 적용할 업데이트 jar를 다운로드합니다. |
 
@@ -93,3 +94,4 @@
 - `<team>`은 `red`, `blue`, `green` 또는 설정된 표시 이름을 사용할 수 있습니다.
 - `<ability>`는 능력 ID, 능력 이름, 또는 능력 목록 순번을 사용할 수 있습니다.
 - 우르프 퍼센트는 `/godwar urf 80%`처럼 입력할 수 있습니다. 이 값은 쿨타임 감소율이며, 내부 설정은 `cooldown-multiplier`로 저장됩니다.
+- 기본 지급 아이템은 `/godwar defaultitems`로 가상 창고를 열어 넣고 빼면 저장됩니다. 콘솔에서는 `/godwar defaultitems list`, `/godwar defaultitems set 1 COOKED_BEEF 64`처럼 수정할 수 있습니다.

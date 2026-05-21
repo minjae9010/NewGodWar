@@ -13,6 +13,7 @@
 | `game.eliminated-player-action` | `spectator` | 탈락 팀 플레이어 처리 방식: `spectator`, `kick`, `midjoin` |
 | `game.clear-inventory` | `true` | 시작 시 인벤토리와 방어구 초기화 |
 | `game.give-skyblock-items` | `true` | 시작 시 기본 스카이블럭 아이템 지급 |
+| `game.skyblock-items` | `COOKED_BEEF 64` | 시작 시 지급할 기본 아이템 목록 |
 | `game.remove-entities` | `true` | 시작 시 아이템, 몬스터, 동물 엔티티 제거 |
 | `game.ignore-bed` | `true` | 리스폰 시 침대 대신 팀 스폰 사용 |
 | `game.fast-start` | `true` | 빠른 시작 카운트다운 사용 |
@@ -31,6 +32,8 @@
 | `game.urf.cooldown-multiplier` | `0.2` | 우르프 모드 쿨타임 배율 |
 
 우르프 명령에서 `80%`를 입력하면 쿨타임을 80% 줄인다는 의미입니다. 이때 저장되는 배율은 `0.2`입니다.
+
+기본 지급 아이템은 `game.give-skyblock-items`가 켜져 있을 때만 지급됩니다. 기본값은 익힌 소고기(`COOKED_BEEF`) 64개이며, 인게임에서는 `/godwar defaultitems`로 가상 창고를 열어 넣고 빼면 닫을 때 저장됩니다.
 
 ## world
 

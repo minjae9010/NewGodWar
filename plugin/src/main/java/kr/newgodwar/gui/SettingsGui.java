@@ -64,6 +64,7 @@ public final class SettingsGui implements Listener {
 
     private final NewGodWarPlugin plugin;
     private final GameManager gameManager;
+    private final StarterItemsGui starterItemsGui;
     private final Set<UUID> openViewers = new HashSet<UUID>();
     private final Set<UUID> refreshingViewers = new HashSet<UUID>();
     private final Map<UUID, SettingsView> openViews = new HashMap<UUID, SettingsView>();
@@ -71,9 +72,10 @@ public final class SettingsGui implements Listener {
     private final Map<UUID, String> selectedTeamIds = new HashMap<UUID, String>();
     private final Map<UUID, String> pendingTeamRenameIds = new ConcurrentHashMap<UUID, String>();
 
-    public SettingsGui(NewGodWarPlugin plugin, GameManager gameManager) {
+    public SettingsGui(NewGodWarPlugin plugin, GameManager gameManager, StarterItemsGui starterItemsGui) {
         this.plugin = plugin;
         this.gameManager = gameManager;
+        this.starterItemsGui = starterItemsGui;
     }
 
     public void open(Player player) {
@@ -275,7 +277,12 @@ public final class SettingsGui implements Listener {
         } else if (slot == 9) {
             toggle("game.clear-inventory");
         } else if (slot == 10) {
-            toggle("game.give-skyblock-items");
+            if (click == ClickType.RIGHT || click == ClickType.SHIFT_RIGHT) {
+                player.closeInventory();
+                starterItemsGui.open(player);
+            } else {
+                toggle("game.give-skyblock-items");
+            }
         } else if (slot == 11) {
             toggle("game.fast-start");
         } else if (slot == 12) {
@@ -548,7 +555,8 @@ public final class SettingsGui implements Listener {
             ChatColor.GRAY + "현재: " + ChatColor.YELLOW + config.getInt("game.ability-reroll-count", 1) + "회"));
 
         inventory.setItem(9, toggleItem("game.clear-inventory", "인벤토리 클리어", "CHEST"));
-        inventory.setItem(10, toggleItem("game.give-skyblock-items", "스카이블럭 아이템 지급", "ICE"));
+        inventory.setItem(10, toggleItem("game.give-skyblock-items", "스카이블럭 아이템 지급", "ICE",
+            ChatColor.GRAY + "우클릭: 기본 지급 아이템 창고 열기"));
         inventory.setItem(11, toggleItem("game.fast-start", "빠른 시작", "SUGAR"));
         inventory.setItem(12, toggleItem("game.select-right", "능력 재추첨 기회", "NETHER_STAR"));
         inventory.setItem(13, toggleItem("game.auto-balance-teams", "시작 시 팀 자동 배정", "COMPASS"));
@@ -912,13 +920,22 @@ public final class SettingsGui implements Listener {
     }
 
     private ItemStack toggleItem(String path, String title, String icon) {
+        return toggleItem(path, title, icon, new String[0]);
+    }
+
+    private ItemStack toggleItem(String path, String title, String icon, String... extraLore) {
         boolean enabled = plugin.getConfig().getBoolean(path, defaultToggleValue(path));
         ChatColor color = enabled ? ChatColor.GREEN : ChatColor.RED;
         String state = enabled ? "켜짐" : "꺼짐";
+        List<String> lore = new ArrayList<String>();
+        lore.add(ChatColor.GRAY + "클릭하면 설정이 전환됩니다.");
+        if (extraLore != null) {
+            lore.addAll(Arrays.asList(extraLore));
+        }
+        lore.add(ChatColor.DARK_GRAY + path);
         return item(icon, icon, 1, (short) 0,
             color + title + ": " + state,
-            ChatColor.GRAY + "클릭하면 설정이 전환됩니다.",
-            ChatColor.DARK_GRAY + path);
+            lore.toArray(new String[lore.size()]));
     }
 
     private ItemStack categoryItem(String icon, String title, String... lore) {

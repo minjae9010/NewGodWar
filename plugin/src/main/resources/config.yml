@@ -6,6 +6,9 @@ game:
   eliminated-player-action: spectator
   clear-inventory: true
   give-skyblock-items: true
+  skyblock-items:
+    - material: COOKED_BEEF
+      amount: 64
   remove-entities: true
   ignore-bed: true
   fast-start: true
