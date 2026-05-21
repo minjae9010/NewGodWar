@@ -989,15 +989,11 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
 
     private void abilityGroup(CommandSender sender, String[] args, String label, boolean themachyRoot) {
         String usagePrefix = "/" + label + " " + args[0].toLowerCase(Locale.ROOT);
-        if (!themachyRoot && args.length < 2) {
+        if (args.length < 2) {
             ability(sender, args);
             return;
         }
-        if (args.length < 2 || args[1].equalsIgnoreCase("help")) {
-            if (themachyRoot && !sender.hasPermission("newgodwar.admin")) {
-                plugin.messages().send(sender, "&c권한이 없습니다.");
-                return;
-            }
+        if (args[1].equalsIgnoreCase("help")) {
             sendAbilityGroupHelp(sender, usagePrefix, themachyRoot, sender.hasPermission("newgodwar.admin"));
             return;
         }
@@ -1047,7 +1043,11 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             return;
         }
         if (args.length < 3) {
-            plugin.messages().send(sender, "&e" + usagePrefix + " <ability> <player>");
+            ability(sender, args);
+            return;
+        }
+        if (!sender.hasPermission("newgodwar.admin")) {
+            plugin.messages().send(sender, "&c권한이 없습니다.");
             return;
         }
         setAbility(sender, new String[] {"setability", args[2], args[1]});
@@ -1484,9 +1484,6 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
     }
 
     private boolean requiresAbilityGroupAdmin(String action, boolean themachyRoot) {
-        if (themachyRoot) {
-            return true;
-        }
         return isAbilityListAction(action)
             || action.equalsIgnoreCase("random")
             || action.equalsIgnoreCase("remove")
@@ -1630,9 +1627,6 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
     private List<String> abilityGroupTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         boolean themachyRoot = isThemachyRoot(command, alias);
         boolean admin = sender.hasPermission("newgodwar.admin");
-        if (themachyRoot && !admin) {
-            return Collections.emptyList();
-        }
         if (args.length == 2) {
             List<String> values = new ArrayList<String>();
             values.addAll(Arrays.asList("help", "catalog"));
@@ -1640,7 +1634,10 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
                 values.addAll(Arrays.asList("list", "random", "remove", "reset", "skip", "cutin", "set"));
             }
             if (themachyRoot) {
-                values.addAll(abilityIdSuggestions());
+                values.addAll(abilityTargetNames(sender));
+                if (admin) {
+                    values.addAll(abilityIdSuggestions());
+                }
             } else {
                 values.addAll(admin ? onlinePlayerNames() : abilityTargetNames(sender));
             }

@@ -13,26 +13,36 @@ import java.util.List;
 @AbilityInfo(
     id = "jangyeongsil",
     name = "장영실",
-    description = "과학 장치로 전장을 보조하고 실용적인 자원을 만들어냅니다.",
-    normalSkill = "레드스톤 장치를 만들고 잠시 성급함을 얻습니다.",
-    normalStoneCost = 16,
-    normalCooldownSeconds = 70,
+    description = "실용적인 부품과 전투 보조 장치로 아군의 채굴과 진입을 돕습니다.",
+    normalSkill = "부품을 쌓고 3스택이 되면 철 곡괭이를 제작합니다.",
+    normalStoneCost = 12,
+    normalCooldownSeconds = 60,
     advancedSkill = "주변 아군에게 성급함, 신속, 저항을 부여합니다.",
     advancedStoneCost = 30,
     advancedCooldownSeconds = 145,
-    passiveSkill = "철괴를 들고 공격하면 가끔 내구도 좋은 타격을 가합니다.",
+    passiveSkill = "곡괭이를 들고 공격하면 가끔 추가 피해와 감속을 부여합니다.",
     grade = AbilityGrade.A
 )
 final class JangYeongSilAbility extends BaseAbility {
+    private static final int PICKAXE_PARTS_REQUIRED = 3;
+
+    private int pickaxeParts;
+
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
         if (!useNormal(context, player)) {
             return;
         }
-        player.getInventory().addItem(new ItemStack(Material.REDSTONE, 8));
-        player.getInventory().addItem(new ItemStack(Material.PISTON_BASE, 1));
+        pickaxeParts++;
         effect(player, "HASTE", "FAST_DIGGING", 12, 1);
-        player.sendMessage(ChatColor.AQUA + "과학 장치를 제작했습니다.");
+        if (pickaxeParts >= PICKAXE_PARTS_REQUIRED) {
+            pickaxeParts = 0;
+            player.getInventory().addItem(new ItemStack(Material.IRON_PICKAXE, 1));
+            player.sendMessage(ChatColor.AQUA + "장영실의 부품이 완성되어 철 곡괭이를 제작했습니다.");
+            return;
+        }
+        player.sendMessage(ChatColor.AQUA + "철 곡괭이 부품을 제작했습니다. "
+            + ChatColor.GRAY + "(" + pickaxeParts + "/" + PICKAXE_PARTS_REQUIRED + ")");
     }
 
     @Override
@@ -52,7 +62,7 @@ final class JangYeongSilAbility extends BaseAbility {
 
     @Override
     public void onDamageByEntity(AbilityPlayerContext context, org.bukkit.event.entity.EntityDamageByEntityEvent event, Player opponent, boolean attacker) {
-        if (attacker && holding(context.player(), Material.IRON_INGOT) && oneIn(4)) {
+        if (attacker && isPickaxe(context.player().getItemInHand().getType()) && oneIn(4)) {
             event.setDamage(event.getDamage() + 2.0D);
             effect(opponent, "SLOWNESS", "SLOW", 3, 0);
         }
