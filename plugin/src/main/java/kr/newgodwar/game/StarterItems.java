@@ -35,11 +35,32 @@ public final class StarterItems {
 
     public static List<Map<String, Object>> defaultEntries() {
         List<Map<String, Object>> entries = new ArrayList<Map<String, Object>>();
-        Map<String, Object> meat = new LinkedHashMap<String, Object>();
-        meat.put("material", "COOKED_BEEF");
-        meat.put("amount", 64);
-        entries.add(meat);
+        entries.add(entry("LAVA_BUCKET", 2));
+        entries.add(entry("ICE", 2));
+        entries.add(entry("OAK_SAPLING", "SAPLING", 1));
+        entries.add(entry("BONE_MEAL", "INK_SACK", 4, 15));
+        entries.add(entry("CHEST", 1));
+        entries.add(entry("COOKED_BEEF", 64));
         return entries;
+    }
+
+    private static Map<String, Object> entry(String material, int amount) {
+        Map<String, Object> entry = new LinkedHashMap<String, Object>();
+        entry.put("material", material);
+        entry.put("amount", amount);
+        return entry;
+    }
+
+    private static Map<String, Object> entry(String material, String legacyMaterial, int amount) {
+        Map<String, Object> entry = entry(material, amount);
+        entry.put("legacy-material", legacyMaterial);
+        return entry;
+    }
+
+    private static Map<String, Object> entry(String material, String legacyMaterial, int amount, int damage) {
+        Map<String, Object> entry = entry(material, legacyMaterial, amount);
+        entry.put("damage", damage);
+        return entry;
     }
 
     public static Map<String, Object> fromItem(ItemStack item) {

@@ -1337,7 +1337,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         }
         if (action.equals("reset") || action.equals("default") || action.equals("초기화")) {
             saveDefaultItems(StarterItems.defaultEntries());
-            plugin.messages().send(sender, "&a기본 지급 아이템을 &fCOOKED_BEEF 64개&a로 초기화했습니다.");
+            plugin.messages().send(sender, "&a기본 지급 아이템을 기본 스카이블럭 세트로 초기화했습니다.");
             return;
         }
         plugin.messages().send(sender, "&e/godwar defaultitems [gui|list|add|set|remove|clear|reset]");
@@ -1761,14 +1761,14 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         }
         if (args.length == 3 && sub.equals("defaultitems")
             && (args[1].equalsIgnoreCase("add") || args[1].equalsIgnoreCase("추가"))) {
-            return startsWith(Arrays.asList("hand", "COOKED_BEEF", "COOKED_PORKCHOP", "BREAD"), args[2]);
+            return startsWith(defaultItemMaterialSuggestions(), args[2]);
         }
         if (args.length == 3 && sub.equals("defaultitems")
             && (args[1].equalsIgnoreCase("set") || args[1].equalsIgnoreCase("remove") || args[1].equalsIgnoreCase("삭제"))) {
             return startsWith(defaultItemIndexes(), args[2]);
         }
         if (args.length == 4 && sub.equals("defaultitems") && args[1].equalsIgnoreCase("set")) {
-            return startsWith(Arrays.asList("hand", "COOKED_BEEF", "COOKED_PORKCHOP", "BREAD"), args[3]);
+            return startsWith(defaultItemMaterialSuggestions(), args[3]);
         }
         if (args.length == 2 && sub.equals("rerolls")) {
             return startsWith(Arrays.asList("0", "1", "2", "3", "5"), args[1]);
@@ -1952,6 +1952,10 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             indexes.add(String.valueOf(i));
         }
         return indexes;
+    }
+
+    private List<String> defaultItemMaterialSuggestions() {
+        return Arrays.asList("hand", "LAVA_BUCKET", "ICE", "OAK_SAPLING", "BONE_MEAL", "CHEST", "COOKED_BEEF");
     }
 
     private boolean isTeamOrAuto(String token) {

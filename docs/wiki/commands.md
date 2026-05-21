@@ -94,4 +94,4 @@
 - `<team>`은 `red`, `blue`, `green` 또는 설정된 표시 이름을 사용할 수 있습니다.
 - `<ability>`는 능력 ID, 능력 이름, 또는 능력 목록 순번을 사용할 수 있습니다.
 - 우르프 퍼센트는 `/godwar urf 80%`처럼 입력할 수 있습니다. 이 값은 쿨타임 감소율이며, 내부 설정은 `cooldown-multiplier`로 저장됩니다.
-- 기본 지급 아이템은 `/godwar defaultitems`로 가상 창고를 열어 넣고 빼면 저장됩니다. 콘솔에서는 `/godwar defaultitems list`, `/godwar defaultitems set 1 COOKED_BEEF 64`처럼 수정할 수 있습니다.
+- 기본 지급 아이템은 `/godwar defaultitems`로 가상 창고를 열어 넣고 빼면 저장됩니다. 콘솔에서는 `/godwar defaultitems list`, `/godwar defaultitems set 1 LAVA_BUCKET 2`처럼 수정할 수 있습니다.

@@ -7,6 +7,19 @@ game:
   clear-inventory: true
   give-skyblock-items: true
   skyblock-items:
+    - material: LAVA_BUCKET
+      amount: 2
+    - material: ICE
+      amount: 2
+    - material: OAK_SAPLING
+      legacy-material: SAPLING
+      amount: 1
+    - material: BONE_MEAL
+      legacy-material: INK_SACK
+      damage: 15
+      amount: 4
+    - material: CHEST
+      amount: 1
     - material: COOKED_BEEF
       amount: 64
   remove-entities: true
