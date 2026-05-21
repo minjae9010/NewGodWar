@@ -17,7 +17,7 @@ import java.util.List;
     id = "artemis",
     name = "아르테미스",
     description = "화살과 활을 만들며 화살로 즉사 확률을 가집니다.",
-    normalSkill = "화살을 생성합니다.",
+    normalSkill = "화살 2개를 생성합니다.",
     normalStoneCost = 7,
     normalCooldownSeconds = 20,
     advancedSkill = "활을 생성합니다.",
@@ -30,7 +30,7 @@ final class ArtemisAbility extends BaseAbility {
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
         if (useNormal(context, player)) {
-            give(player, Material.ARROW, 1);
+            give(player, Material.ARROW, 2);
         }
     }
 

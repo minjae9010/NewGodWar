@@ -12,13 +12,13 @@ import org.bukkit.potion.PotionEffectType;
 @AbilityInfo(
     id = "honggildong",
     name = "홍길동",
-    description = "재빠른 의적으로 숨어들고 적의 조약돌을 빼앗습니다.",
+    description = "재빠른 의적으로 숨어들고 적의 조약돌을 크게 빼앗습니다.",
     normalSkill = "짧게 투명화하고 신속을 얻습니다.",
-    normalStoneCost = 12,
-    normalCooldownSeconds = 65,
+    normalStoneCost = 10,
+    normalCooldownSeconds = 55,
     advancedSkill = "바라보는 적에게서 조약돌을 훔치고 자신의 위치를 흐립니다.",
-    advancedStoneCost = 24,
-    advancedCooldownSeconds = 130,
+    advancedStoneCost = 20,
+    advancedCooldownSeconds = 100,
     passiveSkill = "피격 시 가끔 짧은 신속을 얻습니다.",
     grade = AbilityGrade.B
 )
@@ -34,14 +34,14 @@ final class HongGildongAbility extends BaseAbility {
 
     @Override
     protected void onStaffRight(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
-        Player target = targetPlayerInSight(context, player, 16, false);
+        Player target = targetPlayerInSight(context, player, 20, false);
         if (target == null) {
             return;
         }
         if (!useAdvanced(context, player)) {
             return;
         }
-        int stolen = Math.min(16, count(target, COBBLESTONE));
+        int stolen = Math.min(24, count(target, COBBLESTONE));
         if (stolen > 0) {
             target.getInventory().removeItem(new ItemStack(COBBLESTONE, stolen));
             give(player, COBBLESTONE, stolen);

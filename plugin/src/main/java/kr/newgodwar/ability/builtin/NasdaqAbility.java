@@ -16,13 +16,13 @@ import java.util.List;
 @AbilityInfo(
     id = "nasdaq",
     name = "나스닥",
-    description = "철괴나 다이아몬드를 확률적으로 복사합니다.",
-    normalSkill = "철괴나 다이아몬드를 든 채 좌클릭하면 확률적으로 복사합니다.",
-    normalStoneCost = 20,
-    normalCooldownSeconds = 30,
+    description = "철괴나 다이아몬드를 걸고 확률적으로 자원 복사를 시도합니다.",
+    normalSkill = "철괴나 다이아몬드를 든 채 좌클릭하면 확률적으로 들고 있는 수량을 복사합니다.",
+    normalStoneCost = 16,
+    normalCooldownSeconds = 45,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "실패 시 들고 있던 아이템을 잃을 수 있습니다.",
+    passiveSkill = "성공 시 들고 있던 수량만큼 얻고 실패 시 들고 있던 수량을 잃습니다.",
     grade = AbilityGrade.B
 )
 final class NasdaqAbility extends BaseAbility {
@@ -47,13 +47,13 @@ final class NasdaqAbility extends BaseAbility {
             sendAbilityMessage(context, player, "success", ChatColor.GREEN + "복사에 성공했습니다. 확률 " + successPercent + "%");
         } else {
             player.getInventory().removeItem(item.clone());
-            sendAbilityMessage(context, player, "failure", ChatColor.RED + "복사에 실패해 들고 있던 아이템을 잃었습니다. 확률 " + successPercent + "%");
+            sendAbilityMessage(context, player, "failure", ChatColor.RED + "복사에 실패해 들고 있던 자원을 잃었습니다. 확률 " + successPercent + "%");
         }
     }
 
     private int successPercent(AbilityPlayerContext context, Material material) {
         String path = material == Material.DIAMOND ? "abilities.nasdaq.diamond-success-percent" : "abilities.nasdaq.iron-success-percent";
-        int fallback = material == Material.DIAMOND ? 25 : 75;
+        int fallback = material == Material.DIAMOND ? 5 : 25;
         return Math.max(0, Math.min(100, context.plugin().getConfig().getInt(path, fallback)));
     }
 }

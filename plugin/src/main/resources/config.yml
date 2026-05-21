@@ -61,8 +61,8 @@ abilities:
     failure: true
     timer: true
   nasdaq:
-    iron-success-percent: 75
-    diamond-success-percent: 25
+    iron-success-percent: 25
+    diamond-success-percent: 5
   voodoo:
     damage: 0.5
     hit-interval-millis: 1000

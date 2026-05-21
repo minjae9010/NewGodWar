@@ -17,7 +17,7 @@ import java.util.List;
     id = "acidarcher",
     name = "독화살아처",
     description = "활 피해 대신 독을 부여합니다.",
-    normalSkill = "화살을 생성합니다.",
+    normalSkill = "화살 2개를 생성합니다.",
     normalStoneCost = 5,
     normalCooldownSeconds = 20,
     advancedSkill = "활을 생성합니다.",
@@ -30,7 +30,7 @@ final class AcidArcherAbility extends BaseAbility {
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
         if (useNormal(context, player)) {
-            give(player, Material.ARROW, 1);
+            give(player, Material.ARROW, 2);
         }
     }
 
