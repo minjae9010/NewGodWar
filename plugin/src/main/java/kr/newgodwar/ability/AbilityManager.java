@@ -27,6 +27,7 @@ import org.bukkit.event.entity.ProjectileLaunchEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerFishEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerItemConsumeEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 
@@ -466,6 +467,17 @@ public final class AbilityManager {
         AbilitySession session = activeSession(player);
         if (session != null) {
             session.ability().onFoodLevelChange(playerContext(player, session.definition()), event);
+        }
+    }
+
+    public void handleItemConsume(Player consumer, PlayerItemConsumeEvent event) {
+        for (Map.Entry<UUID, AbilitySession> entry : assignments.entrySet()) {
+            Player owner = plugin.getServer().getPlayer(entry.getKey());
+            if (owner == null || isAbilitySuppressed(owner)) {
+                continue;
+            }
+            AbilitySession session = entry.getValue();
+            session.ability().onItemConsume(playerContext(owner, session.definition()), event);
         }
     }
 

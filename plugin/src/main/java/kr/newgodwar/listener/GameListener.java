@@ -17,6 +17,8 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockExplodeEvent;
+import org.bukkit.event.block.BlockPistonExtendEvent;
+import org.bukkit.event.block.BlockPistonRetractEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.block.SignChangeEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
@@ -29,6 +31,7 @@ import org.bukkit.event.entity.ProjectileLaunchEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerFishEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerItemConsumeEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
@@ -271,6 +274,21 @@ public final class GameListener implements Listener {
     }
 
     @EventHandler(ignoreCancelled = true)
+    public void onBlockPistonExtend(BlockPistonExtendEvent event) {
+        if (movesTempleBlock(event.getBlocks(), event.getDirection())) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onBlockPistonRetract(BlockPistonRetractEvent event) {
+        if (movesTempleBlock(event.getBlocks(), event.getDirection())
+            || movesTempleBlock(event.getBlocks(), event.getDirection().getOppositeFace())) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler(ignoreCancelled = true)
     public void onBlockExplode(BlockExplodeEvent event) {
         protectTempleDiamonds(event.blockList());
         if (gameManager.isRunning()) {
@@ -304,6 +322,13 @@ public final class GameListener implements Listener {
     public void onFoodLevelChange(FoodLevelChangeEvent event) {
         if (gameManager.isRunning() && event.getEntity() instanceof Player) {
             abilityManager.handleFoodLevelChange((Player) event.getEntity(), event);
+        }
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onItemConsume(PlayerItemConsumeEvent event) {
+        if (gameManager.isRunning()) {
+            abilityManager.handleItemConsume(event.getPlayer(), event);
         }
     }
 
@@ -393,6 +418,19 @@ public final class GameListener implements Listener {
                 iterator.remove();
             }
         }
+    }
+
+    private boolean movesTempleBlock(List<Block> blocks, org.bukkit.block.BlockFace direction) {
+        for (Block block : blocks) {
+            if (isTempleLocation(block) || isTempleLocation(block.getRelative(direction))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean isTempleLocation(Block block) {
+        return block != null && gameManager.templeTeam(block) != null;
     }
 
     private void eliminateExplodedTempleDiamonds(List<Block> blocks) {

@@ -5,6 +5,7 @@ import kr.newgodwar.ability.AbilityManager;
 import kr.newgodwar.ability.api.AbilityDefinition;
 import kr.newgodwar.game.GameManager;
 import kr.newgodwar.game.GodTeam;
+import kr.newgodwar.game.StarterItems;
 import kr.newgodwar.gui.AbilityGui;
 import kr.newgodwar.gui.SettingsGui;
 import kr.newgodwar.util.BukkitCompat;
@@ -39,7 +40,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
     private static final List<String> SUBCOMMANDS = Arrays.asList(
         "help", "autoteam", "join", "leave", "settemple", "setspawn", "start", "stop", "status",
         "tips", "ability", "abilities", "participants", "players", "rerolls", "skip", "skipseconds", "blacklist", "gamerule", "target", "spectate", "unspectate", "observer",
-        "reload", "update", "gui", "settings", "test", "midjoin", "info", "yes", "no", "clear", "gamble", "gamblereward", "urf"
+        "reload", "update", "gui", "settings", "test", "midjoin", "info", "yes", "no", "clear", "gamble", "gamblereward", "defaultitems", "urf"
     );
     private static final int HELP_LINES_PER_PAGE = 7;
 
@@ -172,6 +173,10 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         }
         if (sub.equals("gamblereward")) {
             gamblingReward(sender, args);
+            return true;
+        }
+        if (sub.equals("defaultitems")) {
+            defaultItems(sender, args);
             return true;
         }
         if (sub.equals("ability")) {
@@ -341,6 +346,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             entries.add(new HelpEntry("운영 설정", "skipseconds <초>", "관리자 skip 기본 카운트다운 설정"));
             entries.add(new HelpEntry("운영 설정", "urf <on|off|toggle|80%>", "우르프 모드 및 쿨타임 감소율 설정"));
             entries.add(new HelpEntry("운영 설정", "gamblereward <normal|tajja> <번호|add> hand|message|<material> [값]", "도박 당첨 아이템/멘트 변경"));
+            entries.add(new HelpEntry("운영 설정", "defaultitems <list|add|set|remove|clear|reset>", "게임 시작 기본 지급 아이템 관리"));
             entries.add(new HelpEntry("운영 설정", "blacklist <list|add|remove|toggle> [ability]", "랜덤 제외 능력 관리"));
             entries.add(new HelpEntry("운영 설정", "gamerule <apply|restore>", "게임룰 수동 적용 / 복구"));
             entries.add(new HelpEntry("운영 설정", "update [check|download]", "최신 버전 확인 / 업데이트 jar 다운로드"));
@@ -1239,6 +1245,151 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         }
     }
 
+    private void defaultItems(CommandSender sender, String[] args) {
+        if (args.length < 2 || isListDefaultItemsAction(args[1])) {
+            listDefaultItems(sender);
+            return;
+        }
+        String action = args[1].toLowerCase(Locale.ROOT);
+        if (action.equals("add") || action.equals("append") || action.equals("추가")) {
+            if (args.length < 3) {
+                plugin.messages().send(sender, "&e/godwar defaultitems add hand|<material> [수량]");
+                return;
+            }
+            ItemStack item = defaultItemStack(sender, args, 2);
+            if (item == null) {
+                return;
+            }
+            List<Map<String, Object>> entries = StarterItems.copiedConfiguredEntries(plugin.getConfig());
+            entries.add(defaultItemEntry(args[2], item));
+            saveDefaultItems(entries);
+            plugin.messages().send(sender, "&a기본 지급 아이템 #" + entries.size() + "에 &f"
+                + item.getType().name() + " " + item.getAmount() + "개&a를 추가했습니다.");
+            return;
+        }
+        if (action.equals("set") || action.equals("replace") || action.equals("변경") || action.equals("교체")) {
+            if (args.length < 4) {
+                plugin.messages().send(sender, "&e/godwar defaultitems set <번호> hand|<material> [수량]");
+                return;
+            }
+            Integer number = parsePositiveInt(args[2]);
+            if (number == null) {
+                plugin.messages().send(sender, "&c번호는 1 이상의 숫자여야 합니다.");
+                return;
+            }
+            List<Map<String, Object>> entries = StarterItems.copiedConfiguredEntries(plugin.getConfig());
+            int index = number.intValue() - 1;
+            if (index < 0 || index >= entries.size()) {
+                plugin.messages().send(sender, "&c번호는 1-" + entries.size() + " 사이여야 합니다.");
+                return;
+            }
+            ItemStack item = defaultItemStack(sender, args, 3);
+            if (item == null) {
+                return;
+            }
+            entries.set(index, defaultItemEntry(args[3], item));
+            saveDefaultItems(entries);
+            plugin.messages().send(sender, "&a기본 지급 아이템 #" + number + "을 &f"
+                + item.getType().name() + " " + item.getAmount() + "개&a로 변경했습니다.");
+            return;
+        }
+        if (action.equals("remove") || action.equals("delete") || action.equals("rm") || action.equals("삭제")) {
+            if (args.length < 3) {
+                plugin.messages().send(sender, "&e/godwar defaultitems remove <번호>");
+                return;
+            }
+            Integer number = parsePositiveInt(args[2]);
+            if (number == null) {
+                plugin.messages().send(sender, "&c번호는 1 이상의 숫자여야 합니다.");
+                return;
+            }
+            List<Map<String, Object>> entries = StarterItems.copiedConfiguredEntries(plugin.getConfig());
+            int index = number.intValue() - 1;
+            if (index < 0 || index >= entries.size()) {
+                plugin.messages().send(sender, "&c번호는 1-" + entries.size() + " 사이여야 합니다.");
+                return;
+            }
+            String removed = StarterItems.displayName(entries.remove(index));
+            saveDefaultItems(entries);
+            plugin.messages().send(sender, "&a기본 지급 아이템 #" + number + "을 삭제했습니다: &f" + removed);
+            return;
+        }
+        if (action.equals("clear") || action.equals("empty") || action.equals("비우기")) {
+            saveDefaultItems(new ArrayList<Map<String, Object>>());
+            plugin.messages().send(sender, "&a기본 지급 아이템 목록을 비웠습니다.");
+            return;
+        }
+        if (action.equals("reset") || action.equals("default") || action.equals("초기화")) {
+            saveDefaultItems(StarterItems.defaultEntries());
+            plugin.messages().send(sender, "&a기본 지급 아이템을 &fCOOKED_BEEF 64개&a로 초기화했습니다.");
+            return;
+        }
+        plugin.messages().send(sender, "&e/godwar defaultitems <list|add|set|remove|clear|reset>");
+    }
+
+    private void listDefaultItems(CommandSender sender) {
+        List<Map<?, ?>> entries = StarterItems.configuredEntries(plugin.getConfig());
+        sender.sendMessage(ChatColor.GOLD + "기본 지급 아이템");
+        for (int i = 0; i < entries.size(); i++) {
+            sender.sendMessage(ChatColor.GRAY + "  #" + (i + 1) + " " + ChatColor.WHITE + StarterItems.displayName(entries.get(i)));
+        }
+        sender.sendMessage(ChatColor.DARK_GRAY + "  " + StarterItems.PATH);
+    }
+
+    private ItemStack defaultItemStack(CommandSender sender, String[] args, int tokenIndex) {
+        String token = args[tokenIndex];
+        if (token.equalsIgnoreCase("hand") || token.equalsIgnoreCase("held") || token.equalsIgnoreCase("item")
+            || token.equalsIgnoreCase("손") || token.equalsIgnoreCase("손아이템")) {
+            Player player = asPlayer(sender);
+            if (player == null) {
+                plugin.messages().send(sender, "&c콘솔에서는 hand 대신 <material> [수량]을 사용하세요.");
+                return null;
+            }
+            ItemStack hand = player.getItemInHand();
+            if (hand == null || hand.getType() == Material.AIR || hand.getAmount() <= 0) {
+                plugin.messages().send(sender, "&c손에 든 아이템이 없습니다.");
+                return null;
+            }
+            return hand.clone();
+        }
+
+        Material material = StarterItems.matchMaterial(token);
+        if (material == null || material == Material.AIR) {
+            plugin.messages().send(sender, "&c알 수 없는 아이템입니다: " + token);
+            return null;
+        }
+        int amount = 1;
+        if (args.length > tokenIndex + 1) {
+            Integer parsedAmount = parsePositiveInt(args[tokenIndex + 1]);
+            if (parsedAmount == null) {
+                plugin.messages().send(sender, "&c수량은 숫자여야 합니다.");
+                return null;
+            }
+            amount = Math.min(2304, parsedAmount.intValue());
+        }
+        return new ItemStack(material, amount);
+    }
+
+    private Map<String, Object> defaultItemEntry(String token, ItemStack item) {
+        if (token.equalsIgnoreCase("hand") || token.equalsIgnoreCase("held") || token.equalsIgnoreCase("item")
+            || token.equalsIgnoreCase("손") || token.equalsIgnoreCase("손아이템")) {
+            return StarterItems.fromItem(item);
+        }
+        return StarterItems.fromMaterial(item.getType(), item.getAmount());
+    }
+
+    private boolean isListDefaultItemsAction(String token) {
+        return token == null
+            || token.equalsIgnoreCase("list")
+            || token.equalsIgnoreCase("show")
+            || token.equalsIgnoreCase("목록");
+    }
+
+    private void saveDefaultItems(List<Map<String, Object>> entries) {
+        plugin.getConfig().set(StarterItems.PATH, entries);
+        plugin.saveConfig();
+    }
+
     private void gamblingReward(CommandSender sender, String[] args) {
         if (args.length < 4) {
             plugin.messages().send(sender, "&e/godwar gamblereward <normal|tajja> <번호|add> hand|<material> [수량]");
@@ -1580,6 +1731,20 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             values.addAll(Arrays.asList("hand", "message", "item", "DIAMOND", "IRON_INGOT", "BLAZE_ROD", "OAK_LOG"));
             return startsWith(values, args[3]);
         }
+        if (args.length == 2 && sub.equals("defaultitems")) {
+            return startsWith(Arrays.asList("list", "add", "set", "remove", "clear", "reset"), args[1]);
+        }
+        if (args.length == 3 && sub.equals("defaultitems")
+            && (args[1].equalsIgnoreCase("add") || args[1].equalsIgnoreCase("추가"))) {
+            return startsWith(Arrays.asList("hand", "COOKED_BEEF", "COOKED_PORKCHOP", "BREAD"), args[2]);
+        }
+        if (args.length == 3 && sub.equals("defaultitems")
+            && (args[1].equalsIgnoreCase("set") || args[1].equalsIgnoreCase("remove") || args[1].equalsIgnoreCase("삭제"))) {
+            return startsWith(defaultItemIndexes(), args[2]);
+        }
+        if (args.length == 4 && sub.equals("defaultitems") && args[1].equalsIgnoreCase("set")) {
+            return startsWith(Arrays.asList("hand", "COOKED_BEEF", "COOKED_PORKCHOP", "BREAD"), args[3]);
+        }
         if (args.length == 2 && sub.equals("rerolls")) {
             return startsWith(Arrays.asList("0", "1", "2", "3", "5"), args[1]);
         }
@@ -1614,7 +1779,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         List<String> values = new ArrayList<String>();
         if (admin) {
             values.addAll(SUBCOMMANDS);
-            values.addAll(Arrays.asList("a", "black", "cutin", "d", "dia", "info", "observer", "s", "set", "spawn", "t", "yes", "no", "clear", "con"));
+            values.addAll(Arrays.asList("a", "black", "cutin", "d", "dia", "info", "observer", "s", "set", "spawn", "t", "yes", "no", "clear", "con", "starteritems", "기본템"));
             if (isThemachyRoot(command, alias)) {
                 values.addAll(teamSuggestions(false));
             }
@@ -1749,6 +1914,15 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         int size = plugin.getConfig().getMapList(path).size();
         List<String> indexes = new ArrayList<String>();
         indexes.add("add");
+        for (int i = 1; i <= size; i++) {
+            indexes.add(String.valueOf(i));
+        }
+        return indexes;
+    }
+
+    private List<String> defaultItemIndexes() {
+        int size = StarterItems.configuredEntries(plugin.getConfig()).size();
+        List<String> indexes = new ArrayList<String>();
         for (int i = 1; i <= size; i++) {
             indexes.add(String.valueOf(i));
         }
@@ -2041,6 +2215,12 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         }
         if (lower.equals("gamblerewards") || lower.equals("gamblerwd") || lower.equals("도박상품")) {
             return "gamblereward";
+        }
+        if (lower.equals("defaultitem") || lower.equals("defaultitems")
+            || lower.equals("starteritem") || lower.equals("starteritems")
+            || lower.equals("skyblockitem") || lower.equals("skyblockitems")
+            || lower.equals("기본템") || lower.equals("시작템")) {
+            return "defaultitems";
         }
         if (lower.equals("participant") || lower.equals("participants")
             || lower.equals("players") || lower.equals("users")

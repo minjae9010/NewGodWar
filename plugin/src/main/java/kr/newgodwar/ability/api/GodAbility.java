@@ -15,6 +15,7 @@ import org.bukkit.event.entity.ProjectileLaunchEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerFishEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerItemConsumeEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 
@@ -69,6 +70,9 @@ public interface GodAbility {
     }
 
     default void onFoodLevelChange(AbilityPlayerContext context, FoodLevelChangeEvent event) {
+    }
+
+    default void onItemConsume(AbilityPlayerContext context, PlayerItemConsumeEvent event) {
     }
 
     default void onRegainHealth(AbilityPlayerContext context, EntityRegainHealthEvent event) {

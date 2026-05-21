@@ -1225,11 +1225,23 @@ public final class GameManager {
     }
 
     private void giveSkyblockItems(Player player) {
-        player.getInventory().addItem(new ItemStack(Material.CHEST, 1));
-        player.getInventory().addItem(new ItemStack(Material.LAVA_BUCKET, 2));
-        player.getInventory().addItem(new ItemStack(material("ICE", "ICE"), 2));
-        player.getInventory().addItem(new ItemStack(material("OAK_SAPLING", "SAPLING"), 1));
-        player.getInventory().addItem(new ItemStack(material("BONE_MEAL", "INK_SACK"), 1, (short) 15));
+        for (Map<?, ?> entry : StarterItems.configuredEntries(plugin.getConfig())) {
+            ItemStack item = StarterItems.toItemStack(entry);
+            if (item != null) {
+                giveStarterItem(player, item);
+            }
+        }
+    }
+
+    private void giveStarterItem(Player player, ItemStack item) {
+        int remaining = item.getAmount();
+        int maxStack = Math.max(1, item.getMaxStackSize());
+        while (remaining > 0) {
+            ItemStack stack = item.clone();
+            stack.setAmount(Math.min(maxStack, remaining));
+            player.getInventory().addItem(stack);
+            remaining -= stack.getAmount();
+        }
     }
 
     private Material material(String modernName, String legacyName) {
