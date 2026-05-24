@@ -241,9 +241,10 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         if (sub.equals("reload")) {
             plugin.reloadConfig();
             boolean repairedTips = GameTips.repairLegacyConfiguredTips(plugin);
+            boolean removedTajjaRewards = plugin.removeLegacyTajjaGamblingRewards();
             gameManager.reloadSettings();
-            plugin.messages().send(sender, repairedTips
-                ? "&a설정을 다시 불러왔습니다. 오래된 블막 조합 팁도 함께 수정했습니다."
+            plugin.messages().send(sender, repairedTips || removedTajjaRewards
+                ? "&a설정을 다시 불러왔습니다. 오래된 설정도 함께 정리했습니다."
                 : "&a설정을 다시 불러왔습니다.");
             return true;
         }
@@ -348,7 +349,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             entries.add(new HelpEntry("운영 설정", "rerolls <횟수>", "능력 재추첨 가능 횟수 설정"));
             entries.add(new HelpEntry("운영 설정", "skipseconds <초>", "관리자 skip 기본 카운트다운 설정"));
             entries.add(new HelpEntry("운영 설정", "urf <on|off|toggle|80%>", "우르프 모드 및 쿨타임 감소율 설정"));
-            entries.add(new HelpEntry("운영 설정", "gamblereward <normal|tajja> <번호|add> hand|message|<material> [값]", "도박 당첨 아이템/멘트 변경"));
+            entries.add(new HelpEntry("운영 설정", "gamblereward <normal> <번호|add> hand|message|<material> [값]", "도박 당첨 아이템/멘트 변경"));
             entries.add(new HelpEntry("운영 설정", "defaultitems", "게임 시작 기본 지급 아이템 창고 열기"));
             entries.add(new HelpEntry("운영 설정", "blacklist <list|add|remove|toggle> [ability]", "랜덤 제외 능력 관리"));
             entries.add(new HelpEntry("운영 설정", "gamerule <apply|restore>", "게임룰 수동 적용 / 복구"));
@@ -1417,12 +1418,12 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
 
     private void gamblingReward(CommandSender sender, String[] args) {
         if (args.length < 4) {
-            plugin.messages().send(sender, "&e/godwar gamblereward <normal|tajja> <번호|add> hand|<material> [수량]");
+            plugin.messages().send(sender, "&e/godwar gamblereward <normal> <번호|add> hand|message|<material> [값]");
             return;
         }
         String path = gamblingRewardPath(args[1]);
         if (path == null) {
-            plugin.messages().send(sender, "&c종류는 normal 또는 tajja 중 하나여야 합니다.");
+            plugin.messages().send(sender, "&c종류는 normal 또는 일반이어야 합니다.");
             return;
         }
         boolean add = isAddRewardToken(args[2]);
@@ -1511,14 +1512,11 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         if (token.equalsIgnoreCase("normal") || token.equalsIgnoreCase("일반")) {
             return "gambling.rewards.normal";
         }
-        if (token.equalsIgnoreCase("tajja") || token.equalsIgnoreCase("타짜")) {
-            return "gambling.rewards.tajja";
-        }
         return null;
     }
 
     private String gamblingRewardLabel(String path) {
-        return path.endsWith(".tajja") ? "타짜" : "일반";
+        return "일반";
     }
 
     private Material matchRewardMaterial(String token) {
@@ -1746,7 +1744,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             return startsWith(Arrays.asList("on", "off", "toggle", "20%", "50%", "100%", "percent"), args[1]);
         }
         if (args.length == 2 && sub.equals("gamblereward")) {
-            return startsWith(Arrays.asList("normal", "tajja", "일반", "타짜"), args[1]);
+            return startsWith(Arrays.asList("normal", "일반"), args[1]);
         }
         if (args.length == 3 && sub.equals("gamblereward")) {
             return startsWith(gamblingRewardIndexes(args[1]), args[2]);

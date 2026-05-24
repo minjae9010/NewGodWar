@@ -192,8 +192,6 @@ public final class SettingsGui implements Listener {
             handleGambling(player, slot, click);
         } else if (view == SettingsView.GAMBLING_NORMAL) {
             handleRewardChance(player, "gambling.rewards.normal", slot, click);
-        } else if (view == SettingsView.GAMBLING_TAJJA) {
-            handleRewardChance(player, "gambling.rewards.tajja", slot, click);
         }
 
         reopen(player, currentView(player));
@@ -212,6 +210,7 @@ public final class SettingsGui implements Listener {
             switchView(player, SettingsView.GAMBLING);
         } else if (slot == 24) {
             plugin.reloadConfig();
+            plugin.removeLegacyTajjaGamblingRewards();
             gameManager.reloadSettings();
             plugin.messages().send(player, "&a설정을 다시 불러왔습니다.");
         }
@@ -402,15 +401,12 @@ public final class SettingsGui implements Listener {
         } else if (slot == 14) {
             changeInt("gambling.cost.cobblestone", 1, 1, 2304);
         } else if (slot == 13) {
-            switchView(player, click == ClickType.RIGHT || click == ClickType.SHIFT_RIGHT
-                ? SettingsView.GAMBLING_TAJJA
-                : SettingsView.GAMBLING_NORMAL);
+            switchView(player, SettingsView.GAMBLING_NORMAL);
         } else if (slot == 15) {
             switchView(player, SettingsView.GAMBLING_NORMAL);
-        } else if (slot == 16) {
-            switchView(player, SettingsView.GAMBLING_TAJJA);
         } else if (slot == 17) {
             plugin.reloadConfig();
+            plugin.removeLegacyTajjaGamblingRewards();
             plugin.messages().send(player, "&a도박 상품 설정을 다시 불러왔습니다.");
         }
     }
@@ -458,7 +454,7 @@ public final class SettingsGui implements Listener {
     }
 
     private SettingsView backView(SettingsView view) {
-        if (view == SettingsView.GAMBLING_NORMAL || view == SettingsView.GAMBLING_TAJJA) {
+        if (view == SettingsView.GAMBLING_NORMAL) {
             return SettingsView.GAMBLING;
         }
         if (view == SettingsView.PICKAXE_UNLOCK) {
@@ -500,9 +496,7 @@ public final class SettingsGui implements Listener {
         } else if (view == SettingsView.GAMBLING) {
             fillGambling(inventory);
         } else if (view == SettingsView.GAMBLING_NORMAL) {
-            fillRewardChance(inventory, "gambling.rewards.normal", "일반");
-        } else if (view == SettingsView.GAMBLING_TAJJA) {
-            fillRewardChance(inventory, "gambling.rewards.tajja", "타짜");
+            fillRewardChance(inventory, "gambling.rewards.normal", "도박");
         }
         if (view != SettingsView.MAIN) {
             inventory.setItem(BACK_SLOT, backItem());
@@ -696,26 +690,18 @@ public final class SettingsGui implements Listener {
             ChatColor.GRAY + "현재: " + ChatColor.YELLOW + "조약돌 " + cost + "개"));
         inventory.setItem(13, item("CHEST", "CHEST", 1, (short) 0,
             ChatColor.YELLOW + "상품 설정",
-            ChatColor.GRAY + "일반 상품: " + ChatColor.WHITE + config.getMapList("gambling.rewards.normal").size() + "개",
-            ChatColor.GRAY + "타짜 상품: " + ChatColor.WHITE + config.getMapList("gambling.rewards.tajja").size() + "개",
-            ChatColor.GRAY + "좌클릭: 일반 상품 편집",
-            ChatColor.GRAY + "우클릭: 타짜 상품 편집",
+            ChatColor.GRAY + "상품: " + ChatColor.WHITE + config.getMapList("gambling.rewards.normal").size() + "개",
+            ChatColor.GRAY + "클릭: 상품 편집",
             ChatColor.DARK_GRAY + "손 아이템 변경은 편집 화면에서 Q"));
         inventory.setItem(14, item("TORCH", "TORCH", 1, (short) 0,
             ChatColor.GREEN + "도박 가격 +1",
             ChatColor.GRAY + "현재: " + ChatColor.YELLOW + "조약돌 " + cost + "개"));
         inventory.setItem(15, item("DIAMOND", "DIAMOND", 1, (short) 0,
-            ChatColor.AQUA + "일반 상품 편집",
+            ChatColor.AQUA + "상품 편집",
             ChatColor.GRAY + "좌/우클릭으로 확률 가중치 조정",
             ChatColor.GRAY + "손에 아이템을 들고 상품 슬롯에서 Q",
             ChatColor.GRAY + "멘트: /gw gamblereward normal <번호> message <문구>",
             ChatColor.DARK_GRAY + "/gw gamblereward normal <번호> hand"));
-        inventory.setItem(16, item("GOLD_INGOT", "GOLD_INGOT", 1, (short) 0,
-            ChatColor.GOLD + "타짜 상품 편집",
-            ChatColor.GRAY + "좌/우클릭으로 확률 가중치 조정",
-            ChatColor.GRAY + "손에 아이템을 들고 상품 슬롯에서 Q",
-            ChatColor.GRAY + "멘트: /gw gamblereward tajja <번호> message <문구>",
-            ChatColor.DARK_GRAY + "/gw gamblereward tajja <번호> hand"));
         inventory.setItem(17, item("BOOK", "BOOK", 1, (short) 0,
             ChatColor.YELLOW + "상품 설정 다시 불러오기",
             ChatColor.GRAY + "config.yml을 다시 읽습니다."));
@@ -780,13 +766,11 @@ public final class SettingsGui implements Listener {
         ChatColor color = enabled ? ChatColor.GREEN : ChatColor.RED;
         String state = enabled ? "켜짐" : "꺼짐";
         int cost = Math.max(1, config.getInt("gambling.cost.cobblestone", 32));
-        int normalRewards = config.getMapList("gambling.rewards.normal").size();
-        int tajjaRewards = config.getMapList("gambling.rewards.tajja").size();
+        int rewards = config.getMapList("gambling.rewards.normal").size();
         return item("GOLD_INGOT", "GOLD_INGOT", 1, (short) 0,
             color + "도박 허용: " + state,
             ChatColor.GRAY + "가격: " + ChatColor.YELLOW + "조약돌 " + cost + "개",
-            ChatColor.GRAY + "일반 상품: " + ChatColor.WHITE + normalRewards + "개",
-            ChatColor.GRAY + "타짜 상품: " + ChatColor.WHITE + tajjaRewards + "개",
+            ChatColor.GRAY + "상품: " + ChatColor.WHITE + rewards + "개",
             ChatColor.GRAY + "클릭: 도박 켜기/끄기",
             ChatColor.DARK_GRAY + "상품은 GUI 또는 /gw gamblereward로 편집");
     }
@@ -1039,7 +1023,11 @@ public final class SettingsGui implements Listener {
             return;
         }
         if (delta != 0) {
-            changeInt(path, delta, -1, 7200);
+            FileConfiguration config = plugin.getConfig();
+            int current = config.getInt(path, -1);
+            int value = current < 0 && delta > 0 ? delta : current + delta;
+            config.set(path, Math.max(-1, Math.min(7200, value)));
+            plugin.saveConfig();
         }
     }
 
@@ -1533,7 +1521,7 @@ public final class SettingsGui implements Listener {
     }
 
     private String rewardType(String path) {
-        return path.endsWith(".tajja") ? "tajja" : "normal";
+        return "normal";
     }
 
     private ItemStack rewardStack(Map<?, ?> reward) {

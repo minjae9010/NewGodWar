@@ -63,7 +63,7 @@
 | `/godwar spectate <player>` | 플레이어를 관전 상태로 전환합니다. |
 | `/godwar unspectate <player>` | 관전 상태를 해제합니다. |
 | `/godwar observer [list]` | 자신을 옵저버로 전환하거나 옵저버 목록을 봅니다. |
-| `/godwar gamblereward <normal|tajja> <번호|add> hand|message|<material> [값]` | 도박 보상 아이템 또는 멘트를 변경합니다. |
+| `/godwar gamblereward <normal> <번호|add> hand|message|<material> [값]` | 도박 보상 아이템 또는 멘트를 변경합니다. |
 | `/godwar defaultitems [gui|list|add|set|remove|clear|reset]` | 게임 시작 시 지급할 기본 아이템 창고를 열거나 목록을 관리합니다. |
 | `/godwar reload` | `config.yml`을 다시 불러오고 팀/스폰/심장 설정을 갱신합니다. |
 | `/godwar update [check|download]` | 최신 릴리즈를 확인하고 다음 서버 재시작 때 적용할 업데이트 jar를 다운로드합니다. |

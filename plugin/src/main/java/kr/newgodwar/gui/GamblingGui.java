@@ -1,7 +1,6 @@
 package kr.newgodwar.gui;
 
 import kr.newgodwar.NewGodWarPlugin;
-import kr.newgodwar.ability.api.AbilityDefinition;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -105,9 +104,7 @@ public final class GamblingGui implements Listener, CommandExecutor {
         }
         player.getInventory().removeItem(new ItemStack(Material.COBBLESTONE, cost));
 
-        AbilityDefinition ability = plugin.abilities().get(player);
-        boolean tajja = ability != null && "tajja".equalsIgnoreCase(ability.id());
-        Reward reward = chooseReward(tajja);
+        Reward reward = chooseReward();
         reward.give(player);
     }
 
@@ -115,8 +112,8 @@ public final class GamblingGui implements Listener, CommandExecutor {
         return Math.max(1, plugin.getConfig().getInt("gambling.cost.cobblestone", 32));
     }
 
-    private Reward chooseReward(boolean tajja) {
-        List<Reward> rewards = rewards(tajja ? "gambling.rewards.tajja" : "gambling.rewards.normal", tajja);
+    private Reward chooseReward() {
+        List<Reward> rewards = rewards("gambling.rewards.normal");
         long total = 0L;
         for (Reward reward : rewards) {
             total += reward.chance;
@@ -132,9 +129,9 @@ public final class GamblingGui implements Listener, CommandExecutor {
         return rewards.get(rewards.size() - 1);
     }
 
-    private List<Reward> rewards(String path, boolean tajja) {
+    private List<Reward> rewards(String path) {
         List<Reward> rewards = configuredRewards(path);
-        return rewards.isEmpty() ? defaultRewards(tajja) : rewards;
+        return rewards.isEmpty() ? defaultRewards() : rewards;
     }
 
     private List<Reward> configuredRewards(String path) {
@@ -179,16 +176,8 @@ public final class GamblingGui implements Listener, CommandExecutor {
         return messages;
     }
 
-    private List<Reward> defaultRewards(boolean tajja) {
+    private List<Reward> defaultRewards() {
         List<Reward> rewards = new ArrayList<Reward>();
-        if (tajja) {
-            rewards.add(new Reward(10, new ItemStack(Material.DIAMOND, 3), one(ChatColor.AQUA + "와우! 축하합니다! 다이아몬드 3개입니다!")));
-            rewards.add(new Reward(10, new ItemStack(material("OAK_LOG", "LOG"), 3), one(ChatColor.GOLD + "대박! 짜잔! 원목 3개 당첨 축하드립니다!")));
-            rewards.add(new Reward(65, new ItemStack(Material.IRON_INGOT, 3), one("평범하군요! 철괴 3개를 드립니다.")));
-            rewards.add(new Reward(10, new ItemStack(Material.IRON_INGOT, 4), one("평범하군요! 철괴 4개를 드립니다.")));
-            rewards.add(new Reward(5, new ItemStack(Material.DIAMOND, 22), list(ChatColor.YELLOW + "헐... 대박, 당신의 운은 미쳤군요!", ChatColor.AQUA + "다이아몬드 22개에 당첨되셨습니다.")));
-            return rewards;
-        }
         rewards.add(new Reward(5, new ItemStack(Material.DIAMOND, 3), one(ChatColor.AQUA + "와우! 축하합니다! 다이아몬드 3개입니다!")));
         rewards.add(new Reward(15, new ItemStack(material("OAK_LOG", "LOG"), 3), one(ChatColor.GOLD + "대박! 짜잔! 원목 3개 당첨 축하드립니다!")));
         rewards.add(new Reward(15, new ItemStack(Material.BLAZE_ROD, 1), list(ChatColor.RED + "꽝!", ChatColor.BLUE + "서버의 신의 자비로 능력의 막대를 드립니다.")));

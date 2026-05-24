@@ -11,8 +11,7 @@ enum SettingsView {
     PICKAXE_UNLOCK(ChatColor.BLACK + "곡괭이 허용 시간"),
     DISPLAY(ChatColor.BLACK + "표시 / 우르프 설정"),
     GAMBLING(ChatColor.BLACK + "도박 설정"),
-    GAMBLING_NORMAL(ChatColor.BLACK + "일반 도박 확률"),
-    GAMBLING_TAJJA(ChatColor.BLACK + "타짜 도박 확률");
+    GAMBLING_NORMAL(ChatColor.BLACK + "도박 확률");
 
     final String title;
 

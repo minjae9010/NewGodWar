@@ -43,6 +43,9 @@ public final class NewGodWarPlugin extends JavaPlugin {
         if (GameTips.repairLegacyConfiguredTips(this)) {
             getLogger().info("Updated legacy blaze rod recipe tip in config.yml.");
         }
+        if (removeLegacyTajjaGamblingRewards()) {
+            getLogger().info("Removed legacy tajja gambling rewards from config.yml.");
+        }
 
         this.messages = new Messages(this);
         this.versionSupport = ServerVersionSupport.detect();
@@ -120,5 +123,14 @@ public final class NewGodWarPlugin extends JavaPlugin {
 
     public PluginUpdater updater() {
         return updater;
+    }
+
+    public boolean removeLegacyTajjaGamblingRewards() {
+        if (!getConfig().isSet("gambling.rewards.tajja")) {
+            return false;
+        }
+        getConfig().set("gambling.rewards.tajja", null);
+        saveConfig();
+        return true;
     }
 }

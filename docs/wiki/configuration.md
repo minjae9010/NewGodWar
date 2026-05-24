@@ -102,12 +102,11 @@
 | --- | --- | --- |
 | `gambling.enabled` | `true` | 도박 GUI 사용 여부 |
 | `gambling.cost.cobblestone` | `32` | 1회 도박에 필요한 조약돌 수 |
-| `gambling.rewards.normal` | 목록 | 일반 도박 보상 목록 |
-| `gambling.rewards.tajja` | 목록 | 타짜 능력 보상 목록 |
+| `gambling.rewards.normal` | 목록 | 도박 보상 목록 |
 
 보상 항목은 `chance`, `material`, `amount`, `message` 또는 `messages`를 가집니다. 구버전 재료 호환이 필요하면 `legacy-material`을 함께 둘 수 있습니다.
 
-인게임에서는 `/godwar gamblereward <normal|tajja> <번호|add> hand|message|<material> [값]`로 보상 아이템과 멘트를 바꿀 수 있습니다.
+인게임에서는 `/godwar gamblereward <normal> <번호|add> hand|message|<material> [값]`로 보상 아이템과 멘트를 바꿀 수 있습니다.
 
 ## scoreboard
 

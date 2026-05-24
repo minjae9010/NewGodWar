@@ -14,6 +14,7 @@ def testServerJavaVersion = providers.gradleProperty("newGodWarServerJavaVersion
     .map { Integer.parseInt(it) }
     .orElse(25)
 def testServerDirectory = rootProject.layout.projectDirectory.dir("run")
+def pluginVersion = version.toString()
 
 tasks.named("runServer") {
     minecraftVersion(testServerVersion.get())
@@ -34,7 +35,7 @@ tasks.named("runServer") {
 tasks.processResources {
     filteringCharset = "UTF-8"
     filesMatching("plugin.yml") {
-        expand(version: project.version)
+        expand(version: pluginVersion)
     }
 }
 
