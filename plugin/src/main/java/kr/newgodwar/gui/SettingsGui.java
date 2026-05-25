@@ -6,7 +6,9 @@ import kr.newgodwar.game.GodTeam;
 import kr.newgodwar.util.BukkitCompat;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.Difficulty;
 import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
@@ -80,6 +82,10 @@ public final class SettingsGui implements Listener {
 
     public void open(Player player) {
         open(player, SettingsView.MAIN);
+    }
+
+    public void openWorld(Player player) {
+        open(player, SettingsView.WORLD);
     }
 
     private void open(Player player, SettingsView view) {
@@ -182,6 +188,8 @@ public final class SettingsGui implements Listener {
             handleTeam(player, slot, click);
         } else if (view == SettingsView.TEAM_DETAIL) {
             handleTeamDetail(player, slot, click);
+        } else if (view == SettingsView.WORLD) {
+            handleWorld(player, slot, click);
         } else if (view == SettingsView.WORLD_CORE) {
             handleWorldCore(player, slot, click);
         } else if (view == SettingsView.PICKAXE_UNLOCK) {
@@ -202,6 +210,8 @@ public final class SettingsGui implements Listener {
             switchView(player, SettingsView.GAME);
         } else if (slot == 11) {
             switchView(player, SettingsView.TEAM);
+        } else if (slot == 12) {
+            switchView(player, SettingsView.WORLD);
         } else if (slot == 13) {
             switchView(player, SettingsView.WORLD_CORE);
         } else if (slot == 15) {
@@ -310,6 +320,44 @@ public final class SettingsGui implements Listener {
             plugin.messages().send(player, "&a온라인 플레이어를 자동으로 팀 배정했습니다.");
         } else if (slot == 23) {
             cycleEliminatedPlayerAction(click == ClickType.RIGHT || click == ClickType.SHIFT_RIGHT ? -1 : 1);
+        }
+    }
+
+    private void handleWorld(Player player, int slot, ClickType click) {
+        if (slot == 1) {
+            toggle("world.autosave");
+        } else if (slot == 2) {
+            toggle("world.spawn-animals");
+        } else if (slot == 3) {
+            toggle("world.spawn-monsters");
+        } else if (slot == 5) {
+            changeWorldStartTime(click == ClickType.SHIFT_LEFT || click == ClickType.SHIFT_RIGHT ? -6000 : -1000);
+        } else if (slot == 6) {
+            plugin.getConfig().set("world.start-time", (int) (player.getWorld().getTime() % 24000L));
+            plugin.saveConfig();
+            plugin.messages().send(player, "&a게임 시작 시간을 현재 월드 시간으로 저장했습니다.");
+        } else if (slot == 7) {
+            changeWorldStartTime(click == ClickType.SHIFT_LEFT || click == ClickType.SHIFT_RIGHT ? 6000 : 1000);
+        } else if (slot == 9) {
+            cycleWorldDifficulty(-1);
+        } else if (slot == 10) {
+            cycleWorldDifficulty(click == ClickType.RIGHT || click == ClickType.SHIFT_RIGHT ? -1 : 1);
+        } else if (slot == 11) {
+            cycleWorldDifficulty(1);
+        } else if (slot == 13) {
+            toggle("world.reset-game-world-on-stop");
+        } else if (slot == 15) {
+            setGameWorldToCurrent(player);
+        } else if (slot == 16) {
+            plugin.getConfig().set("world.game-world", "");
+            plugin.saveConfig();
+            plugin.messages().send(player, "&a게임 월드 지정을 해제했습니다.");
+        } else if (slot == 18) {
+            player.closeInventory();
+            player.performCommand("godwar world list");
+        } else if (slot == 19) {
+            player.closeInventory();
+            player.performCommand("godwar world help");
         }
     }
 
@@ -487,6 +535,8 @@ public final class SettingsGui implements Listener {
             fillTeam(inventory, player);
         } else if (view == SettingsView.TEAM_DETAIL) {
             fillTeamDetail(inventory, player);
+        } else if (view == SettingsView.WORLD) {
+            fillWorld(inventory, player);
         } else if (view == SettingsView.WORLD_CORE) {
             fillWorldCore(inventory);
         } else if (view == SettingsView.PICKAXE_UNLOCK) {
@@ -512,8 +562,11 @@ public final class SettingsGui implements Listener {
             ChatColor.YELLOW + "팀",
             ChatColor.GRAY + "팀 배정, 색상, 스폰, 심장",
             ChatColor.DARK_GRAY + "클릭해서 열기"));
-        inventory.setItem(13, categoryItem("DIAMOND_BLOCK", "월드 / 코어",
-            ChatColor.GRAY + "월드 규칙, 신전 보호, 팀킬",
+        inventory.setItem(12, categoryItem("GRASS_BLOCK", "월드",
+            ChatColor.GRAY + "시작 시간, 난이도, 게임 월드",
+            ChatColor.DARK_GRAY + "클릭해서 열기"));
+        inventory.setItem(13, categoryItem("DIAMOND_BLOCK", "코어 / 게임룰",
+            ChatColor.GRAY + "신전 보호, 팀킬, 게임룰",
             ChatColor.DARK_GRAY + "클릭해서 열기"));
         inventory.setItem(15, categoryItem("ITEM_FRAME", "표시 / 우르프",
             ChatColor.GRAY + "스코어보드, Prefix, 보스바, 우르프",
@@ -620,6 +673,47 @@ public final class SettingsGui implements Listener {
         inventory.setItem(13, teamNameItem(team));
         inventory.setItem(14, teamTempleItem(team));
         inventory.setItem(16, teamEnabledItem(team));
+    }
+
+    private void fillWorld(Inventory inventory, Player player) {
+        FileConfiguration config = plugin.getConfig();
+        inventory.setItem(0, sectionItem("월드 시작 설정", (short) 3,
+            ChatColor.GRAY + "게임 시작 시 모든 월드에 적용"));
+        inventory.setItem(1, toggleItem("world.autosave", "서버 자동 저장", "BOOK"));
+        inventory.setItem(2, toggleItem("world.spawn-animals", "동물 스폰", "WHEAT"));
+        inventory.setItem(3, toggleItem("world.spawn-monsters", "몬스터 스폰", "BONE"));
+
+        inventory.setItem(5, item("REDSTONE_TORCH", "REDSTONE_TORCH_ON", 1, (short) 0,
+            ChatColor.RED + "시작 시간 -1000",
+            ChatColor.GRAY + "Shift 클릭: -6000",
+            ChatColor.GRAY + "현재: " + ChatColor.YELLOW + worldTimeText(config.getInt("world.start-time", 6000))));
+        inventory.setItem(6, worldStartTimeItem(player));
+        inventory.setItem(7, item("TORCH", "TORCH", 1, (short) 0,
+            ChatColor.GREEN + "시작 시간 +1000",
+            ChatColor.GRAY + "Shift 클릭: +6000",
+            ChatColor.GRAY + "현재: " + ChatColor.YELLOW + worldTimeText(config.getInt("world.start-time", 6000))));
+
+        inventory.setItem(9, item("ARROW", "ARROW", 1, (short) 0,
+            ChatColor.AQUA + "난이도 이전",
+            ChatColor.GRAY + "현재: " + ChatColor.YELLOW + configuredWorldDifficulty().name()));
+        inventory.setItem(10, worldDifficultyItem());
+        inventory.setItem(11, item("ARROW", "ARROW", 1, (short) 0,
+            ChatColor.AQUA + "난이도 다음",
+            ChatColor.GRAY + "현재: " + ChatColor.YELLOW + configuredWorldDifficulty().name()));
+
+        inventory.setItem(13, toggleItem("world.reset-game-world-on-stop", "게임 월드 자동 초기화", "ENDER_CHEST",
+            ChatColor.GRAY + "게임 시작 전 스냅샷을 만들고",
+            ChatColor.GRAY + "게임 종료 후 게임 월드를 복원합니다."));
+        inventory.setItem(15, gameWorldSetItem(player));
+        inventory.setItem(16, gameWorldClearItem());
+        inventory.setItem(18, item("MAP", "MAP", 1, (short) 0,
+            ChatColor.YELLOW + "월드 목록 보기",
+            ChatColor.GRAY + "/gw world list 를 실행합니다.",
+            ChatColor.DARK_GRAY + "로드/미로드 월드와 로비 상태 확인"));
+        inventory.setItem(19, item("PAPER", "PAPER", 1, (short) 0,
+            ChatColor.YELLOW + "월드 도움말",
+            ChatColor.GRAY + "/gw world help 를 실행합니다.",
+            ChatColor.DARK_GRAY + "생성, 로드, 백업, 삭제 명령 안내"));
     }
 
     private void fillWorldCore(Inventory inventory) {
@@ -990,7 +1084,9 @@ public final class SettingsGui implements Listener {
     private boolean defaultToggleValue(String path) {
         return path != null && (path.startsWith("abilities.messages.")
             || path.equals("core.require-empty-hand")
-            || path.equals("game.reveal-abilities-on-end"));
+            || path.equals("game.reveal-abilities-on-end")
+            || path.equals("world.autosave")
+            || path.equals("world.reset-game-world-on-stop"));
     }
 
     private void changeInt(String path, int delta, int min, int max) {
@@ -1005,6 +1101,64 @@ public final class SettingsGui implements Listener {
         changeInt("game.killtime-seconds", delta, 0, 7200);
         gameManager.refreshGameTimerBar();
         gameManager.refreshAllPlayerDisplays();
+    }
+
+    private void changeWorldStartTime(int delta) {
+        FileConfiguration config = plugin.getConfig();
+        int current = config.getInt("world.start-time", 6000);
+        int next = (current + delta) % 24000;
+        if (next < 0) {
+            next += 24000;
+        }
+        config.set("world.start-time", next);
+        plugin.saveConfig();
+    }
+
+    private void cycleWorldDifficulty(int delta) {
+        Difficulty[] difficulties = new Difficulty[] {
+            Difficulty.PEACEFUL,
+            Difficulty.EASY,
+            Difficulty.NORMAL,
+            Difficulty.HARD
+        };
+        Difficulty current = configuredWorldDifficulty();
+        int index = 1;
+        for (int i = 0; i < difficulties.length; i++) {
+            if (difficulties[i] == current) {
+                index = i;
+                break;
+            }
+        }
+        int next = (index + delta) % difficulties.length;
+        if (next < 0) {
+            next += difficulties.length;
+        }
+        plugin.getConfig().set("world.difficulty", difficulties[next].name());
+        plugin.saveConfig();
+    }
+
+    private Difficulty configuredWorldDifficulty() {
+        String value = plugin.getConfig().getString("world.difficulty", "EASY");
+        if (value != null) {
+            try {
+                return Difficulty.valueOf(value.trim().toUpperCase());
+            } catch (IllegalArgumentException ignored) {
+                return Difficulty.EASY;
+            }
+        }
+        return Difficulty.EASY;
+    }
+
+    private void setGameWorldToCurrent(Player player) {
+        World world = player.getWorld();
+        org.bukkit.Location lobby = gameManager.lobbyLocation();
+        if (lobby != null && lobby.getWorld() != null && lobby.getWorld().equals(world)) {
+            plugin.messages().send(player, "&c로비 월드는 게임 월드로 지정할 수 없습니다.");
+            return;
+        }
+        plugin.getConfig().set("world.game-world", world.getName());
+        plugin.saveConfig();
+        plugin.messages().send(player, "&a현재 월드를 게임 월드로 지정했습니다: &f" + world.getName());
     }
 
     private void changePickaxeUnlockSeconds(String path, ClickType click) {
@@ -1085,6 +1239,80 @@ public final class SettingsGui implements Listener {
             return minutes + "분";
         }
         return minutes + "분 " + remain + "초";
+    }
+
+    private ItemStack worldStartTimeItem(Player player) {
+        int time = plugin.getConfig().getInt("world.start-time", 6000);
+        return item("WATCH", "WATCH", Math.max(1, Math.min(64, time / 1000 + 1)), (short) 0,
+            ChatColor.YELLOW + "게임 시작 월드 시간",
+            ChatColor.GRAY + "현재 설정: " + ChatColor.WHITE + worldTimeText(time),
+            ChatColor.GRAY + "클릭: 현재 월드 시간으로 저장",
+            ChatColor.GRAY + "현재 월드 시간: " + ChatColor.AQUA + worldTimeText((int) (player.getWorld().getTime() % 24000L)),
+            ChatColor.DARK_GRAY + "world.start-time");
+    }
+
+    private ItemStack worldDifficultyItem() {
+        Difficulty difficulty = configuredWorldDifficulty();
+        return item(difficultyMaterial(difficulty), "IRON_SWORD", 1, (short) 0,
+            ChatColor.YELLOW + "게임 시작 난이도: " + ChatColor.WHITE + difficulty.name(),
+            ChatColor.GRAY + "좌클릭: 다음 난이도",
+            ChatColor.GRAY + "우클릭: 이전 난이도",
+            ChatColor.GRAY + "게임 시작 시 모든 월드에 적용됩니다.",
+            ChatColor.DARK_GRAY + "world.difficulty");
+    }
+
+    private ItemStack gameWorldSetItem(Player player) {
+        String configured = plugin.getConfig().getString("world.game-world", "");
+        String current = configured == null || configured.trim().length() == 0 ? "미지정" : configured;
+        boolean currentWorldSelected = player.getWorld().getName().equalsIgnoreCase(current);
+        ChatColor color = currentWorldSelected ? ChatColor.GREEN : ChatColor.YELLOW;
+        return item("COMPASS", "COMPASS", 1, (short) 0,
+            color + "현재 월드를 게임 월드로 지정",
+            ChatColor.GRAY + "현재 위치: " + ChatColor.WHITE + player.getWorld().getName(),
+            ChatColor.GRAY + "지정된 게임 월드: " + ChatColor.AQUA + current,
+            ChatColor.GRAY + "게임 월드는 종료 시 자동 초기화 대상입니다.",
+            ChatColor.DARK_GRAY + "world.game-world");
+    }
+
+    private ItemStack gameWorldClearItem() {
+        String configured = plugin.getConfig().getString("world.game-world", "");
+        boolean empty = configured == null || configured.trim().length() == 0;
+        return item("BARRIER", "BARRIER", 1, (short) 0,
+            (empty ? ChatColor.RED : ChatColor.YELLOW) + "게임 월드 지정 해제",
+            ChatColor.GRAY + "현재: " + ChatColor.WHITE + (empty ? "미지정" : configured),
+            ChatColor.GRAY + "해제하면 자동 월드 초기화가 작동하지 않습니다.",
+            ChatColor.DARK_GRAY + "world.game-world");
+    }
+
+    private String difficultyMaterial(Difficulty difficulty) {
+        if (difficulty == Difficulty.PEACEFUL) {
+            return "POPPY";
+        }
+        if (difficulty == Difficulty.NORMAL) {
+            return "IRON_SWORD";
+        }
+        if (difficulty == Difficulty.HARD) {
+            return "NETHERITE_SWORD";
+        }
+        return "STONE_SWORD";
+    }
+
+    private String worldTimeText(int time) {
+        int normalized = time % 24000;
+        if (normalized < 0) {
+            normalized += 24000;
+        }
+        String phase;
+        if (normalized < 6000) {
+            phase = "아침";
+        } else if (normalized < 12000) {
+            phase = "낮";
+        } else if (normalized < 18000) {
+            phase = "저녁";
+        } else {
+            phase = "밤";
+        }
+        return normalized + "틱 (" + phase + ")";
     }
 
     private void changeRewardChance(String path, int index, int delta) {

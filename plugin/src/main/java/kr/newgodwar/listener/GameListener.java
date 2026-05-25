@@ -36,9 +36,11 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
+import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.projectiles.ProjectileSource;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Iterator;
 import java.util.List;
@@ -67,6 +69,10 @@ public final class GameListener implements Listener {
                 return;
             }
             abilityManager.reapply(player);
+        } else if (!gameManager.isRunning()
+            && plugin.getConfig().getBoolean("lobby.teleport-on-join", true)
+            && gameManager.hasLobbyLocation()) {
+            Bukkit.getScheduler().runTaskLater(plugin, () -> gameManager.teleportToLobby(player), 1L);
         }
         gameManager.refreshPlayerDisplay(player);
     }
@@ -364,6 +370,20 @@ public final class GameListener implements Listener {
         }
     }
 
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onTeleport(PlayerTeleportEvent event) {
+        if (!gameManager.isRunning()
+            || !plugin.getConfig().getBoolean("compatibility.clear-teleport-invulnerability.enabled", true)
+            || gameManager.teamOf(event.getPlayer()) == null) {
+            return;
+        }
+        int delayTicks = Math.max(0, plugin.getConfig().getInt("compatibility.clear-teleport-invulnerability.delay-ticks", 1));
+        int repeatTicks = Math.max(0, plugin.getConfig().getInt("compatibility.clear-teleport-invulnerability.repeat-ticks", 3));
+        for (int tick = delayTicks; tick <= delayTicks + repeatTicks; tick++) {
+            Bukkit.getScheduler().runTaskLater(plugin, () -> clearTeleportInvulnerability(event.getPlayer()), tick);
+        }
+    }
+
     @EventHandler(ignoreCancelled = true)
     public void onChat(AsyncPlayerChatEvent event) {
         final Player player = event.getPlayer();
@@ -485,6 +505,29 @@ public final class GameListener implements Listener {
             return null;
         } catch (NoClassDefFoundError ex) {
             return null;
+        }
+    }
+
+    private void clearTeleportInvulnerability(Player player) {
+        if (player == null || !player.isOnline() || !gameManager.isRunning() || gameManager.teamOf(player) == null) {
+            return;
+        }
+        int allowedTicks = Math.max(0, plugin.getConfig().getInt("compatibility.clear-teleport-invulnerability.allowed-no-damage-ticks", 0));
+        if (player.getNoDamageTicks() > allowedTicks) {
+            player.setNoDamageTicks(allowedTicks);
+        }
+        if (plugin.getConfig().getBoolean("compatibility.clear-teleport-invulnerability.clear-entity-invulnerable", true)) {
+            setEntityInvulnerable(player, false);
+        }
+    }
+
+    private void setEntityInvulnerable(Player player, boolean invulnerable) {
+        try {
+            Method method = player.getClass().getMethod("setInvulnerable", boolean.class);
+            method.invoke(player, invulnerable);
+        } catch (NoSuchMethodException ignored) {
+        } catch (IllegalAccessException ignored) {
+        } catch (InvocationTargetException ignored) {
         }
     }
 }

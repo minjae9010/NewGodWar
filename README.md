@@ -41,7 +41,9 @@ Wiki 배포 전 저장소 Settings > Features에서 Wiki 기능을 켜야 합니
 - `/godwar midjoin <player> [red|blue|green|auto]` 관리자가 진행 중인 게임에 중간 참여 지정. 탈락 팀 플레이어도 살아있는 팀으로 재참여할 수 있습니다.
 - `/godwar leave <player>` 관리자가 플레이어 팀 제거
 - `/godwar setspawn <red|blue|green>` 현재 위치를 팀 스폰으로 등록
+- `/godwar setlobby` 현재 위치를 접속/게임 종료 로비로 등록
 - `/godwar settemple <red|blue|green>` 바라보는 다이아 블록을 팀 심장으로 등록
+- `/godwar world list|game|create|load|copy|tp|lobby|unload|delete|backup` 게임 월드 지정, 월드 생성, 로드, 복사, 이동, 로비 이동, 언로드, 삭제, 백업 관리
 - `/t info [team]` 팀원 목록 확인
 - `/t observer [list]` 옵저버 전환 또는 목록 확인
 - `/t clear [player]` 능력 쿨타임 초기화
@@ -82,7 +84,7 @@ Wiki 배포 전 저장소 Settings > Features에서 Wiki 기능을 켜야 합니
 - `game.auto-balance-teams`: 팀이 비어 있을 때 시작 시 자동 팀 배정
 - `game.allow-mid-join`: 진행 중인 게임의 중간 참여 허용 여부
 - `game.eliminated-player-action`: 팀 탈락 시 플레이어 처리 방식. `spectator`, `kick`, `midjoin`
-- `game.clear-inventory`, `game.give-skyblock-items`, `game.skyblock-items`, `game.remove-entities`: 시작 시 인벤토리/기본 아이템/엔티티 정리
+- `game.clear-inventory`, `game.clear-inventory-on-stop`, `game.give-skyblock-items`, `game.skyblock-items`, `game.remove-entities`: 시작/종료 시 인벤토리, 기본 아이템, 엔티티 정리
 - `game.ignore-bed`: 리스폰 시 침대 대신 팀 스폰 사용
 - `game.fast-start`, `game.ready-countdown-seconds`: 시작 준비 카운트다운
 - `game.select-right`: 능력 재추첨 기회 사용 여부
@@ -95,6 +97,8 @@ Wiki 배포 전 저장소 Settings > Features에서 Wiki 기능을 켜야 합니
 - `abilities.voodoo.damage`, `abilities.voodoo.hit-interval-millis`: 부두술사 연결 피해량과 피해 간격
 - `abilities.darkness.incoming-damage-multiplier`: 다크니스가 받는 피해 배율
 - `world`: 시작 시 autosave, 동물/몬스터 스폰, 난이도, 시작 시간을 적용하고 종료 시 복구
+- `lobby`: 접속 위치와 게임 종료 후 복귀 위치
+- `compatibility.clear-teleport-invulnerability`: 다른 플러그인의 텔레포트 보호로 생기는 전투 중 무적 틱 정리
 - `updates`: GitHub Release 최신 버전 확인, 자동 다운로드, 다음 재시작 적용 안내
 - `core`: 코어 폭파 보호, 맨손 파괴 제한, 다이아 곡괭이 파괴 금지
 - `gambling.enabled`: 도박 GUI 사용 여부

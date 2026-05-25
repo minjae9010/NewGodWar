@@ -29,6 +29,7 @@ import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.ScoreboardManager;
 import org.bukkit.scoreboard.Team;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -78,6 +79,8 @@ public final class GameManager {
     private long runningStartedAtMillis = 0L;
     private BossBar gameTimerBar;
     private boolean killtimeEndAnnounced = false;
+    private GameLocation lobbyLocation;
+    private String activeGameWorldSnapshotName;
 
     public GameManager(NewGodWarPlugin plugin, AbilityManager abilityManager, NmsAdapter nmsAdapter) {
         this.plugin = plugin;
@@ -87,11 +90,12 @@ public final class GameManager {
         GodTeam.reload(plugin.getConfig());
         loadTemples();
         loadSpawns();
+        loadLobby();
         setupScoreboard();
     }
 
     public void shutdown() {
-        stop(false);
+        stop(false, false);
     }
 
     public GameState state() {
@@ -113,6 +117,7 @@ public final class GameManager {
         spawns.clear();
         loadTemples();
         loadSpawns();
+        loadLobby();
         setupScoreboard();
     }
 
@@ -274,6 +279,36 @@ public final class GameManager {
         return true;
     }
 
+    public boolean setLobby(Location location) {
+        if (location == null) {
+            return false;
+        }
+        lobbyLocation = GameLocation.from(location);
+        plugin.getConfig().set("lobby.location", lobbyLocation.serialize());
+        plugin.saveConfig();
+        return true;
+    }
+
+    public Location lobbyLocation() {
+        return lobbyLocation == null ? null : lobbyLocation.toLocation();
+    }
+
+    public boolean hasLobbyLocation() {
+        return lobbyLocation() != null;
+    }
+
+    public boolean teleportToLobby(Player player) {
+        if (player == null) {
+            return false;
+        }
+        Location location = lobbyLocation();
+        if (location == null) {
+            return false;
+        }
+        player.teleport(location);
+        return true;
+    }
+
     public GodTeam templeTeam(Block block) {
         for (Map.Entry<GodTeam, TempleLocation> entry : temples.entrySet()) {
             if (entry.getValue().matches(block)) {
@@ -323,6 +358,7 @@ public final class GameManager {
         }
         restoreTempleBlocks();
         validateStartSettings();
+        prepareGameWorldSnapshot();
 
         state = GameState.READY;
         eliminatedTeams.clear();
@@ -441,6 +477,11 @@ public final class GameManager {
     }
 
     public void stop(boolean announce) {
+        stop(announce, true);
+    }
+
+    private void stop(boolean announce, boolean resetGameWorld) {
+        List<Player> endingPlayers = endingPlayers();
         state = GameState.ENDED;
         runningStartedAtMillis = 0L;
         killtimeEndAnnounced = false;
@@ -472,6 +513,12 @@ public final class GameManager {
         clearPotionEffects(BukkitCompat.onlinePlayers());
         gameRuleController.restorePreviousRules();
         restoreWorldSettings();
+        clearEndingInventories(endingPlayers);
+        teleportEndingPlayersToLobby(endingPlayers);
+        if (resetGameWorld) {
+            resetConfiguredGameWorld();
+        }
+        clearGameParticipation();
         refreshAllPlayerDisplays();
     }
 
@@ -675,6 +722,170 @@ public final class GameManager {
             GameLocation location = GameLocation.deserialize(plugin.getConfig().getString("spawns." + team.id()));
             if (location != null) {
                 spawns.put(team, location);
+            }
+        }
+    }
+
+    private void loadLobby() {
+        lobbyLocation = GameLocation.deserialize(plugin.getConfig().getString("lobby.location"));
+    }
+
+    private void prepareGameWorldSnapshot() {
+        if (!gameWorldResetEnabled()) {
+            activeGameWorldSnapshotName = null;
+            return;
+        }
+        String worldName = configuredGameWorldName();
+        if (worldName == null) {
+            activeGameWorldSnapshotName = null;
+            return;
+        }
+        World world = Bukkit.getWorld(worldName);
+        if (world == null) {
+            throw new IllegalStateException("게임 월드가 로드되어 있지 않습니다: " + worldName);
+        }
+        if (isLobbyWorld(world)) {
+            throw new IllegalStateException("로비 월드는 게임 월드 자동 초기화 대상으로 사용할 수 없습니다.");
+        }
+        activeGameWorldSnapshotName = "active-game-world";
+        try {
+            plugin.worldBackups().saveWorldSnapshot(world, activeGameWorldSnapshotName);
+            plugin.getLogger().info("Saved game world snapshot for '" + world.getName() + "'.");
+        } catch (IOException ex) {
+            activeGameWorldSnapshotName = null;
+            throw new IllegalStateException("게임 월드 백업 생성 실패: " + ex.getMessage());
+        }
+    }
+
+    private void resetConfiguredGameWorld() {
+        if (!gameWorldResetEnabled() || activeGameWorldSnapshotName == null) {
+            return;
+        }
+        String worldName = configuredGameWorldName();
+        if (worldName == null) {
+            return;
+        }
+        World world = Bukkit.getWorld(worldName);
+        if (world == null) {
+            activeGameWorldSnapshotName = null;
+            return;
+        }
+        if (isLobbyWorld(world)) {
+            plugin.getLogger().warning("Skipping game world reset because it points at the lobby world: " + worldName);
+            activeGameWorldSnapshotName = null;
+            return;
+        }
+        if (!world.getPlayers().isEmpty()) {
+            plugin.getLogger().warning("Skipping game world reset because players are still in world '" + worldName + "'. Set a lobby with /godwar setlobby first.");
+            activeGameWorldSnapshotName = null;
+            return;
+        }
+        if (!Bukkit.unloadWorld(world, false)) {
+            plugin.getLogger().warning("Could not unload game world for reset: " + worldName);
+            activeGameWorldSnapshotName = null;
+            return;
+        }
+        try {
+            plugin.worldBackups().restoreWorldSnapshot(worldName, activeGameWorldSnapshotName);
+            World reloaded = Bukkit.createWorld(WorldBackupManager.creator(worldName, managedWorldType(worldName)));
+            if (reloaded == null) {
+                plugin.getLogger().warning("Restored game world folder, but Bukkit did not load it: " + worldName);
+            } else {
+                plugin.getLogger().info("Reset and reloaded game world: " + worldName);
+            }
+        } catch (IOException ex) {
+            plugin.getLogger().warning("Game world reset failed for '" + worldName + "': " + ex.getMessage());
+        } finally {
+            activeGameWorldSnapshotName = null;
+        }
+    }
+
+    private boolean gameWorldResetEnabled() {
+        return plugin.getConfig().getBoolean("world.reset-game-world-on-stop", true);
+    }
+
+    private String configuredGameWorldName() {
+        String worldName = plugin.getConfig().getString("world.game-world", "");
+        if (worldName == null || worldName.trim().length() == 0) {
+            return null;
+        }
+        return worldName.trim();
+    }
+
+    private boolean isLobbyWorld(World world) {
+        Location lobby = lobbyLocation();
+        return lobby != null && lobby.getWorld() != null && lobby.getWorld().equals(world);
+    }
+
+    private String managedWorldType(String worldName) {
+        for (Map<?, ?> entry : plugin.getConfig().getMapList("world.managed-worlds")) {
+            Object name = entry.get("name");
+            if (name != null && name.toString().equalsIgnoreCase(worldName)) {
+                Object type = entry.get("type");
+                String value = type == null ? "normal" : type.toString().toLowerCase(Locale.ROOT);
+                return value.equals("void") || value.equals("flat") ? value : "normal";
+            }
+        }
+        return "normal";
+    }
+
+    private List<Player> endingPlayers() {
+        List<Player> players = new ArrayList<Player>();
+        for (Player player : BukkitCompat.onlinePlayers()) {
+            if (teamOf(player) != null || isObserver(player)) {
+                players.add(player);
+            }
+        }
+        return players;
+    }
+
+    private void teleportEndingPlayersToLobby(List<Player> players) {
+        if (!plugin.getConfig().getBoolean("lobby.teleport-on-game-stop", true)) {
+            return;
+        }
+        Location location = lobbyLocation();
+        if (location == null) {
+            return;
+        }
+        for (Player player : players) {
+            BukkitCompat.setSurvival(player);
+            player.teleport(location);
+        }
+    }
+
+    private void clearEndingInventories(List<Player> players) {
+        if (!plugin.getConfig().getBoolean("game.clear-inventory", true)
+            || !plugin.getConfig().getBoolean("game.clear-inventory-on-stop", true)) {
+            return;
+        }
+        for (Player player : players) {
+            player.getInventory().clear();
+            player.getInventory().setHelmet(null);
+            player.getInventory().setChestplate(null);
+            player.getInventory().setLeggings(null);
+            player.getInventory().setBoots(null);
+            try {
+                player.getInventory().setItemInOffHand(null);
+            } catch (Throwable ignored) {
+            }
+            player.setItemOnCursor(null);
+            player.updateInventory();
+        }
+    }
+
+    private void clearGameParticipation() {
+        teams.clear();
+        observers.clear();
+        eliminatedTeams.clear();
+        kills.clear();
+        pendingSelection.clear();
+        teamChatModePlayers.clear();
+        playerScoreboards.clear();
+        ScoreboardManager manager = Bukkit.getScoreboardManager();
+        if (manager != null) {
+            for (Player player : BukkitCompat.onlinePlayers()) {
+                player.setScoreboard(manager.getMainScoreboard());
+                resetPlayerListName(player);
             }
         }
     }

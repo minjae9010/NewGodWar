@@ -12,6 +12,7 @@
 | `game.allow-mid-join` | `true` | 진행 중 중간 참여 허용 여부 |
 | `game.eliminated-player-action` | `spectator` | 탈락 팀 플레이어 처리 방식: `spectator`, `kick`, `midjoin` |
 | `game.clear-inventory` | `true` | 시작 시 인벤토리와 방어구 초기화 |
+| `game.clear-inventory-on-stop` | `true` | 게임 종료 시 참가자/옵저버 인벤토리와 방어구 초기화 |
 | `game.give-skyblock-items` | `true` | 시작 시 기본 스카이블럭 아이템 지급 |
 | `game.skyblock-items` | 용암 양동이, 얼음, 묘목, 뼛가루, 상자, 익힌 소고기 | 시작 시 지급할 기본 아이템 목록 |
 | `game.remove-entities` | `true` | 시작 시 아이템, 몬스터, 동물 엔티티 제거 |
@@ -46,6 +47,27 @@
 | `world.spawn-monsters` | `false` | 몬스터 스폰 여부 |
 | `world.difficulty` | `EASY` | 시작 후 난이도 |
 | `world.start-time` | `6000` | 시작 후 월드 시간 |
+| `world.game-world` | `""` | 자동 초기화할 게임 월드 이름. 비어 있으면 자동 초기화 기능은 작동하지 않음 |
+| `world.reset-game-world-on-stop` | `true` | 게임 월드가 지정되어 있을 때 시작 시 백업하고 종료 시 해당 월드 복원 |
+| `world.managed-worlds` | `[]` | `/godwar world create`, `load`, `copy`, 백업 로드로 등록된 월드 목록. 서버 시작 시 자동 로드 |
+
+게임 월드는 `/godwar world game <world>`로 지정하고 `/godwar world game clear`로 해제합니다. 로비 월드는 게임 월드로 지정할 수 없습니다. 게임 월드가 지정되어 있으면 게임 시작 직전에 해당 월드를 스냅샷으로 저장하고, 게임 종료 시 참가자를 로비로 이동시킨 뒤 월드를 언로드, 복원, 재로드합니다. 로비가 설정되어 있지 않거나 플레이어가 게임 월드에 남아 있으면 안전을 위해 월드 초기화를 건너뜁니다.
+
+인게임에서는 `/godwar world gui` 또는 `/godwar settings`의 `월드` 메뉴에서 `world.autosave`, `world.spawn-animals`, `world.spawn-monsters`, `world.difficulty`, `world.start-time`, `world.game-world`, `world.reset-game-world-on-stop`을 조정할 수 있습니다. 자세한 운영 흐름은 [월드 관리](world-management.md)를 참고하세요.
+
+## lobby
+
+접속 위치와 게임 종료 후 복귀 위치를 관리합니다. 위치는 `/godwar setlobby`로 저장합니다.
+
+| 키 | 기본값 | 설명 |
+| --- | --- | --- |
+| `lobby.teleport-on-join` | `true` | 게임 진행 중이 아닐 때 접속한 플레이어를 로비 위치로 이동 |
+| `lobby.teleport-on-game-stop` | `true` | 게임 종료 시 참가자/옵저버를 로비 위치로 이동 |
+| `lobby.location` | `""` | 저장된 로비 위치. 비어 있거나 월드가 없으면 이동 처리 없이 기존 흐름대로 진행 |
+
+게임 종료 시 참가자 팀 배정, 옵저버 상태, 팀 채팅 모드, 킬 기록도 함께 초기화됩니다.
+
+로비 월드와 게임 월드를 분리해서 운영할 수 있습니다. 로비 월드에서 `/godwar setlobby`를 실행하면 종료 후 참가자는 해당 월드로 돌아갑니다. 운영자는 `/godwar world help`, `/godwar world list`, `/godwar world game <world|clear>`, `/godwar world create <world> [normal|flat|void]`, `/godwar world load <world>`, `/godwar world copy <sourceWorld> <newWorld>`, `/godwar world tp <world> [player]`, `/godwar world lobby [player]`, `/godwar world unload <world>`, `/godwar world delete <world> confirm`으로 월드를 지정, 생성, 복사, 이동, 로드, 언로드, 삭제할 수 있습니다.
 
 ## updates
 
@@ -64,6 +86,20 @@
 | `updates.github.repo` | `NewGodWar` | GitHub 릴리즈 저장소 이름 |
 
 관리자는 `/godwar update check`로 즉시 확인하고, `/godwar update download`로 서버 실행 중 최신 jar를 내려받을 수 있습니다.
+
+## compatibility
+
+다른 플러그인과 함께 사용할 때 게임 중 전투에 영향을 줄 수 있는 보호 효과를 보정합니다.
+
+| 키 | 기본값 | 설명 |
+| --- | --- | --- |
+| `compatibility.clear-teleport-invulnerability.enabled` | `true` | 게임 참가자가 텔레포트한 뒤 추가 무적 틱을 정리할지 여부 |
+| `compatibility.clear-teleport-invulnerability.delay-ticks` | `1` | 텔레포트 후 첫 정리를 실행할 tick 지연 |
+| `compatibility.clear-teleport-invulnerability.repeat-ticks` | `3` | 외부 플러그인의 지연 적용까지 잡기 위해 추가 정리할 tick 범위 |
+| `compatibility.clear-teleport-invulnerability.allowed-no-damage-ticks` | `0` | 텔레포트 후 허용할 최대 무적 tick |
+| `compatibility.clear-teleport-invulnerability.clear-entity-invulnerable` | `true` | 서버 버전이 지원하면 엔티티 invulnerable 플래그도 해제 |
+
+이 기능은 NewGodWar의 능력 무적 판정에는 영향을 주지 않고, Bukkit 플레이어의 텔레포트 후 피해 무시 틱과 엔티티 무적 플래그만 정리합니다.
 
 ## core
 
@@ -164,6 +200,8 @@ teams:
 ## spawns, temples, messages
 
 `spawns`와 `temples`는 `/godwar setspawn`, `/godwar settemple` 명령 또는 설정 GUI가 저장합니다. 직접 수정할 수 있지만 월드 이름과 좌표가 정확해야 합니다.
+
+월드 백업은 `/godwar world backup create [이름]`으로 생성하고 `plugins/NewGodWar/world-backups/`에 저장됩니다. `/godwar world backup load <백업이름> [로드월드이름]`은 기존 월드를 덮어쓰지 않고 새 월드 폴더로 복사한 뒤 서버에 로드합니다.
 
 `messages`에서는 prefix와 주요 게임 메시지를 바꿀 수 있습니다.
 

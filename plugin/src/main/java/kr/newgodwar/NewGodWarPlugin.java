@@ -5,6 +5,7 @@ import kr.newgodwar.command.GodWarCommand;
 import kr.newgodwar.command.TeamChatCommand;
 import kr.newgodwar.game.BlazeRodRecipes;
 import kr.newgodwar.game.GameManager;
+import kr.newgodwar.game.WorldBackupManager;
 import kr.newgodwar.gui.AbilityGui;
 import kr.newgodwar.gui.GamblingGui;
 import kr.newgodwar.gui.SettingsGui;
@@ -20,7 +21,13 @@ import kr.newgodwar.util.ServerVersionSupport;
 import org.bstats.bukkit.Metrics;
 import org.bstats.charts.SimplePie;
 import org.bukkit.Bukkit;
+import org.bukkit.World;
 import org.bukkit.plugin.java.JavaPlugin;
+
+import java.io.File;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 public final class NewGodWarPlugin extends JavaPlugin {
 
@@ -36,6 +43,7 @@ public final class NewGodWarPlugin extends JavaPlugin {
     private StarterItemsGui starterItemsGui;
     private AbilityGui abilityGui;
     private GamblingGui gamblingGui;
+    private WorldBackupManager worldBackupManager;
 
     @Override
     public void onEnable() {
@@ -55,6 +63,8 @@ public final class NewGodWarPlugin extends JavaPlugin {
 
         this.nmsAdapter = NmsAdapters.create(this);
         this.abilityManager = new AbilityManager(this);
+        this.worldBackupManager = new WorldBackupManager(this);
+        loadManagedWorlds();
         this.gameManager = new GameManager(this, abilityManager, nmsAdapter);
 
         this.starterItemsGui = new StarterItemsGui(this);
@@ -62,7 +72,7 @@ public final class NewGodWarPlugin extends JavaPlugin {
         this.abilityGui = new AbilityGui(this, abilityManager);
         this.gamblingGui = new GamblingGui(this);
 
-        GodWarCommand godWarCommand = new GodWarCommand(this, gameManager, abilityManager, settingsGui, starterItemsGui, abilityGui);
+        GodWarCommand godWarCommand = new GodWarCommand(this, gameManager, abilityManager, settingsGui, starterItemsGui, abilityGui, worldBackupManager);
         getCommand("godwar").setExecutor(godWarCommand);
         getCommand("godwar").setTabCompleter(godWarCommand);
         getCommand("t").setExecutor(godWarCommand);
@@ -125,6 +135,10 @@ public final class NewGodWarPlugin extends JavaPlugin {
         return updater;
     }
 
+    public WorldBackupManager worldBackups() {
+        return worldBackupManager;
+    }
+
     public boolean removeLegacyTajjaGamblingRewards() {
         if (!getConfig().isSet("gambling.rewards.tajja")) {
             return false;
@@ -132,5 +146,38 @@ public final class NewGodWarPlugin extends JavaPlugin {
         getConfig().set("gambling.rewards.tajja", null);
         saveConfig();
         return true;
+    }
+
+    private void loadManagedWorlds() {
+        List<Map<?, ?>> worlds = getConfig().getMapList("world.managed-worlds");
+        for (Map<?, ?> entry : worlds) {
+            Object nameValue = entry.get("name");
+            if (nameValue == null) {
+                continue;
+            }
+            String name = nameValue.toString().trim();
+            if (name.length() == 0 || Bukkit.getWorld(name) != null) {
+                continue;
+            }
+            if (!new File(Bukkit.getWorldContainer(), name).isDirectory()) {
+                getLogger().warning("Managed world folder does not exist, skipping: " + name);
+                continue;
+            }
+            String type = "normal";
+            Object typeValue = entry.get("type");
+            if (typeValue != null) {
+                type = typeValue.toString().toLowerCase(Locale.ROOT);
+            }
+            try {
+                World world = Bukkit.createWorld(WorldBackupManager.creator(name, type));
+                if (world == null) {
+                    getLogger().warning("Managed world did not load: " + name);
+                } else {
+                    getLogger().info("Loaded managed world: " + world.getName() + " (" + type + ")");
+                }
+            } catch (RuntimeException ex) {
+                getLogger().warning("Could not load managed world '" + name + "': " + ex.getMessage());
+            }
+        }
     }
 }

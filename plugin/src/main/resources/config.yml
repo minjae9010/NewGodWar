@@ -5,6 +5,7 @@ game:
   allow-mid-join: true
   eliminated-player-action: spectator
   clear-inventory: true
+  clear-inventory-on-stop: true
   give-skyblock-items: true
   skyblock-items:
     - material: LAVA_BUCKET
@@ -46,6 +47,14 @@ world:
   spawn-monsters: false
   difficulty: EASY
   start-time: 6000
+  game-world: ""
+  reset-game-world-on-stop: true
+  managed-worlds: []
+
+lobby:
+  teleport-on-join: true
+  teleport-on-game-stop: true
+  location: ""
 
 updates:
   enabled: true
@@ -58,6 +67,14 @@ updates:
   github:
     owner: minjae9010
     repo: NewGodWar
+
+compatibility:
+  clear-teleport-invulnerability:
+    enabled: true
+    delay-ticks: 1
+    repeat-ticks: 3
+    allowed-no-damage-ticks: 0
+    clear-entity-invulnerable: true
 
 core:
   protect-diamond-from-explosion: true

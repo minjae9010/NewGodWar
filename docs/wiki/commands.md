@@ -40,7 +40,20 @@
 | `/godwar midjoin <player> [team|auto]` | 진행 중인 게임에 플레이어를 중간 참여시킵니다. |
 | `/godwar leave <player>` | 플레이어의 팀 배정을 해제합니다. |
 | `/godwar setspawn <team>` | 현재 위치를 팀 스폰으로 저장합니다. |
+| `/godwar setlobby` | 현재 위치를 접속/게임 종료 후 이동할 로비 위치로 저장합니다. |
 | `/godwar settemple <team>` | 바라보는 다이아몬드 블록을 팀 심장으로 저장합니다. |
+| `/godwar world help` 또는 `/godwar help world` | 월드 생성, 로드, 이동, 백업, GUI 설정 도움말을 봅니다. |
+| `/godwar world gui` | 월드 전용 설정 GUI를 엽니다. |
+| `/godwar world list` | 현재 로드된 월드 목록을 확인합니다. |
+| `/godwar world game <world|clear>` | 게임 월드를 지정하거나 해제합니다. 지정된 월드는 시작 시 백업되고 종료 시 초기화됩니다. |
+| `/godwar world create <world> [normal|flat|void]` | 일반, 평지, 공허 월드를 생성하고 로드합니다. |
+| `/godwar world load <world> [normal|flat|void]` | 서버 폴더에 있는 월드를 로드하고 자동 로드 목록에 등록합니다. |
+| `/godwar world copy <sourceWorld> <newWorld> [normal|flat|void]` | 특정 월드를 기준으로 새 월드를 복사하고 로드합니다. |
+| `/godwar world tp <world> [player]` | 자신 또는 지정한 플레이어를 해당 월드 스폰으로 이동시킵니다. |
+| `/godwar world lobby [player]` | 자신 또는 지정한 플레이어를 저장된 로비 위치로 이동시킵니다. |
+| `/godwar world unload <world> [save]` | 플레이어가 없는 월드를 언로드합니다. 기본값은 저장입니다. |
+| `/godwar world delete <world> confirm` | 플레이어가 없는 월드를 언로드하고 월드 폴더를 삭제합니다. |
+| `/godwar world backup <create|list|load> [이름]` | 월드 백업 생성, 목록 확인, 새 월드로 로드를 처리합니다. |
 | `/godwar start` | 게임 시작 준비를 시작하고 능력을 배정합니다. |
 | `/godwar test [ability]` | 혼자 능력 테스트를 시작합니다. |
 | `/godwar stop` | 게임을 종료하고 적용된 게임룰/월드 설정을 복구합니다. |
@@ -95,3 +108,5 @@
 - `<ability>`는 능력 ID, 능력 이름, 또는 능력 목록 순번을 사용할 수 있습니다.
 - 우르프 퍼센트는 `/godwar urf 80%`처럼 입력할 수 있습니다. 이 값은 쿨타임 감소율이며, 내부 설정은 `cooldown-multiplier`로 저장됩니다.
 - 기본 지급 아이템은 `/godwar defaultitems`로 가상 창고를 열어 넣고 빼면 저장됩니다. 콘솔에서는 `/godwar defaultitems list`, `/godwar defaultitems set 1 LAVA_BUCKET 2`처럼 수정할 수 있습니다.
+- 월드 설정은 `/godwar world gui` 또는 `/godwar gui`의 `월드` 메뉴에서 변경할 수 있습니다. 현재 월드를 게임 월드로 지정하거나 자동 초기화, 시작 난이도, 시작 시간을 조정할 수 있습니다.
+- 월드 백업 로드는 안전을 위해 기존 월드 폴더에 바로 덮어쓰지 않습니다. 예를 들어 `/godwar world backup load arena-1 reset-arena`는 백업을 `reset-arena` 월드로 새로 로드합니다.

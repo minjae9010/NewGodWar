@@ -6,6 +6,8 @@ import kr.newgodwar.ability.api.AbilityDefinition;
 import kr.newgodwar.game.GameManager;
 import kr.newgodwar.game.GodTeam;
 import kr.newgodwar.game.StarterItems;
+import kr.newgodwar.game.VoidWorldGenerator;
+import kr.newgodwar.game.WorldBackupManager;
 import kr.newgodwar.gui.AbilityGui;
 import kr.newgodwar.gui.SettingsGui;
 import kr.newgodwar.gui.StarterItemsGui;
@@ -16,6 +18,9 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.World;
+import org.bukkit.WorldCreator;
+import org.bukkit.WorldType;
 import org.bukkit.block.Block;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -35,13 +40,15 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.io.File;
+import java.io.IOException;
 
 public final class GodWarCommand implements CommandExecutor, TabCompleter {
 
     private static final List<String> SUBCOMMANDS = Arrays.asList(
-        "help", "autoteam", "join", "leave", "settemple", "setspawn", "start", "stop", "status",
+        "help", "autoteam", "join", "leave", "settemple", "setspawn", "setlobby", "start", "stop", "status",
         "tips", "ability", "abilities", "participants", "players", "rerolls", "skip", "skipseconds", "blacklist", "gamerule", "target", "spectate", "unspectate", "observer",
-        "reload", "update", "gui", "settings", "test", "midjoin", "info", "yes", "no", "clear", "gamble", "gamblereward", "defaultitems", "urf"
+        "reload", "update", "gui", "settings", "test", "midjoin", "info", "yes", "no", "clear", "gamble", "gamblereward", "defaultitems", "urf", "world"
     );
     private static final int HELP_LINES_PER_PAGE = 7;
 
@@ -51,14 +58,16 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
     private final SettingsGui settingsGui;
     private final StarterItemsGui starterItemsGui;
     private final AbilityGui abilityGui;
+    private final WorldBackupManager worldBackupManager;
 
-    public GodWarCommand(NewGodWarPlugin plugin, GameManager gameManager, AbilityManager abilityManager, SettingsGui settingsGui, StarterItemsGui starterItemsGui, AbilityGui abilityGui) {
+    public GodWarCommand(NewGodWarPlugin plugin, GameManager gameManager, AbilityManager abilityManager, SettingsGui settingsGui, StarterItemsGui starterItemsGui, AbilityGui abilityGui, WorldBackupManager worldBackupManager) {
         this.plugin = plugin;
         this.gameManager = gameManager;
         this.abilityManager = abilityManager;
         this.settingsGui = settingsGui;
         this.starterItemsGui = starterItemsGui;
         this.abilityGui = abilityGui;
+        this.worldBackupManager = worldBackupManager;
     }
 
     @Override
@@ -130,6 +139,10 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             setSpawn(sender, args);
             return true;
         }
+        if (sub.equals("setlobby")) {
+            setLobby(sender);
+            return true;
+        }
         if (sub.equals("start")) {
             start(sender);
             return true;
@@ -152,6 +165,10 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         }
         if (sub.equals("urf")) {
             urf(sender, args);
+            return true;
+        }
+        if (sub.equals("world")) {
+            world(sender, label, args);
             return true;
         }
         if (sub.equals("info")) {
@@ -262,6 +279,10 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
     }
 
     private void help(CommandSender sender, String label, String[] args) {
+        if (args.length >= 2 && isWorldHelpToken(args[1])) {
+            worldHelp(sender, label);
+            return;
+        }
         int requestedPage = parseHelpPage(args);
         List<HelpEntry> entries = helpEntries(label, sender.hasPermission("newgodwar.admin"));
         int maxPage = Math.max(1, ((entries.size() - 1) / HELP_LINES_PER_PAGE) + 1);
@@ -304,6 +325,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             if (section.equals("team") || section.equals("팀")) return 2;
             if (section.equals("ability") || section.equals("능력")) return 3;
             if (section.equals("admin") || section.equals("관리")) return 4;
+            if (isWorldHelpToken(section)) return 2;
             return 1;
         }
     }
@@ -335,7 +357,11 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             entries.add(new HelpEntry("운영 팀", "midjoin <player> [team|auto]", "진행 중 플레이어 중간 참여"));
             entries.add(new HelpEntry("운영 팀", "leave <player>", "플레이어 팀 배정 해제"));
             entries.add(new HelpEntry("운영 팀", "setspawn <team>", "현재 위치를 팀 스폰으로 등록"));
+            entries.add(new HelpEntry("운영 팀", "setlobby", "현재 위치를 접속/게임 종료 로비로 등록"));
             entries.add(new HelpEntry("운영 팀", "settemple <team>", "바라보는 다이아 블록을 심장으로 등록"));
+            entries.add(new HelpEntry("운영 팀", "world help", "월드 명령 상세 도움말"));
+            entries.add(new HelpEntry("운영 팀", "world gui", "월드 전용 설정 GUI 열기"));
+            entries.add(new HelpEntry("운영 팀", "world <list|game|create|load|copy|tp|lobby|unload|delete|backup>", "게임 월드 지정, 생성, 복사, 이동, 백업, 삭제 관리"));
             entries.add(new HelpEntry("Themachy 호환", "/t <team> <player>", "플레이어 팀 수동 배정 (/gw join 원본)"));
             entries.add(new HelpEntry("운영 설정", "a set <player> <ability>", "능력 수동 지정"));
             entries.add(new HelpEntry("운영 설정", "a list [검색어]", "플레이어별 배정 능력 확인"));
@@ -614,6 +640,17 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         }
         gameManager.setSpawn(team, player.getLocation());
         plugin.messages().send(sender, "&a현재 위치를 " + teamName(team) + " 팀 스폰으로 등록했습니다.");
+    }
+
+    private void setLobby(CommandSender sender) {
+        Player player = asPlayer(sender);
+        if (player == null) {
+            plugin.messages().send(sender, "&c플레이어만 사용할 수 있습니다.");
+            return;
+        }
+        if (gameManager.setLobby(player.getLocation())) {
+            plugin.messages().send(sender, "&a현재 위치를 접속/게임 종료 로비로 등록했습니다.");
+        }
     }
 
     private void urf(CommandSender sender, String[] args) {
@@ -1149,6 +1186,615 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             return;
         }
         plugin.messages().send(sender, "&e/godwar gamerule <apply|restore>");
+    }
+
+    private void world(CommandSender sender, String label, String[] args) {
+        if (args.length < 2 || args[1].equalsIgnoreCase("list") || args[1].equalsIgnoreCase("목록")) {
+            listWorlds(sender);
+            return;
+        }
+        String action = args[1].toLowerCase(Locale.ROOT);
+        if (action.equals("help") || action.equals("도움말") || action.equals("?")) {
+            worldHelp(sender, label);
+            return;
+        }
+        if (action.equals("gui") || action.equals("settings") || action.equals("설정")) {
+            openWorldSettings(sender);
+            return;
+        }
+        if (action.equals("create") || action.equals("new") || action.equals("생성")) {
+            createWorld(sender, args);
+            return;
+        }
+        if (action.equals("game") || action.equals("gameworld") || action.equals("게임")) {
+            gameWorld(sender, args);
+            return;
+        }
+        if (action.equals("load") || action.equals("로드")) {
+            loadWorld(sender, args);
+            return;
+        }
+        if (action.equals("copy") || action.equals("clone") || action.equals("복사")) {
+            copyWorld(sender, args);
+            return;
+        }
+        if (action.equals("unload") || action.equals("언로드")) {
+            unloadWorld(sender, args);
+            return;
+        }
+        if (action.equals("delete") || action.equals("remove") || action.equals("삭제")) {
+            deleteWorld(sender, args);
+            return;
+        }
+        if (action.equals("backup") || action.equals("backups") || action.equals("백업")) {
+            worldBackup(sender, args);
+            return;
+        }
+        if (action.equals("tp") || action.equals("teleport") || action.equals("move") || action.equals("이동")) {
+            if (args.length < 3) {
+                plugin.messages().send(sender, "&e/godwar world tp <world> [player]");
+                return;
+            }
+            Player target = args.length >= 4 ? Bukkit.getPlayer(args[3]) : asPlayer(sender);
+            if (target == null) {
+                plugin.messages().send(sender, "&c이동할 플레이어를 찾을 수 없습니다.");
+                return;
+            }
+            World world = worldByName(args[2]);
+            if (world == null) {
+                plugin.messages().send(sender, "&c월드를 찾을 수 없습니다: " + args[2]);
+                return;
+            }
+            target.teleport(world.getSpawnLocation());
+            plugin.messages().send(sender, "&a" + target.getName() + " 님을 &f" + world.getName() + "&a 월드로 이동했습니다.");
+            return;
+        }
+        if (action.equals("lobby") || action.equals("로비")) {
+            Player target = args.length >= 3 ? Bukkit.getPlayer(args[2]) : asPlayer(sender);
+            if (target == null) {
+                plugin.messages().send(sender, "&c이동할 플레이어를 찾을 수 없습니다.");
+                return;
+            }
+            if (!gameManager.teleportToLobby(target)) {
+                plugin.messages().send(sender, "&c로비 위치가 설정되지 않았습니다. /godwar setlobby 를 먼저 실행하세요.");
+                return;
+            }
+            plugin.messages().send(sender, "&a" + target.getName() + " 님을 로비로 이동했습니다.");
+            return;
+        }
+        World directWorld = worldByName(args[1]);
+        if (directWorld != null) {
+            Player target = args.length >= 3 ? Bukkit.getPlayer(args[2]) : asPlayer(sender);
+            if (target == null) {
+                plugin.messages().send(sender, "&c이동할 플레이어를 찾을 수 없습니다.");
+                return;
+            }
+            target.teleport(directWorld.getSpawnLocation());
+            plugin.messages().send(sender, "&a" + target.getName() + " 님을 &f" + directWorld.getName() + "&a 월드로 이동했습니다.");
+            return;
+        }
+        plugin.messages().send(sender, "&e/godwar world <list|game|create|load|copy|tp|lobby|unload|delete|backup>");
+    }
+
+    private boolean isWorldHelpToken(String token) {
+        return token != null
+            && (token.equalsIgnoreCase("world")
+            || token.equalsIgnoreCase("worlds")
+            || token.equalsIgnoreCase("월드"));
+    }
+
+    private void worldHelp(CommandSender sender, String label) {
+        String configured = plugin.getConfig().getString("world.game-world", "");
+        boolean hasGameWorld = configured != null && configured.trim().length() > 0;
+        sender.sendMessage("");
+        line(sender);
+        sender.sendMessage(ChatColor.GOLD + "" + ChatColor.BOLD + " NewGodWar 월드 관리"
+            + ChatColor.DARK_GRAY + " | " + ChatColor.YELLOW + "/" + label + " world help");
+        sender.sendMessage(ChatColor.GRAY + "  게임 월드: "
+            + (hasGameWorld ? ChatColor.AQUA + configured : ChatColor.RED + "미지정")
+            + ChatColor.DARK_GRAY + " | " + ChatColor.GRAY + "자동 초기화 "
+            + state(plugin.getConfig().getBoolean("world.reset-game-world-on-stop", true))
+            + ChatColor.DARK_GRAY + " | " + ChatColor.GRAY + "GUI "
+            + ChatColor.AQUA + "/" + label + " gui");
+        line(sender);
+        section(sender, "확인 / 지정");
+        command(sender, label, "world list", "로드된 월드와 로드 가능한 월드 폴더 확인");
+        command(sender, label, "world game <world|clear>", "종료 시 초기화할 게임 월드 지정 또는 해제");
+        command(sender, label, "world gui", "월드 전용 설정 GUI 열기");
+        command(sender, label, "world lobby [player]", "저장된 로비 위치로 이동");
+        section(sender, "생성 / 로드");
+        command(sender, label, "world create <world> [normal|flat|void]", "새 월드 생성 후 자동 로드");
+        command(sender, label, "world load <world> [normal|flat|void]", "서버 폴더의 월드를 로드하고 자동 로드 목록에 등록");
+        command(sender, label, "world copy <sourceWorld> <newWorld> [normal|flat|void]", "기존 월드를 복사해서 새 월드로 로드");
+        section(sender, "이동 / 정리");
+        command(sender, label, "world tp <world> [player]", "플레이어를 해당 월드 스폰으로 이동");
+        command(sender, label, "world unload <world> [save]", "플레이어가 없는 월드를 언로드");
+        command(sender, label, "world delete <world> confirm", "플레이어가 없는 월드를 언로드하고 폴더 삭제");
+        section(sender, "백업");
+        command(sender, label, "world backup create [이름]", "모든 로드 월드를 백업");
+        command(sender, label, "world backup list", "저장된 월드 백업 목록 확인");
+        command(sender, label, "world backup load <백업이름> [로드월드이름]", "백업을 기존 월드가 아닌 새 월드로 복사해 로드");
+        line(sender);
+        sender.sendMessage(ChatColor.GRAY + "  설정 GUI: " + ChatColor.AQUA + "/" + label + " gui"
+            + ChatColor.DARK_GRAY + " > " + ChatColor.YELLOW + "월드"
+            + ChatColor.GRAY + " 에서 난이도, 시작 시간, 스폰, 게임 월드 초기화를 조정합니다.");
+        sender.sendMessage(ChatColor.RED + "  주의: " + ChatColor.GRAY
+            + "삭제/언로드 전 플레이어를 로비나 다른 월드로 이동시키고, 중요한 월드는 먼저 백업하세요.");
+        line(sender);
+    }
+
+    private void openWorldSettings(CommandSender sender) {
+        Player player = asPlayer(sender);
+        if (player == null) {
+            plugin.messages().send(sender, "&c플레이어만 GUI를 열 수 있습니다.");
+            return;
+        }
+        settingsGui.openWorld(player);
+    }
+
+    private void gameWorld(CommandSender sender, String[] args) {
+        if (args.length < 3) {
+            String configured = plugin.getConfig().getString("world.game-world", "");
+            if (configured == null || configured.trim().length() == 0) {
+                plugin.messages().send(sender, "&e게임 월드가 지정되어 있지 않습니다. 자동 월드 초기화는 작동하지 않습니다.");
+            } else {
+                plugin.messages().send(sender, "&a현재 게임 월드: &f" + configured);
+            }
+            plugin.messages().send(sender, "&e/godwar world game <world|clear>");
+            return;
+        }
+        if (args[2].equalsIgnoreCase("clear") || args[2].equalsIgnoreCase("none") || args[2].equalsIgnoreCase("해제")) {
+            plugin.getConfig().set("world.game-world", "");
+            plugin.saveConfig();
+            plugin.messages().send(sender, "&a게임 월드 지정을 해제했습니다. 자동 월드 초기화는 작동하지 않습니다.");
+            return;
+        }
+        World world = worldByName(args[2]);
+        if (world == null) {
+            plugin.messages().send(sender, "&c로드된 월드를 찾을 수 없습니다: " + args[2]);
+            return;
+        }
+        org.bukkit.Location lobby = gameManager.lobbyLocation();
+        if (lobby != null && lobby.getWorld() != null && lobby.getWorld().equals(world)) {
+            plugin.messages().send(sender, "&c로비 월드는 게임 월드로 지정할 수 없습니다.");
+            return;
+        }
+        plugin.getConfig().set("world.game-world", world.getName());
+        plugin.saveConfig();
+        plugin.messages().send(sender, "&a게임 월드를 지정했습니다: &f" + world.getName()
+            + "&7 | 게임 시작 시 백업, 종료 시 자동 초기화됩니다.");
+    }
+
+    private void createWorld(CommandSender sender, String[] args) {
+        if (args.length < 3) {
+            plugin.messages().send(sender, "&e/godwar world create <world> [normal|flat|void]");
+            return;
+        }
+        String name = sanitizeWorldName(args[2]);
+        if (name == null) {
+            plugin.messages().send(sender, "&c월드 이름은 영문, 숫자, 점, 밑줄, 하이픈만 사용할 수 있습니다.");
+            return;
+        }
+        if (worldByName(name) != null || new File(Bukkit.getWorldContainer(), name).exists()) {
+            plugin.messages().send(sender, "&c이미 같은 이름의 월드가 있습니다: " + name);
+            return;
+        }
+        WorldCreator creator = new WorldCreator(name);
+        creator.environment(World.Environment.NORMAL);
+        if (args.length >= 4 && (args[3].equalsIgnoreCase("flat") || args[3].equalsIgnoreCase("평지"))) {
+            creator.type(WorldType.FLAT);
+        } else if (args.length >= 4 && (args[3].equalsIgnoreCase("void") || args[3].equalsIgnoreCase("empty") || args[3].equalsIgnoreCase("공허"))) {
+            creator.generator(new VoidWorldGenerator());
+            creator.generateStructures(false);
+        }
+        World created = Bukkit.createWorld(creator);
+        if (created == null) {
+            plugin.messages().send(sender, "&c월드를 생성하지 못했습니다: " + name);
+            return;
+        }
+        created.save();
+        saveManagedWorld(created.getName(), worldTypeToken(args, 3));
+        plugin.messages().send(sender, "&a월드를 생성하고 로드했습니다: &f" + created.getName());
+    }
+
+    private void loadWorld(CommandSender sender, String[] args) {
+        if (args.length < 3) {
+            plugin.messages().send(sender, "&e/godwar world load <world> [normal|flat|void]");
+            return;
+        }
+        String name = sanitizeWorldName(args[2]);
+        if (name == null) {
+            plugin.messages().send(sender, "&c월드 이름은 영문, 숫자, 점, 밑줄, 하이픈만 사용할 수 있습니다.");
+            return;
+        }
+        if (worldByName(name) != null) {
+            plugin.messages().send(sender, "&e이미 로드된 월드입니다: &f" + name);
+            return;
+        }
+        File folder = new File(Bukkit.getWorldContainer(), name);
+        if (!folder.isDirectory()) {
+            plugin.messages().send(sender, "&c월드 폴더를 찾을 수 없습니다: " + name);
+            return;
+        }
+        String type = args.length >= 4 ? worldTypeToken(args, 3) : managedWorldType(name);
+        World loaded = Bukkit.createWorld(WorldBackupManager.creator(name, type));
+        if (loaded == null) {
+            plugin.messages().send(sender, "&c월드를 로드하지 못했습니다: " + name);
+            return;
+        }
+        saveManagedWorld(loaded.getName(), type);
+        plugin.messages().send(sender, "&a월드를 로드했습니다: &f" + loaded.getName());
+    }
+
+    private void copyWorld(CommandSender sender, String[] args) {
+        if (args.length < 4) {
+            plugin.messages().send(sender, "&e/godwar world copy <sourceWorld> <newWorld> [normal|flat|void]");
+            return;
+        }
+        String sourceName = sanitizeWorldName(args[2]);
+        String targetName = sanitizeWorldName(args[3]);
+        if (sourceName == null || targetName == null) {
+            plugin.messages().send(sender, "&c월드 이름은 영문, 숫자, 점, 밑줄, 하이픈만 사용할 수 있습니다.");
+            return;
+        }
+        if (worldByName(targetName) != null || worldBackupManager.hasWorldFolder(targetName)) {
+            plugin.messages().send(sender, "&c이미 같은 이름의 월드가 있습니다: " + targetName);
+            return;
+        }
+        try {
+            String type = args.length >= 5 ? worldTypeToken(args, 4) : inferWorldType(sourceName);
+            World copied = worldBackupManager.copyWorld(sourceName, targetName, type);
+            saveManagedWorld(copied.getName(), type);
+            plugin.messages().send(sender, "&a월드를 복사하고 로드했습니다: &f" + sourceName + " &7-> &f" + copied.getName());
+        } catch (IOException ex) {
+            plugin.messages().send(sender, "&c월드 복사 실패: " + ex.getMessage());
+        }
+    }
+
+    private void unloadWorld(CommandSender sender, String[] args) {
+        if (args.length < 3) {
+            plugin.messages().send(sender, "&e/godwar world unload <world> [save]");
+            return;
+        }
+        World world = worldByName(args[2]);
+        if (world == null) {
+            plugin.messages().send(sender, "&c로드된 월드를 찾을 수 없습니다: " + args[2]);
+            return;
+        }
+        if (isProtectedWorld(world)) {
+            plugin.messages().send(sender, "&c기본 월드나 로비 월드는 언로드할 수 없습니다.");
+            return;
+        }
+        if (!world.getPlayers().isEmpty()) {
+            plugin.messages().send(sender, "&c플레이어가 있는 월드는 언로드할 수 없습니다. 먼저 다른 월드로 이동시키세요.");
+            return;
+        }
+        boolean save = args.length < 4 || !args[3].equalsIgnoreCase("false");
+        if (!Bukkit.unloadWorld(world, save)) {
+            plugin.messages().send(sender, "&c월드를 언로드하지 못했습니다: " + world.getName());
+            return;
+        }
+        plugin.messages().send(sender, "&a월드를 언로드했습니다: &f" + world.getName());
+    }
+
+    private void deleteWorld(CommandSender sender, String[] args) {
+        if (args.length < 4 || !args[3].equalsIgnoreCase("confirm")) {
+            plugin.messages().send(sender, "&e/godwar world delete <world> confirm");
+            plugin.messages().send(sender, "&c주의: 월드 폴더를 영구 삭제합니다. 먼저 백업을 권장합니다.");
+            return;
+        }
+        String name = sanitizeWorldName(args[2]);
+        if (name == null) {
+            plugin.messages().send(sender, "&c월드 이름은 영문, 숫자, 점, 밑줄, 하이픈만 사용할 수 있습니다.");
+            return;
+        }
+        World loaded = worldByName(name);
+        File folder = loaded == null ? null : loaded.getWorldFolder();
+        if (loaded != null) {
+            if (isProtectedWorld(loaded)) {
+                plugin.messages().send(sender, "&c기본 월드나 로비 월드는 삭제할 수 없습니다.");
+                return;
+            }
+            if (isSharedWorldFolder(loaded, folder)) {
+                plugin.messages().send(sender, "&c다른 로드된 월드와 같은 폴더를 쓰는 월드는 삭제할 수 없습니다: " + folder.getPath());
+                return;
+            }
+            if (!loaded.getPlayers().isEmpty()) {
+                plugin.messages().send(sender, "&c플레이어가 있는 월드는 삭제할 수 없습니다. 먼저 다른 월드로 이동시키세요.");
+                return;
+            }
+            if (!Bukkit.unloadWorld(loaded, false)) {
+                plugin.messages().send(sender, "&c삭제 전 월드를 언로드하지 못했습니다: " + loaded.getName());
+                return;
+            }
+        }
+        List<File> folders = worldBackupManager.existingWorldFolders(name);
+        if (folders.isEmpty()) {
+            removeManagedWorld(name);
+            plugin.getConfig().set("world.game-world", gameWorldNameMatches(name) ? "" : plugin.getConfig().getString("world.game-world", ""));
+            plugin.saveConfig();
+            plugin.messages().send(sender, "&e월드는 언로드했지만 삭제할 폴더를 찾지 못했습니다: &f" + name);
+            return;
+        }
+        for (File worldFolder : folders) {
+            if (!isInsideWorldContainer(worldFolder)) {
+                plugin.messages().send(sender, "&c서버 월드 폴더 밖의 경로는 삭제할 수 없습니다: " + worldFolder.getPath());
+                return;
+            }
+        }
+        try {
+            for (File worldFolder : folders) {
+                deleteDirectory(worldFolder);
+            }
+            removeManagedWorld(name);
+            if (gameWorldNameMatches(name)) {
+                plugin.getConfig().set("world.game-world", "");
+                plugin.saveConfig();
+            }
+            plugin.messages().send(sender, "&a월드 폴더를 삭제했습니다: &f" + name + " &7(" + folders.size() + "개 경로)");
+        } catch (IOException ex) {
+            plugin.messages().send(sender, "&c월드 삭제 실패: " + ex.getMessage());
+        }
+    }
+
+    private void worldBackup(CommandSender sender, String[] args) {
+        if (args.length < 3) {
+            plugin.messages().send(sender, "&e/godwar world backup <create|list|load> [이름] [로드월드이름]");
+            plugin.messages().send(sender, "&7백업은 plugins/NewGodWar/world-backups/ 아래에 저장됩니다.");
+            return;
+        }
+        String action = args[2].toLowerCase(Locale.ROOT);
+        if (action.equals("list") || action.equals("목록")) {
+            worldBackupManager.sendBackupList(sender);
+            return;
+        }
+        if (action.equals("create") || action.equals("save") || action.equals("생성") || action.equals("저장")) {
+            try {
+                WorldBackupManager.BackupResult result = worldBackupManager.createBackup(args.length >= 4 ? args[3] : null);
+                plugin.messages().send(sender, "&a월드 백업을 생성했습니다: &f" + result.name()
+                    + " &7(" + result.worlds().size() + "개 월드)");
+            } catch (IOException ex) {
+                plugin.messages().send(sender, "&c월드 백업 생성 실패: " + ex.getMessage());
+            }
+            return;
+        }
+        if (action.equals("load") || action.equals("import") || action.equals("로드") || action.equals("불러오기")) {
+            if (args.length < 4) {
+                plugin.messages().send(sender, "&e/godwar world backup load <백업이름> [로드월드이름]");
+                return;
+            }
+            try {
+                WorldBackupManager.LoadResult result = worldBackupManager.loadBackup(args[3], args.length >= 5 ? args[4] : null);
+                for (String worldName : result.worlds()) {
+                    saveManagedWorld(worldName, "normal");
+                }
+                plugin.messages().send(sender, "&a월드 백업을 새 월드로 로드했습니다: &f" + result.backupName()
+                    + " &7-> &f" + join(result.worlds()));
+            } catch (IOException ex) {
+                plugin.messages().send(sender, "&c월드 백업 로드 실패: " + ex.getMessage());
+            }
+            return;
+        }
+        plugin.messages().send(sender, "&e/godwar world backup <create|list|load> [이름] [로드월드이름]");
+    }
+
+    private void listWorlds(CommandSender sender) {
+        sender.sendMessage(plugin.messages().prefix() + ChatColor.YELLOW + "로드된 월드 목록");
+        Set<String> listed = new HashSet<String>();
+        for (World world : Bukkit.getWorlds()) {
+            listed.add(world.getName().toLowerCase(Locale.ROOT));
+            sender.sendMessage(ChatColor.GRAY + "- " + ChatColor.WHITE + world.getName()
+                + ChatColor.DARK_GRAY + " | " + ChatColor.GRAY + world.getEnvironment().name()
+                + ChatColor.DARK_GRAY + " | " + ChatColor.GRAY + world.getPlayers().size() + "명"
+                + ChatColor.DARK_GRAY + " | " + ChatColor.GRAY + world.getWorldFolder().getName());
+        }
+        List<String> unmanagedFolders = unloadedWorldNameSuggestions();
+        if (!unmanagedFolders.isEmpty()) {
+            sender.sendMessage(ChatColor.YELLOW + "로드되지 않은 월드 폴더");
+            for (String worldName : unmanagedFolders) {
+                if (!listed.contains(worldName.toLowerCase(Locale.ROOT))) {
+                    sender.sendMessage(ChatColor.GRAY + "- " + ChatColor.WHITE + worldName
+                        + ChatColor.DARK_GRAY + " | " + ChatColor.GRAY + "/godwar world load " + worldName);
+                }
+            }
+        }
+        if (gameManager.lobbyLocation() != null) {
+            sender.sendMessage(ChatColor.GRAY + "로비 이동: " + ChatColor.AQUA + "/godwar world lobby");
+        } else {
+            sender.sendMessage(ChatColor.GRAY + "로비 위치 없음: " + ChatColor.AQUA + "/godwar setlobby");
+        }
+    }
+
+    private boolean isProtectedWorld(World world) {
+        if (world == null) {
+            return false;
+        }
+        List<World> worlds = Bukkit.getWorlds();
+        if (!worlds.isEmpty() && worlds.get(0).equals(world)) {
+            return true;
+        }
+        org.bukkit.Location lobby = gameManager.lobbyLocation();
+        return lobby != null && lobby.getWorld() != null && lobby.getWorld().equals(world);
+    }
+
+    private String sanitizeWorldName(String name) {
+        if (name == null || name.trim().length() == 0) {
+            return null;
+        }
+        String trimmed = name.trim();
+        if (!trimmed.matches("[A-Za-z0-9._-]{1,64}") || ".".equals(trimmed) || "..".equals(trimmed)) {
+            return null;
+        }
+        return trimmed;
+    }
+
+    private String worldTypeToken(String[] args, int index) {
+        if (args.length <= index) {
+            return "normal";
+        }
+        String token = args[index].toLowerCase(Locale.ROOT);
+        if (token.equals("void") || token.equals("empty") || token.equals("공허")) {
+            return "void";
+        }
+        if (token.equals("flat") || token.equals("평지")) {
+            return "flat";
+        }
+        return "normal";
+    }
+
+    private void saveManagedWorld(String worldName, String type) {
+        List<Map<?, ?>> source = plugin.getConfig().getMapList("world.managed-worlds");
+        List<Map<String, Object>> updated = new ArrayList<Map<String, Object>>();
+        boolean replaced = false;
+        for (Map<?, ?> entry : source) {
+            String name = entry.get("name") == null ? null : entry.get("name").toString();
+            if (name == null || name.trim().length() == 0) {
+                continue;
+            }
+            Map<String, Object> copied = new LinkedHashMap<String, Object>();
+            copied.put("name", name);
+            copied.put("type", name.equalsIgnoreCase(worldName) ? type : managedTypeValue(entry));
+            if (name.equalsIgnoreCase(worldName)) {
+                replaced = true;
+            }
+            updated.add(copied);
+        }
+        if (!replaced) {
+            Map<String, Object> entry = new LinkedHashMap<String, Object>();
+            entry.put("name", worldName);
+            entry.put("type", type);
+            updated.add(entry);
+        }
+        plugin.getConfig().set("world.managed-worlds", updated);
+        plugin.saveConfig();
+    }
+
+    private void removeManagedWorld(String worldName) {
+        List<Map<?, ?>> source = plugin.getConfig().getMapList("world.managed-worlds");
+        List<Map<String, Object>> updated = new ArrayList<Map<String, Object>>();
+        for (Map<?, ?> entry : source) {
+            String name = entry.get("name") == null ? null : entry.get("name").toString();
+            if (name == null || name.equalsIgnoreCase(worldName)) {
+                continue;
+            }
+            Map<String, Object> copied = new LinkedHashMap<String, Object>();
+            copied.put("name", name);
+            copied.put("type", managedTypeValue(entry));
+            updated.add(copied);
+        }
+        plugin.getConfig().set("world.managed-worlds", updated);
+        plugin.saveConfig();
+    }
+
+    private String managedWorldType(String worldName) {
+        for (Map<?, ?> entry : plugin.getConfig().getMapList("world.managed-worlds")) {
+            Object name = entry.get("name");
+            if (name != null && name.toString().equalsIgnoreCase(worldName)) {
+                return managedTypeValue(entry);
+            }
+        }
+        return "normal";
+    }
+
+    private String inferWorldType(String worldName) {
+        String managed = managedWorldType(worldName);
+        if (!"normal".equals(managed)) {
+            return managed;
+        }
+        World world = worldByName(worldName);
+        if (world == null) {
+            return managed;
+        }
+        if (world.getGenerator() instanceof VoidWorldGenerator
+            || (world.getGenerator() != null && world.getGenerator().getClass().getName().toLowerCase(Locale.ROOT).contains("void"))) {
+            return "void";
+        }
+        try {
+            if (world.getWorldType() == WorldType.FLAT) {
+                return "flat";
+            }
+        } catch (Throwable ignored) {
+        }
+        return managed;
+    }
+
+    private String managedTypeValue(Map<?, ?> entry) {
+        Object type = entry.get("type");
+        String value = type == null ? "normal" : type.toString().toLowerCase(Locale.ROOT);
+        return value.equals("void") || value.equals("flat") ? value : "normal";
+    }
+
+    private boolean isInsideWorldContainer(File folder) {
+        try {
+            File container = Bukkit.getWorldContainer().getCanonicalFile();
+            File target = folder.getCanonicalFile();
+            while (target != null) {
+                if (target.equals(container)) {
+                    return true;
+                }
+                target = target.getParentFile();
+            }
+        } catch (IOException ex) {
+            return false;
+        }
+        return false;
+    }
+
+    private boolean isSharedWorldFolder(World world, File folder) {
+        for (World other : Bukkit.getWorlds()) {
+            if (other.equals(world)) {
+                continue;
+            }
+            if (sameFile(other.getWorldFolder(), folder)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean sameFile(File left, File right) {
+        try {
+            return left != null && right != null && left.getCanonicalFile().equals(right.getCanonicalFile());
+        } catch (IOException ex) {
+            return false;
+        }
+    }
+
+    private boolean gameWorldNameMatches(String worldName) {
+        String configured = plugin.getConfig().getString("world.game-world", "");
+        return configured != null && configured.equalsIgnoreCase(worldName);
+    }
+
+    private void deleteDirectory(File directory) throws IOException {
+        File[] files = directory.listFiles();
+        if (files != null) {
+            for (File file : files) {
+                if (file.isDirectory()) {
+                    deleteDirectory(file);
+                } else if (!file.delete()) {
+                    throw new IOException("파일을 삭제하지 못했습니다: " + file.getPath());
+                }
+            }
+        }
+        if (!directory.delete()) {
+            throw new IOException("폴더를 삭제하지 못했습니다: " + directory.getPath());
+        }
+    }
+
+    private World worldByName(String name) {
+        if (name == null) {
+            return null;
+        }
+        World exact = Bukkit.getWorld(name);
+        if (exact != null) {
+            return exact;
+        }
+        for (World world : Bukkit.getWorlds()) {
+            if (world.getName().equalsIgnoreCase(name)) {
+                return world;
+            }
+        }
+        return null;
     }
 
     private void target(CommandSender sender, String[] args) {
@@ -1693,7 +2339,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             return abilityGroupTabComplete(sender, command, alias, args);
         }
         if (args.length == 2 && sub.equals("help")) {
-            return startsWith(Arrays.asList("1", "2", "3", "game", "team", "ability"), args[1]);
+            return startsWith(Arrays.asList("1", "2", "3", "game", "team", "ability", "world", "월드"), args[1]);
         }
         if (requiresAdmin(sub) && !sender.hasPermission("newgodwar.admin")) {
             return Collections.emptyList();
@@ -1739,6 +2385,67 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         }
         if (args.length == 2 && sub.equals("gamerule")) {
             return startsWith(Arrays.asList("apply", "restore"), args[1]);
+        }
+        if (args.length == 2 && sub.equals("world")) {
+            List<String> values = new ArrayList<String>();
+            values.addAll(Arrays.asList("help", "gui", "settings", "list", "game", "create", "load", "copy", "tp", "lobby", "unload", "delete", "backup"));
+            values.addAll(worldNameSuggestions());
+            return startsWith(values, args[1]);
+        }
+        if (args.length == 3 && sub.equals("world")) {
+            if (args[1].equalsIgnoreCase("tp") || args[1].equalsIgnoreCase("teleport") || args[1].equalsIgnoreCase("이동")) {
+                return startsWith(worldNameSuggestions(), args[2]);
+            }
+            if (args[1].equalsIgnoreCase("load") || args[1].equalsIgnoreCase("로드")) {
+                return startsWith(unloadedWorldNameSuggestions(), args[2]);
+            }
+            if (args[1].equalsIgnoreCase("copy") || args[1].equalsIgnoreCase("clone") || args[1].equalsIgnoreCase("복사")) {
+                return startsWith(worldNameSuggestions(), args[2]);
+            }
+            if (args[1].equalsIgnoreCase("create") || args[1].equalsIgnoreCase("new") || args[1].equalsIgnoreCase("생성")) {
+                return startsWith(Arrays.asList("game", "lobby", "arena"), args[2]);
+            }
+            if (args[1].equalsIgnoreCase("game") || args[1].equalsIgnoreCase("gameworld") || args[1].equalsIgnoreCase("게임")) {
+                List<String> values = new ArrayList<String>();
+                values.add("clear");
+                values.addAll(worldNameSuggestions());
+                return startsWith(values, args[2]);
+            }
+            if (args[1].equalsIgnoreCase("unload") || args[1].equalsIgnoreCase("delete") || args[1].equalsIgnoreCase("remove")
+                || args[1].equalsIgnoreCase("언로드") || args[1].equalsIgnoreCase("삭제")) {
+                return startsWith(worldNameSuggestions(), args[2]);
+            }
+            if (args[1].equalsIgnoreCase("backup") || args[1].equalsIgnoreCase("backups") || args[1].equalsIgnoreCase("백업")) {
+                return startsWith(Arrays.asList("create", "list", "load"), args[2]);
+            }
+            if (args[1].equalsIgnoreCase("lobby") || worldByName(args[1]) != null) {
+                return startsWith(onlinePlayerNames(), args[2]);
+            }
+        }
+        if (args.length == 4 && sub.equals("world")
+            && (args[1].equalsIgnoreCase("tp") || args[1].equalsIgnoreCase("teleport") || args[1].equalsIgnoreCase("이동"))) {
+            return startsWith(onlinePlayerNames(), args[3]);
+        }
+        if (args.length == 4 && sub.equals("world")
+            && (args[1].equalsIgnoreCase("create") || args[1].equalsIgnoreCase("new") || args[1].equalsIgnoreCase("생성"))) {
+            return startsWith(Arrays.asList("normal", "flat", "void"), args[3]);
+        }
+        if (args.length == 4 && sub.equals("world")
+            && (args[1].equalsIgnoreCase("load") || args[1].equalsIgnoreCase("로드"))) {
+            return startsWith(Arrays.asList("normal", "flat", "void"), args[3]);
+        }
+        if (args.length == 5 && sub.equals("world")
+            && (args[1].equalsIgnoreCase("copy") || args[1].equalsIgnoreCase("clone") || args[1].equalsIgnoreCase("복사"))) {
+            return startsWith(Arrays.asList("normal", "flat", "void"), args[4]);
+        }
+        if (args.length == 4 && sub.equals("world")
+            && (args[1].equalsIgnoreCase("delete") || args[1].equalsIgnoreCase("remove") || args[1].equalsIgnoreCase("삭제"))) {
+            return startsWith(Arrays.asList("confirm"), args[3]);
+        }
+        if (args.length == 4 && sub.equals("world")
+            && (args[1].equalsIgnoreCase("backup") || args[1].equalsIgnoreCase("backups") || args[1].equalsIgnoreCase("백업"))
+            && (args[2].equalsIgnoreCase("load") || args[2].equalsIgnoreCase("로드"))) {
+            return startsWith(backupNameSuggestions(), args[3]);
         }
         if (args.length == 2 && sub.equals("urf")) {
             return startsWith(Arrays.asList("on", "off", "toggle", "20%", "50%", "100%", "percent"), args[1]);
@@ -1802,7 +2509,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         List<String> values = new ArrayList<String>();
         if (admin) {
             values.addAll(SUBCOMMANDS);
-            values.addAll(Arrays.asList("a", "black", "cutin", "d", "dia", "info", "observer", "s", "set", "spawn", "t", "yes", "no", "clear", "con", "starteritems", "기본템"));
+            values.addAll(Arrays.asList("a", "black", "cutin", "d", "dia", "info", "lobby", "observer", "s", "set", "spawn", "t", "yes", "no", "clear", "con", "starteritems", "기본템", "월드"));
             if (isThemachyRoot(command, alias)) {
                 values.addAll(teamSuggestions(false));
             }
@@ -1954,6 +2661,36 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
 
     private List<String> defaultItemMaterialSuggestions() {
         return Arrays.asList("hand", "LAVA_BUCKET", "ICE", "OAK_SAPLING", "BONE_MEAL", "CHEST", "COOKED_BEEF");
+    }
+
+    private List<String> backupNameSuggestions() {
+        List<String> backups = new ArrayList<String>();
+        for (WorldBackupManager.BackupInfo backup : worldBackupManager.listBackups()) {
+            backups.add(backup.name());
+        }
+        return backups;
+    }
+
+    private List<String> worldNameSuggestions() {
+        List<String> worlds = new ArrayList<String>();
+        for (World world : Bukkit.getWorlds()) {
+            worlds.add(world.getName());
+        }
+        return worlds;
+    }
+
+    private List<String> unloadedWorldNameSuggestions() {
+        List<String> worlds = new ArrayList<String>();
+        File[] folders = Bukkit.getWorldContainer().listFiles(File::isDirectory);
+        if (folders == null) {
+            return worlds;
+        }
+        for (File folder : folders) {
+            if (Bukkit.getWorld(folder.getName()) == null && new File(folder, "level.dat").isFile()) {
+                worlds.add(folder.getName());
+            }
+        }
+        return worlds;
     }
 
     private boolean isTeamOrAuto(String token) {
@@ -2281,6 +3018,9 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         if (lower.equals("spawn") || lower.equals("s")) {
             return "setspawn";
         }
+        if (lower.equals("lobby") || lower.equals("setlobby") || lower.equals("로비")) {
+            return "setlobby";
+        }
         if (lower.equals("info") || lower.equals("i")) {
             return "info";
         }
@@ -2289,6 +3029,9 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         }
         if (lower.equals("update") || lower.equals("updates") || lower.equals("업데이트")) {
             return "update";
+        }
+        if (lower.equals("world") || lower.equals("worlds") || lower.equals("월드")) {
+            return "world";
         }
         if (lower.equals("clear") || lower.equals("c")) {
             return "clear";
@@ -2346,4 +3089,5 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             this.kills = kills;
         }
     }
+
 }
