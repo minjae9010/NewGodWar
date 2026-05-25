@@ -24,7 +24,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.io.File;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -159,7 +158,7 @@ public final class NewGodWarPlugin extends JavaPlugin {
             if (name.length() == 0 || Bukkit.getWorld(name) != null) {
                 continue;
             }
-            if (!new File(Bukkit.getWorldContainer(), name).isDirectory()) {
+            if (!worldBackupManager.hasWorldFolder(name)) {
                 getLogger().warning("Managed world folder does not exist, skipping: " + name);
                 continue;
             }

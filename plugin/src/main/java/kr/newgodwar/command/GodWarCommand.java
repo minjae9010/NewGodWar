@@ -1411,8 +1411,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             plugin.messages().send(sender, "&e이미 로드된 월드입니다: &f" + name);
             return;
         }
-        File folder = new File(Bukkit.getWorldContainer(), name);
-        if (!folder.isDirectory()) {
+        if (!worldBackupManager.hasWorldFolder(name)) {
             plugin.messages().send(sender, "&c월드 폴더를 찾을 수 없습니다: " + name);
             return;
         }
