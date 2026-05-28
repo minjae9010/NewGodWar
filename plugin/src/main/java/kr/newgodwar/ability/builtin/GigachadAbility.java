@@ -40,17 +40,17 @@ final class GigachadAbility extends BaseAbility {
                 }
                 target.setVelocity(vector.normalize().multiply(1.4D).setY(0.55D));
             }
-            effect(player, "RESISTANCE", "DAMAGE_RESISTANCE", 8, 0);
-            effect(player, PotionEffectType.ABSORPTION, 8, 0);
+            effect(player, "RESISTANCE", "DAMAGE_RESISTANCE", 10, 0);
+            effect(player, PotionEffectType.ABSORPTION, 10, 0);
         }
     }
 
     @Override
     protected void onStaffRight(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
         if (useAdvanced(context, player)) {
-            effect(player, PotionEffectType.SPEED, 9, 1);
-            effect(player, "STRENGTH", "INCREASE_DAMAGE", 9, 0);
-            effect(player, "RESISTANCE", "DAMAGE_RESISTANCE", 9, 0);
+            effect(player, PotionEffectType.SPEED, 11, 1);
+            effect(player, "STRENGTH", "INCREASE_DAMAGE", 11, 0);
+            effect(player, "RESISTANCE", "DAMAGE_RESISTANCE", 11, 0);
         }
     }
 
@@ -58,8 +58,8 @@ final class GigachadAbility extends BaseAbility {
     public void onGenericDamage(AbilityPlayerContext context, EntityDamageEvent event) {
         Player player = context.player();
         if (player.getHealth() - event.getFinalDamage() <= 6.0D && rollChance(1, 4)) {
-            effect(player, PotionEffectType.ABSORPTION, 8, 1);
-            effect(player, "RESISTANCE", "DAMAGE_RESISTANCE", 5, 0);
+            effect(player, PotionEffectType.ABSORPTION, 10, 1);
+            effect(player, "RESISTANCE", "DAMAGE_RESISTANCE", 8, 0);
             player.sendMessage(ChatColor.GOLD + "기가채드의 자신감이 버티게 합니다.");
         }
     }

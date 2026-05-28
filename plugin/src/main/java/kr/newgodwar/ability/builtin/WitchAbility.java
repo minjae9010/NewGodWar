@@ -47,9 +47,9 @@ final class WitchAbility extends BaseAbility {
     }
 
     private void curse(Player player) {
-        effect(player, PotionEffectType.HUNGER, 10, 0);
-        effect(player, PotionEffectType.POISON, 10, 0);
-        effect(player, "SLOWNESS", "SLOW", 10, 0);
-        effect(player, "MINING_FATIGUE", "SLOW_DIGGING", 10, 0);
+        effect(player, PotionEffectType.HUNGER, 12, 0);
+        effect(player, PotionEffectType.POISON, 12, 0);
+        effect(player, "SLOWNESS", "SLOW", 12, 0);
+        effect(player, "MINING_FATIGUE", "SLOW_DIGGING", 12, 0);
     }
 }

@@ -31,8 +31,8 @@ final class AmaterasuAbility extends BaseAbility {
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
         if (useNormal(context, player) && setWorldTime(context, player, 1000)) {
-            effect(player, "STRENGTH", "INCREASE_DAMAGE", 6, 0);
-            effect(player, PotionEffectType.SPEED, 6, 0);
+            effect(player, "STRENGTH", "INCREASE_DAMAGE", 8, 0);
+            effect(player, PotionEffectType.SPEED, 8, 0);
         }
     }
 
@@ -44,7 +44,7 @@ final class AmaterasuAbility extends BaseAbility {
         }
         if (useAdvanced(context, player)) {
             target.setFireTicks(120);
-            effect(target, PotionEffectType.BLINDNESS, 4, 0);
+            effect(target, PotionEffectType.BLINDNESS, 7, 0);
             damage(target, 5.0D, player);
         }
     }

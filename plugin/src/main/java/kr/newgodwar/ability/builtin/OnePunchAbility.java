@@ -15,7 +15,7 @@ import org.bukkit.util.Vector;
     normalSkill = "8초 안의 다음 맨손 공격에 추가 피해와 큰 밀침을 부여합니다.",
     normalStoneCost = 24,
     normalCooldownSeconds = 95,
-    advancedSkill = "앞으로 도약하고 5초 동안 공격력 증가를 얻습니다.",
+    advancedSkill = "앞으로 도약하고 8초 동안 공격력 증가를 얻습니다.",
     advancedStoneCost = 18,
     advancedCooldownSeconds = 55,
     passiveSkill = "맨손 공격 시 적을 추가로 밀쳐냅니다.",
@@ -41,7 +41,7 @@ final class OnePunchAbility extends BaseAbility {
     protected void onStaffRight(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
         if (useAdvanced(context, player)) {
             dash(player);
-            effect(player, "STRENGTH", "INCREASE_DAMAGE", 5, 0);
+            effect(player, "STRENGTH", "INCREASE_DAMAGE", 8, 0);
         }
     }
 
@@ -63,7 +63,7 @@ final class OnePunchAbility extends BaseAbility {
             punchReady = false;
             event.setDamage(event.getDamage() + 14.0D);
             opponent.setVelocity(vector.normalize().multiply(1.9D));
-            effect(player, PotionEffectType.WEAKNESS, 6, 0);
+            effect(player, PotionEffectType.WEAKNESS, 8, 0);
             player.sendMessage(ChatColor.RED + "원펀치!");
         } else {
             opponent.setVelocity(vector.normalize().multiply(0.7D));

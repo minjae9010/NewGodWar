@@ -31,8 +31,8 @@ final class LokiAbility extends BaseAbility {
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
         if (useNormal(context, player)) {
-            effect(player, PotionEffectType.INVISIBILITY, 7, 0);
-            effect(player, PotionEffectType.SPEED, 7, 1);
+            effect(player, PotionEffectType.INVISIBILITY, 9, 0);
+            effect(player, PotionEffectType.SPEED, 9, 1);
         }
     }
 
@@ -47,15 +47,15 @@ final class LokiAbility extends BaseAbility {
             Location second = target.getLocation();
             player.teleport(second);
             target.teleport(first);
-            effect(target, PotionEffectType.BLINDNESS, 3, 0);
-            effect(target, "NAUSEA", "CONFUSION", 6, 0);
+            effect(target, PotionEffectType.BLINDNESS, 6, 0);
+            effect(target, "NAUSEA", "CONFUSION", 8, 0);
         }
     }
 
     @Override
     public void onDamageByEntity(AbilityPlayerContext context, EntityDamageByEntityEvent event, Player opponent, boolean attacker) {
         if (!attacker && rollChance(1, 5)) {
-            effect(opponent, "NAUSEA", "CONFUSION", 6, 0);
+            effect(opponent, "NAUSEA", "CONFUSION", 8, 0);
         }
     }
 }

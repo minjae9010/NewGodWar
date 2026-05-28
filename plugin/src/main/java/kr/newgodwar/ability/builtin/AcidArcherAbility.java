@@ -44,6 +44,6 @@ final class AcidArcherAbility extends BaseAbility {
     @Override
     public void onProjectileHit(AbilityPlayerContext context, EntityDamageByEntityEvent event, Player victim) {
         event.setDamage(0.0D);
-        effect(victim, PotionEffectType.POISON, 10, 0);
+        effect(victim, PotionEffectType.POISON, 12, 0);
     }
 }

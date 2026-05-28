@@ -37,7 +37,7 @@ final class ChronosAbility extends BaseAbility {
         }
         if (useNormal(context, player)) {
             for (Player target : targets) {
-                effect(target, "SLOWNESS", "SLOW", 6, 2);
+                effect(target, "SLOWNESS", "SLOW", 8, 2);
             }
         }
     }
@@ -51,9 +51,9 @@ final class ChronosAbility extends BaseAbility {
         }
         if (useAdvanced(context, player)) {
             for (Player target : targets) {
-                effect(target, "SLOWNESS", "SLOW", 4, 8);
-                effect(target, "MINING_FATIGUE", "SLOW_DIGGING", 4, 4);
-                effect(target, PotionEffectType.WEAKNESS, 4, 1);
+                effect(target, "SLOWNESS", "SLOW", 7, 8);
+                effect(target, "MINING_FATIGUE", "SLOW_DIGGING", 7, 4);
+                effect(target, PotionEffectType.WEAKNESS, 7, 1);
                 target.setVelocity(new Vector(0, 0, 0));
             }
         }
@@ -62,7 +62,7 @@ final class ChronosAbility extends BaseAbility {
     @Override
     public void onDamageByEntity(AbilityPlayerContext context, EntityDamageByEntityEvent event, Player opponent, boolean attacker) {
         if (!attacker && rollChance(1, 4)) {
-            effect(opponent, "SLOWNESS", "SLOW", 4, 1);
+            effect(opponent, "SLOWNESS", "SLOW", 7, 1);
         }
     }
 }

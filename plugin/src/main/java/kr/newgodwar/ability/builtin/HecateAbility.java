@@ -36,8 +36,8 @@ final class HecateAbility extends BaseAbility {
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
         if (useNormal(context, player)) {
-            effect(player, PotionEffectType.INVISIBILITY, 6, 0);
-            effect(player, PotionEffectType.SPEED, 6, 0);
+            effect(player, PotionEffectType.INVISIBILITY, 8, 0);
+            effect(player, PotionEffectType.SPEED, 8, 0);
         }
     }
 
@@ -48,8 +48,8 @@ final class HecateAbility extends BaseAbility {
             return;
         }
         if (useAdvanced(context, player)) {
-            effect(target, PotionEffectType.BLINDNESS, 4, 0);
-            effect(target, "SLOWNESS", "SLOW", 5, 1);
+            effect(target, PotionEffectType.BLINDNESS, 7, 0);
+            effect(target, "SLOWNESS", "SLOW", 8, 1);
             target.sendMessage(ChatColor.DARK_PURPLE + "헤카테의 저주가 시야를 흐립니다.");
         }
     }

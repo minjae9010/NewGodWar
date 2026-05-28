@@ -22,7 +22,7 @@ import java.util.List;
     normalCooldownSeconds = 150,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "피격 시 50% 확률로 공격자에게 5초 독을 겁니다.",
+    passiveSkill = "피격 시 50% 확률로 공격자에게 8초 독을 겁니다.",
     grade = AbilityGrade.A
 )
 final class QueenBeeAbility extends BaseAbility {
@@ -45,7 +45,7 @@ final class QueenBeeAbility extends BaseAbility {
     @Override
     public void onDamageByEntity(AbilityPlayerContext context, EntityDamageByEntityEvent event, Player opponent, boolean attacker) {
         if (!attacker && RANDOM.nextBoolean()) {
-            effect(opponent, PotionEffectType.POISON, 5, 0);
+            effect(opponent, PotionEffectType.POISON, 8, 0);
         }
     }
 }

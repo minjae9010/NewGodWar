@@ -37,8 +37,8 @@ final class PersephoneAbility extends BaseAbility {
             return;
         }
         if (useNormal(context, player)) {
-            effect(target, "SLOWNESS", "SLOW", 6, 3);
-            effect(target, PotionEffectType.WEAKNESS, 6, 0);
+            effect(target, "SLOWNESS", "SLOW", 8, 3);
+            effect(target, PotionEffectType.WEAKNESS, 8, 0);
         }
     }
 
@@ -49,7 +49,7 @@ final class PersephoneAbility extends BaseAbility {
         if (useAdvanced(context, player)) {
             for (Player target : targets) {
                 target.setHealth(Math.min(target.getMaxHealth(), target.getHealth() + 4.0D));
-                effect(target, PotionEffectType.REGENERATION, 5, 0);
+                effect(target, PotionEffectType.REGENERATION, 8, 0);
             }
         }
     }
@@ -63,7 +63,7 @@ final class PersephoneAbility extends BaseAbility {
         }
         if (rollChance(3, 10)) {
             bloomReadyAt = now + context.plugin().abilities().scaleCooldownMillis(60 * 1000L);
-            effect(player, PotionEffectType.REGENERATION, 5, 0);
+            effect(player, PotionEffectType.REGENERATION, 8, 0);
             player.sendMessage(ChatColor.GREEN + "페르세포네의 봄기운이 잠시 피어납니다.");
         }
     }

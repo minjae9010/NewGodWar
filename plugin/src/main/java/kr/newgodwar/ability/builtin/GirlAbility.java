@@ -32,7 +32,7 @@ final class GirlAbility extends BaseAbility {
             for (Player target : nearbyPlayers(context, player, 5, 0, 5, false)) {
                 target.teleport(player);
                 target.setFoodLevel(0);
-                effectTicks(target, "SLOWNESS", "SLOW", 2, 200);
+                effectTicks(target, "SLOWNESS", "SLOW", 60, 200);
             }
         }
     }

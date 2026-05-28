@@ -32,7 +32,7 @@ final class ShinSaimdangAbility extends BaseAbility {
         }
         player.getInventory().addItem(new ItemStack(Material.RED_ROSE, 3));
         player.getInventory().addItem(new ItemStack(Material.INK_SACK, 4));
-        effect(player, PotionEffectType.REGENERATION, 6, 0);
+        effect(player, PotionEffectType.REGENERATION, 8, 0);
         player.sendMessage(ChatColor.LIGHT_PURPLE + "초충도의 생기가 피어납니다.");
     }
 
@@ -45,14 +45,14 @@ final class ShinSaimdangAbility extends BaseAbility {
         }
         for (Player target : targets) {
             target.setHealth(Math.min(target.getMaxHealth(), target.getHealth() + 5.0D));
-            effect(target, PotionEffectType.REGENERATION, 6, 0);
+            effect(target, PotionEffectType.REGENERATION, 8, 0);
         }
     }
 
     @Override
     public void onDamageByEntity(AbilityPlayerContext context, EntityDamageByEntityEvent event, Player opponent, boolean attacker) {
         if (!attacker && oneIn(5)) {
-            effect(opponent, PotionEffectType.WEAKNESS, 5, 0);
+            effect(opponent, PotionEffectType.WEAKNESS, 8, 0);
         }
     }
 }

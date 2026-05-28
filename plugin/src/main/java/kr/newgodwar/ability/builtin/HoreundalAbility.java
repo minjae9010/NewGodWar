@@ -37,7 +37,7 @@ final class HoreundalAbility extends BaseAbility {
         final Location location = player.getLocation();
         later(context, 10, "귀환 발동", "귀환 발동", () -> {
             player.teleport(location);
-            effect(player, PotionEffectType.INVISIBILITY, 3, 0);
+            effect(player, PotionEffectType.INVISIBILITY, 6, 0);
         });
     }
 }

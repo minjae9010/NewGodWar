@@ -20,7 +20,7 @@ import java.util.List;
     normalSkill = "반경 20블록 아군에게 15초 신속과 재생을 부여합니다.",
     normalStoneCost = 10,
     normalCooldownSeconds = 60,
-    advancedSkill = "반경 10블록 적을 밀쳐내고 5초 약화/감속을 부여합니다.",
+    advancedSkill = "반경 10블록 적을 밀쳐내고 8초 약화/감속을 부여합니다.",
     advancedStoneCost = 24,
     advancedCooldownSeconds = 170,
     passiveSkill = "없음",
@@ -51,8 +51,8 @@ final class AeolusAbility extends BaseAbility {
         if (useAdvanced(context, player)) {
             push(context, player, targets, 2.4D, 20L);
             for (Player target : targets) {
-                effect(target, PotionEffectType.WEAKNESS, 5, 0);
-                effect(target, "SLOWNESS", "SLOW", 5, 0);
+                effect(target, PotionEffectType.WEAKNESS, 8, 0);
+                effect(target, "SLOWNESS", "SLOW", 8, 0);
             }
         }
     }

@@ -37,8 +37,8 @@ final class AnubisAbility extends BaseAbility {
             return;
         }
         if (useNormal(context, player)) {
-            effect(target, "WITHER", "WITHER", 6, 0);
-            effect(target, PotionEffectType.WEAKNESS, 6, 0);
+            effect(target, "WITHER", "WITHER", 8, 0);
+            effect(target, PotionEffectType.WEAKNESS, 8, 0);
         }
     }
 
@@ -68,7 +68,7 @@ final class AnubisAbility extends BaseAbility {
         }
         if (rollChance(1, 4)) {
             lastScales = now + context.plugin().abilities().scaleCooldownMillis(90 * 1000L);
-            effect(player, "ABSORPTION", "ABSORPTION", 8, 1);
+            effect(player, "ABSORPTION", "ABSORPTION", 10, 1);
             player.sendMessage(ChatColor.GOLD + "아누비스의 저울이 죽음을 잠시 미룹니다.");
         }
     }

@@ -42,7 +42,7 @@ final class MinerAbility extends BaseAbility {
 
     @Override
     public void onTick(AbilityPlayerContext context) {
-        effect(context.player(), "HASTE", "FAST_DIGGING", 3, 0);
+        effect(context.player(), "HASTE", "FAST_DIGGING", 6, 0);
     }
 
     @Override

@@ -37,8 +37,8 @@ final class AhnJungGeunAbility extends BaseAbility {
             return;
         }
         damage(target, 5.0D, player);
-        effect(target, "SLOWNESS", "SLOW", 7, 1);
-        effect(target, PotionEffectType.WEAKNESS, 7, 0);
+        effect(target, "SLOWNESS", "SLOW", 9, 1);
+        effect(target, PotionEffectType.WEAKNESS, 9, 0);
         target.sendMessage(ChatColor.RED + "의거의 결의가 움직임을 꺾었습니다.");
     }
 
@@ -52,8 +52,8 @@ final class AhnJungGeunAbility extends BaseAbility {
             return;
         }
         damage(target, 9.0D, player);
-        effect(target, PotionEffectType.BLINDNESS, 4, 0);
-        effect(target, "SLOWNESS", "SLOW", 7, 2);
+        effect(target, PotionEffectType.BLINDNESS, 7, 0);
+        effect(target, "SLOWNESS", "SLOW", 9, 2);
         if (context.plugin().abilities().session(target) != null) {
             context.plugin().abilities().suppressAbility(target, 5);
         }
@@ -63,7 +63,7 @@ final class AhnJungGeunAbility extends BaseAbility {
     @Override
     public void onDamageByEntity(AbilityPlayerContext context, EntityDamageByEntityEvent event, Player opponent, boolean attacker) {
         if (attacker && isSword(context.player().getItemInHand().getType()) && oneIn(5)) {
-            effect(context.player(), "STRENGTH", "INCREASE_DAMAGE", 4, 0);
+            effect(context.player(), "STRENGTH", "INCREASE_DAMAGE", 7, 0);
         }
     }
 }

@@ -28,8 +28,8 @@ final class DionysusAbility extends BaseAbility {
     @Override
     public void onDamageByEntity(AbilityPlayerContext context, EntityDamageByEntityEvent event, Player opponent, boolean attacker) {
         if (!attacker && rollChance(2, 20)) {
-            effect(opponent, "SLOWNESS", "SLOW", 10, 0);
-            effect(opponent, PotionEffectType.WEAKNESS, 10, 0);
+            effect(opponent, "SLOWNESS", "SLOW", 12, 0);
+            effect(opponent, PotionEffectType.WEAKNESS, 12, 0);
             effect(opponent, "NAUSEA", "CONFUSION", 12, 0);
         }
     }

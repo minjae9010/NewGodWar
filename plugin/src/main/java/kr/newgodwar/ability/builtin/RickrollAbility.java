@@ -31,9 +31,9 @@ final class RickrollAbility extends BaseAbility {
         }
         if (useNormal(context, player)) {
             for (Player target : targets) {
-                effect(target, "NAUSEA", "CONFUSION", 7, 0);
-                effect(target, "SLOWNESS", "SLOW", 7, 1);
-                effect(target, PotionEffectType.WEAKNESS, 7, 0);
+                effect(target, "NAUSEA", "CONFUSION", 9, 0);
+                effect(target, "SLOWNESS", "SLOW", 9, 1);
+                effect(target, PotionEffectType.WEAKNESS, 9, 0);
             }
             player.sendMessage(ChatColor.LIGHT_PURPLE + "예상 밖의 공연이 시작됩니다.");
         }
@@ -44,15 +44,15 @@ final class RickrollAbility extends BaseAbility {
         Player target = targetPlayerInSight(context, player, 22, false);
         if (target != null && useAdvanced(context, player)) {
             target.teleport(player.getLocation().add(player.getEyeLocation().getDirection().normalize().multiply(1.5D)));
-            effect(target, PotionEffectType.BLINDNESS, 4, 0);
-            effect(target, "NAUSEA", "CONFUSION", 6, 0);
+            effect(target, PotionEffectType.BLINDNESS, 7, 0);
+            effect(target, "NAUSEA", "CONFUSION", 8, 0);
         }
     }
 
     @Override
     public void onDamageByEntity(AbilityPlayerContext context, org.bukkit.event.entity.EntityDamageByEntityEvent event, Player opponent, boolean attacker) {
         if (!attacker && rollChance(1, 5)) {
-            effect(opponent, "NAUSEA", "CONFUSION", 5, 0);
+            effect(opponent, "NAUSEA", "CONFUSION", 8, 0);
         }
     }
 }

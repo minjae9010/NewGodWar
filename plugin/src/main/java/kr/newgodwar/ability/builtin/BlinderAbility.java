@@ -30,7 +30,7 @@ final class BlinderAbility extends BaseAbility {
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
         if (useNormal(context, player, 0)) {
             for (Player target : nearbyPlayers(context, player, 5, false)) {
-                effect(target, PotionEffectType.BLINDNESS, 8, 0);
+                effect(target, PotionEffectType.BLINDNESS, 10, 0);
             }
         }
     }
@@ -38,7 +38,7 @@ final class BlinderAbility extends BaseAbility {
     @Override
     public void onDamageByEntity(AbilityPlayerContext context, EntityDamageByEntityEvent event, Player opponent, boolean attacker) {
         if (!attacker && oneIn(10)) {
-            effect(opponent, PotionEffectType.BLINDNESS, 4, 0);
+            effect(opponent, PotionEffectType.BLINDNESS, 7, 0);
         }
     }
 }

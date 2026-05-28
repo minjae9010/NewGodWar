@@ -32,7 +32,7 @@ final class IrisAbility extends BaseAbility {
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
         if (useNormal(context, player)) {
             teleportToTargetBlock(player);
-            effect(player, PotionEffectType.SPEED, 4, 0);
+            effect(player, PotionEffectType.SPEED, 7, 0);
         }
     }
 
@@ -52,8 +52,8 @@ final class IrisAbility extends BaseAbility {
         targets.add(player);
         if (useAdvanced(context, player)) {
             for (Player target : targets) {
-                effect(target, PotionEffectType.SPEED, 6, 0);
-                effect(target, PotionEffectType.REGENERATION, 4, 0);
+                effect(target, PotionEffectType.SPEED, 8, 0);
+                effect(target, PotionEffectType.REGENERATION, 7, 0);
             }
         }
     }

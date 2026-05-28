@@ -47,7 +47,7 @@ final class QuetzalcoatlAbility extends BaseAbility {
         if (useAdvanced(context, player)) {
             for (Player target : targets) {
                 target.setVelocity(new Vector(0, 1.25D, 0));
-                effect(target, "SLOWNESS", "SLOW", 4, 0);
+                effect(target, "SLOWNESS", "SLOW", 7, 0);
             }
             push(context, player, targets, 1.5D, 6L);
         }

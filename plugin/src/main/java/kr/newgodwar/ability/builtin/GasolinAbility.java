@@ -28,7 +28,7 @@ final class GasolinAbility extends BaseAbility {
     @Override
     public void onGenericDamage(AbilityPlayerContext context, EntityDamageEvent event) {
         if (fire(event.getCause()) && !context.player().hasPotionEffect(PotionEffectType.SPEED)) {
-            effect(context.player(), PotionEffectType.SPEED, 10, 0);
+            effect(context.player(), PotionEffectType.SPEED, 12, 0);
         }
     }
 }

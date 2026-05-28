@@ -55,8 +55,8 @@ final class PoseidonAbility extends BaseAbility {
         }
         if (useNormal(context, player)) {
             createTemporarySea(context, center, SEA_RADIUS, SEA_DURATION_SECONDS, "해역 소멸", "해역 소멸");
-            effect(player, PotionEffectType.SPEED, 6, 1);
-            effect(player, PotionEffectType.REGENERATION, 4, 0);
+            effect(player, PotionEffectType.SPEED, 8, 1);
+            effect(player, PotionEffectType.REGENERATION, 7, 0);
         }
     }
 
@@ -73,9 +73,9 @@ final class PoseidonAbility extends BaseAbility {
             for (Player target : targets) {
                 damage(target, TIDAL_DAMAGE, player);
                 createTemporarySea(context, target.getLocation(), 1, 6, "해일 소멸", "해일 소멸");
-                effect(target, "SLOWNESS", "SLOW", 8, 2);
-                effect(target, PotionEffectType.WEAKNESS, 8, 0);
-                effect(target, PotionEffectType.CONFUSION, 5, 0);
+                effect(target, "SLOWNESS", "SLOW", 10, 2);
+                effect(target, PotionEffectType.WEAKNESS, 10, 0);
+                effect(target, PotionEffectType.CONFUSION, 8, 0);
             }
         }
     }
@@ -83,11 +83,11 @@ final class PoseidonAbility extends BaseAbility {
     @Override
     public void onTick(AbilityPlayerContext context) {
         Player player = context.player();
-        effect(player, PotionEffectType.WATER_BREATHING, 3, 0);
+        effect(player, PotionEffectType.WATER_BREATHING, 6, 0);
         if (touchingWater(player)) {
-            effect(player, PotionEffectType.SPEED, 3, 1);
-            effect(player, PotionEffectType.REGENERATION, 3, 0);
-            effect(player, "RESISTANCE", "DAMAGE_RESISTANCE", 3, 0);
+            effect(player, PotionEffectType.SPEED, 6, 1);
+            effect(player, PotionEffectType.REGENERATION, 6, 0);
+            effect(player, "RESISTANCE", "DAMAGE_RESISTANCE", 6, 0);
         }
     }
 
@@ -96,7 +96,7 @@ final class PoseidonAbility extends BaseAbility {
         if (attacker && (touchingWater(context.player()) || touchingWater(opponent))) {
             event.setDamage(event.getDamage() * 1.25D);
             if (oneIn(4)) {
-                effect(opponent, "SLOWNESS", "SLOW", 3, 0);
+                effect(opponent, "SLOWNESS", "SLOW", 6, 0);
             }
         }
     }

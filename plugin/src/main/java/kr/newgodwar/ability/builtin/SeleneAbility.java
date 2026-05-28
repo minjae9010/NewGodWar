@@ -41,7 +41,7 @@ final class SeleneAbility extends BaseAbility {
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
         if (useNormal(context, player) && setWorldTime(context, player, 18000)) {
-            effect(player, PotionEffectType.INVISIBILITY, 6, 0);
+            effect(player, PotionEffectType.INVISIBILITY, 8, 0);
         }
     }
 
@@ -52,8 +52,8 @@ final class SeleneAbility extends BaseAbility {
             return;
         }
         if (useAdvanced(context, player)) {
-            effect(target, PotionEffectType.BLINDNESS, 4, 0);
-            effect(target, "SLOWNESS", "SLOW", 5, 1);
+            effect(target, PotionEffectType.BLINDNESS, 7, 0);
+            effect(target, "SLOWNESS", "SLOW", 8, 1);
         }
     }
 

@@ -78,7 +78,7 @@ final class HermioneAbility extends BaseAbility {
             if (useAdvanced(context, player)) {
                 for (Player target : nearbyPlayers(context, player, 10, false)) {
                     if (RANDOM.nextBoolean()) {
-                        effect(target, "SLOWNESS", "SLOW", 8, harry ? 1 : 2);
+                        effect(target, "SLOWNESS", "SLOW", 10, harry ? 1 : 2);
                     }
                 }
             }

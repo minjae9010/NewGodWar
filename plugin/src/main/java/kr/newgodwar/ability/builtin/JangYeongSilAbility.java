@@ -54,8 +54,8 @@ final class JangYeongSilAbility extends BaseAbility {
         }
         for (Player target : targets) {
             effect(target, "HASTE", "FAST_DIGGING", 12, 1);
-            effect(target, PotionEffectType.SPEED, 8, 0);
-            effect(target, "RESISTANCE", "DAMAGE_RESISTANCE", 6, 0);
+            effect(target, PotionEffectType.SPEED, 10, 0);
+            effect(target, "RESISTANCE", "DAMAGE_RESISTANCE", 8, 0);
         }
         player.sendMessage(ChatColor.AQUA + "장영실의 장치가 아군의 전투 준비를 돕습니다.");
     }
@@ -64,7 +64,7 @@ final class JangYeongSilAbility extends BaseAbility {
     public void onDamageByEntity(AbilityPlayerContext context, org.bukkit.event.entity.EntityDamageByEntityEvent event, Player opponent, boolean attacker) {
         if (attacker && isPickaxe(context.player().getItemInHand().getType()) && oneIn(4)) {
             event.setDamage(event.getDamage() + 2.0D);
-            effect(opponent, "SLOWNESS", "SLOW", 3, 0);
+            effect(opponent, "SLOWNESS", "SLOW", 6, 0);
         }
     }
 }

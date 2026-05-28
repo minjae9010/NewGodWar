@@ -37,7 +37,7 @@ final class ClockingAbility extends BaseAbility {
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
         if (useNormal(context, player, 0)) {
             invisible = true;
-            effect(player, PotionEffectType.INVISIBILITY, 7, 0);
+            effect(player, PotionEffectType.INVISIBILITY, 9, 0);
             later(context, 7, "클로킹 종료", "클로킹 종료", () -> invisible = false);
         }
     }

@@ -31,8 +31,8 @@ final class HeraAbility extends BaseAbility {
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
         if (useNormal(context, player)) {
-            effect(player, "DAMAGE_RESISTANCE", "DAMAGE_RESISTANCE", 8, 0);
-            effect(player, PotionEffectType.ABSORPTION, 8, 0);
+            effect(player, "DAMAGE_RESISTANCE", "DAMAGE_RESISTANCE", 10, 0);
+            effect(player, PotionEffectType.ABSORPTION, 10, 0);
         }
     }
 
@@ -42,7 +42,7 @@ final class HeraAbility extends BaseAbility {
         targets.add(player);
         if (useAdvanced(context, player)) {
             for (Player target : targets) {
-                effect(target, "DAMAGE_RESISTANCE", "DAMAGE_RESISTANCE", 6, 0);
+                effect(target, "DAMAGE_RESISTANCE", "DAMAGE_RESISTANCE", 8, 0);
             }
         }
     }
@@ -50,7 +50,7 @@ final class HeraAbility extends BaseAbility {
     @Override
     public void onDamageByEntity(AbilityPlayerContext context, EntityDamageByEntityEvent event, Player opponent, boolean attacker) {
         if (!attacker && rollChance(2, 20)) {
-            effect(opponent, PotionEffectType.WEAKNESS, 6, 0);
+            effect(opponent, PotionEffectType.WEAKNESS, 8, 0);
             context.player().sendMessage(ChatColor.LIGHT_PURPLE + "헤라의 위엄이 공격자를 약화시켰습니다.");
         }
     }

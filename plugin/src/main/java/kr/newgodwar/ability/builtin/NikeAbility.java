@@ -31,8 +31,8 @@ final class NikeAbility extends BaseAbility {
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
         if (useNormal(context, player)) {
-            effect(player, PotionEffectType.SPEED, 8, 1);
-            effect(player, PotionEffectType.JUMP, 8, 0);
+            effect(player, PotionEffectType.SPEED, 10, 1);
+            effect(player, PotionEffectType.JUMP, 10, 0);
         }
     }
 
@@ -42,15 +42,15 @@ final class NikeAbility extends BaseAbility {
         targets.add(player);
         if (useAdvanced(context, player)) {
             for (Player target : targets) {
-                effect(target, PotionEffectType.SPEED, 7, 0);
-                effect(target, "STRENGTH", "INCREASE_DAMAGE", 5, 0);
+                effect(target, PotionEffectType.SPEED, 9, 0);
+                effect(target, "STRENGTH", "INCREASE_DAMAGE", 8, 0);
             }
         }
     }
 
     @Override
     public void onKill(AbilityKillContext context) {
-        effect(context.killer(), PotionEffectType.REGENERATION, 5, 0);
-        effect(context.killer(), PotionEffectType.SPEED, 6, 0);
+        effect(context.killer(), PotionEffectType.REGENERATION, 8, 0);
+        effect(context.killer(), PotionEffectType.SPEED, 8, 0);
     }
 }

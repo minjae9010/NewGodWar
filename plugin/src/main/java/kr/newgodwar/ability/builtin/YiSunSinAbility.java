@@ -41,8 +41,8 @@ final class YiSunSinAbility extends BaseAbility {
             return;
         }
         push(context, player, targets, 2.4D, 5L);
-        effect(player, "RESISTANCE", "DAMAGE_RESISTANCE", 9, 0);
-        effect(player, "STRENGTH", "INCREASE_DAMAGE", 7, 0);
+        effect(player, "RESISTANCE", "DAMAGE_RESISTANCE", 11, 0);
+        effect(player, "STRENGTH", "INCREASE_DAMAGE", 9, 0);
         player.sendMessage(ChatColor.AQUA + "학익진으로 전열을 뒤흔들었습니다.");
     }
 
@@ -57,8 +57,8 @@ final class YiSunSinAbility extends BaseAbility {
         }
         target.getWorld().createExplosion(target.getLocation(), 2.0F);
         damage(target, 8.0D, player);
-        effect(target, "SLOWNESS", "SLOW", 9, 2);
-        effect(target, PotionEffectType.WEAKNESS, 9, 0);
+        effect(target, "SLOWNESS", "SLOW", 11, 2);
+        effect(target, PotionEffectType.WEAKNESS, 11, 0);
         target.sendMessage(ChatColor.RED + "거북선 포격이 전장을 뒤덮었습니다.");
     }
 

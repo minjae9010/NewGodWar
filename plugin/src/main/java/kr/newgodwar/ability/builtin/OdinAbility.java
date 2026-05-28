@@ -33,8 +33,8 @@ final class OdinAbility extends BaseAbility {
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
         if (useNormal(context, player)) {
-            effect(player, PotionEffectType.REGENERATION, 7, 1);
-            effect(player, "RESISTANCE", "DAMAGE_RESISTANCE", 8, 0);
+            effect(player, PotionEffectType.REGENERATION, 9, 1);
+            effect(player, "RESISTANCE", "DAMAGE_RESISTANCE", 10, 0);
         }
     }
 
@@ -45,9 +45,9 @@ final class OdinAbility extends BaseAbility {
             return;
         }
         if (useAdvanced(context, player)) {
-            effect(target, PotionEffectType.BLINDNESS, 5, 0);
-            effect(target, PotionEffectType.WEAKNESS, 7, 0);
-            effect(target, "SLOWNESS", "SLOW", 7, 2);
+            effect(target, PotionEffectType.BLINDNESS, 8, 0);
+            effect(target, PotionEffectType.WEAKNESS, 9, 0);
+            effect(target, "SLOWNESS", "SLOW", 9, 2);
             target.sendMessage(ChatColor.DARK_PURPLE + "오딘의 룬이 몸을 무겁게 합니다.");
         }
     }
@@ -61,8 +61,8 @@ final class OdinAbility extends BaseAbility {
         }
         if (rollChance(1, 3)) {
             lastRuneGuard = now + context.plugin().abilities().scaleCooldownMillis(75 * 1000L);
-            effect(player, "ABSORPTION", "ABSORPTION", 8, 1);
-            effect(player, "RESISTANCE", "DAMAGE_RESISTANCE", 5, 0);
+            effect(player, "ABSORPTION", "ABSORPTION", 10, 1);
+            effect(player, "RESISTANCE", "DAMAGE_RESISTANCE", 8, 0);
             player.sendMessage(ChatColor.AQUA + "오딘의 룬 가호가 발동했습니다.");
         }
     }

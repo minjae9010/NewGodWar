@@ -45,8 +45,8 @@ final class HeoJunAbility extends BaseAbility {
             heal(target);
             cleanse(target);
             effect(target, "ABSORPTION", "ABSORPTION", 12, 1);
-            effect(target, PotionEffectType.REGENERATION, 10, 1);
-            effect(target, "RESISTANCE", "DAMAGE_RESISTANCE", 8, 0);
+            effect(target, PotionEffectType.REGENERATION, 12, 1);
+            effect(target, "RESISTANCE", "DAMAGE_RESISTANCE", 10, 0);
         }
         player.sendMessage(ChatColor.GREEN + "동의보감의 대처방이 아군을 살렸습니다.");
     }

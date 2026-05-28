@@ -31,7 +31,7 @@ final class ThisIsFineAbility extends BaseAbility {
             return;
         }
         if (useNormal(context, player)) {
-            effect(player, PotionEffectType.FIRE_RESISTANCE, 10, 0);
+            effect(player, PotionEffectType.FIRE_RESISTANCE, 12, 0);
             for (Player target : targets) {
                 target.setFireTicks(100);
             }
@@ -44,7 +44,7 @@ final class ThisIsFineAbility extends BaseAbility {
         if (useAdvanced(context, player)) {
             player.setFireTicks(0);
             player.setHealth(Math.min(player.getMaxHealth(), player.getHealth() + 6.0D));
-            effect(player, "RESISTANCE", "DAMAGE_RESISTANCE", 6, 0);
+            effect(player, "RESISTANCE", "DAMAGE_RESISTANCE", 8, 0);
         }
     }
 
@@ -52,7 +52,7 @@ final class ThisIsFineAbility extends BaseAbility {
     public void onGenericDamage(AbilityPlayerContext context, EntityDamageEvent event) {
         if (fire(event.getCause())) {
             event.setCancelled(true);
-            effect(context.player(), PotionEffectType.SPEED, 3, 0);
+            effect(context.player(), PotionEffectType.SPEED, 6, 0);
         }
     }
 }

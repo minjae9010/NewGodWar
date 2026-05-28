@@ -34,13 +34,13 @@ final class YuGwanSunAbility extends BaseAbility {
             return;
         }
         for (Player ally : allies) {
-            effect(ally, PotionEffectType.SPEED, 10, 1);
-            effect(ally, "STRENGTH", "INCREASE_DAMAGE", 8, 0);
-            effect(ally, "RESISTANCE", "DAMAGE_RESISTANCE", 7, 0);
+            effect(ally, PotionEffectType.SPEED, 12, 1);
+            effect(ally, "STRENGTH", "INCREASE_DAMAGE", 10, 0);
+            effect(ally, "RESISTANCE", "DAMAGE_RESISTANCE", 9, 0);
         }
         for (Player enemy : enemies) {
-            effect(enemy, PotionEffectType.WEAKNESS, 8, 0);
-            effect(enemy, "SLOWNESS", "SLOW", 8, 1);
+            effect(enemy, PotionEffectType.WEAKNESS, 10, 0);
+            effect(enemy, "SLOWNESS", "SLOW", 10, 1);
         }
         player.sendMessage(ChatColor.AQUA + "만세의 함성이 전장에 울려 퍼졌습니다.");
     }
@@ -59,14 +59,14 @@ final class YuGwanSunAbility extends BaseAbility {
         }
         for (Player ally : allies) {
             effect(ally, "ABSORPTION", "ABSORPTION", 12, 1);
-            effect(ally, PotionEffectType.REGENERATION, 8, 1);
-            effect(ally, "RESISTANCE", "DAMAGE_RESISTANCE", 8, 0);
+            effect(ally, PotionEffectType.REGENERATION, 10, 1);
+            effect(ally, "RESISTANCE", "DAMAGE_RESISTANCE", 10, 0);
         }
         for (Player enemy : enemies) {
             enemy.setFireTicks(120);
-            effect(enemy, PotionEffectType.BLINDNESS, 5, 0);
-            effect(enemy, PotionEffectType.CONFUSION, 7, 0);
-            effect(enemy, PotionEffectType.WEAKNESS, 7, 0);
+            effect(enemy, PotionEffectType.BLINDNESS, 8, 0);
+            effect(enemy, PotionEffectType.CONFUSION, 9, 0);
+            effect(enemy, PotionEffectType.WEAKNESS, 9, 0);
         }
         player.sendMessage(ChatColor.GOLD + "독립의 횃불이 적진을 흔들었습니다.");
     }
@@ -79,9 +79,9 @@ final class YuGwanSunAbility extends BaseAbility {
             return;
         }
         lastIndependenceGuard = now + context.plugin().abilities().scaleCooldownMillis(90 * 1000L);
-        effect(player, "ABSORPTION", "ABSORPTION", 10, 1);
-        effect(player, "RESISTANCE", "DAMAGE_RESISTANCE", 6, 1);
-        effect(player, PotionEffectType.REGENERATION, 5, 1);
+        effect(player, "ABSORPTION", "ABSORPTION", 12, 1);
+        effect(player, "RESISTANCE", "DAMAGE_RESISTANCE", 8, 1);
+        effect(player, PotionEffectType.REGENERATION, 8, 1);
         player.sendMessage(ChatColor.AQUA + "꺼지지 않는 의지가 치명상을 버텨냈습니다.");
     }
 }

@@ -51,7 +51,7 @@ final class CounterAbility extends BaseAbility {
 
     @Override
     public void onTick(AbilityPlayerContext context) {
-        effect(context.player(), "HASTE", "FAST_DIGGING", 3, 0);
+        effect(context.player(), "HASTE", "FAST_DIGGING", 6, 0);
     }
 
     @Override
@@ -80,7 +80,7 @@ final class CounterAbility extends BaseAbility {
         for (Player target : targets) {
             context.plugin().abilities().suppressAbility(target, ADVANCED_SUPPRESS_SECONDS);
         }
-        effect(player, "HASTE", "FAST_DIGGING", 8, 1);
+        effect(player, "HASTE", "FAST_DIGGING", 10, 1);
         player.sendMessage(ChatColor.DARK_PURPLE + "주변 적 " + targets.size() + "명의 능력을 봉인했습니다.");
     }
 

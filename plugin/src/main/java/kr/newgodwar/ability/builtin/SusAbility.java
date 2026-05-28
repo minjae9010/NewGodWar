@@ -26,8 +26,8 @@ final class SusAbility extends BaseAbility {
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
         if (useNormal(context, player)) {
-            effect(player, PotionEffectType.INVISIBILITY, 8, 0);
-            effect(player, PotionEffectType.SPEED, 8, 0);
+            effect(player, PotionEffectType.INVISIBILITY, 10, 0);
+            effect(player, PotionEffectType.SPEED, 10, 0);
         }
     }
 
@@ -44,15 +44,15 @@ final class SusAbility extends BaseAbility {
             Location targetLocation = target.getLocation();
             player.teleport(targetLocation);
             target.teleport(playerLocation);
-            effect(player, PotionEffectType.BLINDNESS, 2, 0);
-            effect(target, PotionEffectType.BLINDNESS, 5, 0);
+            effect(player, PotionEffectType.BLINDNESS, 5, 0);
+            effect(target, PotionEffectType.BLINDNESS, 8, 0);
         }
     }
 
     @Override
     public void onDamageByEntity(AbilityPlayerContext context, EntityDamageByEntityEvent event, Player opponent, boolean attacker) {
         if (!attacker && rollChance(1, 5)) {
-            effect(context.player(), PotionEffectType.INVISIBILITY, 4, 0);
+            effect(context.player(), PotionEffectType.INVISIBILITY, 7, 0);
         }
     }
 }

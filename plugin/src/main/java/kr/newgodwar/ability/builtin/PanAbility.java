@@ -37,8 +37,8 @@ final class PanAbility extends BaseAbility {
         }
         if (useNormal(context, player)) {
             for (Player target : targets) {
-                effect(target, "NAUSEA", "CONFUSION", 6, 0);
-                effect(target, "SLOWNESS", "SLOW", 5, 0);
+                effect(target, "NAUSEA", "CONFUSION", 8, 0);
+                effect(target, "SLOWNESS", "SLOW", 8, 0);
             }
         }
     }
@@ -49,8 +49,8 @@ final class PanAbility extends BaseAbility {
         targets.add(player);
         if (useAdvanced(context, player)) {
             for (Player target : targets) {
-                effect(target, PotionEffectType.SPEED, 8, 0);
-                effect(target, PotionEffectType.JUMP, 8, 0);
+                effect(target, PotionEffectType.SPEED, 10, 0);
+                effect(target, PotionEffectType.JUMP, 10, 0);
             }
         }
     }

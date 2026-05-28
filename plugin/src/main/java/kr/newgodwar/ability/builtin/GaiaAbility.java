@@ -35,7 +35,7 @@ final class GaiaAbility extends BaseAbility {
         if (useNormal(context, player)) {
             for (Player target : targets) {
                 target.setHealth(Math.min(target.getMaxHealth(), target.getHealth() + 6.0D));
-                effect(target, PotionEffectType.REGENERATION, 5, 0);
+                effect(target, PotionEffectType.REGENERATION, 8, 0);
             }
         }
     }
@@ -49,8 +49,8 @@ final class GaiaAbility extends BaseAbility {
         }
         if (useAdvanced(context, player)) {
             for (Player target : targets) {
-                effect(target, "SLOWNESS", "SLOW", 6, 4);
-                effect(target, PotionEffectType.WEAKNESS, 6, 0);
+                effect(target, "SLOWNESS", "SLOW", 8, 4);
+                effect(target, PotionEffectType.WEAKNESS, 8, 0);
             }
         }
     }
@@ -66,7 +66,7 @@ final class GaiaAbility extends BaseAbility {
     public void onTick(AbilityPlayerContext context) {
         Material below = context.player().getLocation().clone().add(0, -1, 0).getBlock().getType();
         if (below == Material.GRASS || below == Material.DIRT) {
-            effect(context.player(), PotionEffectType.REGENERATION, 3, 0);
+            effect(context.player(), PotionEffectType.REGENERATION, 6, 0);
         }
     }
 }
