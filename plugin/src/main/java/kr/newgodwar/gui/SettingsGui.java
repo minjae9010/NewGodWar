@@ -878,6 +878,7 @@ public final class SettingsGui implements Listener {
             ChatColor.GRAY + "관전: 탈락자를 관전 모드로 전환",
             ChatColor.GRAY + "킥: 탈락자를 서버에서 내보냄",
             ChatColor.GRAY + "자동 중간참여: 남은 팀이 2개 이상이면 자동 이적",
+            ChatColor.GRAY + "그대로 둠: 팀/위치/게임모드 유지",
             ChatColor.DARK_GRAY + "game.eliminated-player-action");
     }
 
@@ -887,6 +888,9 @@ public final class SettingsGui implements Listener {
         }
         if ("midjoin".equals(action)) {
             return "ENDER_PEARL";
+        }
+        if ("none".equals(action)) {
+            return "PAPER";
         }
         return "SPYGLASS";
     }
@@ -1042,7 +1046,7 @@ public final class SettingsGui implements Listener {
     }
 
     private void cycleEliminatedPlayerAction(int delta) {
-        String[] actions = new String[] {"spectator", "kick", "midjoin"};
+        String[] actions = new String[] {"spectator", "kick", "midjoin", "none"};
         String current = normalizedEliminatedPlayerAction(plugin.getConfig());
         int index = 0;
         for (int i = 0; i < actions.length; i++) {
@@ -1065,7 +1069,7 @@ public final class SettingsGui implements Listener {
             return "spectator";
         }
         action = action.toLowerCase().trim();
-        if ("kick".equals(action) || "midjoin".equals(action) || "spectator".equals(action)) {
+        if ("kick".equals(action) || "midjoin".equals(action) || "none".equals(action) || "spectator".equals(action)) {
             return action;
         }
         return "spectator";
@@ -1077,6 +1081,9 @@ public final class SettingsGui implements Listener {
         }
         if ("midjoin".equals(action)) {
             return "자동 중간참여";
+        }
+        if ("none".equals(action)) {
+            return "그대로 둠";
         }
         return "관전";
     }

@@ -48,7 +48,7 @@ public final class PluginUpdater {
 
         long initialDelayTicks = Math.max(1L, plugin.getConfig().getLong("updates.initial-delay-seconds", 10L)) * 20L;
         long intervalMinutes = plugin.getConfig().getLong("updates.check-interval-minutes", 60L);
-        boolean autoDownload = plugin.getConfig().getBoolean("updates.auto-download", true);
+        boolean autoDownload = plugin.getConfig().getBoolean("updates.auto-download", false);
 
         if (intervalMinutes <= 0L) {
             scheduledTask = Bukkit.getScheduler().runTaskLaterAsynchronously(plugin, () -> checkAndNotify(autoDownload), initialDelayTicks);
@@ -119,7 +119,7 @@ public final class PluginUpdater {
             return;
         }
 
-        boolean autoDownload = plugin.getConfig().getBoolean("updates.auto-download", true);
+        boolean autoDownload = plugin.getConfig().getBoolean("updates.auto-download", false);
         checkNow(autoDownload, checked -> {
             if (checked.updateAvailable() && player.isOnline() && player.hasPermission("newgodwar.admin")) {
                 sendNotice(player, checked);
@@ -189,8 +189,13 @@ public final class PluginUpdater {
             if (plugin.getConfig().getBoolean("updates.apply-without-restart", false)) {
                 plugin.getLogger().warning("updates.apply-without-restart is deprecated and ignored. Restart the server to apply downloaded plugin updates.");
             }
-            Bukkit.broadcastMessage(plugin.messages().prefix() + ChatColor.YELLOW
-                + "NewGodWar 업데이트 다운로드가 완료되었습니다. 서버를 재시작하면 적용됩니다.");
+            String message = plugin.messages().prefix() + ChatColor.YELLOW
+                + "NewGodWar 업데이트 다운로드가 완료되었습니다. 서버를 재시작하면 적용됩니다.";
+            for (Player player : BukkitCompat.onlinePlayers()) {
+                if (player.hasPermission("newgodwar.admin")) {
+                    player.sendMessage(message);
+                }
+            }
         });
     }
 

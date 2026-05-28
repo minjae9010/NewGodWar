@@ -58,6 +58,7 @@ public final class GameManager {
     private final Map<UUID, Scoreboard> playerScoreboards = new HashMap<UUID, Scoreboard>();
     private final Map<String, WorldSnapshot> worldSnapshots = new HashMap<String, WorldSnapshot>();
     private final Set<String> announcedPickaxeUnlocks = new HashSet<String>();
+    private static final String SIDEBAR_OBJECTIVE_NAME = "gw_status";
     private static final PickaxeUnlockNotice[] PICKAXE_UNLOCK_NOTICES = new PickaxeUnlockNotice[] {
         new PickaxeUnlockNotice("나무", "core.pickaxe-unlock.wooden-seconds"),
         new PickaxeUnlockNotice("돌", "core.pickaxe-unlock.stone-seconds"),
@@ -226,6 +227,25 @@ public final class GameManager {
         teams.put(player.getUniqueId(), team);
         refreshAllPlayerDisplays();
         nmsAdapter.sendActionBar(player, teamColoredName(team) + " 팀에 배정되었습니다.");
+    }
+
+    public void changeTeam(Player player, GodTeam team) {
+        if (!isTeamEnabled(team)) {
+            throw new IllegalStateException("비활성화된 팀에는 변경할 수 없습니다.");
+        }
+        if (state == GameState.RUNNING && eliminatedTeams.contains(team)) {
+            throw new IllegalStateException("탈락한 팀으로는 변경할 수 없습니다.");
+        }
+        teams.put(player.getUniqueId(), team);
+        if (state == GameState.RUNNING) {
+            observers.remove(player.getUniqueId());
+            BukkitCompat.setSurvival(player);
+            if (abilityManager.get(player) != null) {
+                abilityManager.reapply(player);
+            }
+        }
+        refreshAllPlayerDisplays();
+        nmsAdapter.sendActionBar(player, teamColoredName(team) + " 팀으로 변경되었습니다.");
     }
 
     public void leave(Player player) {
@@ -476,6 +496,31 @@ public final class GameManager {
         return ability;
     }
 
+    private AbilityDefinition joinEliminatedMidGame(Player player, GodTeam preferredTeam) {
+        if (state != GameState.RUNNING) {
+            throw new IllegalStateException("게임 진행 중에만 중간 참여를 사용할 수 있습니다.");
+        }
+
+        GodTeam team = smallestJoinableTeam(preferredTeam);
+        if (team == null || eliminatedTeams.contains(team)) {
+            throw new IllegalStateException("참여 가능한 팀이 없습니다.");
+        }
+
+        AbilityDefinition ability = abilityManager.get(player);
+        observers.remove(player.getUniqueId());
+        assign(player, team);
+        teleportToTeamSpawn(player, team);
+        if (ability == null) {
+            ability = abilityManager.assignRandom(player);
+        }
+        BukkitCompat.setSurvival(player);
+        nmsAdapter.sendTitle(player, ChatColor.GREEN + "중간 참여", ability.name(), 10, 60, 10);
+        Bukkit.broadcastMessage(plugin.messages().prefix() + teamColoredName(team) + ChatColor.YELLOW
+            + " 팀에 " + player.getName() + " 님이 중간 참여했습니다.");
+        refreshAllPlayerDisplays();
+        return ability;
+    }
+
     public void stop(boolean announce) {
         stop(announce, true);
     }
@@ -538,6 +583,7 @@ public final class GameManager {
             return;
         }
         eliminatedTeams.add(team);
+        GodTeam breakerTeam = breaker == null ? null : teamOf(breaker);
         String message = plugin.messages().get("team-eliminated").replace("{team}", teamColoredName(team));
         Bukkit.broadcastMessage(plugin.messages().prefix() + message);
         List<Player> eliminatedPlayers = new ArrayList<Player>();
@@ -547,7 +593,7 @@ public final class GameManager {
             }
         }
         for (Player player : eliminatedPlayers) {
-            handleEliminatedPlayer(player, team);
+            handleEliminatedPlayer(player, team, breakerTeam);
         }
         refreshAllPlayerDisplays();
         checkWinner();
@@ -558,19 +604,25 @@ public final class GameManager {
         if (team == null || !eliminatedTeams.contains(team)) {
             return false;
         }
-        handleEliminatedPlayer(player, team);
+        if ("none".equals(eliminatedPlayerAction())) {
+            return false;
+        }
+        handleEliminatedPlayer(player, team, null);
         return true;
     }
 
-    private void handleEliminatedPlayer(Player player, GodTeam team) {
+    private void handleEliminatedPlayer(Player player, GodTeam team, GodTeam breakerTeam) {
         String action = eliminatedPlayerAction();
+        if ("none".equals(action)) {
+            return;
+        }
         if ("kick".equals(action)) {
             kickEliminatedPlayer(player, team);
             return;
         }
         if ("midjoin".equals(action) && aliveTeamCount() > 1) {
             try {
-                joinMidGame(player, null, false);
+                joinEliminatedMidGame(player, breakerTeam);
                 return;
             } catch (IllegalStateException ex) {
                 player.sendMessage(ChatColor.RED + "자동 중간 참여 실패: " + ex.getMessage());
@@ -590,7 +642,7 @@ public final class GameManager {
             return "spectator";
         }
         action = action.toLowerCase(Locale.ROOT).trim();
-        if ("kick".equals(action) || "midjoin".equals(action) || "spectator".equals(action)) {
+        if ("kick".equals(action) || "midjoin".equals(action) || "none".equals(action) || "spectator".equals(action)) {
             return action;
         }
         return "spectator";
@@ -907,6 +959,12 @@ public final class GameManager {
         }
     }
 
+    public void refreshAllPlayerSidebars() {
+        for (Player player : BukkitCompat.onlinePlayers()) {
+            refreshPlayerSidebar(player);
+        }
+    }
+
     public void refreshPlayerDisplay(Player player) {
         ScoreboardManager manager = Bukkit.getScoreboardManager();
         if (manager == null || player == null) {
@@ -914,11 +972,24 @@ public final class GameManager {
         }
         Scoreboard board = manager.getNewScoreboard();
         registerTeams(board);
-        if (plugin.getConfig().getBoolean("scoreboard.enabled", true)) {
-            fillSidebar(player, board);
-        }
+        refreshSidebar(player, board);
         playerScoreboards.put(player.getUniqueId(), board);
         player.setScoreboard(board);
+        updatePlayerListName(player);
+        syncGameTimerBarPlayer(player);
+    }
+
+    public void refreshPlayerSidebar(Player player) {
+        ScoreboardManager manager = Bukkit.getScoreboardManager();
+        if (manager == null || player == null) {
+            return;
+        }
+        Scoreboard board = playerScoreboards.get(player.getUniqueId());
+        if (board == null || player.getScoreboard() != board) {
+            refreshPlayerDisplay(player);
+            return;
+        }
+        refreshSidebar(player, board);
         updatePlayerListName(player);
         syncGameTimerBarPlayer(player);
     }
@@ -954,8 +1025,19 @@ public final class GameManager {
         }
     }
 
+    private void refreshSidebar(Player player, Scoreboard board) {
+        Objective previous = board.getObjective(SIDEBAR_OBJECTIVE_NAME);
+        if (previous != null) {
+            previous.unregister();
+        }
+        if (!plugin.getConfig().getBoolean("scoreboard.enabled", true)) {
+            return;
+        }
+        fillSidebar(player, board);
+    }
+
     private void fillSidebar(Player player, Scoreboard board) {
-        Objective objective = board.registerNewObjective("gw_status", "dummy");
+        Objective objective = board.registerNewObjective(SIDEBAR_OBJECTIVE_NAME, "dummy");
         objective.setDisplayName(ChatColor.GOLD + "신들의 전쟁");
         objective.setDisplaySlot(DisplaySlot.SIDEBAR);
 
@@ -1116,6 +1198,10 @@ public final class GameManager {
     }
 
     private GodTeam smallestJoinableTeam() {
+        return smallestJoinableTeam(null);
+    }
+
+    private GodTeam smallestJoinableTeam(GodTeam preferredTeam) {
         GodTeam selected = null;
         int selectedCount = Integer.MAX_VALUE;
         for (GodTeam team : activeTeams()) {
@@ -1131,6 +1217,8 @@ public final class GameManager {
             if (count < selectedCount) {
                 selected = team;
                 selectedCount = count;
+            } else if (count == selectedCount && team.equals(preferredTeam)) {
+                selected = team;
             }
         }
         return selected;

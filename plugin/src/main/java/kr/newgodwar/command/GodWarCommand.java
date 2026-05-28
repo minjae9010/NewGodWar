@@ -46,8 +46,8 @@ import java.io.IOException;
 public final class GodWarCommand implements CommandExecutor, TabCompleter {
 
     private static final List<String> SUBCOMMANDS = Arrays.asList(
-        "help", "autoteam", "join", "leave", "settemple", "setspawn", "setlobby", "start", "stop", "status",
-        "tips", "ability", "abilities", "participants", "players", "rerolls", "skip", "skipseconds", "blacklist", "gamerule", "target", "spectate", "unspectate", "observer",
+        "help", "autoteam", "join", "changeteam", "leave", "settemple", "setspawn", "setlobby", "start", "stop", "status",
+        "tips", "ability", "abilities", "participants", "players", "rerolls", "skip", "skipseconds", "pickaxe", "blacklist", "gamerule", "target", "spectate", "unspectate", "observer",
         "reload", "update", "gui", "settings", "test", "midjoin", "info", "yes", "no", "clear", "gamble", "gamblereward", "defaultitems", "urf", "world"
     );
     private static final int HELP_LINES_PER_PAGE = 7;
@@ -121,6 +121,10 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         }
         if (sub.equals("join")) {
             join(sender, args);
+            return true;
+        }
+        if (sub.equals("changeteam")) {
+            changeTeam(sender, args);
             return true;
         }
         if (sub.equals("midjoin")) {
@@ -225,6 +229,10 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         }
         if (sub.equals("skipseconds")) {
             skipSeconds(sender, args);
+            return true;
+        }
+        if (sub.equals("pickaxe")) {
+            pickaxe(sender, args);
             return true;
         }
         if (sub.equals("blacklist")) {
@@ -354,6 +362,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             entries.add(new HelpEntry("운영 진행", "stop", "게임 종료"));
             entries.add(new HelpEntry("운영 팀", "autoteam", "온라인 플레이어 자동 팀 배정"));
             entries.add(new HelpEntry("운영 팀", "join <team> <player>", "플레이어 팀 수동 배정"));
+            entries.add(new HelpEntry("운영 팀", "changeteam <player> <team>", "진행 중 능력 유지 팀 변경"));
             entries.add(new HelpEntry("운영 팀", "midjoin <player> [team|auto]", "진행 중 플레이어 중간 참여"));
             entries.add(new HelpEntry("운영 팀", "leave <player>", "플레이어 팀 배정 해제"));
             entries.add(new HelpEntry("운영 팀", "setspawn <team>", "현재 위치를 팀 스폰으로 등록"));
@@ -374,6 +383,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             entries.add(new HelpEntry("운영 설정", "skip [초]", "능력 확정 대기 종료 및 시작 카운트다운 조정"));
             entries.add(new HelpEntry("운영 설정", "rerolls <횟수>", "능력 재추첨 가능 횟수 설정"));
             entries.add(new HelpEntry("운영 설정", "skipseconds <초>", "관리자 skip 기본 카운트다운 설정"));
+            entries.add(new HelpEntry("운영 설정", "pickaxe <종류|all> <open|off|분>", "곡괭이 코어 파괴 시간 조정"));
             entries.add(new HelpEntry("운영 설정", "urf <on|off|toggle|80%>", "우르프 모드 및 쿨타임 감소율 설정"));
             entries.add(new HelpEntry("운영 설정", "gamblereward <normal> <번호|add> hand|message|<material> [값]", "도박 당첨 아이템/멘트 변경"));
             entries.add(new HelpEntry("운영 설정", "defaultitems", "게임 시작 기본 지급 아이템 창고 열기"));
@@ -401,6 +411,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         line(sender);
         sender.sendMessage(ChatColor.GOLD + "" + ChatColor.BOLD + " NewGodWar 상태");
         sender.sendMessage(ChatColor.GRAY + "  상태       " + ChatColor.YELLOW + gameManager.state());
+        sender.sendMessage(ChatColor.GRAY + "  진행 시간  " + ChatColor.YELLOW + runningElapsedText());
         sender.sendMessage(ChatColor.GRAY + "  버전       " + ChatColor.YELLOW + plugin.versionSupport().minecraftVersion());
         sender.sendMessage(ChatColor.GRAY + "  팀킬       " + state(plugin.getConfig().getBoolean("game.friendly-fire", false)));
         sender.sendMessage(ChatColor.GRAY + "  우르프     " + urfStatus());
@@ -414,6 +425,13 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(ChatColor.GRAY + "  블랙리스트 " + ChatColor.YELLOW + abilityManager.blacklistedAbilityIds().size() + ChatColor.GRAY + "개");
         sender.sendMessage(ChatColor.GRAY + "  원문       " + gameManager.statusLine());
         line(sender);
+    }
+
+    private String runningElapsedText() {
+        if (!gameManager.isRunning()) {
+            return "진행 중 아님";
+        }
+        return formatSeconds(gameManager.runningElapsedSeconds());
     }
 
     private void line(CommandSender sender) {
@@ -487,6 +505,44 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             + plugin.getConfig().getInt("game.skip-ready-countdown-seconds", 5) + "초&a로 설정했습니다.");
     }
 
+    private void pickaxe(CommandSender sender, String[] args) {
+        if (args.length < 2 || args[1].equalsIgnoreCase("status") || args[1].equalsIgnoreCase("list")
+            || args[1].equalsIgnoreCase("상태") || args[1].equalsIgnoreCase("목록")) {
+            pickaxeStatus(sender);
+            return;
+        }
+        PickaxeUnlockTarget target = pickaxeUnlockTarget(args[1]);
+        if (target == null) {
+            plugin.messages().send(sender, "&c곡괭이는 wooden, stone, iron, gold, diamond, all 중 하나여야 합니다.");
+            return;
+        }
+        if (args.length < 3) {
+            plugin.messages().send(sender, "&e/godwar pickaxe <wooden|stone|iron|gold|diamond|all> <open|off|분>");
+            return;
+        }
+        Integer seconds = parsePickaxeUnlockSeconds(args[2]);
+        if (seconds == null) {
+            plugin.messages().send(sender, "&c시간은 open, off, 0 이상의 분 또는 초로 입력하세요. 예: open, off, 10, 300초");
+            return;
+        }
+        for (PickaxeUnlockTarget selected : pickaxeUnlockTargets(target)) {
+            plugin.getConfig().set(selected.path, seconds.intValue());
+        }
+        plugin.saveConfig();
+        plugin.messages().send(sender, "&a곡괭이 허용 시간을 변경했습니다: &f"
+            + pickaxeTargetLabel(target) + " &7-> &f" + pickaxeUnlockText(seconds.intValue()));
+        pickaxeStatus(sender);
+    }
+
+    private void pickaxeStatus(CommandSender sender) {
+        plugin.messages().send(sender, "&e/godwar pickaxe 상태");
+        plugin.messages().send(sender, "&7진행 시간: &f" + runningElapsedText());
+        for (PickaxeUnlockTarget target : pickaxeUnlockTargets(PickaxeUnlockTarget.ALL)) {
+            int seconds = plugin.getConfig().getInt(target.path, -1);
+            plugin.messages().send(sender, "&7" + target.label + ": &f" + pickaxeUnlockStateText(seconds));
+        }
+    }
+
     private void skipAbilitySelection(CommandSender sender, String[] args, int secondsIndex) {
         Integer seconds = null;
         if (args.length > secondsIndex) {
@@ -540,6 +596,37 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         }
         gameManager.assign(target, team);
         plugin.messages().send(sender, "&a" + target.getName() + " 님을 " + teamName(team) + " 팀으로 배정했습니다.");
+    }
+
+    private void changeTeam(CommandSender sender, String[] args) {
+        if (!sender.hasPermission("newgodwar.admin")) {
+            plugin.messages().send(sender, "&c권한이 없습니다.");
+            return;
+        }
+        if (args.length < 3) {
+            plugin.messages().send(sender, "&e/godwar changeteam <player> <team>");
+            plugin.messages().send(sender, "&7또는: &f/godwar changeteam <team> <player>");
+            plugin.messages().send(sender, "&7가능한 팀: &f" + teamUsage());
+            return;
+        }
+        GodTeam firstTeam = GodTeam.parse(args[1]);
+        GodTeam team = firstTeam == null ? GodTeam.parse(args[2]) : firstTeam;
+        Player target = Bukkit.getPlayer(firstTeam == null ? args[1] : args[2]);
+        if (team == null) {
+            plugin.messages().send(sender, "&c팀은 " + teamUsage() + " 중 하나여야 합니다.");
+            return;
+        }
+        if (target == null) {
+            plugin.messages().send(sender, "&c대상 플레이어를 찾을 수 없습니다.");
+            return;
+        }
+        try {
+            gameManager.changeTeam(target, team);
+            plugin.messages().send(sender, "&a" + target.getName() + " 님의 팀을 "
+                + teamName(team) + " 팀으로 변경했습니다.");
+        } catch (IllegalStateException ex) {
+            plugin.messages().send(sender, "&c" + ex.getMessage());
+        }
     }
 
     private void midJoin(CommandSender sender, String[] args) {
@@ -2352,6 +2439,18 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         if (args.length == 3 && sub.equals("join")) {
             return startsWith(onlinePlayerNames(), args[2]);
         }
+        if (args.length == 2 && sub.equals("changeteam")) {
+            List<String> values = new ArrayList<String>();
+            values.addAll(onlinePlayerNames());
+            values.addAll(teamSuggestions(false));
+            return startsWith(values, args[1]);
+        }
+        if (args.length == 3 && sub.equals("changeteam")) {
+            if (GodTeam.parse(args[1]) != null) {
+                return startsWith(onlinePlayerNames(), args[2]);
+            }
+            return startsWith(teamSuggestions(false), args[2]);
+        }
         if (args.length == 2 && sub.equals("midjoin")) {
             return startsWith(onlinePlayerNames(), args[1]);
         }
@@ -2483,6 +2582,12 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         if (args.length == 2 && sub.equals("skipseconds")) {
             return startsWith(Arrays.asList("0", "3", "5", "10", "15", "30"), args[1]);
         }
+        if (args.length == 2 && sub.equals("pickaxe")) {
+            return startsWith(Arrays.asList("status", "wooden", "stone", "iron", "gold", "diamond", "all"), args[1]);
+        }
+        if (args.length == 3 && sub.equals("pickaxe")) {
+            return startsWith(Arrays.asList("open", "off", "0", "5", "10", "15", "20", "30", "300초"), args[2]);
+        }
         if (args.length == 3 && sub.equals("urf")
             && (args[1].equalsIgnoreCase("percent") || args[1].equalsIgnoreCase("rate") || args[1].equalsIgnoreCase("배율"))) {
             return startsWith(Arrays.asList("0%", "20%", "50%", "100%"), args[2]);
@@ -2508,7 +2613,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         List<String> values = new ArrayList<String>();
         if (admin) {
             values.addAll(SUBCOMMANDS);
-            values.addAll(Arrays.asList("a", "black", "cutin", "d", "dia", "info", "lobby", "observer", "s", "set", "spawn", "t", "yes", "no", "clear", "con", "starteritems", "기본템", "월드"));
+            values.addAll(Arrays.asList("a", "black", "cutin", "d", "dia", "info", "lobby", "observer", "s", "set", "spawn", "t", "teamchange", "switchteam", "팀변경", "곡괭이", "yes", "no", "clear", "con", "starteritems", "기본템", "월드"));
             if (isThemachyRoot(command, alias)) {
                 values.addAll(teamSuggestions(false));
             }
@@ -2806,6 +2911,154 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         }
     }
 
+    private Integer parsePickaxeUnlockSeconds(String text) {
+        if (text == null) {
+            return null;
+        }
+        String normalized = text.trim().toLowerCase(Locale.ROOT);
+        if (normalized.equals("open") || normalized.equals("now") || normalized.equals("on")
+            || normalized.equals("열기") || normalized.equals("해제") || normalized.equals("켜기")) {
+            return Integer.valueOf(0);
+        }
+        if (normalized.equals("off") || normalized.equals("disable") || normalized.equals("닫기")
+            || normalized.equals("꺼짐") || normalized.equals("끄기")) {
+            return Integer.valueOf(-1);
+        }
+        int multiplier = 60;
+        if (normalized.endsWith("seconds")) {
+            multiplier = 1;
+            normalized = normalized.substring(0, normalized.length() - "seconds".length()).trim();
+        } else if (normalized.endsWith("second")) {
+            multiplier = 1;
+            normalized = normalized.substring(0, normalized.length() - "second".length()).trim();
+        } else if (normalized.endsWith("secs")) {
+            multiplier = 1;
+            normalized = normalized.substring(0, normalized.length() - "secs".length()).trim();
+        } else if (normalized.endsWith("sec")) {
+            multiplier = 1;
+            normalized = normalized.substring(0, normalized.length() - "sec".length()).trim();
+        } else if (normalized.endsWith("s") || normalized.endsWith("초")) {
+            multiplier = 1;
+            normalized = normalized.substring(0, normalized.length() - 1).trim();
+        } else if (normalized.endsWith("minutes")) {
+            normalized = normalized.substring(0, normalized.length() - "minutes".length()).trim();
+        } else if (normalized.endsWith("minute")) {
+            normalized = normalized.substring(0, normalized.length() - "minute".length()).trim();
+        } else if (normalized.endsWith("mins")) {
+            normalized = normalized.substring(0, normalized.length() - "mins".length()).trim();
+        } else if (normalized.endsWith("min")) {
+            normalized = normalized.substring(0, normalized.length() - "min".length()).trim();
+        } else if (normalized.endsWith("m") || normalized.endsWith("분")) {
+            normalized = normalized.substring(0, normalized.length() - 1).trim();
+        }
+        try {
+            int value = Integer.parseInt(normalized);
+            if (value < 0) {
+                return null;
+            }
+            long seconds = (long) value * (long) multiplier;
+            return Integer.valueOf((int) Math.min(86400L, seconds));
+        } catch (NumberFormatException ex) {
+            return null;
+        }
+    }
+
+    private PickaxeUnlockTarget pickaxeUnlockTarget(String token) {
+        if (token == null) {
+            return null;
+        }
+        String normalized = token.toLowerCase(Locale.ROOT).trim();
+        if (normalized.equals("wood") || normalized.equals("wooden") || normalized.equals("나무")) {
+            return PickaxeUnlockTarget.WOODEN;
+        }
+        if (normalized.equals("stone") || normalized.equals("돌")) {
+            return PickaxeUnlockTarget.STONE;
+        }
+        if (normalized.equals("iron") || normalized.equals("철")) {
+            return PickaxeUnlockTarget.IRON;
+        }
+        if (normalized.equals("gold") || normalized.equals("golden") || normalized.equals("금")) {
+            return PickaxeUnlockTarget.GOLD;
+        }
+        if (normalized.equals("diamond") || normalized.equals("dia") || normalized.equals("다이아")) {
+            return PickaxeUnlockTarget.DIAMOND;
+        }
+        if (normalized.equals("all") || normalized.equals("전체")) {
+            return PickaxeUnlockTarget.ALL;
+        }
+        return null;
+    }
+
+    private List<PickaxeUnlockTarget> pickaxeUnlockTargets(PickaxeUnlockTarget target) {
+        if (target == PickaxeUnlockTarget.ALL) {
+            return Arrays.asList(
+                PickaxeUnlockTarget.WOODEN,
+                PickaxeUnlockTarget.STONE,
+                PickaxeUnlockTarget.IRON,
+                PickaxeUnlockTarget.GOLD,
+                PickaxeUnlockTarget.DIAMOND);
+        }
+        return Collections.singletonList(target);
+    }
+
+    private String pickaxeTargetLabel(PickaxeUnlockTarget target) {
+        return target == PickaxeUnlockTarget.ALL ? "전체" : target.label;
+    }
+
+    private String pickaxeUnlockStateText(int seconds) {
+        if (seconds < 0) {
+            return "자동 해제 안 함";
+        }
+        if (!gameManager.isRunning()) {
+            return pickaxeUnlockText(seconds);
+        }
+        long elapsed = gameManager.runningElapsedSeconds();
+        if (elapsed >= seconds) {
+            return pickaxeUnlockText(seconds) + ChatColor.GREEN + " (열림)";
+        }
+        return pickaxeUnlockText(seconds) + ChatColor.GRAY + " (남은 시간 " + formatSeconds(seconds - elapsed) + ")";
+    }
+
+    private String pickaxeUnlockText(int seconds) {
+        if (seconds < 0) {
+            return "자동 해제 안 함";
+        }
+        if (seconds == 0) {
+            return "즉시 열림";
+        }
+        return formatSeconds(seconds);
+    }
+
+    private String formatSeconds(long seconds) {
+        long safeSeconds = Math.max(0L, seconds);
+        long minutes = safeSeconds / 60L;
+        long remain = safeSeconds % 60L;
+        if (minutes <= 0L) {
+            return remain + "초";
+        }
+        if (remain == 0L) {
+            return minutes + "분";
+        }
+        return minutes + "분 " + remain + "초";
+    }
+
+    private enum PickaxeUnlockTarget {
+        WOODEN("나무", "core.pickaxe-unlock.wooden-seconds"),
+        STONE("돌", "core.pickaxe-unlock.stone-seconds"),
+        IRON("철", "core.pickaxe-unlock.iron-seconds"),
+        GOLD("금", "core.pickaxe-unlock.gold-seconds"),
+        DIAMOND("다이아", "core.pickaxe-unlock.diamond-seconds"),
+        ALL("전체", null);
+
+        private final String label;
+        private final String path;
+
+        PickaxeUnlockTarget(String label, String path) {
+            this.label = label;
+            this.path = path;
+        }
+    }
+
     private AbilityDefinition abilityByToken(String token) {
         AbilityDefinition byId = abilityManager.registry().get(token);
         if (byId != null) {
@@ -3001,8 +3254,15 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         if (lower.equals("skip") || lower.equals("스킵")) {
             return "skip";
         }
+        if (lower.equals("pickaxe") || lower.equals("pickaxes") || lower.equals("곡괭이") || lower.equals("곡괭")) {
+            return "pickaxe";
+        }
         if (lower.equals("cutin")) {
             return "midjoin";
+        }
+        if (lower.equals("changeteam") || lower.equals("teamchange") || lower.equals("switchteam")
+            || lower.equals("팀변경") || lower.equals("팀바꾸기")) {
+            return "changeteam";
         }
         if (lower.equals("plist") || lower.equals("players") || lower.equals("users")
             || lower.equals("참가자") || lower.equals("유저")) {

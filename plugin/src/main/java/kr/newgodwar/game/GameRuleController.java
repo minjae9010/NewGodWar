@@ -33,7 +33,9 @@ public final class GameRuleController {
             for (String rule : rules.getKeys(false)) {
                 String resolvedRule = resolveRuleName(world, rule);
                 if (resolvedRule == null) {
-                    plugin.getLogger().warning("Unknown or unsupported gamerule: " + rule);
+                    if (!isOptionalUnsupportedRule(rule)) {
+                        plugin.getLogger().warning("Unknown or unsupported gamerule: " + rule);
+                    }
                     continue;
                 }
                 String value = String.valueOf(rules.get(rule));
@@ -120,6 +122,10 @@ public final class GameRuleController {
         return value;
     }
 
+    private boolean isOptionalUnsupportedRule(String rule) {
+        return "locatorbar".equals(normalizeRuleName(stripMinecraftNamespace(rule)));
+    }
+
     private boolean isGameRule(World world, String rule) {
         try {
             return world.isGameRule(rule);
@@ -176,6 +182,7 @@ public final class GameRuleController {
         names.put("doVinesSpread", "spread_vines");
         names.put("doWardenSpawning", "spawn_wardens");
         names.put("keepInventory", "keep_inventory");
+        names.put("locatorBar", "locator_bar");
         names.put("logAdminCommands", "log_admin_commands");
         names.put("maxCommandChainLength", "max_command_sequence_length");
         names.put("maxEntityCramming", "max_entity_cramming");

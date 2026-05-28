@@ -37,6 +37,7 @@
 | `/godwar gui` 또는 `/godwar settings` | 관리자 설정 GUI를 엽니다. |
 | `/godwar autoteam` | 온라인 플레이어를 활성 팀에 자동 배정합니다. |
 | `/godwar join <team> <player>` | 플레이어를 팀에 배정합니다. 진행 중에는 중간 참여로 처리될 수 있습니다. |
+| `/godwar changeteam <player> <team>` 또는 `/godwar changeteam <team> <player>` | 진행 중 플레이어의 능력과 인벤토리를 유지한 채 팀만 변경합니다. |
 | `/godwar midjoin <player> [team|auto]` | 진행 중인 게임에 플레이어를 중간 참여시킵니다. |
 | `/godwar leave <player>` | 플레이어의 팀 배정을 해제합니다. |
 | `/godwar setspawn <team>` | 현재 위치를 팀 스폰으로 저장합니다. |
@@ -70,6 +71,8 @@
 | `/godwar rerolls <횟수>` | 능력 재추첨 가능 횟수를 설정합니다. |
 | `/godwar skip [초]` | 능력 확정 대기를 종료하고 시작 카운트다운을 지정합니다. |
 | `/godwar skipseconds <초>` | 자동/관리자 skip 기본 초를 설정합니다. |
+| `/godwar pickaxe [status]` | 현재 진행 시간과 곡괭이별 코어 파괴 허용 상태를 확인합니다. |
+| `/godwar pickaxe <wooden|stone|iron|gold|diamond|all> <open|off|분>` | 곡괭이별 코어 파괴 허용 시간을 조정합니다. `open`은 즉시 허용, `off`는 자동 해제 안 함입니다. |
 | `/godwar urf <on|off|toggle|퍼센트>` | 우르프 모드와 쿨타임 감소율을 설정합니다. |
 | `/godwar blacklist <list|add|remove|toggle> [ability]` | 랜덤 배정 제외 능력을 관리합니다. |
 | `/godwar gamerule <apply|restore>` | 설정된 게임룰을 수동 적용하거나 복구합니다. |

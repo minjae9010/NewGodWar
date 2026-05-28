@@ -58,7 +58,7 @@ lobby:
 
 updates:
   enabled: true
-  auto-download: true
+  auto-download: false
   apply-without-restart: false
   apply-delay-seconds: 10
   notify-admins: true
@@ -172,6 +172,7 @@ gamerules:
     doDaylightCycle: false
     doWeatherCycle: false
     naturalRegeneration: true
+    locatorBar: false
 
 teams:
   red:

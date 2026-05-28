@@ -10,7 +10,7 @@
 | `game.friendly-fire` | `false` | 같은 팀 공격 허용 여부 |
 | `game.auto-balance-teams` | `true` | 팀 배정이 비어 있을 때 시작 시 자동 배정 |
 | `game.allow-mid-join` | `true` | 진행 중 중간 참여 허용 여부 |
-| `game.eliminated-player-action` | `spectator` | 탈락 팀 플레이어 처리 방식: `spectator`, `kick`, `midjoin` |
+| `game.eliminated-player-action` | `spectator` | 탈락 팀 플레이어 처리 방식: `spectator`, `kick`, `midjoin`, `none` |
 | `game.clear-inventory` | `true` | 시작 시 인벤토리와 방어구 초기화 |
 | `game.clear-inventory-on-stop` | `true` | 게임 종료 시 참가자/옵저버 인벤토리와 방어구 초기화 |
 | `game.give-skyblock-items` | `true` | 시작 시 기본 스카이블럭 아이템 지급 |
@@ -71,15 +71,15 @@
 
 ## updates
 
-서버가 켜져 있는 동안 GitHub Release를 확인하고, 새 버전이 있으면 업데이트 jar를 `plugins/update/`에 준비합니다. 다운로드 완료 후 서버를 재시작하면 새 버전이 적용됩니다.
+서버가 켜져 있는 동안 GitHub Release를 확인하고, 새 버전이 있으면 관리자에게 알립니다. `updates.auto-download`를 켜거나 `/godwar update download`를 실행하면 업데이트 jar를 `plugins/update/`에 준비하고, 서버 재시작 후 새 버전이 적용됩니다.
 
 | 키 | 기본값 | 설명 |
 | --- | --- | --- |
 | `updates.enabled` | `true` | 자동 업데이트 확인 사용 여부 |
-| `updates.auto-download` | `true` | 새 릴리즈 발견 시 jar 자동 다운로드 여부 |
+| `updates.auto-download` | `false` | 새 릴리즈 발견 시 jar 자동 다운로드 여부 |
 | `updates.apply-without-restart` | `false` | 더 이상 사용하지 않는 이전 설정. 최신 Paper에서는 플러그인 업데이트 적용에 서버 재시작이 필요합니다. |
 | `updates.apply-delay-seconds` | `10` | 더 이상 사용하지 않는 이전 설정 |
-| `updates.notify-admins` | `true` | 관리자 접속 시 구버전 알림 여부 |
+| `updates.notify-admins` | `true` | 관리자에게 구버전 및 재시작 필요 알림 표시 여부 |
 | `updates.initial-delay-seconds` | `10` | 서버 시작 후 첫 업데이트 확인 지연 시간 |
 | `updates.check-interval-minutes` | `60` | 반복 확인 간격. `0` 이하이면 시작 시 한 번만 확인 |
 | `updates.github.owner` | `minjae9010` | GitHub 릴리즈 저장소 소유자 |
@@ -114,7 +114,7 @@
 | `core.pickaxe-unlock.gold-seconds` | `-1` | 게임 시작 후 금 곡괭이 코어 파괴 허용 시간. `-1`이면 자동 해제 안 함 |
 | `core.pickaxe-unlock.diamond-seconds` | `-1` | 게임 시작 후 다이아 곡괭이 코어 파괴 허용 시간. `-1`이면 자동 해제 안 함 |
 
-곡괭이 시간 해제 값이 `0` 이상이면 `core.require-empty-hand`가 켜져 있어도 해당 시간이 지난 뒤 그 곡괭이로 코어를 파괴할 수 있습니다. 월드 / 코어 설정 GUI에서 각 곡괭이를 좌클릭/우클릭해 1분 단위로, 쉬프트 좌클릭/쉬프트 우클릭해 5분 단위로 조정할 수 있습니다.
+곡괭이 시간 해제 값이 `0` 이상이면 `core.require-empty-hand`가 켜져 있어도 해당 시간이 지난 뒤 그 곡괭이로 코어를 파괴할 수 있습니다. 월드 / 코어 설정 GUI에서 각 곡괭이를 좌클릭/우클릭해 1분 단위로, 쉬프트 좌클릭/쉬프트 우클릭해 5분 단위로 조정할 수 있습니다. 명령어로는 `/godwar pickaxe status`로 진행 시간과 해제 상태를 확인하고, `/godwar pickaxe <종류|all> <open|off|분>`으로 바로 조정할 수 있습니다.
 
 ## abilities
 
@@ -181,7 +181,7 @@
 | `gamerules.restore-on-stop` | `true` | 종료 시 이전 게임룰 복구 |
 | `gamerules.rules` | 목록 | 적용할 Minecraft GameRule |
 
-기본값은 `keepInventory: false`, `doImmediateRespawn: true`, `doDaylightCycle: false`, `doWeatherCycle: false`, `naturalRegeneration: true`입니다.
+기본값은 `keepInventory: false`, `doImmediateRespawn: true`, `doDaylightCycle: false`, `doWeatherCycle: false`, `naturalRegeneration: true`, `locatorBar: false`입니다. `locatorBar`는 해당 게임룰이 있는 서버 버전에서만 적용됩니다.
 
 ## teams
 

@@ -38,6 +38,7 @@ Wiki 배포 전 저장소 Settings > Features에서 Wiki 기능을 켜야 합니
 - `/t yes` 또는 `/t no` 능력 재추첨 확정 / 다시 뽑기
 - `/godwar autoteam` 온라인 플레이어 자동 팀 배정
 - `/godwar join <red|blue|green> <player>` 관리자가 플레이어 팀 수동 배정
+- `/godwar changeteam <player> <red|blue|green>` 또는 `/godwar changeteam <red|blue|green> <player>` 관리자가 진행 중인 플레이어의 능력을 유지한 채 팀 변경
 - `/godwar midjoin <player> [red|blue|green|auto]` 관리자가 진행 중인 게임에 중간 참여 지정. 탈락 팀 플레이어도 살아있는 팀으로 재참여할 수 있습니다.
 - `/godwar leave <player>` 관리자가 플레이어 팀 제거
 - `/godwar setspawn <red|blue|green>` 현재 위치를 팀 스폰으로 등록
@@ -52,6 +53,8 @@ Wiki 배포 전 저장소 Settings > Features에서 Wiki 기능을 켜야 합니
 - `/godwar test [ability]` 혼자 능력 테스트 시작
 - `/godwar stop` 게임 종료
 - `/godwar status` 현재 게임 상태
+- `/godwar pickaxe [status]` 현재 진행 시간과 곡괭이 해제 상태 확인
+- `/godwar pickaxe <wooden|stone|iron|gold|diamond|all> <open|off|분>` 곡괭이 코어 파괴 허용 시간 조정
 - `/godwar update [check|download]` 최신 릴리즈 확인 및 다음 재시작에 적용할 업데이트 jar 다운로드
 - `/godwar tips` 서버 플레이 팁 확인
 - `/godwar gui` 또는 `/godwar settings` 관리자용 상자 GUI 설정 열기
@@ -83,7 +86,7 @@ Wiki 배포 전 저장소 Settings > Features에서 Wiki 기능을 켜야 합니
 - `game.friendly-fire`: 같은 팀 공격 허용 여부
 - `game.auto-balance-teams`: 팀이 비어 있을 때 시작 시 자동 팀 배정
 - `game.allow-mid-join`: 진행 중인 게임의 중간 참여 허용 여부
-- `game.eliminated-player-action`: 팀 탈락 시 플레이어 처리 방식. `spectator`, `kick`, `midjoin`
+- `game.eliminated-player-action`: 팀 탈락 시 플레이어 처리 방식. `spectator`, `kick`, `midjoin`, `none`
 - `game.clear-inventory`, `game.clear-inventory-on-stop`, `game.give-skyblock-items`, `game.skyblock-items`, `game.remove-entities`: 시작/종료 시 인벤토리, 기본 아이템, 엔티티 정리
 - `game.ignore-bed`: 리스폰 시 침대 대신 팀 스폰 사용
 - `game.fast-start`, `game.ready-countdown-seconds`: 시작 준비 카운트다운
@@ -99,7 +102,7 @@ Wiki 배포 전 저장소 Settings > Features에서 Wiki 기능을 켜야 합니
 - `world`: 시작 시 autosave, 동물/몬스터 스폰, 난이도, 시작 시간을 적용하고 종료 시 복구
 - `lobby`: 접속 위치와 게임 종료 후 복귀 위치
 - `compatibility.clear-teleport-invulnerability`: 다른 플러그인의 텔레포트 보호로 생기는 전투 중 무적 틱 정리
-- `updates`: GitHub Release 최신 버전 확인, 자동 다운로드, 다음 재시작 적용 안내
+- `updates`: GitHub Release 최신 버전 확인, 선택적 자동 다운로드, 다음 재시작 적용 안내
 - `core`: 코어 폭파 보호, 맨손 파괴 제한, 다이아 곡괭이 파괴 금지
 - `gambling.enabled`: 도박 GUI 사용 여부
 - `gambling.rewards`: 도박 당첨 아이템, 수량, 메시지, 확률 가중치
