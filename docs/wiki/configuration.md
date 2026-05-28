@@ -50,8 +50,10 @@
 | `world.game-world` | `""` | 자동 초기화할 게임 월드 이름. 비어 있으면 자동 초기화 기능은 작동하지 않음 |
 | `world.reset-game-world-on-stop` | `true` | 게임 월드가 지정되어 있을 때 시작 시 백업하고 종료 시 해당 월드 복원 |
 | `world.managed-worlds` | `[]` | `/godwar world create`, `load`, `copy`, 백업 로드로 등록된 월드 목록. 서버 시작 시 자동 로드 |
+| `maps.<world>.spawns` | 자동 생성 | 맵별 팀 스폰 위치. `/godwar map <world>` 선택 후 `/godwar setspawn <team>`로 저장 |
+| `maps.<world>.temples` | 자동 생성 | 맵별 팀 심장 위치. `/godwar map <world>` 선택 후 `/godwar settemple <team>`로 저장 |
 
-게임 월드는 `/godwar world game <world>`로 지정하고 `/godwar world game clear`로 해제합니다. 로비 월드는 게임 월드로 지정할 수 없습니다. 게임 월드가 지정되어 있으면 게임 시작 직전에 해당 월드를 스냅샷으로 저장하고, 게임 종료 시 참가자를 로비로 이동시킨 뒤 월드를 언로드, 복원, 재로드합니다. 로비가 설정되어 있지 않거나 플레이어가 게임 월드에 남아 있으면 안전을 위해 월드 초기화를 건너뜁니다.
+게임 맵은 `/godwar map <world>`로 선택하고 `/godwar map clear`로 해제합니다. 기존 `/godwar world game <world>`도 같은 설정을 사용합니다. 로비 월드는 게임 맵으로 지정할 수 없습니다. 게임 월드가 지정되어 있으면 게임 시작 직전에 해당 월드를 스냅샷으로 저장하고, 게임 종료 시 참가자를 로비로 이동시킨 뒤 월드를 언로드, 복원, 재로드합니다. 로비가 설정되어 있지 않거나 플레이어가 게임 월드에 남아 있으면 안전을 위해 월드 초기화를 건너뜁니다.
 
 인게임에서는 `/godwar world gui` 또는 `/godwar settings`의 `월드` 메뉴에서 `world.autosave`, `world.spawn-animals`, `world.spawn-monsters`, `world.difficulty`, `world.start-time`, `world.game-world`, `world.reset-game-world-on-stop`을 조정할 수 있습니다. 자세한 운영 흐름은 [월드 관리](world-management)를 참고하세요.
 
@@ -181,7 +183,7 @@
 | `gamerules.restore-on-stop` | `true` | 종료 시 이전 게임룰 복구 |
 | `gamerules.rules` | 목록 | 적용할 Minecraft GameRule |
 
-기본값은 `keepInventory: false`, `doImmediateRespawn: true`, `doDaylightCycle: false`, `doWeatherCycle: false`, `naturalRegeneration: true`, `locatorBar: false`입니다. `locatorBar`는 해당 게임룰이 있는 서버 버전에서만 적용됩니다.
+기본값은 `keepInventory: false`, `doImmediateRespawn: true`, `doDaylightCycle: false`, `doWeatherCycle: false`, `doFireTick: false`, `fire_spread_radius_around_player: 0`, `naturalRegeneration: true`, `locatorBar: false`입니다. `doFireTick: false`는 구버전 불 틱을 끄고, `fire_spread_radius_around_player: 0`은 상위 버전에서 플레이어 주변 불 번짐 반경을 0으로 설정합니다. `locatorBar`와 `fire_spread_radius_around_player`는 해당 게임룰이 있는 서버 버전에서만 적용됩니다.
 
 ## teams
 

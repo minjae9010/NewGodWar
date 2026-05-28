@@ -51,6 +51,8 @@ world:
   reset-game-world-on-stop: true
   managed-worlds: []
 
+maps: {}
+
 lobby:
   teleport-on-join: true
   teleport-on-game-stop: true
@@ -171,6 +173,8 @@ gamerules:
     doImmediateRespawn: true
     doDaylightCycle: false
     doWeatherCycle: false
+    doFireTick: false
+    fire_spread_radius_around_player: 0
     naturalRegeneration: true
     locatorBar: false
 

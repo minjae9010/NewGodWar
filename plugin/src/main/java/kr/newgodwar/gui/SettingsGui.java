@@ -1165,6 +1165,7 @@ public final class SettingsGui implements Listener {
         }
         plugin.getConfig().set("world.game-world", world.getName());
         plugin.saveConfig();
+        gameManager.reloadSettings();
         plugin.messages().send(player, "&a현재 월드를 게임 월드로 지정했습니다: &f" + world.getName());
     }
 

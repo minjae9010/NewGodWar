@@ -123,7 +123,9 @@ public final class GameRuleController {
     }
 
     private boolean isOptionalUnsupportedRule(String rule) {
-        return "locatorbar".equals(normalizeRuleName(stripMinecraftNamespace(rule)));
+        String normalized = normalizeRuleName(stripMinecraftNamespace(rule));
+        return "locatorbar".equals(normalized)
+            || "firespreadradiusaroundplayer".equals(normalized);
     }
 
     private boolean isGameRule(World world, String rule) {
@@ -171,6 +173,7 @@ public final class GameRuleController {
         names.put("disableElytraMovementCheck", "elytra_movement_check");
         names.put("doDaylightCycle", "advance_time");
         names.put("doEntityDrops", "entity_drops");
+        names.put("doFireTick", "do_fire_tick");
         names.put("doImmediateRespawn", "immediate_respawn");
         names.put("doInsomnia", "spawn_phantoms");
         names.put("doLimitedCrafting", "limited_crafting");

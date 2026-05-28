@@ -9,10 +9,12 @@ NewGodWar는 로비 월드와 게임 월드를 분리해서 운영할 수 있습
 | 월드 도움말 확인 | `/godwar world help` 또는 `/godwar help world` |
 | 월드 목록 확인 | `/godwar world list` |
 | 현재 위치를 로비로 저장 | `/godwar setlobby` |
-| 게임 월드 지정 | `/godwar world game <world>` |
-| 게임 월드 지정 해제 | `/godwar world game clear` |
+| 게임 맵 선택 | `/godwar map <world>` |
+| 게임 맵 선택 해제 | `/godwar map clear` |
 | 월드 설정 GUI 열기 | `/godwar world gui` |
 | 전체 설정 GUI 열기 | `/godwar gui` 또는 `/godwar settings` |
+
+`/godwar map <world>`는 로드된 월드를 선택합니다. 월드 폴더만 있고 아직 로드되지 않은 경우에는 자동으로 로드한 뒤 선택합니다. 선택된 맵의 팀 스폰과 심장은 `maps.<world>` 아래에 별도로 저장되므로, 새 맵을 만들면 해당 맵에서 `/godwar setspawn <team>`과 `/godwar settemple <team>`을 다시 지정하세요.
 
 설정 GUI에서는 `월드` 메뉴를 열어 자동 저장, 동물/몬스터 스폰, 시작 시간, 시작 난이도, 게임 월드 자동 초기화, 현재 월드를 게임 월드로 지정/해제를 조정할 수 있습니다.
 
@@ -61,6 +63,7 @@ NewGodWar는 로비 월드와 게임 월드를 분리해서 운영할 수 있습
 ## 운영 주의사항
 
 - 로비 월드는 게임 월드로 지정할 수 없습니다.
+- 맵마다 팀 스폰과 심장을 따로 설정해야 합니다.
 - 게임 월드 자동 초기화는 로비 위치가 있어야 안전하게 동작합니다.
 - 게임 종료 시 게임 월드에 플레이어가 남아 있으면 안전을 위해 복원을 건너뛸 수 있습니다.
 - 월드를 삭제하거나 언로드하기 전에는 `/godwar world lobby [player]` 또는 `/godwar world tp <world> [player]`로 플레이어를 다른 월드로 이동하세요.

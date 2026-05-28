@@ -48,7 +48,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
     private static final List<String> SUBCOMMANDS = Arrays.asList(
         "help", "autoteam", "join", "changeteam", "leave", "settemple", "setspawn", "setlobby", "start", "stop", "status",
         "tips", "ability", "abilities", "participants", "players", "rerolls", "skip", "skipseconds", "pickaxe", "blacklist", "gamerule", "target", "spectate", "unspectate", "observer",
-        "reload", "update", "gui", "settings", "test", "midjoin", "info", "yes", "no", "clear", "gamble", "gamblereward", "defaultitems", "urf", "world"
+        "reload", "update", "gui", "settings", "test", "midjoin", "info", "yes", "no", "clear", "gamble", "gamblereward", "defaultitems", "urf", "world", "map"
     );
     private static final int HELP_LINES_PER_PAGE = 7;
 
@@ -175,6 +175,10 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             world(sender, label, args);
             return true;
         }
+        if (sub.equals("map")) {
+            map(sender, label, args);
+            return true;
+        }
         if (sub.equals("info")) {
             teamInfo(sender, args);
             return true;
@@ -291,6 +295,10 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             worldHelp(sender, label);
             return;
         }
+        if (args.length >= 2 && isMapHelpToken(args[1])) {
+            mapHelp(sender, label);
+            return;
+        }
         int requestedPage = parseHelpPage(args);
         List<HelpEntry> entries = helpEntries(label, sender.hasPermission("newgodwar.admin"));
         int maxPage = Math.max(1, ((entries.size() - 1) / HELP_LINES_PER_PAGE) + 1);
@@ -334,6 +342,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             if (section.equals("ability") || section.equals("능력")) return 3;
             if (section.equals("admin") || section.equals("관리")) return 4;
             if (isWorldHelpToken(section)) return 2;
+            if (isMapHelpToken(section)) return 2;
             return 1;
         }
     }
@@ -368,6 +377,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             entries.add(new HelpEntry("운영 팀", "setspawn <team>", "현재 위치를 팀 스폰으로 등록"));
             entries.add(new HelpEntry("운영 팀", "setlobby", "현재 위치를 접속/게임 종료 로비로 등록"));
             entries.add(new HelpEntry("운영 팀", "settemple <team>", "바라보는 다이아 블록을 심장으로 등록"));
+            entries.add(new HelpEntry("운영 팀", "map [world|clear]", "게임에 사용할 맵 선택 / 해제"));
             entries.add(new HelpEntry("운영 팀", "world help", "월드 명령 상세 도움말"));
             entries.add(new HelpEntry("운영 팀", "world gui", "월드 전용 설정 GUI 열기"));
             entries.add(new HelpEntry("운영 팀", "world <list|game|create|load|copy|tp|lobby|unload|delete|backup>", "게임 월드 지정, 생성, 복사, 이동, 백업, 삭제 관리"));
@@ -415,6 +425,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(ChatColor.GRAY + "  버전       " + ChatColor.YELLOW + plugin.versionSupport().minecraftVersion());
         sender.sendMessage(ChatColor.GRAY + "  팀킬       " + state(plugin.getConfig().getBoolean("game.friendly-fire", false)));
         sender.sendMessage(ChatColor.GRAY + "  우르프     " + urfStatus());
+        sender.sendMessage(ChatColor.GRAY + "  선택 맵    " + selectedMapStatus());
         sender.sendMessage(ChatColor.GRAY + "  재추첨     " + ChatColor.YELLOW
             + plugin.getConfig().getInt("game.ability-reroll-count", 1) + "회"
             + ChatColor.DARK_GRAY + " | " + ChatColor.GRAY + "자동 Skip "
@@ -455,6 +466,11 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
     private String urfStatus() {
         return state(abilityManager.urfEnabled()) + ChatColor.GRAY + " / 쿨타임 감소 "
             + ChatColor.YELLOW + abilityManager.urfCooldownPercent() + "%";
+    }
+
+    private String selectedMapStatus() {
+        String map = selectedMapName();
+        return map == null ? ChatColor.RED + "미선택" : ChatColor.AQUA + map;
     }
 
     private String updateStatusSuffix() {
@@ -1363,11 +1379,83 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         plugin.messages().send(sender, "&e/godwar world <list|game|create|load|copy|tp|lobby|unload|delete|backup>");
     }
 
+    private void map(CommandSender sender, String label, String[] args) {
+        if (args.length < 2 || args[1].equalsIgnoreCase("list") || args[1].equalsIgnoreCase("목록")) {
+            listMaps(sender, label);
+            return;
+        }
+        if (args[1].equalsIgnoreCase("help") || args[1].equalsIgnoreCase("도움말") || args[1].equals("?")) {
+            mapHelp(sender, label);
+            return;
+        }
+        if (args[1].equalsIgnoreCase("clear") || args[1].equalsIgnoreCase("none") || args[1].equalsIgnoreCase("해제")) {
+            clearSelectedMap(sender);
+            return;
+        }
+        if ((args[1].equalsIgnoreCase("select") || args[1].equalsIgnoreCase("선택")) && args.length >= 3) {
+            selectMap(sender, args[2], true);
+            return;
+        }
+        selectMap(sender, args[1], true);
+    }
+
+    private void mapHelp(CommandSender sender, String label) {
+        sender.sendMessage("");
+        line(sender);
+        sender.sendMessage(ChatColor.GOLD + "" + ChatColor.BOLD + " NewGodWar 맵 선택"
+            + ChatColor.DARK_GRAY + " | " + ChatColor.YELLOW + "/" + label + " map");
+        sender.sendMessage(ChatColor.GRAY + "  현재 선택: " + selectedMapStatus());
+        line(sender);
+        command(sender, label, "map", "선택 가능한 맵 목록과 현재 선택 확인");
+        command(sender, label, "map <world>", "해당 월드를 이번 게임 맵으로 선택");
+        command(sender, label, "map clear", "맵 선택 해제");
+        command(sender, label, "world load <world>", "로드되지 않은 월드를 수동 로드");
+        line(sender);
+        sender.sendMessage(ChatColor.GRAY + "  맵별 팀 스폰/심장은 선택된 맵 기준으로 저장됩니다.");
+        sender.sendMessage(ChatColor.GRAY + "  맵을 새로 선택한 뒤 " + ChatColor.AQUA + "/" + label
+            + " setspawn" + ChatColor.GRAY + ", " + ChatColor.AQUA + "/" + label
+            + " settemple" + ChatColor.GRAY + " 을 맵마다 설정하세요.");
+        line(sender);
+    }
+
+    private void listMaps(CommandSender sender, String label) {
+        String selected = selectedMapName();
+        sender.sendMessage(plugin.messages().prefix() + ChatColor.YELLOW + "게임 맵 목록");
+        sender.sendMessage(ChatColor.GRAY + "현재 선택: " + selectedMapStatus());
+        Set<String> listed = new HashSet<String>();
+        for (World world : Bukkit.getWorlds()) {
+            listed.add(world.getName().toLowerCase(Locale.ROOT));
+            sender.sendMessage(mapListLine(world.getName(), true, selected));
+        }
+        for (String worldName : unloadedWorldNameSuggestions()) {
+            if (!listed.contains(worldName.toLowerCase(Locale.ROOT))) {
+                sender.sendMessage(mapListLine(worldName, false, selected));
+            }
+        }
+        sender.sendMessage(ChatColor.GRAY + "선택: " + ChatColor.AQUA + "/" + label + " map <world>"
+            + ChatColor.DARK_GRAY + " | " + ChatColor.GRAY + "해제: " + ChatColor.AQUA + "/" + label + " map clear");
+    }
+
+    private String mapListLine(String worldName, boolean loaded, String selected) {
+        boolean active = selected != null && selected.equalsIgnoreCase(worldName);
+        return ChatColor.GRAY + "- " + (active ? ChatColor.GREEN : ChatColor.WHITE) + worldName
+            + ChatColor.DARK_GRAY + " | " + (loaded ? ChatColor.GRAY + "로드됨" : ChatColor.YELLOW + "폴더만 있음")
+            + (active ? ChatColor.DARK_GRAY + " | " + ChatColor.GREEN + "선택됨" : "");
+    }
+
     private boolean isWorldHelpToken(String token) {
         return token != null
             && (token.equalsIgnoreCase("world")
             || token.equalsIgnoreCase("worlds")
             || token.equalsIgnoreCase("월드"));
+    }
+
+    private boolean isMapHelpToken(String token) {
+        return token != null
+            && (token.equalsIgnoreCase("map")
+            || token.equalsIgnoreCase("maps")
+            || token.equalsIgnoreCase("맵")
+            || token.equalsIgnoreCase("지도"));
     }
 
     private void worldHelp(CommandSender sender, String label) {
@@ -1386,6 +1474,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         line(sender);
         section(sender, "확인 / 지정");
         command(sender, label, "world list", "로드된 월드와 로드 가능한 월드 폴더 확인");
+        command(sender, label, "map <world|clear>", "게임에 사용할 맵 선택 또는 해제");
         command(sender, label, "world game <world|clear>", "종료 시 초기화할 게임 월드 지정 또는 해제");
         command(sender, label, "world gui", "월드 전용 설정 GUI 열기");
         command(sender, label, "world lobby [player]", "저장된 로비 위치로 이동");
@@ -1431,25 +1520,67 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             return;
         }
         if (args[2].equalsIgnoreCase("clear") || args[2].equalsIgnoreCase("none") || args[2].equalsIgnoreCase("해제")) {
-            plugin.getConfig().set("world.game-world", "");
-            plugin.saveConfig();
-            plugin.messages().send(sender, "&a게임 월드 지정을 해제했습니다. 자동 월드 초기화는 작동하지 않습니다.");
+            clearSelectedMap(sender);
             return;
         }
-        World world = worldByName(args[2]);
+        selectMap(sender, args[2], false);
+    }
+
+    private void selectMap(CommandSender sender, String requestedWorldName, boolean loadIfNeeded) {
+        World world = worldByName(requestedWorldName);
         if (world == null) {
-            plugin.messages().send(sender, "&c로드된 월드를 찾을 수 없습니다: " + args[2]);
-            return;
+            if (!loadIfNeeded) {
+                plugin.messages().send(sender, "&c로드된 월드를 찾을 수 없습니다: " + requestedWorldName);
+                return;
+            }
+            world = loadMapWorld(sender, requestedWorldName);
+            if (world == null) {
+                return;
+            }
         }
         org.bukkit.Location lobby = gameManager.lobbyLocation();
         if (lobby != null && lobby.getWorld() != null && lobby.getWorld().equals(world)) {
-            plugin.messages().send(sender, "&c로비 월드는 게임 월드로 지정할 수 없습니다.");
+            plugin.messages().send(sender, "&c로비 월드는 게임 맵으로 선택할 수 없습니다.");
             return;
         }
         plugin.getConfig().set("world.game-world", world.getName());
         plugin.saveConfig();
-        plugin.messages().send(sender, "&a게임 월드를 지정했습니다: &f" + world.getName()
-            + "&7 | 게임 시작 시 백업, 종료 시 자동 초기화됩니다.");
+        gameManager.reloadSettings();
+        plugin.messages().send(sender, "&a게임 맵을 선택했습니다: &f" + world.getName()
+            + "&7 | 시작 시 백업, 종료 시 자동 초기화됩니다.");
+        plugin.messages().send(sender, "&7맵별 스폰/심장 설정: &e/godwar setspawn <team>&7, &e/godwar settemple <team>");
+    }
+
+    private World loadMapWorld(CommandSender sender, String requestedWorldName) {
+        String name = sanitizeWorldName(requestedWorldName);
+        if (name == null) {
+            plugin.messages().send(sender, "&c월드 이름은 영문, 숫자, 점, 밑줄, 하이픈만 사용할 수 있습니다.");
+            return null;
+        }
+        if (!worldBackupManager.hasWorldFolder(name)) {
+            plugin.messages().send(sender, "&c로드된 월드나 월드 폴더를 찾을 수 없습니다: " + name);
+            return null;
+        }
+        World loaded = Bukkit.createWorld(WorldBackupManager.creator(name, managedWorldType(name)));
+        if (loaded == null) {
+            plugin.messages().send(sender, "&c맵 월드를 로드하지 못했습니다: " + name);
+            return null;
+        }
+        saveManagedWorld(loaded.getName(), managedWorldType(loaded.getName()));
+        plugin.messages().send(sender, "&a맵 월드를 로드했습니다: &f" + loaded.getName());
+        return loaded;
+    }
+
+    private void clearSelectedMap(CommandSender sender) {
+        plugin.getConfig().set("world.game-world", "");
+        plugin.saveConfig();
+        gameManager.reloadSettings();
+        plugin.messages().send(sender, "&a게임 맵 선택을 해제했습니다. 자동 월드 초기화는 작동하지 않습니다.");
+    }
+
+    private String selectedMapName() {
+        String configured = plugin.getConfig().getString("world.game-world", "");
+        return configured == null || configured.trim().length() == 0 ? null : configured.trim();
     }
 
     private void createWorld(CommandSender sender, String[] args) {
@@ -2425,7 +2556,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             return abilityGroupTabComplete(sender, command, alias, args);
         }
         if (args.length == 2 && sub.equals("help")) {
-            return startsWith(Arrays.asList("1", "2", "3", "game", "team", "ability", "world", "월드"), args[1]);
+            return startsWith(Arrays.asList("1", "2", "3", "game", "team", "ability", "world", "map", "월드", "맵"), args[1]);
         }
         if (requiresAdmin(sub) && !sender.hasPermission("newgodwar.admin")) {
             return Collections.emptyList();
@@ -2489,6 +2620,16 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             values.addAll(Arrays.asList("help", "gui", "settings", "list", "game", "create", "load", "copy", "tp", "lobby", "unload", "delete", "backup"));
             values.addAll(worldNameSuggestions());
             return startsWith(values, args[1]);
+        }
+        if (args.length == 2 && sub.equals("map")) {
+            List<String> values = new ArrayList<String>();
+            values.addAll(Arrays.asList("help", "list", "clear", "select"));
+            values.addAll(mapNameSuggestions());
+            return startsWith(values, args[1]);
+        }
+        if (args.length == 3 && sub.equals("map")
+            && (args[1].equalsIgnoreCase("select") || args[1].equalsIgnoreCase("선택"))) {
+            return startsWith(mapNameSuggestions(), args[2]);
         }
         if (args.length == 3 && sub.equals("world")) {
             if (args[1].equalsIgnoreCase("tp") || args[1].equalsIgnoreCase("teleport") || args[1].equalsIgnoreCase("이동")) {
@@ -2781,6 +2922,25 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             worlds.add(world.getName());
         }
         return worlds;
+    }
+
+    private List<String> mapNameSuggestions() {
+        List<String> worlds = worldNameSuggestions();
+        for (String unloaded : unloadedWorldNameSuggestions()) {
+            if (!containsIgnoreCase(worlds, unloaded)) {
+                worlds.add(unloaded);
+            }
+        }
+        return worlds;
+    }
+
+    private boolean containsIgnoreCase(List<String> values, String target) {
+        for (String value : values) {
+            if (value.equalsIgnoreCase(target)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private List<String> unloadedWorldNameSuggestions() {
@@ -3291,6 +3451,9 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         }
         if (lower.equals("world") || lower.equals("worlds") || lower.equals("월드")) {
             return "world";
+        }
+        if (lower.equals("map") || lower.equals("maps") || lower.equals("맵") || lower.equals("지도")) {
+            return "map";
         }
         if (lower.equals("clear") || lower.equals("c")) {
             return "clear";

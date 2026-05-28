@@ -283,6 +283,7 @@ public final class GameManager {
         }
         TempleLocation location = TempleLocation.fromBlock(block);
         temples.put(team, location);
+        plugin.getConfig().set(mapTemplePath(block.getWorld().getName(), team), location.serialize());
         plugin.getConfig().set("temples." + team.id(), location.serialize());
         plugin.saveConfig();
         return true;
@@ -294,6 +295,7 @@ public final class GameManager {
         }
         GameLocation spawn = GameLocation.from(location);
         spawns.put(team, spawn);
+        plugin.getConfig().set(mapSpawnPath(location.getWorld().getName(), team), spawn.serialize());
         plugin.getConfig().set("spawns." + team.id(), spawn.serialize());
         plugin.saveConfig();
         return true;
@@ -761,8 +763,15 @@ public final class GameManager {
     }
 
     private void loadTemples() {
+        String worldName = configuredGameWorldName();
         for (GodTeam team : GodTeam.values()) {
-            TempleLocation location = TempleLocation.deserialize(plugin.getConfig().getString("temples." + team.id()));
+            TempleLocation location = TempleLocation.deserialize(plugin.getConfig().getString(activeMapTemplePath(team)));
+            if (location == null) {
+                String legacy = plugin.getConfig().getString("temples." + team.id());
+                if (worldName == null || locationValueMatchesWorld(legacy, worldName)) {
+                    location = TempleLocation.deserialize(legacy);
+                }
+            }
             if (location != null) {
                 temples.put(team, location);
             }
@@ -770,12 +779,41 @@ public final class GameManager {
     }
 
     private void loadSpawns() {
+        String worldName = configuredGameWorldName();
         for (GodTeam team : GodTeam.values()) {
-            GameLocation location = GameLocation.deserialize(plugin.getConfig().getString("spawns." + team.id()));
+            GameLocation location = GameLocation.deserialize(plugin.getConfig().getString(activeMapSpawnPath(team)));
+            if (location == null) {
+                String legacy = plugin.getConfig().getString("spawns." + team.id());
+                if (worldName == null || locationValueMatchesWorld(legacy, worldName)) {
+                    location = GameLocation.deserialize(legacy);
+                }
+            }
             if (location != null) {
                 spawns.put(team, location);
             }
         }
+    }
+
+    private String activeMapTemplePath(GodTeam team) {
+        String worldName = configuredGameWorldName();
+        return worldName == null ? "temples." + team.id() : mapTemplePath(worldName, team);
+    }
+
+    private String activeMapSpawnPath(GodTeam team) {
+        String worldName = configuredGameWorldName();
+        return worldName == null ? "spawns." + team.id() : mapSpawnPath(worldName, team);
+    }
+
+    private String mapTemplePath(String worldName, GodTeam team) {
+        return "maps." + worldName + ".temples." + team.id();
+    }
+
+    private String mapSpawnPath(String worldName, GodTeam team) {
+        return "maps." + worldName + ".spawns." + team.id();
+    }
+
+    private boolean locationValueMatchesWorld(String value, String worldName) {
+        return value != null && value.regionMatches(true, 0, worldName + ",", 0, worldName.length() + 1);
     }
 
     private void loadLobby() {
