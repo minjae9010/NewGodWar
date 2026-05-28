@@ -283,7 +283,7 @@ public final class GameManager {
         }
         TempleLocation location = TempleLocation.fromBlock(block);
         temples.put(team, location);
-        plugin.getConfig().set(mapTemplePath(block.getWorld().getName(), team), location.serialize());
+        saveMapTempleIfSelected(team, location.serialize(), block.getWorld().getName());
         plugin.getConfig().set("temples." + team.id(), location.serialize());
         plugin.saveConfig();
         return true;
@@ -295,7 +295,7 @@ public final class GameManager {
         }
         GameLocation spawn = GameLocation.from(location);
         spawns.put(team, spawn);
-        plugin.getConfig().set(mapSpawnPath(location.getWorld().getName(), team), spawn.serialize());
+        saveMapSpawnIfSelected(team, spawn.serialize(), location.getWorld().getName());
         plugin.getConfig().set("spawns." + team.id(), spawn.serialize());
         plugin.saveConfig();
         return true;
@@ -764,33 +764,53 @@ public final class GameManager {
 
     private void loadTemples() {
         String worldName = configuredGameWorldName();
+        boolean migrated = false;
         for (GodTeam team : GodTeam.values()) {
-            TempleLocation location = TempleLocation.deserialize(plugin.getConfig().getString(activeMapTemplePath(team)));
+            String mapPath = activeMapTemplePath(team);
+            TempleLocation location = TempleLocation.deserialize(plugin.getConfig().getString(mapPath));
             if (location == null) {
                 String legacy = plugin.getConfig().getString("temples." + team.id());
                 if (worldName == null || locationValueMatchesWorld(legacy, worldName)) {
                     location = TempleLocation.deserialize(legacy);
+                    if (worldName != null && location != null) {
+                        plugin.getConfig().set(mapPath, legacy);
+                        migrated = true;
+                    }
                 }
             }
             if (location != null) {
                 temples.put(team, location);
             }
         }
+        if (migrated) {
+            plugin.saveConfig();
+            plugin.getLogger().info("Migrated legacy temple locations into selected map '" + worldName + "'.");
+        }
     }
 
     private void loadSpawns() {
         String worldName = configuredGameWorldName();
+        boolean migrated = false;
         for (GodTeam team : GodTeam.values()) {
-            GameLocation location = GameLocation.deserialize(plugin.getConfig().getString(activeMapSpawnPath(team)));
+            String mapPath = activeMapSpawnPath(team);
+            GameLocation location = GameLocation.deserialize(plugin.getConfig().getString(mapPath));
             if (location == null) {
                 String legacy = plugin.getConfig().getString("spawns." + team.id());
                 if (worldName == null || locationValueMatchesWorld(legacy, worldName)) {
                     location = GameLocation.deserialize(legacy);
+                    if (worldName != null && location != null) {
+                        plugin.getConfig().set(mapPath, legacy);
+                        migrated = true;
+                    }
                 }
             }
             if (location != null) {
                 spawns.put(team, location);
             }
+        }
+        if (migrated) {
+            plugin.saveConfig();
+            plugin.getLogger().info("Migrated legacy spawn locations into selected map '" + worldName + "'.");
         }
     }
 
@@ -810,6 +830,20 @@ public final class GameManager {
 
     private String mapSpawnPath(String worldName, GodTeam team) {
         return "maps." + worldName + ".spawns." + team.id();
+    }
+
+    private void saveMapTempleIfSelected(GodTeam team, String value, String locationWorldName) {
+        String worldName = configuredGameWorldName();
+        if (worldName != null && worldName.equalsIgnoreCase(locationWorldName)) {
+            plugin.getConfig().set(mapTemplePath(worldName, team), value);
+        }
+    }
+
+    private void saveMapSpawnIfSelected(GodTeam team, String value, String locationWorldName) {
+        String worldName = configuredGameWorldName();
+        if (worldName != null && worldName.equalsIgnoreCase(locationWorldName)) {
+            plugin.getConfig().set(mapSpawnPath(worldName, team), value);
+        }
     }
 
     private boolean locationValueMatchesWorld(String value, String worldName) {
