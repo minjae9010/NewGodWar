@@ -48,7 +48,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\Test-PaperMatrix.ps1
 이미 빌드된 jar를 테스트하려면 다음처럼 실행합니다.
 
 ```powershell
-.\scripts\Test-PaperMatrix.ps1 -SkipBuild -PluginJar .\build\libs\NewGodWar-0.2.6.jar -Versions 26.1.2
+.\scripts\Test-PaperMatrix.ps1 -SkipBuild -PluginJar .\build\libs\NewGodWar-0.2.7.jar -Versions 26.1.2
 ```
 
 테스트 서버 파일은 `.paper-smoke/` 아래에 생성되며 git에는 포함되지 않습니다.
