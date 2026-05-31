@@ -26,6 +26,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -63,6 +64,28 @@ public final class SettingsGui implements Listener {
         ChatColor.DARK_GRAY,
         ChatColor.BLACK
     };
+    private static final Set<String> TRUE_DEFAULT_TOGGLES = Collections.unmodifiableSet(new HashSet<String>(Arrays.asList(
+        "core.protect-diamond-from-explosion",
+        "core.forbid-diamond-pickaxe",
+        "core.require-empty-hand",
+        "game.ability-roll-message",
+        "game.allow-mid-join",
+        "game.auto-balance-teams",
+        "game.clear-inventory",
+        "game.fast-start",
+        "game.give-skyblock-items",
+        "game.ignore-bed",
+        "game.remove-entities",
+        "game.reveal-abilities-on-end",
+        "game.select-right",
+        "gambling.enabled",
+        "gamerules.enabled",
+        "gamerules.restore-on-stop",
+        "scoreboard.enabled",
+        "scoreboard.team-prefixes",
+        "world.autosave",
+        "world.reset-game-world-on-stop"
+    )));
 
     private final NewGodWarPlugin plugin;
     private final GameManager gameManager;
@@ -385,6 +408,8 @@ public final class SettingsGui implements Listener {
             toggle("gamerules.enabled");
         } else if (slot == 16) {
             toggle("gamerules.restore-on-stop");
+        } else if (slot == 17) {
+            toggle("gamerules.rules.locatorBar");
         } else if (slot == 18) {
             switchView(player, SettingsView.PICKAXE_UNLOCK);
         }
@@ -739,6 +764,9 @@ public final class SettingsGui implements Listener {
             ChatColor.GRAY + "시작/종료 시 게임룰 적용"));
         inventory.setItem(15, toggleItem("gamerules.enabled", "게임룰 자동 적용", "COMMAND_BLOCK"));
         inventory.setItem(16, toggleItem("gamerules.restore-on-stop", "종료 시 게임룰 복구", "REDSTONE_COMPARATOR"));
+        inventory.setItem(17, toggleItem("gamerules.rules.locatorBar", "경험치바 위치 표시", "COMPASS",
+            ChatColor.GRAY + "꺼두면 지원 서버에서 Locator Bar가 표시되지 않습니다.",
+            ChatColor.DARK_GRAY + "게임 중에는 /gw gamerule apply 로 즉시 적용할 수 있습니다."));
 
         inventory.setItem(18, pickaxeUnlockMenuItem());
     }
@@ -1090,10 +1118,7 @@ public final class SettingsGui implements Listener {
 
     private boolean defaultToggleValue(String path) {
         return path != null && (path.startsWith("abilities.messages.")
-            || path.equals("core.require-empty-hand")
-            || path.equals("game.reveal-abilities-on-end")
-            || path.equals("world.autosave")
-            || path.equals("world.reset-game-world-on-stop"));
+            || TRUE_DEFAULT_TOGGLES.contains(path));
     }
 
     private void changeInt(String path, int delta, int min, int max) {
@@ -1620,43 +1645,7 @@ public final class SettingsGui implements Listener {
         if ("green".equals(team.id())) {
             return "GREEN_WOOL";
         }
-        if (gameManager.teamColor(team) == ChatColor.YELLOW) {
-            return "YELLOW_WOOL";
-        }
-        if (gameManager.teamColor(team) == ChatColor.AQUA) {
-            return "LIGHT_BLUE_WOOL";
-        }
-        if (gameManager.teamColor(team) == ChatColor.GOLD) {
-            return "ORANGE_WOOL";
-        }
-        if (gameManager.teamColor(team) == ChatColor.LIGHT_PURPLE) {
-            return "PINK_WOOL";
-        }
-        if (gameManager.teamColor(team) == ChatColor.GRAY) {
-            return "LIGHT_GRAY_WOOL";
-        }
-        if (gameManager.teamColor(team) == ChatColor.DARK_RED) {
-            return "RED_WOOL";
-        }
-        if (gameManager.teamColor(team) == ChatColor.DARK_BLUE) {
-            return "BLUE_WOOL";
-        }
-        if (gameManager.teamColor(team) == ChatColor.DARK_GREEN) {
-            return "GREEN_WOOL";
-        }
-        if (gameManager.teamColor(team) == ChatColor.DARK_AQUA) {
-            return "CYAN_WOOL";
-        }
-        if (gameManager.teamColor(team) == ChatColor.DARK_PURPLE) {
-            return "PURPLE_WOOL";
-        }
-        if (gameManager.teamColor(team) == ChatColor.DARK_GRAY) {
-            return "GRAY_WOOL";
-        }
-        if (gameManager.teamColor(team) == ChatColor.BLACK) {
-            return "BLACK_WOOL";
-        }
-        return "WHITE_WOOL";
+        return woolMaterial(gameManager.teamColor(team));
     }
 
     private short teamWoolData(GodTeam team) {
@@ -1669,42 +1658,38 @@ public final class SettingsGui implements Listener {
         if ("green".equals(team.id())) {
             return 13;
         }
-        if (gameManager.teamColor(team) == ChatColor.YELLOW) {
-            return 4;
-        }
-        if (gameManager.teamColor(team) == ChatColor.AQUA) {
-            return 3;
-        }
-        if (gameManager.teamColor(team) == ChatColor.GOLD) {
-            return 1;
-        }
-        if (gameManager.teamColor(team) == ChatColor.LIGHT_PURPLE) {
-            return 6;
-        }
-        if (gameManager.teamColor(team) == ChatColor.GRAY) {
-            return 8;
-        }
-        if (gameManager.teamColor(team) == ChatColor.DARK_RED) {
-            return 14;
-        }
-        if (gameManager.teamColor(team) == ChatColor.DARK_BLUE) {
-            return 11;
-        }
-        if (gameManager.teamColor(team) == ChatColor.DARK_GREEN) {
-            return 13;
-        }
-        if (gameManager.teamColor(team) == ChatColor.DARK_AQUA) {
-            return 9;
-        }
-        if (gameManager.teamColor(team) == ChatColor.DARK_PURPLE) {
-            return 10;
-        }
-        if (gameManager.teamColor(team) == ChatColor.DARK_GRAY) {
-            return 7;
-        }
-        if (gameManager.teamColor(team) == ChatColor.BLACK) {
-            return 15;
-        }
+        return woolData(gameManager.teamColor(team));
+    }
+
+    private String woolMaterial(ChatColor color) {
+        if (color == ChatColor.YELLOW) return "YELLOW_WOOL";
+        if (color == ChatColor.AQUA) return "LIGHT_BLUE_WOOL";
+        if (color == ChatColor.GOLD) return "ORANGE_WOOL";
+        if (color == ChatColor.LIGHT_PURPLE) return "PINK_WOOL";
+        if (color == ChatColor.GRAY) return "LIGHT_GRAY_WOOL";
+        if (color == ChatColor.DARK_RED) return "RED_WOOL";
+        if (color == ChatColor.DARK_BLUE) return "BLUE_WOOL";
+        if (color == ChatColor.DARK_GREEN) return "GREEN_WOOL";
+        if (color == ChatColor.DARK_AQUA) return "CYAN_WOOL";
+        if (color == ChatColor.DARK_PURPLE) return "PURPLE_WOOL";
+        if (color == ChatColor.DARK_GRAY) return "GRAY_WOOL";
+        if (color == ChatColor.BLACK) return "BLACK_WOOL";
+        return "WHITE_WOOL";
+    }
+
+    private short woolData(ChatColor color) {
+        if (color == ChatColor.YELLOW) return 4;
+        if (color == ChatColor.AQUA) return 3;
+        if (color == ChatColor.GOLD) return 1;
+        if (color == ChatColor.LIGHT_PURPLE) return 6;
+        if (color == ChatColor.GRAY) return 8;
+        if (color == ChatColor.DARK_RED) return 14;
+        if (color == ChatColor.DARK_BLUE) return 11;
+        if (color == ChatColor.DARK_GREEN) return 13;
+        if (color == ChatColor.DARK_AQUA) return 9;
+        if (color == ChatColor.DARK_PURPLE) return 10;
+        if (color == ChatColor.DARK_GRAY) return 7;
+        if (color == ChatColor.BLACK) return 15;
         return 0;
     }
 

@@ -916,6 +916,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             AbilityDefinition ability = abilityManager.get(player);
             plugin.messages().send(sender, "&a능력을 확정했습니다: &f" + (ability == null ? "없음" : ability.name()));
             Bukkit.broadcastMessage(ChatColor.DARK_AQUA + player.getName() + ChatColor.WHITE + " 님께서 능력을 확정하셨습니다.");
+            gameManager.completeAbilitySelectionIfReady();
             return;
         }
         plugin.messages().send(sender, "&e현재 확정할 능력이 없습니다.");
@@ -937,6 +938,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             + ChatColor.GRAY + " | 남은 재추첨: " + ChatColor.YELLOW + remaining + "회");
         if (remaining <= 0) {
             Bukkit.broadcastMessage(ChatColor.DARK_AQUA + player.getName() + ChatColor.WHITE + " 님께서 능력을 확정하셨습니다.");
+            gameManager.completeAbilitySelectionIfReady();
         } else {
             Bukkit.broadcastMessage(ChatColor.DARK_AQUA + player.getName() + ChatColor.WHITE
                 + " 님께서 능력을 다시 뽑았습니다. 남은 재추첨: " + ChatColor.YELLOW + remaining + "회");

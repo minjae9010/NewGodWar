@@ -80,8 +80,11 @@ public final class GameManager {
     private long runningStartedAtMillis = 0L;
     private BossBar gameTimerBar;
     private boolean killtimeEndAnnounced = false;
+    private boolean abilitySelectionWaitEnded = false;
     private GameLocation lobbyLocation;
+    private String activeGameWorldName;
     private String activeGameWorldSnapshotName;
+    private String activeGameWorldType;
 
     public GameManager(NewGodWarPlugin plugin, AbilityManager abilityManager, NmsAdapter nmsAdapter) {
         this.plugin = plugin;
@@ -249,6 +252,7 @@ public final class GameManager {
     }
 
     public void leave(Player player) {
+        boolean removedPendingSelection = pendingSelection.remove(player.getUniqueId()) != null;
         teams.remove(player.getUniqueId());
         teamChatModePlayers.remove(player.getUniqueId());
         playerScoreboards.remove(player.getUniqueId());
@@ -257,6 +261,9 @@ public final class GameManager {
             player.setScoreboard(manager.getMainScoreboard());
         }
         resetPlayerListName(player);
+        if (removedPendingSelection) {
+            completeAbilitySelectionIfReady();
+        }
         refreshAllPlayerDisplays();
     }
 
@@ -386,6 +393,7 @@ public final class GameManager {
         eliminatedTeams.clear();
         kills.clear();
         pendingSelection.clear();
+        abilitySelectionWaitEnded = false;
         clearPotionEffects(participants);
         abilityManager.clear();
         setupScoreboard();
@@ -410,6 +418,8 @@ public final class GameManager {
             Bukkit.broadcastMessage(ChatColor.YELLOW + "능력 재추첨 기회가 주어졌습니다. "
                 + ChatColor.AQUA + "/t yes" + ChatColor.WHITE + " 또는 " + ChatColor.RED + "/t no"
                 + ChatColor.WHITE + " 로 능력을 확정해주세요.");
+        } else {
+            abilitySelectionWaitEnded = true;
         }
         startReadyTask();
     }
@@ -551,6 +561,7 @@ public final class GameManager {
             gameTipTask = -1;
         }
         pendingSelection.clear();
+        abilitySelectionWaitEnded = false;
         teamChatModePlayers.clear();
         if (announce) {
             Bukkit.broadcastMessage(plugin.messages().prefix() + plugin.messages().get("game-stop"));
@@ -669,15 +680,17 @@ public final class GameManager {
             enabled = false;
         } else {
             observers.add(uuid);
+            pendingSelection.remove(uuid);
             setSpectator(player);
             enabled = true;
         }
+        completeAbilitySelectionIfReady();
         refreshAllPlayerDisplays();
         return enabled;
     }
 
     public boolean confirmAbility(Player player) {
-        return pendingSelection.remove(player.getUniqueId()) != null;
+        return player != null && pendingSelection.remove(player.getUniqueId()) != null;
     }
 
     public AbilityDefinition rerollAbility(Player player) {
@@ -709,6 +722,7 @@ public final class GameManager {
         int count = pendingSelection.size();
         pendingSelection.clear();
         if (state == GameState.READY) {
+            abilitySelectionWaitEnded = true;
             readySecondsRemaining = Math.max(0, countdownSeconds);
             if (readySecondsRemaining <= 0) {
                 finishStart();
@@ -719,6 +733,23 @@ public final class GameManager {
 
     public boolean hasPendingAbilitySelection() {
         return !pendingSelection.isEmpty();
+    }
+
+    public boolean completeAbilitySelectionIfReady() {
+        if (state != GameState.READY || abilitySelectionWaitEnded || !pendingSelection.isEmpty()) {
+            return false;
+        }
+        abilitySelectionWaitEnded = true;
+        readyReminder = 0;
+        int countdown = Math.max(0, plugin.getConfig().getInt("game.skip-ready-countdown-seconds", 5));
+        readySecondsRemaining = Math.min(readySecondsRemaining, countdown);
+        Bukkit.broadcastMessage(plugin.messages().prefix() + ChatColor.GREEN
+            + "모든 플레이어가 능력을 확정했습니다. 확정 대기를 종료합니다.");
+        refreshAllPlayerDisplays();
+        if (readySecondsRemaining <= 0) {
+            finishStart();
+        }
+        return true;
     }
 
     public void sendTeamChat(Player sender, String message) {
@@ -856,12 +887,12 @@ public final class GameManager {
 
     private void prepareGameWorldSnapshot() {
         if (!gameWorldResetEnabled()) {
-            activeGameWorldSnapshotName = null;
+            clearActiveGameWorldSnapshot();
             return;
         }
         String worldName = configuredGameWorldName();
         if (worldName == null) {
-            activeGameWorldSnapshotName = null;
+            clearActiveGameWorldSnapshot();
             return;
         }
         World world = Bukkit.getWorld(worldName);
@@ -871,47 +902,37 @@ public final class GameManager {
         if (isLobbyWorld(world)) {
             throw new IllegalStateException("로비 월드는 게임 월드 자동 초기화 대상으로 사용할 수 없습니다.");
         }
-        activeGameWorldSnapshotName = "active-game-world";
+        String activeWorldName = world.getName();
+        String snapshotName = "active-game-world";
+        String worldType = managedWorldType(activeWorldName);
         try {
-            plugin.worldBackups().saveWorldSnapshot(world, activeGameWorldSnapshotName);
-            plugin.getLogger().info("Saved game world snapshot for '" + world.getName() + "'.");
+            plugin.worldBackups().saveWorldSnapshot(world, snapshotName);
+            activeGameWorldName = activeWorldName;
+            activeGameWorldSnapshotName = snapshotName;
+            activeGameWorldType = worldType;
+            plugin.getLogger().info("Saved game world snapshot for '" + activeWorldName + "'.");
         } catch (IOException ex) {
-            activeGameWorldSnapshotName = null;
+            clearActiveGameWorldSnapshot();
             throw new IllegalStateException("게임 월드 백업 생성 실패: " + ex.getMessage());
         }
     }
 
     private void resetConfiguredGameWorld() {
-        if (!gameWorldResetEnabled() || activeGameWorldSnapshotName == null) {
+        if (activeGameWorldName == null || activeGameWorldSnapshotName == null) {
+            clearActiveGameWorldSnapshot();
             return;
         }
-        String worldName = configuredGameWorldName();
-        if (worldName == null) {
+        if (!gameWorldResetEnabled()) {
+            clearActiveGameWorldSnapshot();
             return;
         }
-        World world = Bukkit.getWorld(worldName);
-        if (world == null) {
-            activeGameWorldSnapshotName = null;
-            return;
-        }
-        if (isLobbyWorld(world)) {
-            plugin.getLogger().warning("Skipping game world reset because it points at the lobby world: " + worldName);
-            activeGameWorldSnapshotName = null;
-            return;
-        }
-        if (!world.getPlayers().isEmpty()) {
-            plugin.getLogger().warning("Skipping game world reset because players are still in world '" + worldName + "'. Set a lobby with /godwar setlobby first.");
-            activeGameWorldSnapshotName = null;
-            return;
-        }
-        if (!Bukkit.unloadWorld(world, false)) {
-            plugin.getLogger().warning("Could not unload game world for reset: " + worldName);
-            activeGameWorldSnapshotName = null;
-            return;
-        }
+        String worldName = activeGameWorldName;
         try {
+            if (!unloadActiveGameWorld(worldName)) {
+                return;
+            }
             plugin.worldBackups().restoreWorldSnapshot(worldName, activeGameWorldSnapshotName);
-            World reloaded = Bukkit.createWorld(WorldBackupManager.creator(worldName, managedWorldType(worldName)));
+            World reloaded = Bukkit.createWorld(WorldBackupManager.creator(worldName, activeGameWorldType));
             if (reloaded == null) {
                 plugin.getLogger().warning("Restored game world folder, but Bukkit did not load it: " + worldName);
             } else {
@@ -919,9 +940,37 @@ public final class GameManager {
             }
         } catch (IOException ex) {
             plugin.getLogger().warning("Game world reset failed for '" + worldName + "': " + ex.getMessage());
+        } catch (RuntimeException ex) {
+            plugin.getLogger().warning("Game world reload failed for '" + worldName + "': " + ex.getMessage());
         } finally {
-            activeGameWorldSnapshotName = null;
+            clearActiveGameWorldSnapshot();
         }
+    }
+
+    private boolean unloadActiveGameWorld(String worldName) {
+        World world = Bukkit.getWorld(worldName);
+        if (world == null) {
+            return true;
+        }
+        if (isLobbyWorld(world)) {
+            plugin.getLogger().warning("Skipping game world reset because it points at the lobby world: " + worldName);
+            return false;
+        }
+        if (!world.getPlayers().isEmpty()) {
+            plugin.getLogger().warning("Skipping game world reset because players are still in world '" + worldName + "'. Set a lobby with /godwar setlobby first.");
+            return false;
+        }
+        if (!Bukkit.unloadWorld(world, false)) {
+            plugin.getLogger().warning("Could not unload game world for reset: " + worldName);
+            return false;
+        }
+        return true;
+    }
+
+    private void clearActiveGameWorldSnapshot() {
+        activeGameWorldName = null;
+        activeGameWorldSnapshotName = null;
+        activeGameWorldType = null;
     }
 
     private boolean gameWorldResetEnabled() {
@@ -1367,6 +1416,8 @@ public final class GameManager {
             }
             return;
         }
+        pruneInactivePendingSelections();
+        completeAbilitySelectionIfReady();
         if (!pendingSelection.isEmpty()) {
             readyReminder++;
             if (readyReminder == 1 || readyReminder % 15 == 0) {
@@ -1389,6 +1440,26 @@ public final class GameManager {
         if (readySecondsRemaining <= 0) {
             finishStart();
         }
+    }
+
+    private void pruneInactivePendingSelections() {
+        if (pendingSelection.isEmpty()) {
+            return;
+        }
+        List<UUID> inactivePlayers = new ArrayList<UUID>();
+        for (UUID uuid : pendingSelection.keySet()) {
+            Player player = Bukkit.getPlayer(uuid);
+            if (player == null || !player.isOnline() || teamOf(player) == null || isObserver(player)) {
+                inactivePlayers.add(uuid);
+            }
+        }
+        if (inactivePlayers.isEmpty()) {
+            return;
+        }
+        for (UUID uuid : inactivePlayers) {
+            pendingSelection.remove(uuid);
+        }
+        plugin.getLogger().info("Removed " + inactivePlayers.size() + " inactive player(s) from ability selection wait.");
     }
 
     private void finishStart() {
