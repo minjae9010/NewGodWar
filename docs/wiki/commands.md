@@ -73,7 +73,7 @@
 | `/godwar skip [초]` | 능력 확정 대기를 종료하고 시작 카운트다운을 지정합니다. |
 | `/godwar skipseconds <초>` | 자동/관리자 skip 기본 초를 설정합니다. |
 | `/godwar pickaxe [status]` | 현재 진행 시간과 곡괭이별 코어 파괴 허용 상태를 확인합니다. |
-| `/godwar pickaxe <wooden|stone|iron|gold|diamond|all> <open|off|분>` | 곡괭이별 코어 파괴 허용 시간을 조정합니다. `open`은 즉시 허용, `off`는 자동 해제 안 함입니다. |
+| `/godwar pickaxe <wooden|stone|iron|diamond|all> <open|off|분>` | 곡괭이별 코어 파괴 허용 시간을 조정합니다. 금 곡괭이는 제외됩니다. `open`은 즉시 허용, `off`는 자동 해제 안 함입니다. |
 | `/godwar urf <on|off|toggle|퍼센트>` | 우르프 모드와 쿨타임 감소율을 설정합니다. |
 | `/godwar blacklist <list|add|remove|toggle> [ability]` | 랜덤 배정 제외 능력을 관리합니다. |
 | `/godwar gamerule <apply|restore>` | 설정된 게임룰을 수동 적용하거나 복구합니다. |

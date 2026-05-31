@@ -9,7 +9,7 @@ enum SettingsView {
     TEAM_DETAIL(ChatColor.BLACK + "팀 상세 설정"),
     WORLD(ChatColor.BLACK + "월드 설정"),
     WORLD_CORE(ChatColor.BLACK + "코어 / 게임룰 설정"),
-    PICKAXE_UNLOCK(ChatColor.BLACK + "곡괭이 허용 시간"),
+    PICKAXE_UNLOCK(ChatColor.BLACK + "코어 보호 설정"),
     DISPLAY(ChatColor.BLACK + "표시 / 우르프 설정"),
     GAMBLING(ChatColor.BLACK + "도박 설정"),
     GAMBLING_NORMAL(ChatColor.BLACK + "도박 확률");

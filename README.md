@@ -54,7 +54,7 @@ Wiki 배포 전 저장소 Settings > Features에서 Wiki 기능을 켜야 합니
 - `/godwar stop` 게임 종료
 - `/godwar status` 현재 게임 상태
 - `/godwar pickaxe [status]` 현재 진행 시간과 곡괭이 해제 상태 확인
-- `/godwar pickaxe <wooden|stone|iron|gold|diamond|all> <open|off|분>` 곡괭이 코어 파괴 허용 시간 조정
+- `/godwar pickaxe <wooden|stone|iron|diamond|all> <open|off|분>` 곡괭이 코어 파괴 허용 시간 조정. 금 곡괭이는 제외
 - `/godwar update [check|download]` 최신 릴리즈 확인 및 다음 재시작에 적용할 업데이트 jar 다운로드
 - `/godwar tips` 서버 플레이 팁 확인
 - `/godwar gui` 또는 `/godwar settings` 관리자용 상자 GUI 설정 열기
@@ -104,7 +104,7 @@ Wiki 배포 전 저장소 Settings > Features에서 Wiki 기능을 켜야 합니
 - `lobby`: 접속 위치와 게임 종료 후 복귀 위치
 - `compatibility.clear-teleport-invulnerability`: 다른 플러그인의 텔레포트 보호로 생기는 전투 중 무적 틱 정리
 - `updates`: GitHub Release 최신 버전 확인, 선택적 자동 다운로드, 다음 재시작 적용 안내
-- `core`: 코어 폭파 보호, 맨손 파괴 제한, 다이아 곡괭이 파괴 금지
+- `core`: 코어 폭파 보호와 시간 해제, 맨손 파괴 제한, 곡괭이 코어 파괴 시간
 - `gambling.enabled`: 도박 GUI 사용 여부
 - `gambling.rewards`: 도박 당첨 아이템, 수량, 메시지, 확률 가중치
 - `scoreboard.enabled`: 우측 스코어보드에 내 팀, 능력, 킬 상태 표시

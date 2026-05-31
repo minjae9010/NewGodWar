@@ -17,7 +17,7 @@ import java.util.List;
     id = "akasha",
     name = "아카샤",
     description = "아군에게 향락을, 적에게 고통을 부여합니다.",
-    normalSkill = "주변 아군에게 신속과 재생을 부여합니다.",
+    normalSkill = "자신과 주변 아군에게 신속과 재생을 부여합니다.",
     normalStoneCost = 10,
     normalCooldownSeconds = 60,
     advancedSkill = "주변 적에게 혼란과 피해를 줍니다.",
@@ -35,7 +35,9 @@ final class AkashaAbility extends BaseAbility {
     }
 
     private void teamBuff(AbilityPlayerContext context, Player player) {
-        for (Player target : nearbyPlayers(context, player, 20, true)) {
+        List<Player> targets = nearbyPlayers(context, player, 20, true);
+        targets.add(player);
+        for (Player target : targets) {
             effect(target, PotionEffectType.SPEED, 15, 0);
             effect(target, PotionEffectType.REGENERATION, 15, 0);
         }
@@ -43,8 +45,13 @@ final class AkashaAbility extends BaseAbility {
 
     @Override
     protected void onStaffRight(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
+        List<Player> targets = nearbyPlayers(context, player, 10, false);
+        if (targets.isEmpty()) {
+            player.sendMessage("능력을 사용할 수 있는 대상이 없습니다.");
+            return;
+        }
         if (useAdvanced(context, player)) {
-            for (Player target : nearbyPlayers(context, player, 10, false)) {
+            for (Player target : targets) {
                 effect(target, "NAUSEA", "CONFUSION", 8, 0);
                 damage(target, 4.0D, player);
             }

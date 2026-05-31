@@ -16,11 +16,11 @@ import java.util.List;
 @AbilityInfo(
     id = "priest",
     name = "사제",
-    description = "자신과 팀원에게 여러 전투 축복 중 일부를 무작위로 부여합니다.",
-    normalSkill = "자신에게 30초짜리 무작위 축복들을 부여합니다.",
+    description = "자신과 팀원에게 여러 전투 축복 중 하나 이상을 무작위로 부여합니다.",
+    normalSkill = "자신에게 30초짜리 무작위 축복을 하나 이상 부여합니다.",
     normalStoneCost = 22,
     normalCooldownSeconds = 45,
-    advancedSkill = "팀원 전체에게 30초짜리 무작위 축복들을 부여합니다.",
+    advancedSkill = "팀원 전체에게 30초짜리 무작위 축복을 하나 이상 부여합니다.",
     advancedStoneCost = 40,
     advancedCooldownSeconds = 105,
     passiveSkill = "없음",
@@ -49,10 +49,29 @@ final class PriestAbility extends BaseAbility {
     }
 
     private void bless(Player player) {
-        if (RANDOM.nextBoolean()) effect(player, "RESISTANCE", "DAMAGE_RESISTANCE", 30, 0);
-        if (RANDOM.nextBoolean()) effect(player, "STRENGTH", "INCREASE_DAMAGE", 30, 0);
-        if (RANDOM.nextBoolean()) effect(player, PotionEffectType.REGENERATION, 30, 0);
-        if (RANDOM.nextBoolean()) effect(player, PotionEffectType.SPEED, 30, 0);
-        if (RANDOM.nextBoolean()) effect(player, "HASTE", "FAST_DIGGING", 30, 0);
+        boolean applied = false;
+        if (RANDOM.nextBoolean()) {
+            effect(player, "RESISTANCE", "DAMAGE_RESISTANCE", 30, 0);
+            applied = true;
+        }
+        if (RANDOM.nextBoolean()) {
+            effect(player, "STRENGTH", "INCREASE_DAMAGE", 30, 0);
+            applied = true;
+        }
+        if (RANDOM.nextBoolean()) {
+            effect(player, PotionEffectType.REGENERATION, 30, 0);
+            applied = true;
+        }
+        if (RANDOM.nextBoolean()) {
+            effect(player, PotionEffectType.SPEED, 30, 0);
+            applied = true;
+        }
+        if (RANDOM.nextBoolean()) {
+            effect(player, "HASTE", "FAST_DIGGING", 30, 0);
+            applied = true;
+        }
+        if (!applied) {
+            effect(player, PotionEffectType.REGENERATION, 30, 0);
+        }
     }
 }

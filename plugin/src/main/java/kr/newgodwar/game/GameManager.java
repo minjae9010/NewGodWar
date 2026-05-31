@@ -58,12 +58,12 @@ public final class GameManager {
     private final Map<UUID, Scoreboard> playerScoreboards = new HashMap<UUID, Scoreboard>();
     private final Map<String, WorldSnapshot> worldSnapshots = new HashMap<String, WorldSnapshot>();
     private final Set<String> announcedPickaxeUnlocks = new HashSet<String>();
+    private static final String CORE_EXPLOSION_UNLOCK_SECONDS_PATH = "core.explosion-unlock-seconds";
     private static final String SIDEBAR_OBJECTIVE_NAME = "gw_status";
     private static final PickaxeUnlockNotice[] PICKAXE_UNLOCK_NOTICES = new PickaxeUnlockNotice[] {
         new PickaxeUnlockNotice("나무", "core.pickaxe-unlock.wooden-seconds"),
         new PickaxeUnlockNotice("돌", "core.pickaxe-unlock.stone-seconds"),
         new PickaxeUnlockNotice("철", "core.pickaxe-unlock.iron-seconds"),
-        new PickaxeUnlockNotice("금", "core.pickaxe-unlock.gold-seconds"),
         new PickaxeUnlockNotice("다이아", "core.pickaxe-unlock.diamond-seconds")
     };
 
@@ -80,6 +80,7 @@ public final class GameManager {
     private long runningStartedAtMillis = 0L;
     private BossBar gameTimerBar;
     private boolean killtimeEndAnnounced = false;
+    private boolean coreExplosionUnlockAnnounced = false;
     private boolean abilitySelectionWaitEnded = false;
     private GameLocation lobbyLocation;
     private String activeGameWorldName;
@@ -191,6 +192,17 @@ public final class GameManager {
             return 0L;
         }
         return Math.max(0L, killtimeDurationSeconds() - runningElapsedSeconds());
+    }
+
+    public boolean isCoreExplosionProtected() {
+        if (!plugin.getConfig().getBoolean("core.protect-diamond-from-explosion", true)) {
+            return false;
+        }
+        int unlockSeconds = coreExplosionUnlockSeconds();
+        if (unlockSeconds < 0 || state != GameState.RUNNING) {
+            return true;
+        }
+        return runningElapsedSeconds() < unlockSeconds;
     }
 
     public void refreshGameTimerBar() {
@@ -432,6 +444,7 @@ public final class GameManager {
         state = GameState.RUNNING;
         runningStartedAtMillis = System.currentTimeMillis();
         killtimeEndAnnounced = false;
+        coreExplosionUnlockAnnounced = false;
         eliminatedTeams.clear();
         kills.clear();
         abilityManager.clear();
@@ -1470,6 +1483,7 @@ public final class GameManager {
         state = GameState.RUNNING;
         runningStartedAtMillis = System.currentTimeMillis();
         killtimeEndAnnounced = false;
+        coreExplosionUnlockAnnounced = false;
         gameRuleController.applyConfiguredRules();
         applyWorldStartSettings();
         clearConfiguredEntities();
@@ -1534,18 +1548,29 @@ public final class GameManager {
         Bukkit.broadcastMessage(ChatColor.WHITE + "킬타임 보스바 : " + state(gameTimerBossBarEnabled()));
         Bukkit.broadcastMessage(ChatColor.WHITE + "킬타임 공격 금지 : " + ChatColor.YELLOW + formatSeconds(killtimeDurationSeconds()));
         Bukkit.broadcastMessage(ChatColor.WHITE + "도박 : " + state(plugin.getConfig().getBoolean("gambling.enabled", true)));
-        Bukkit.broadcastMessage(ChatColor.WHITE + "코어 폭파 보호 : " + state(plugin.getConfig().getBoolean("core.protect-diamond-from-explosion", true)));
+        Bukkit.broadcastMessage(ChatColor.WHITE + "코어 폭파 보호 : " + coreExplosionProtectionSummary());
         Bukkit.broadcastMessage(ChatColor.WHITE + "코어 맨손 파괴 : " + state(plugin.getConfig().getBoolean("core.require-empty-hand", true)));
         Bukkit.broadcastMessage(ChatColor.WHITE + "다이아 곡괭이 금지 : " + state(plugin.getConfig().getBoolean("core.forbid-diamond-pickaxe", true)));
         Bukkit.broadcastMessage(ChatColor.WHITE + "곡괭이 시간 해제 : " + pickaxeUnlockSummary());
         Bukkit.broadcastMessage(ChatColor.GREEN + "***************************");
     }
 
+    private String coreExplosionProtectionSummary() {
+        if (!plugin.getConfig().getBoolean("core.protect-diamond-from-explosion", true)) {
+            return state(false);
+        }
+        int seconds = coreExplosionUnlockSeconds();
+        if (seconds < 0) {
+            return state(true);
+        }
+        return state(true) + ChatColor.GRAY + " / " + ChatColor.YELLOW + formatSeconds(seconds)
+            + ChatColor.GRAY + " 후 폭파 허용";
+    }
+
     private String pickaxeUnlockSummary() {
         String summary = pickaxeUnlockLabel("나무", "core.pickaxe-unlock.wooden-seconds")
             + ChatColor.GRAY + " / " + pickaxeUnlockLabel("돌", "core.pickaxe-unlock.stone-seconds")
             + ChatColor.GRAY + " / " + pickaxeUnlockLabel("철", "core.pickaxe-unlock.iron-seconds")
-            + ChatColor.GRAY + " / " + pickaxeUnlockLabel("금", "core.pickaxe-unlock.gold-seconds")
             + ChatColor.GRAY + " / " + pickaxeUnlockLabel("다이아", "core.pickaxe-unlock.diamond-seconds");
         return summary;
     }
@@ -1841,6 +1866,10 @@ public final class GameManager {
         return Math.max(0, plugin.getConfig().getInt("game.killtime-seconds", 300));
     }
 
+    private int coreExplosionUnlockSeconds() {
+        return plugin.getConfig().getInt(CORE_EXPLOSION_UNLOCK_SECONDS_PATH, -1);
+    }
+
     private double timerBarProgress() {
         int duration = killtimeDurationSeconds();
         if (duration <= 0) {
@@ -1902,6 +1931,7 @@ public final class GameManager {
     private void startPickaxeUnlockNoticeTask() {
         cancelPickaxeUnlockNoticeTask();
         announcedPickaxeUnlocks.clear();
+        coreExplosionUnlockAnnounced = false;
         tickPickaxeUnlockNotices();
         if (state == GameState.RUNNING) {
             pickaxeUnlockNoticeTask = Bukkit.getScheduler().scheduleSyncRepeatingTask(plugin, () -> tickPickaxeUnlockNotices(), 20L, 20L);
@@ -1928,6 +1958,38 @@ public final class GameManager {
                 announcedPickaxeUnlocks.remove(notice.path);
             }
         }
+        tickCoreExplosionUnlockNotice(elapsed);
+    }
+
+    private void tickCoreExplosionUnlockNotice(long elapsed) {
+        if (!plugin.getConfig().getBoolean("core.protect-diamond-from-explosion", true)) {
+            coreExplosionUnlockAnnounced = false;
+            return;
+        }
+        int seconds = coreExplosionUnlockSeconds();
+        if (seconds < 0) {
+            coreExplosionUnlockAnnounced = false;
+            return;
+        }
+        if (elapsed >= seconds) {
+            if (!coreExplosionUnlockAnnounced) {
+                coreExplosionUnlockAnnounced = true;
+                announceCoreExplosionUnlocked();
+            }
+        } else {
+            coreExplosionUnlockAnnounced = false;
+        }
+    }
+
+    private void announceCoreExplosionUnlocked() {
+        String title = ChatColor.RED + "코어 폭파 허용";
+        String subtitle = ChatColor.WHITE + "이제 폭발로 코어를 파괴할 수 있습니다.";
+        Bukkit.broadcastMessage(plugin.messages().prefix() + title + ChatColor.WHITE
+            + " - 이제 폭발로 코어를 파괴할 수 있습니다.");
+        for (Player player : BukkitCompat.onlinePlayers()) {
+            nmsAdapter.sendTitle(player, title, subtitle, 10, 60, 10);
+            BukkitCompat.playLevelUp(player);
+        }
     }
 
     private void announcePickaxeUnlocked(PickaxeUnlockNotice notice) {
@@ -1947,6 +2009,7 @@ public final class GameManager {
             pickaxeUnlockNoticeTask = -1;
         }
         announcedPickaxeUnlocks.clear();
+        coreExplosionUnlockAnnounced = false;
     }
 
     private void startWaterHealTask() {

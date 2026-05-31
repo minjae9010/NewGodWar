@@ -529,11 +529,11 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         }
         PickaxeUnlockTarget target = pickaxeUnlockTarget(args[1]);
         if (target == null) {
-            plugin.messages().send(sender, "&c곡괭이는 wooden, stone, iron, gold, diamond, all 중 하나여야 합니다.");
+            plugin.messages().send(sender, "&c곡괭이는 wooden, stone, iron, diamond, all 중 하나여야 합니다.");
             return;
         }
         if (args.length < 3) {
-            plugin.messages().send(sender, "&e/godwar pickaxe <wooden|stone|iron|gold|diamond|all> <open|off|분>");
+            plugin.messages().send(sender, "&e/godwar pickaxe <wooden|stone|iron|diamond|all> <open|off|분>");
             return;
         }
         Integer seconds = parsePickaxeUnlockSeconds(args[2]);
@@ -2726,7 +2726,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             return startsWith(Arrays.asList("0", "3", "5", "10", "15", "30"), args[1]);
         }
         if (args.length == 2 && sub.equals("pickaxe")) {
-            return startsWith(Arrays.asList("status", "wooden", "stone", "iron", "gold", "diamond", "all"), args[1]);
+            return startsWith(Arrays.asList("status", "wooden", "stone", "iron", "diamond", "all"), args[1]);
         }
         if (args.length == 3 && sub.equals("pickaxe")) {
             return startsWith(Arrays.asList("open", "off", "0", "5", "10", "15", "20", "30", "300초"), args[2]);
@@ -3139,9 +3139,6 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         if (normalized.equals("iron") || normalized.equals("철")) {
             return PickaxeUnlockTarget.IRON;
         }
-        if (normalized.equals("gold") || normalized.equals("golden") || normalized.equals("금")) {
-            return PickaxeUnlockTarget.GOLD;
-        }
         if (normalized.equals("diamond") || normalized.equals("dia") || normalized.equals("다이아")) {
             return PickaxeUnlockTarget.DIAMOND;
         }
@@ -3157,7 +3154,6 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
                 PickaxeUnlockTarget.WOODEN,
                 PickaxeUnlockTarget.STONE,
                 PickaxeUnlockTarget.IRON,
-                PickaxeUnlockTarget.GOLD,
                 PickaxeUnlockTarget.DIAMOND);
         }
         return Collections.singletonList(target);
@@ -3208,7 +3204,6 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         WOODEN("나무", "core.pickaxe-unlock.wooden-seconds"),
         STONE("돌", "core.pickaxe-unlock.stone-seconds"),
         IRON("철", "core.pickaxe-unlock.iron-seconds"),
-        GOLD("금", "core.pickaxe-unlock.gold-seconds"),
         DIAMOND("다이아", "core.pickaxe-unlock.diamond-seconds"),
         ALL("전체", null);
 

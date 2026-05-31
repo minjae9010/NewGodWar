@@ -422,10 +422,10 @@ public final class SettingsGui implements Listener {
             changePickaxeUnlockSeconds("core.pickaxe-unlock.stone-seconds", click);
         } else if (slot == 12) {
             changePickaxeUnlockSeconds("core.pickaxe-unlock.iron-seconds", click);
-        } else if (slot == 19) {
-            changePickaxeUnlockSeconds("core.pickaxe-unlock.gold-seconds", click);
-        } else if (slot == 20) {
+        } else if (slot == 13) {
             changePickaxeUnlockSeconds("core.pickaxe-unlock.diamond-seconds", click);
+        } else if (slot == 16) {
+            changePickaxeUnlockSeconds("core.explosion-unlock-seconds", click);
         }
     }
 
@@ -768,17 +768,17 @@ public final class SettingsGui implements Listener {
             ChatColor.GRAY + "꺼두면 지원 서버에서 Locator Bar가 표시되지 않습니다.",
             ChatColor.DARK_GRAY + "게임 중에는 /gw gamerule apply 로 즉시 적용할 수 있습니다."));
 
-        inventory.setItem(18, pickaxeUnlockMenuItem());
+        inventory.setItem(18, coreProtectionMenuItem());
     }
 
     private void fillPickaxeUnlock(Inventory inventory) {
-        inventory.setItem(4, sectionItem("곡괭이 허용 시간", (short) 6,
-            ChatColor.GRAY + "게임 시작 후 코어 파괴 허용 시점"));
+        inventory.setItem(4, sectionItem("코어 보호 설정", (short) 6,
+            ChatColor.GRAY + "게임 시작 후 코어 보호 해제 시점"));
         inventory.setItem(10, pickaxeUnlockItem("WOODEN_PICKAXE", "WOOD_PICKAXE", "나무 곡괭이", "core.pickaxe-unlock.wooden-seconds"));
         inventory.setItem(11, pickaxeUnlockItem("STONE_PICKAXE", "STONE_PICKAXE", "돌 곡괭이", "core.pickaxe-unlock.stone-seconds"));
         inventory.setItem(12, pickaxeUnlockItem("IRON_PICKAXE", "IRON_PICKAXE", "철 곡괭이", "core.pickaxe-unlock.iron-seconds"));
-        inventory.setItem(19, pickaxeUnlockItem("GOLDEN_PICKAXE", "GOLD_PICKAXE", "금 곡괭이", "core.pickaxe-unlock.gold-seconds"));
-        inventory.setItem(20, pickaxeUnlockItem("DIAMOND_PICKAXE", "DIAMOND_PICKAXE", "다이아 곡괭이", "core.pickaxe-unlock.diamond-seconds"));
+        inventory.setItem(13, pickaxeUnlockItem("DIAMOND_PICKAXE", "DIAMOND_PICKAXE", "다이아 곡괭이", "core.pickaxe-unlock.diamond-seconds"));
+        inventory.setItem(16, explosionUnlockItem());
     }
 
     private void fillDisplay(Inventory inventory) {
@@ -1231,15 +1231,29 @@ public final class SettingsGui implements Listener {
             ChatColor.DARK_GRAY + path);
     }
 
-    private ItemStack pickaxeUnlockMenuItem() {
-        return item("IRON_PICKAXE", "IRON_PICKAXE", 1, (short) 0,
-            ChatColor.YELLOW + "곡괭이 허용 시간",
+    private ItemStack explosionUnlockItem() {
+        int seconds = plugin.getConfig().getInt("core.explosion-unlock-seconds", -1);
+        ChatColor color = seconds < 0 ? ChatColor.RED : ChatColor.GREEN;
+        return item("TNT", "TNT", 1, (short) 0,
+            color + "코어 폭파 허용 시간: " + pickaxeUnlockText(seconds),
+            ChatColor.GRAY + "코어 폭파 보호가 켜져 있을 때",
+            ChatColor.GRAY + "게임 시작 후 이 시간이 지나면",
+            ChatColor.GRAY + "폭발로 코어를 파괴할 수 있습니다.",
+            ChatColor.GRAY + "좌클릭 +1분 / 우클릭 -1분",
+            ChatColor.GRAY + "쉬프트 좌클릭 +5분 / 쉬프트 우클릭 -5분",
+            ChatColor.GRAY + "가운데 클릭: 해제 안 함",
+            ChatColor.DARK_GRAY + "core.explosion-unlock-seconds");
+    }
+
+    private ItemStack coreProtectionMenuItem() {
+        return item("DIAMOND_BLOCK", "DIAMOND_BLOCK", 1, (short) 0,
+            ChatColor.YELLOW + "코어 보호 설정",
             ChatColor.GRAY + "나무: " + ChatColor.WHITE + pickaxeUnlockText(configSeconds("core.pickaxe-unlock.wooden-seconds")),
             ChatColor.GRAY + "돌: " + ChatColor.WHITE + pickaxeUnlockText(configSeconds("core.pickaxe-unlock.stone-seconds")),
             ChatColor.GRAY + "철: " + ChatColor.WHITE + pickaxeUnlockText(configSeconds("core.pickaxe-unlock.iron-seconds")),
-            ChatColor.GRAY + "금: " + ChatColor.WHITE + pickaxeUnlockText(configSeconds("core.pickaxe-unlock.gold-seconds")),
             ChatColor.GRAY + "다이아: " + ChatColor.WHITE + pickaxeUnlockText(configSeconds("core.pickaxe-unlock.diamond-seconds")),
-            ChatColor.DARK_GRAY + "클릭해서 곡괭이별로 조정");
+            ChatColor.GRAY + "폭파: " + ChatColor.WHITE + pickaxeUnlockText(configSeconds("core.explosion-unlock-seconds")),
+            ChatColor.DARK_GRAY + "클릭해서 코어 보호 시간을 조정");
     }
 
     private int configSeconds(String path) {

@@ -80,14 +80,14 @@ compatibility:
 
 core:
   protect-diamond-from-explosion: true
+  explosion-unlock-seconds: 1800
   require-empty-hand: true
   forbid-diamond-pickaxe: true
   pickaxe-unlock:
-    wooden-seconds: -1
-    stone-seconds: -1
-    iron-seconds: -1
-    gold-seconds: -1
-    diamond-seconds: -1
+    wooden-seconds: 1500
+    stone-seconds: 1500
+    iron-seconds: 1500
+    diamond-seconds: 1500
 
 abilities:
   messages:

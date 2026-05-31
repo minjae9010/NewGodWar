@@ -31,7 +31,7 @@ final class HeraAbility extends BaseAbility {
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
         if (useNormal(context, player)) {
-            effect(player, "DAMAGE_RESISTANCE", "DAMAGE_RESISTANCE", 10, 0);
+            effect(player, "RESISTANCE", "DAMAGE_RESISTANCE", 10, 0);
             effect(player, PotionEffectType.ABSORPTION, 10, 0);
         }
     }
@@ -42,7 +42,7 @@ final class HeraAbility extends BaseAbility {
         targets.add(player);
         if (useAdvanced(context, player)) {
             for (Player target : targets) {
-                effect(target, "DAMAGE_RESISTANCE", "DAMAGE_RESISTANCE", 8, 0);
+                effect(target, "RESISTANCE", "DAMAGE_RESISTANCE", 8, 0);
             }
         }
     }

@@ -108,15 +108,15 @@
 | 키 | 기본값 | 설명 |
 | --- | --- | --- |
 | `core.protect-diamond-from-explosion` | `true` | 등록된 다이아 심장 폭발 보호 |
+| `core.explosion-unlock-seconds` | `1800` | 게임 시작 후 폭발로 코어 파괴를 허용할 시간. `-1`이면 자동 해제 안 함 |
 | `core.require-empty-hand` | `true` | 심장을 맨손으로만 파괴 가능 |
 | `core.forbid-diamond-pickaxe` | `true` | 다이아몬드 곡괭이 심장 파괴 금지 |
-| `core.pickaxe-unlock.wooden-seconds` | `-1` | 게임 시작 후 나무 곡괭이 코어 파괴 허용 시간. `-1`이면 자동 해제 안 함 |
-| `core.pickaxe-unlock.stone-seconds` | `-1` | 게임 시작 후 돌 곡괭이 코어 파괴 허용 시간. `-1`이면 자동 해제 안 함 |
-| `core.pickaxe-unlock.iron-seconds` | `-1` | 게임 시작 후 철 곡괭이 코어 파괴 허용 시간. `-1`이면 자동 해제 안 함 |
-| `core.pickaxe-unlock.gold-seconds` | `-1` | 게임 시작 후 금 곡괭이 코어 파괴 허용 시간. `-1`이면 자동 해제 안 함 |
-| `core.pickaxe-unlock.diamond-seconds` | `-1` | 게임 시작 후 다이아 곡괭이 코어 파괴 허용 시간. `-1`이면 자동 해제 안 함 |
+| `core.pickaxe-unlock.wooden-seconds` | `1500` | 게임 시작 후 나무 곡괭이 코어 파괴 허용 시간. `-1`이면 자동 해제 안 함 |
+| `core.pickaxe-unlock.stone-seconds` | `1500` | 게임 시작 후 돌 곡괭이 코어 파괴 허용 시간. `-1`이면 자동 해제 안 함 |
+| `core.pickaxe-unlock.iron-seconds` | `1500` | 게임 시작 후 철 곡괭이 코어 파괴 허용 시간. `-1`이면 자동 해제 안 함 |
+| `core.pickaxe-unlock.diamond-seconds` | `1500` | 게임 시작 후 다이아 곡괭이 코어 파괴 허용 시간. `-1`이면 자동 해제 안 함 |
 
-곡괭이 시간 해제 값이 `0` 이상이면 `core.require-empty-hand`가 켜져 있어도 해당 시간이 지난 뒤 그 곡괭이로 코어를 파괴할 수 있습니다. 월드 / 코어 설정 GUI에서 각 곡괭이를 좌클릭/우클릭해 1분 단위로, 쉬프트 좌클릭/쉬프트 우클릭해 5분 단위로 조정할 수 있습니다. 명령어로는 `/godwar pickaxe status`로 진행 시간과 해제 상태를 확인하고, `/godwar pickaxe <종류|all> <open|off|분>`으로 바로 조정할 수 있습니다.
+곡괭이 시간 해제 값이 `0` 이상이면 `core.require-empty-hand`가 켜져 있어도 해당 시간이 지난 뒤 그 곡괭이로 코어를 파괴할 수 있습니다. 금 곡괭이는 코어 파괴 허용 대상에서 제외됩니다. 월드 / 코어 설정 GUI의 코어 보호 설정에서 곡괭이와 폭파 허용 시간을 좌클릭/우클릭해 1분 단위로, 쉬프트 좌클릭/쉬프트 우클릭해 5분 단위로 조정할 수 있습니다. 명령어로는 `/godwar pickaxe status`로 진행 시간과 해제 상태를 확인하고, `/godwar pickaxe <종류|all> <open|off|분>`으로 곡괭이 시간을 조정할 수 있습니다.
 
 ## abilities
 

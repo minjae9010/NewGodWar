@@ -235,9 +235,6 @@ public final class GameListener implements Listener {
         if (material == Material.IRON_PICKAXE) {
             return "core.pickaxe-unlock.iron-seconds";
         }
-        if ("GOLD_PICKAXE".equals(name) || "GOLDEN_PICKAXE".equals(name) || "LEGACY_GOLD_PICKAXE".equals(name)) {
-            return "core.pickaxe-unlock.gold-seconds";
-        }
         if (isDiamondPickaxe(material)) {
             return "core.pickaxe-unlock.diamond-seconds";
         }
@@ -428,7 +425,7 @@ public final class GameListener implements Listener {
     }
 
     private void protectTempleDiamonds(java.util.List<Block> blocks) {
-        if (!plugin.getConfig().getBoolean("core.protect-diamond-from-explosion", true)) {
+        if (!gameManager.isCoreExplosionProtected()) {
             return;
         }
         Iterator<Block> iterator = blocks.iterator();
@@ -454,7 +451,7 @@ public final class GameListener implements Listener {
     }
 
     private void eliminateExplodedTempleDiamonds(List<Block> blocks) {
-        if (!gameManager.isRunning() || plugin.getConfig().getBoolean("core.protect-diamond-from-explosion", true)) {
+        if (!gameManager.isRunning() || gameManager.isCoreExplosionProtected()) {
             return;
         }
         for (Block block : blocks) {

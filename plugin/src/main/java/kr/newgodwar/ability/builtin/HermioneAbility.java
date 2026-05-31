@@ -75,8 +75,13 @@ final class HermioneAbility extends BaseAbility {
                 player.getWorld().createExplosion(targetLocation(player, 5), 1.0F);
             }
         } else if (spell.equals("스투페파이") || spell.equalsIgnoreCase("Stupefy")) {
+            List<Player> targets = nearbyPlayers(context, player, 10, false);
+            if (targets.isEmpty()) {
+                player.sendMessage("능력을 사용할 수 있는 대상이 없습니다.");
+                return;
+            }
             if (useAdvanced(context, player)) {
-                for (Player target : nearbyPlayers(context, player, 10, false)) {
+                for (Player target : targets) {
                     if (RANDOM.nextBoolean()) {
                         effect(target, "SLOWNESS", "SLOW", 10, harry ? 1 : 2);
                     }
