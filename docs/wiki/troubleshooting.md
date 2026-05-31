@@ -18,17 +18,17 @@
 .\scripts\Test-PaperMatrix.ps1 -LatestVersion
 ```
 
-## `/godwar start`가 실패함
+## `/gw start`가 실패함
 
 대부분 시작 설정 누락입니다.
 
-- 활성 팀마다 `/godwar setspawn <team>`이 필요합니다.
-- 활성 팀마다 `/godwar settemple <team>`이 필요합니다.
+- 활성 팀마다 `/gw setspawn <team>`이 필요합니다.
+- 활성 팀마다 `/gw settemple <team>`이 필요합니다.
 - 심장으로 등록한 블록은 현재도 다이아몬드 블록이어야 합니다.
 - 팀 배정 인원이 `game.min-players` 이상이어야 합니다.
 - 게임이 이미 준비중 또는 진행중이면 다시 시작할 수 없습니다.
 
-상태 확인은 `/godwar status`와 `/godwar participants`를 사용합니다.
+상태 확인은 `/gw status`와 `/gw participants`를 사용합니다.
 
 ## 팀 배정이나 중간 참여가 안 됨
 
@@ -64,12 +64,12 @@
 
 - `gambling.enabled`가 `true`인지 확인합니다.
 - 플레이어가 조약돌 비용을 가지고 있는지 확인합니다.
-- `/도박`, `/godwar gamble`, `/t con` 중 하나를 사용합니다.
+- `/도박` 또는 `/gw gamble`을 사용합니다.
 - 보상 설정을 직접 수정했다면 YAML 들여쓰기와 material 이름을 확인합니다.
 
 ## config를 바꿨는데 반영되지 않음
 
-`/godwar reload`를 실행하거나 서버를 재시작하세요. 팀 설정, 스폰, 심장 정보는 reload 시 다시 읽습니다.
+`/gw reload`를 실행하거나 서버를 재시작하세요. 팀 설정, 스폰, 심장 정보는 reload 시 다시 읽습니다.
 
 게임이 진행 중일 때 일부 값은 즉시 바뀌어도 이미 배정된 능력이나 진행 중인 타이머에는 영향을 주지 않을 수 있습니다. 확실히 반영하려면 게임 종료 후 수정하는 편이 좋습니다.
 

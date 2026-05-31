@@ -135,7 +135,7 @@ public interface GodAbility {
 
 ## 타깃형 능력
 
-타깃형 능력은 `/x <player>` 또는 `/godwar target <player>`로 대상 이름을 지정받습니다. `setTarget`을 override해 대상 검증과 저장을 처리하고, 실제 발동 시 온라인 여부, 같은 월드 여부, 팀 관계, 거리 등을 다시 확인하세요.
+타깃형 능력은 `/x <player>` 또는 `/gw target <player>`로 대상 이름을 지정받습니다. `setTarget`을 override해 대상 검증과 저장을 처리하고, 실제 발동 시 온라인 여부, 같은 월드 여부, 팀 관계, 거리 등을 다시 확인하세요.
 
 ## 설정 사용
 
@@ -158,13 +158,13 @@ double bonus = context.plugin()
 서버에서 다음 명령으로 등록 여부를 확인합니다.
 
 ```text
-/godwar abilities sample
+/gw abilities sample
 ```
 
 무작위 배정에서 제외하려면 다음 명령을 사용할 수 있습니다.
 
 ```text
-/godwar blacklist add sample
+/gw blacklist add sample
 ```
 
 ## 구현 체크리스트

@@ -428,7 +428,7 @@ public final class GameManager {
 
         if (!pendingSelection.isEmpty()) {
             Bukkit.broadcastMessage(ChatColor.YELLOW + "능력 재추첨 기회가 주어졌습니다. "
-                + ChatColor.AQUA + "/t yes" + ChatColor.WHITE + " 또는 " + ChatColor.RED + "/t no"
+                + ChatColor.AQUA + "/gw yes" + ChatColor.WHITE + " 또는 " + ChatColor.RED + "/gw no"
                 + ChatColor.WHITE + " 로 능력을 확정해주세요.");
         } else {
             abilitySelectionWaitEnded = true;
@@ -970,7 +970,7 @@ public final class GameManager {
             return false;
         }
         if (!world.getPlayers().isEmpty()) {
-            plugin.getLogger().warning("Skipping game world reset because players are still in world '" + worldName + "'. Set a lobby with /godwar setlobby first.");
+            plugin.getLogger().warning("Skipping game world reset because players are still in world '" + worldName + "'. Set a lobby with /gw setlobby first.");
             return false;
         }
         if (!Bukkit.unloadWorld(world, false)) {
@@ -1384,7 +1384,7 @@ public final class GameManager {
         }
         if (!missing.isEmpty()) {
             throw new IllegalStateException("시작 설정이 완료되지 않았습니다: " + joinLabels(missing)
-                + ". /godwar settings 또는 /godwar setspawn, /godwar settemple로 먼저 설정해주세요.");
+                + ". /gw settings 또는 /gw setspawn, /gw settemple로 먼저 설정해주세요.");
         }
     }
 
@@ -1516,8 +1516,8 @@ public final class GameManager {
                     + ChatColor.GRAY + " (재추첨 " + entry.getValue() + "회 남음)");
             }
         }
-        Bukkit.broadcastMessage(ChatColor.WHITE + "능력을 확정하려면 " + ChatColor.AQUA + "/t yes"
-            + ChatColor.WHITE + " 또는 " + ChatColor.RED + "/t no" + ChatColor.WHITE + " 를 입력하세요.");
+        Bukkit.broadcastMessage(ChatColor.WHITE + "능력을 확정하려면 " + ChatColor.AQUA + "/gw yes"
+            + ChatColor.WHITE + " 또는 " + ChatColor.RED + "/gw no" + ChatColor.WHITE + " 를 입력하세요.");
         sendAdminPendingSkipTip();
     }
 
@@ -1532,7 +1532,7 @@ public final class GameManager {
     private void sendAdminPendingSkipTip() {
         for (Player player : BukkitCompat.onlinePlayers()) {
             if (player.hasPermission("newgodwar.admin")) {
-                player.sendMessage(ChatColor.GRAY + "관리자: " + ChatColor.YELLOW + "/t skip [초]"
+                player.sendMessage(ChatColor.GRAY + "관리자: " + ChatColor.YELLOW + "/gw skip [초]"
                     + ChatColor.GRAY + " 로 남은 능력 확정 대기를 종료할 수 있습니다.");
             }
         }

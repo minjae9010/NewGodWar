@@ -48,7 +48,7 @@ public final class NewGodWarPlugin extends JavaPlugin {
     public void onEnable() {
         saveDefaultConfig();
         if (GameTips.repairLegacyConfiguredTips(this)) {
-            getLogger().info("Updated legacy blaze rod recipe tip in config.yml.");
+            getLogger().info("Updated legacy game tips in config.yml.");
         }
         if (removeLegacyTajjaGamblingRewards()) {
             getLogger().info("Removed legacy tajja gambling rewards from config.yml.");

@@ -43,19 +43,19 @@ Linux/macOS에서는 다음처럼 실행합니다.
 2. `NewGodWar-<version>.jar`를 서버의 `plugins/` 폴더에 넣습니다.
 3. 서버를 시작해 `plugins/NewGodWar/config.yml`이 생성되는지 확인합니다.
 4. 콘솔 또는 로그에서 `NewGodWar enabled` 메시지를 확인합니다.
-5. 필요한 설정을 바꾼 뒤 `/godwar reload` 또는 서버 재시작으로 반영합니다.
+5. 필요한 설정을 바꾼 뒤 `/gw reload` 또는 서버 재시작으로 반영합니다.
 
 ## 첫 게임 준비
 
 관리자는 OP 또는 `newgodwar.admin` 권한이 있어야 합니다.
 
-1. `/godwar settings` 또는 `/godwar gui`로 설정 GUI를 엽니다.
+1. `/gw settings` 또는 `/gw gui`로 설정 GUI를 엽니다.
 2. 사용할 팀이 켜져 있는지 확인합니다.
-3. 각 팀 스폰 위치에 서서 `/godwar setspawn <team>`을 실행합니다.
-4. 각 팀의 다이아몬드 블록 심장을 바라보고 `/godwar settemple <team>`을 실행합니다.
-5. 플레이어를 `/godwar autoteam`으로 자동 배정하거나 `/godwar join <team> <player>`로 수동 배정합니다.
-6. `/godwar start`로 게임 시작 준비를 시작합니다.
-7. 플레이어는 능력 배정 후 `/t yes`로 확정하거나 `/t no`로 재추첨합니다.
+3. 각 팀 스폰 위치에 서서 `/gw setspawn <team>`을 실행합니다.
+4. 각 팀의 다이아몬드 블록 심장을 바라보고 `/gw settemple <team>`을 실행합니다.
+5. 플레이어를 `/gw autoteam`으로 자동 배정하거나 `/gw join <team> <player>`로 수동 배정합니다.
+6. `/gw start`로 게임 시작 준비를 시작합니다.
+7. 플레이어는 능력 배정 후 `/gw yes`로 확정하거나 `/gw no`로 재추첨합니다.
 8. 카운트다운이 끝나면 전원이 팀 스폰으로 이동하고 게임이 시작됩니다.
 
 ## 빠른 테스트
@@ -63,10 +63,10 @@ Linux/macOS에서는 다음처럼 실행합니다.
 혼자 능력을 확인하려면 서버에 접속한 뒤 다음 명령을 사용할 수 있습니다.
 
 ```text
-/godwar test [ability]
+/gw test [ability]
 ```
 
-`[ability]`를 생략하면 무작위 능력이 배정됩니다. 예를 들어 `zeus`를 직접 테스트하려면 `/godwar test zeus`를 사용합니다.
+`[ability]`를 생략하면 무작위 능력이 배정됩니다. 예를 들어 `zeus`를 직접 테스트하려면 `/gw test zeus`를 사용합니다.
 
 ## 기본 조합법
 

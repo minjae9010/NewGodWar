@@ -620,7 +620,7 @@ public final class SettingsGui implements Listener {
             ChatColor.GRAY + "현재: " + ChatColor.YELLOW + config.getInt("game.ability-reroll-count", 1) + "회"));
         inventory.setItem(6, item("NETHER_STAR", "NETHER_STAR", Math.max(1, config.getInt("game.ability-reroll-count", 1)), (short) 0,
             ChatColor.YELLOW + "능력 재추첨 가능 횟수",
-            ChatColor.GRAY + "/t no 사용 가능 횟수",
+            ChatColor.GRAY + "/gw no 사용 가능 횟수",
             ChatColor.GRAY + "현재: " + ChatColor.YELLOW + config.getInt("game.ability-reroll-count", 1) + "회"));
         inventory.setItem(7, item("TORCH", "TORCH", 1, (short) 0,
             ChatColor.GREEN + "재추첨 횟수 +1",
@@ -638,7 +638,7 @@ public final class SettingsGui implements Listener {
             ChatColor.GRAY + "현재: " + ChatColor.YELLOW + config.getInt("game.skip-ready-countdown-seconds", 5) + "초"));
         inventory.setItem(16, item("WATCH", "WATCH", Math.max(1, config.getInt("game.skip-ready-countdown-seconds", 5)), (short) 0,
             ChatColor.YELLOW + "능력 확정 자동 Skip 초",
-            ChatColor.GRAY + "/t skip 기본 카운트다운도 함께 사용",
+            ChatColor.GRAY + "/gw skip 기본 카운트다운도 함께 사용",
             ChatColor.GRAY + "현재: " + ChatColor.YELLOW + config.getInt("game.skip-ready-countdown-seconds", 5) + "초"));
         inventory.setItem(17, item("TORCH", "TORCH", 1, (short) 0,
             ChatColor.GREEN + "자동 Skip +1초",
@@ -646,11 +646,11 @@ public final class SettingsGui implements Listener {
 
         inventory.setItem(18, item("EMERALD_BLOCK", "EMERALD_BLOCK", 1, (short) 0,
             ChatColor.GREEN + "게임 시작",
-            ChatColor.GRAY + "/t start"));
+            ChatColor.GRAY + "/gw start"));
         inventory.setItem(19, toggleItem("game.reveal-abilities-on-end", "종료 후 능력 공개", "ENCHANTED_BOOK"));
         inventory.setItem(20, item("REDSTONE_BLOCK", "REDSTONE_BLOCK", 1, (short) 0,
             ChatColor.RED + "게임 종료",
-            ChatColor.GRAY + "/t stop"));
+            ChatColor.GRAY + "/gw stop"));
         inventory.setItem(21, item("COMPASS", "COMPASS", 1, (short) 0,
             ChatColor.AQUA + "팀 자동 배정",
             ChatColor.GRAY + "/gw autoteam"));

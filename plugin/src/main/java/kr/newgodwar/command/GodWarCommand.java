@@ -50,6 +50,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         "tips", "ability", "abilities", "participants", "players", "rerolls", "skip", "skipseconds", "pickaxe", "blacklist", "gamerule", "target", "spectate", "unspectate", "observer",
         "reload", "update", "gui", "settings", "test", "midjoin", "info", "yes", "no", "clear", "gamble", "gamblereward", "defaultitems", "urf", "world", "map"
     );
+    private static final String PRIMARY_COMMAND_LABEL = "gw";
     private static final int HELP_LINES_PER_PAGE = 7;
 
     private final NewGodWarPlugin plugin;
@@ -286,21 +287,21 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             return true;
         }
 
-        plugin.messages().send(sender, "&c알 수 없는 명령어입니다. /" + label + " help");
+        plugin.messages().send(sender, "&c알 수 없는 명령어입니다. /" + PRIMARY_COMMAND_LABEL + " help");
         return true;
     }
 
     private void help(CommandSender sender, String label, String[] args) {
         if (args.length >= 2 && isWorldHelpToken(args[1])) {
-            worldHelp(sender, label);
+            worldHelp(sender, PRIMARY_COMMAND_LABEL);
             return;
         }
         if (args.length >= 2 && isMapHelpToken(args[1])) {
-            mapHelp(sender, label);
+            mapHelp(sender, PRIMARY_COMMAND_LABEL);
             return;
         }
         int requestedPage = parseHelpPage(args);
-        List<HelpEntry> entries = helpEntries(label, sender.hasPermission("newgodwar.admin"));
+        List<HelpEntry> entries = helpEntries(sender.hasPermission("newgodwar.admin"));
         int maxPage = Math.max(1, ((entries.size() - 1) / HELP_LINES_PER_PAGE) + 1);
         int page = Math.max(1, Math.min(maxPage, requestedPage));
         int start = (page - 1) * HELP_LINES_PER_PAGE;
@@ -312,8 +313,8 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             + ChatColor.DARK_GRAY + " | " + ChatColor.YELLOW + "신들의 전쟁 운영 메뉴"
             + ChatColor.DARK_GRAY + " | " + ChatColor.GRAY + page + "/" + maxPage);
         sender.sendMessage(ChatColor.GRAY + "  능력 확인: " + ChatColor.AQUA + "/a"
-            + ChatColor.DARK_GRAY + " | " + ChatColor.GRAY + "설정: " + ChatColor.AQUA + "/" + label + " gui"
-            + ChatColor.DARK_GRAY + " | " + ChatColor.GRAY + "다음: " + ChatColor.AQUA + "/" + label + " help " + nextPage(page, maxPage));
+            + ChatColor.DARK_GRAY + " | " + ChatColor.GRAY + "설정: " + ChatColor.AQUA + "/" + PRIMARY_COMMAND_LABEL + " gui"
+            + ChatColor.DARK_GRAY + " | " + ChatColor.GRAY + "다음: " + ChatColor.AQUA + "/" + PRIMARY_COMMAND_LABEL + " help " + nextPage(page, maxPage));
         line(sender);
         String section = "";
         for (int i = start; i < end; i++) {
@@ -322,10 +323,10 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
                 section = entry.section;
                 section(sender, section);
             }
-            command(sender, label, entry.usage, entry.description);
+            command(sender, PRIMARY_COMMAND_LABEL, entry.usage, entry.description);
         }
         line(sender);
-        sender.sendMessage(ChatColor.GRAY + "  페이지 이동: " + ChatColor.AQUA + "/" + label + " help <1-" + maxPage + ">");
+        sender.sendMessage(ChatColor.GRAY + "  페이지 이동: " + ChatColor.AQUA + "/" + PRIMARY_COMMAND_LABEL + " help <1-" + maxPage + ">");
         line(sender);
     }
 
@@ -351,7 +352,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         return page >= maxPage ? 1 : page + 1;
     }
 
-    private List<HelpEntry> helpEntries(String label, boolean admin) {
+    private List<HelpEntry> helpEntries(boolean admin) {
         List<HelpEntry> entries = new ArrayList<HelpEntry>();
         entries.add(new HelpEntry("게임 진행", "status", "현재 상태 보기"));
         entries.add(new HelpEntry("게임 진행", "tips", "서버 플레이 팁 보기"));
@@ -362,8 +363,6 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         entries.add(new HelpEntry("능력", "a catalog [검색어]", "능력 도감 검색"));
         entries.add(new HelpEntry("능력", "target <player>", "타깃형 능력 대상 지정"));
         entries.add(new HelpEntry("능력", "gamble", "도박 GUI 열기"));
-        entries.add(new HelpEntry("Themachy 호환", "/t info [team]", "팀원 목록 (/gw info 원본)"));
-        entries.add(new HelpEntry("Themachy 호환", "/t con", "도박 GUI 열기 (/gw gamble 원본)"));
         if (admin) {
             entries.add(new HelpEntry("운영 진행", "gui", "관리자 설정 GUI 열기"));
             entries.add(new HelpEntry("운영 진행", "start", "게임 시작 및 능력 배정"));
@@ -381,8 +380,8 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             entries.add(new HelpEntry("운영 팀", "world help", "월드 명령 상세 도움말"));
             entries.add(new HelpEntry("운영 팀", "world gui", "월드 전용 설정 GUI 열기"));
             entries.add(new HelpEntry("운영 팀", "world <list|game|create|load|copy|tp|lobby|unload|delete|backup>", "게임 월드 지정, 생성, 복사, 이동, 백업, 삭제 관리"));
-            entries.add(new HelpEntry("Themachy 호환", "/t <team> <player>", "플레이어 팀 수동 배정 (/gw join 원본)"));
             entries.add(new HelpEntry("운영 설정", "a set <player> <ability>", "능력 수동 지정"));
+            entries.add(new HelpEntry("운영 설정", "a <ability|number> <player>", "호환 순서로 능력 수동 지정"));
             entries.add(new HelpEntry("운영 설정", "a list [검색어]", "플레이어별 배정 능력 확인"));
             entries.add(new HelpEntry("운영 설정", "a random [player]", "랜덤 능력 배정"));
             entries.add(new HelpEntry("운영 설정", "a remove <player>", "플레이어 능력 삭제"));
@@ -402,14 +401,6 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             entries.add(new HelpEntry("운영 설정", "update [check|download]", "최신 버전 확인 / 업데이트 jar 다운로드"));
             entries.add(new HelpEntry("운영 설정", "reload", "config.yml 다시 불러오기"));
             entries.add(new HelpEntry("운영 설정", "spectate|unspectate <player>", "관전 모드 전환"));
-            entries.add(new HelpEntry("운영 호환", "/t spawn|s <team>", "팀 스폰 등록 (/gw setspawn 원본)"));
-            entries.add(new HelpEntry("운영 호환", "/t dia|d <team>", "다이아 심장 등록 (/gw settemple 원본)"));
-            entries.add(new HelpEntry("운영 호환", "/t set", "설정 GUI 열기 (/gw settings 원본)"));
-            entries.add(new HelpEntry("운영 호환", "/t a list [검색어]", "플레이어별 배정 능력 확인 (/gw a list 원본)"));
-            entries.add(new HelpEntry("운영 호환", "/t a <ability> <player>", "능력 수동 지정 (/gw a set 원본)"));
-            entries.add(new HelpEntry("운영 호환", "/t a random|reset|remove", "능력 배정 보조 (/gw a 원본)"));
-            entries.add(new HelpEntry("운영 호환", "/t a skip|cutin", "스킵/중간 참여 (/gw a 원본)"));
-            entries.add(new HelpEntry("운영 호환", "/t observer [list]", "옵저버 전환 / 목록 (/gw observer 원본)"));
         }
         entries.add(new HelpEntry("단축 명령어", "/a", "내 능력 GUI 열기"));
         entries.add(new HelpEntry("단축 명령어", "/x <player>", "타깃형 능력 대상 빠른 지정"));
@@ -487,7 +478,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
 
     private void rerolls(CommandSender sender, String[] args) {
         if (args.length < 2) {
-            plugin.messages().send(sender, "&e/godwar rerolls <횟수>");
+            plugin.messages().send(sender, "&e/gw rerolls <횟수>");
             plugin.messages().send(sender, "&7현재 능력 재추첨 가능 횟수: &f"
                 + plugin.getConfig().getInt("game.ability-reroll-count", 1) + "회");
             return;
@@ -505,7 +496,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
 
     private void skipSeconds(CommandSender sender, String[] args) {
         if (args.length < 2) {
-            plugin.messages().send(sender, "&e/godwar skipseconds <초>");
+            plugin.messages().send(sender, "&e/gw skipseconds <초>");
             plugin.messages().send(sender, "&7현재 능력 확정 자동/관리자 skip 초: &f"
                 + plugin.getConfig().getInt("game.skip-ready-countdown-seconds", 5) + "초");
             return;
@@ -533,7 +524,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             return;
         }
         if (args.length < 3) {
-            plugin.messages().send(sender, "&e/godwar pickaxe <wooden|stone|iron|diamond|all> <open|off|분>");
+            plugin.messages().send(sender, "&e/gw pickaxe <wooden|stone|iron|diamond|all> <open|off|분>");
             return;
         }
         Integer seconds = parsePickaxeUnlockSeconds(args[2]);
@@ -551,7 +542,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
     }
 
     private void pickaxeStatus(CommandSender sender) {
-        plugin.messages().send(sender, "&e/godwar pickaxe 상태");
+        plugin.messages().send(sender, "&e/gw pickaxe 상태");
         plugin.messages().send(sender, "&7진행 시간: &f" + runningElapsedText());
         for (PickaxeUnlockTarget target : pickaxeUnlockTargets(PickaxeUnlockTarget.ALL)) {
             int seconds = plugin.getConfig().getInt(target.path, -1);
@@ -582,7 +573,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             return;
         }
         if (args.length < 3) {
-            plugin.messages().send(sender, "&e/godwar join <team> <player>");
+            plugin.messages().send(sender, "&e/gw join <team> <player>");
             plugin.messages().send(sender, "&7가능한 팀: &f" + teamUsage());
             return;
         }
@@ -620,8 +611,8 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             return;
         }
         if (args.length < 3) {
-            plugin.messages().send(sender, "&e/godwar changeteam <player> <team>");
-            plugin.messages().send(sender, "&7또는: &f/godwar changeteam <team> <player>");
+            plugin.messages().send(sender, "&e/gw changeteam <player> <team>");
+            plugin.messages().send(sender, "&7또는: &f/gw changeteam <team> <player>");
             plugin.messages().send(sender, "&7가능한 팀: &f" + teamUsage());
             return;
         }
@@ -651,7 +642,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             return;
         }
         if (args.length < 2) {
-            plugin.messages().send(sender, "&e/godwar midjoin <player> [team|auto]");
+            plugin.messages().send(sender, "&e/gw midjoin <player> [team|auto]");
             return;
         }
         Player player = Bukkit.getPlayer(args[1]);
@@ -687,7 +678,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             return;
         }
         if (args.length < 2) {
-            plugin.messages().send(sender, "&e/godwar leave <player>");
+            plugin.messages().send(sender, "&e/gw leave <player>");
             return;
         }
         Player target = Bukkit.getPlayer(args[1]);
@@ -706,7 +697,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             return;
         }
         if (args.length < 2) {
-            plugin.messages().send(sender, "&e/godwar settemple <team>");
+            plugin.messages().send(sender, "&e/gw settemple <team>");
             plugin.messages().send(sender, "&7가능한 팀: &f" + teamUsage());
             return;
         }
@@ -732,7 +723,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             return;
         }
         if (args.length < 2) {
-            plugin.messages().send(sender, "&e/godwar setspawn <team>");
+            plugin.messages().send(sender, "&e/gw setspawn <team>");
             plugin.messages().send(sender, "&7가능한 팀: &f" + teamUsage());
             return;
         }
@@ -758,7 +749,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
 
     private void urf(CommandSender sender, String[] args) {
         if (args.length < 2) {
-            plugin.messages().send(sender, "&e/godwar urf <on|off|toggle|20%>");
+            plugin.messages().send(sender, "&e/gw urf <on|off|toggle|20%>");
             plugin.messages().send(sender, "&7현재 우르프: " + urfStatus());
             return;
         }
@@ -781,7 +772,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             }
             Integer percent = parsePercent(percentText);
             if (percent == null) {
-                plugin.messages().send(sender, "&e/godwar urf <on|off|toggle|20%>");
+                plugin.messages().send(sender, "&e/gw urf <on|off|toggle|20%>");
                 return;
             }
             abilityManager.setUrfCooldownPercent(percent.intValue());
@@ -1067,7 +1058,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
 
     private void setAbility(CommandSender sender, String[] args) {
         if (args.length < 3) {
-            plugin.messages().send(sender, "&e/godwar setability <player> <ability>");
+            plugin.messages().send(sender, "&e/gw setability <player> <ability>");
             return;
         }
         Player target = Bukkit.getPlayer(args[1]);
@@ -1113,7 +1104,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
 
     private void removeAbility(CommandSender sender, String[] args) {
         if (args.length < 2) {
-            plugin.messages().send(sender, "&e/godwar a remove <player>");
+            plugin.messages().send(sender, "&e/gw a remove <player>");
             return;
         }
         Player target = Bukkit.getPlayer(args[1]);
@@ -1140,7 +1131,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
     }
 
     private void abilityGroup(CommandSender sender, String[] args, String label, boolean themachyRoot) {
-        String usagePrefix = "/" + label + " " + args[0].toLowerCase(Locale.ROOT);
+        String usagePrefix = "/" + PRIMARY_COMMAND_LABEL + " " + args[0].toLowerCase(Locale.ROOT);
         if (args.length < 2) {
             ability(sender, args);
             return;
@@ -1190,6 +1181,14 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             setAbility(sender, new String[] {"setability", args[2], args[3]});
             return;
         }
+        if (args.length >= 3 && abilityByToken(args[1]) != null) {
+            if (!sender.hasPermission("newgodwar.admin")) {
+                plugin.messages().send(sender, "&c권한이 없습니다.");
+                return;
+            }
+            setAbility(sender, new String[] {"setability", args[2], args[1]});
+            return;
+        }
         if (!themachyRoot) {
             ability(sender, args);
             return;
@@ -1220,16 +1219,14 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             command(sender, "", usagePrefix + " list [검색어]", "플레이어별 배정 능력 확인");
             section(sender, "능력 운영");
             command(sender, "", usagePrefix + " set <player> <ability>", "능력 수동 지정");
+            command(sender, "", usagePrefix + " <ability|number> <player>", "호환 순서로 능력 수동 지정");
             command(sender, "", usagePrefix + " random [player]", "랜덤 능력 배정");
             command(sender, "", usagePrefix + " remove <player>", "플레이어 능력 삭제");
             command(sender, "", usagePrefix + " reset [player]", "능력 초기화");
             command(sender, "", usagePrefix + " skip [초]", "능력 확정 대기 종료");
             command(sender, "", usagePrefix + " cutin <player> [team|auto]", "진행 중 중간 참여");
         }
-        if (themachyRoot) {
-            section(sender, "Themachy 호환");
-            command(sender, "", usagePrefix + " <ability|number> <player>", "/gw a set <player> <ability> 원본");
-        } else {
+        if (!themachyRoot) {
             sender.sendMessage(ChatColor.DARK_GRAY + "  /gw ability = /gw a");
         }
         line(sender);
@@ -1246,7 +1243,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             return;
         }
         if (args.length < 3) {
-            plugin.messages().send(sender, "&e/godwar blacklist <list|add|remove|toggle> [ability]");
+            plugin.messages().send(sender, "&e/gw blacklist <list|add|remove|toggle> [ability]");
             return;
         }
 
@@ -1272,12 +1269,12 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             plugin.messages().send(sender, "&a" + ability.name() + " 능력을 블랙리스트에서 " + state + "했습니다.");
             return;
         }
-        plugin.messages().send(sender, "&e/godwar blacklist <list|add|remove|toggle> [ability]");
+        plugin.messages().send(sender, "&e/gw blacklist <list|add|remove|toggle> [ability]");
     }
 
     private void gamerule(CommandSender sender, String[] args) {
         if (args.length < 2) {
-            plugin.messages().send(sender, "&e/godwar gamerule <apply|restore>");
+            plugin.messages().send(sender, "&e/gw gamerule <apply|restore>");
             return;
         }
         if (args[1].equalsIgnoreCase("apply")) {
@@ -1290,7 +1287,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             plugin.messages().send(sender, "&a게임 시작 전 게임룰 값으로 복구했습니다.");
             return;
         }
-        plugin.messages().send(sender, "&e/godwar gamerule <apply|restore>");
+        plugin.messages().send(sender, "&e/gw gamerule <apply|restore>");
     }
 
     private void world(CommandSender sender, String label, String[] args) {
@@ -1337,7 +1334,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         }
         if (action.equals("tp") || action.equals("teleport") || action.equals("move") || action.equals("이동")) {
             if (args.length < 3) {
-                plugin.messages().send(sender, "&e/godwar world tp <world> [player]");
+                plugin.messages().send(sender, "&e/gw world tp <world> [player]");
                 return;
             }
             Player target = args.length >= 4 ? Bukkit.getPlayer(args[3]) : asPlayer(sender);
@@ -1361,7 +1358,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
                 return;
             }
             if (!gameManager.teleportToLobby(target)) {
-                plugin.messages().send(sender, "&c로비 위치가 설정되지 않았습니다. /godwar setlobby 를 먼저 실행하세요.");
+                plugin.messages().send(sender, "&c로비 위치가 설정되지 않았습니다. /gw setlobby 를 먼저 실행하세요.");
                 return;
             }
             plugin.messages().send(sender, "&a" + target.getName() + " 님을 로비로 이동했습니다.");
@@ -1378,7 +1375,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             plugin.messages().send(sender, "&a" + target.getName() + " 님을 &f" + directWorld.getName() + "&a 월드로 이동했습니다.");
             return;
         }
-        plugin.messages().send(sender, "&e/godwar world <list|game|create|load|copy|tp|lobby|unload|delete|backup>");
+        plugin.messages().send(sender, "&e/gw world <list|game|create|load|copy|tp|lobby|unload|delete|backup>");
     }
 
     private void map(CommandSender sender, String label, String[] args) {
@@ -1518,7 +1515,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             } else {
                 plugin.messages().send(sender, "&a현재 게임 월드: &f" + configured);
             }
-            plugin.messages().send(sender, "&e/godwar world game <world|clear>");
+            plugin.messages().send(sender, "&e/gw world game <world|clear>");
             return;
         }
         if (args[2].equalsIgnoreCase("clear") || args[2].equalsIgnoreCase("none") || args[2].equalsIgnoreCase("해제")) {
@@ -1550,7 +1547,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         gameManager.reloadSettings();
         plugin.messages().send(sender, "&a게임 맵을 선택했습니다: &f" + world.getName()
             + "&7 | 시작 시 백업, 종료 시 자동 초기화됩니다.");
-        plugin.messages().send(sender, "&7맵별 스폰/심장 설정: &e/godwar setspawn <team>&7, &e/godwar settemple <team>");
+        plugin.messages().send(sender, "&7맵별 스폰/심장 설정: &e/gw setspawn <team>&7, &e/gw settemple <team>");
     }
 
     private World loadMapWorld(CommandSender sender, String requestedWorldName) {
@@ -1587,7 +1584,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
 
     private void createWorld(CommandSender sender, String[] args) {
         if (args.length < 3) {
-            plugin.messages().send(sender, "&e/godwar world create <world> [normal|flat|void]");
+            plugin.messages().send(sender, "&e/gw world create <world> [normal|flat|void]");
             return;
         }
         String name = sanitizeWorldName(args[2]);
@@ -1619,7 +1616,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
 
     private void loadWorld(CommandSender sender, String[] args) {
         if (args.length < 3) {
-            plugin.messages().send(sender, "&e/godwar world load <world> [normal|flat|void]");
+            plugin.messages().send(sender, "&e/gw world load <world> [normal|flat|void]");
             return;
         }
         String name = sanitizeWorldName(args[2]);
@@ -1647,7 +1644,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
 
     private void copyWorld(CommandSender sender, String[] args) {
         if (args.length < 4) {
-            plugin.messages().send(sender, "&e/godwar world copy <sourceWorld> <newWorld> [normal|flat|void]");
+            plugin.messages().send(sender, "&e/gw world copy <sourceWorld> <newWorld> [normal|flat|void]");
             return;
         }
         String sourceName = sanitizeWorldName(args[2]);
@@ -1672,7 +1669,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
 
     private void unloadWorld(CommandSender sender, String[] args) {
         if (args.length < 3) {
-            plugin.messages().send(sender, "&e/godwar world unload <world> [save]");
+            plugin.messages().send(sender, "&e/gw world unload <world> [save]");
             return;
         }
         World world = worldByName(args[2]);
@@ -1698,7 +1695,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
 
     private void deleteWorld(CommandSender sender, String[] args) {
         if (args.length < 4 || !args[3].equalsIgnoreCase("confirm")) {
-            plugin.messages().send(sender, "&e/godwar world delete <world> confirm");
+            plugin.messages().send(sender, "&e/gw world delete <world> confirm");
             plugin.messages().send(sender, "&c주의: 월드 폴더를 영구 삭제합니다. 먼저 백업을 권장합니다.");
             return;
         }
@@ -1758,7 +1755,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
 
     private void worldBackup(CommandSender sender, String[] args) {
         if (args.length < 3) {
-            plugin.messages().send(sender, "&e/godwar world backup <create|list|load> [이름] [로드월드이름]");
+            plugin.messages().send(sender, "&e/gw world backup <create|list|load> [이름] [로드월드이름]");
             plugin.messages().send(sender, "&7백업은 plugins/NewGodWar/world-backups/ 아래에 저장됩니다.");
             return;
         }
@@ -1779,7 +1776,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         }
         if (action.equals("load") || action.equals("import") || action.equals("로드") || action.equals("불러오기")) {
             if (args.length < 4) {
-                plugin.messages().send(sender, "&e/godwar world backup load <백업이름> [로드월드이름]");
+                plugin.messages().send(sender, "&e/gw world backup load <백업이름> [로드월드이름]");
                 return;
             }
             try {
@@ -1794,7 +1791,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             }
             return;
         }
-        plugin.messages().send(sender, "&e/godwar world backup <create|list|load> [이름] [로드월드이름]");
+        plugin.messages().send(sender, "&e/gw world backup <create|list|load> [이름] [로드월드이름]");
     }
 
     private void listWorlds(CommandSender sender) {
@@ -1813,14 +1810,14 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             for (String worldName : unmanagedFolders) {
                 if (!listed.contains(worldName.toLowerCase(Locale.ROOT))) {
                     sender.sendMessage(ChatColor.GRAY + "- " + ChatColor.WHITE + worldName
-                        + ChatColor.DARK_GRAY + " | " + ChatColor.GRAY + "/godwar world load " + worldName);
+                        + ChatColor.DARK_GRAY + " | " + ChatColor.GRAY + "/gw world load " + worldName);
                 }
             }
         }
         if (gameManager.lobbyLocation() != null) {
-            sender.sendMessage(ChatColor.GRAY + "로비 이동: " + ChatColor.AQUA + "/godwar world lobby");
+            sender.sendMessage(ChatColor.GRAY + "로비 이동: " + ChatColor.AQUA + "/gw world lobby");
         } else {
-            sender.sendMessage(ChatColor.GRAY + "로비 위치 없음: " + ChatColor.AQUA + "/godwar setlobby");
+            sender.sendMessage(ChatColor.GRAY + "로비 위치 없음: " + ChatColor.AQUA + "/gw setlobby");
         }
     }
 
@@ -2023,7 +2020,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             return;
         }
         if (args.length < 2) {
-            plugin.messages().send(sender, "&e/godwar target <player>");
+            plugin.messages().send(sender, "&e/gw target <player>");
             return;
         }
         abilityManager.setTarget(player, sender, args[1]);
@@ -2044,7 +2041,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
 
     private void spectate(CommandSender sender, String[] args, boolean spectate) {
         if (args.length < 2) {
-            plugin.messages().send(sender, "&e/godwar " + (spectate ? "spectate" : "unspectate") + " <player>");
+            plugin.messages().send(sender, "&e/gw " + (spectate ? "spectate" : "unspectate") + " <player>");
             return;
         }
         Player target = Bukkit.getPlayer(args[1]);
@@ -2109,7 +2106,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             && !action.equals("check")
             && !action.equals("status")
             && !action.equals("확인")) {
-            plugin.messages().send(sender, "&e/godwar update [check|download]");
+            plugin.messages().send(sender, "&e/gw update [check|download]");
             return;
         }
 
@@ -2135,7 +2132,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         String action = args[1].toLowerCase(Locale.ROOT);
         if (action.equals("add") || action.equals("append") || action.equals("추가")) {
             if (args.length < 3) {
-                plugin.messages().send(sender, "&e/godwar defaultitems add hand|<material> [수량]");
+                plugin.messages().send(sender, "&e/gw defaultitems add hand|<material> [수량]");
                 return;
             }
             ItemStack item = defaultItemStack(sender, args, 2);
@@ -2151,7 +2148,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         }
         if (action.equals("set") || action.equals("replace") || action.equals("변경") || action.equals("교체")) {
             if (args.length < 4) {
-                plugin.messages().send(sender, "&e/godwar defaultitems set <번호> hand|<material> [수량]");
+                plugin.messages().send(sender, "&e/gw defaultitems set <번호> hand|<material> [수량]");
                 return;
             }
             Integer number = parsePositiveInt(args[2]);
@@ -2177,7 +2174,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         }
         if (action.equals("remove") || action.equals("delete") || action.equals("rm") || action.equals("삭제")) {
             if (args.length < 3) {
-                plugin.messages().send(sender, "&e/godwar defaultitems remove <번호>");
+                plugin.messages().send(sender, "&e/gw defaultitems remove <번호>");
                 return;
             }
             Integer number = parsePositiveInt(args[2]);
@@ -2206,7 +2203,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             plugin.messages().send(sender, "&a기본 지급 아이템을 기본 스카이블럭 세트로 초기화했습니다.");
             return;
         }
-        plugin.messages().send(sender, "&e/godwar defaultitems [gui|list|add|set|remove|clear|reset]");
+        plugin.messages().send(sender, "&e/gw defaultitems [gui|list|add|set|remove|clear|reset]");
     }
 
     private void listDefaultItems(CommandSender sender) {
@@ -2283,7 +2280,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
 
     private void gamblingReward(CommandSender sender, String[] args) {
         if (args.length < 4) {
-            plugin.messages().send(sender, "&e/godwar gamblereward <normal> <번호|add> hand|message|<material> [값]");
+            plugin.messages().send(sender, "&e/gw gamblereward <normal> <번호|add> hand|message|<material> [값]");
             return;
         }
         String path = gamblingRewardPath(args[1]);
@@ -2315,7 +2312,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
                 return;
             }
             if (args.length < 5) {
-                plugin.messages().send(sender, "&e/godwar gamblereward " + args[1] + " " + number + " message <멘트>");
+                plugin.messages().send(sender, "&e/gw gamblereward " + args[1] + " " + number + " message <멘트>");
                 return;
             }
             String message = joinArguments(args, 4);
@@ -2756,7 +2753,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         List<String> values = new ArrayList<String>();
         if (admin) {
             values.addAll(SUBCOMMANDS);
-            values.addAll(Arrays.asList("a", "black", "cutin", "d", "dia", "info", "lobby", "observer", "s", "set", "spawn", "t", "teamchange", "switchteam", "팀변경", "곡괭이", "yes", "no", "clear", "con", "starteritems", "기본템", "월드"));
+            values.addAll(Arrays.asList("a", "black", "cutin", "d", "dia", "info", "lobby", "observer", "s", "set", "spawn", "teamchange", "switchteam", "팀변경", "곡괭이", "yes", "no", "clear", "con", "starteritems", "기본템", "월드"));
             if (isThemachyRoot(command, alias)) {
                 values.addAll(teamSuggestions(false));
             }
@@ -2782,6 +2779,9 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
                 }
             } else {
                 values.addAll(admin ? onlinePlayerNames() : abilityTargetNames(sender));
+                if (admin) {
+                    values.addAll(abilityIdSuggestions());
+                }
             }
             return startsWith(values, args[1]);
         }
@@ -2815,7 +2815,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         if (args.length == 3 && args[1].equalsIgnoreCase("skip")) {
             return startsWith(Arrays.asList("0", "3", "5", "10", "15", "30"), args[2]);
         }
-        if (themachyRoot && args.length == 3 && !isThemachyAbilityAction(args[1])) {
+        if (args.length == 3 && !isThemachyAbilityAction(args[1]) && abilityByToken(args[1]) != null) {
             return startsWith(onlinePlayerNames(), args[2]);
         }
         return Collections.emptyList();

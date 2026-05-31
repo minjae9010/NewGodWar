@@ -150,7 +150,7 @@ public final class PluginUpdater {
             plugin.messages().send(sender, "&a업데이트 jar 준비 완료: &f" + info.downloadedFile().getPath());
             plugin.messages().send(sender, "&7서버를 재시작하면 새 버전이 적용됩니다.");
         } else {
-            plugin.messages().send(sender, "&e/godwar update download &7명령으로 서버 실행 중에 업데이트 jar를 받을 수 있습니다.");
+            plugin.messages().send(sender, "&e/gw update download &7명령으로 서버 실행 중에 업데이트 jar를 받을 수 있습니다.");
         }
         if (info.releaseUrl() != null) {
             sender.sendMessage(ChatColor.DARK_GRAY + "  " + ChatColor.GRAY + info.releaseUrl());

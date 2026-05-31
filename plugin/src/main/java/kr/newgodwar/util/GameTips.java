@@ -80,12 +80,15 @@ public final class GameTips {
         List<String> repaired = new ArrayList<String>(configured.size());
         boolean changed = false;
         for (String tip : configured) {
-            if (isLegacyBlazeRodRecipeTip(tip)) {
-                repaired.add(BLAZE_ROD_RECIPE_TIP);
-                changed = true;
-            } else {
-                repaired.add(tip);
+            String repairedTip = tip;
+            if (isLegacyBlazeRodRecipeTip(repairedTip)) {
+                repairedTip = BLAZE_ROD_RECIPE_TIP;
             }
+            repairedTip = repairLegacyCommandTips(repairedTip);
+            if (repairedTip == null ? tip != null : !repairedTip.equals(tip)) {
+                changed = true;
+            }
+            repaired.add(repairedTip);
         }
 
         if (changed) {
@@ -107,15 +110,24 @@ public final class GameTips {
             && (tip.contains("조합") || tip.contains("만들"));
     }
 
+    private static String repairLegacyCommandTips(String tip) {
+        if (tip == null) {
+            return null;
+        }
+        return tip.replace("/godwar", "/gw")
+            .replace("/t yes", "/gw yes")
+            .replace("/t no", "/gw no");
+    }
+
     private static List<String> defaultTips() {
         return Arrays.asList(
             BLAZE_ROD_RECIPE_TIP,
             "&f능력 확인: &b/a&7로 내 능력 설명과 쿨타임을 확인하세요.",
-            "&f재추첨: &b/t yes&7로 확정, &c/t no&7로 다시 뽑기를 선택합니다.",
+            "&f재추첨: &b/gw yes&7로 확정, &c/gw no&7로 다시 뽑기를 선택합니다.",
             "&f타깃 능력: &b/x <닉네임>&7으로 대상을 빠르게 지정합니다.",
-            "&f팀 설정: &b/godwar settings&7의 팀 메뉴에서 팀 추가, 이름, 색상, 스폰, 심장을 관리할 수 있습니다.",
+            "&f팀 설정: &b/gw settings&7의 팀 메뉴에서 팀 추가, 이름, 색상, 스폰, 심장을 관리할 수 있습니다.",
             "&f비활성 팀: &7비활성화된 팀은 자동 배정, 중간 참여, 시작 검사에서 제외됩니다.",
-            "&f우르프: &b/godwar urf 80%&7처럼 쿨타임 감소율을 바로 조정할 수 있습니다.",
+            "&f우르프: &b/gw urf 80%&7처럼 쿨타임 감소율을 바로 조정할 수 있습니다.",
             "&f도박: &b/도박&7에서 코블스톤으로 추가 자원을 노려볼 수 있습니다.",
             "&f팀 채팅: &b/tc&7로 모드를 켜면 일반 채팅이 팀챗으로 전송됩니다."
         );

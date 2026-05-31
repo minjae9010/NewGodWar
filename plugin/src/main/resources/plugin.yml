@@ -7,7 +7,7 @@ commands:
   godwar:
     aliases: [gw, godswar, 신들의전쟁]
     description: 신들의 전쟁 게임을 관리합니다.
-    usage: /godwar help
+    usage: /gw help
   t:
     description: Themachy 스타일 신들의 전쟁 호환 명령어입니다.
     usage: /t help

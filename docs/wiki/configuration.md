@@ -1,6 +1,6 @@
 # 설정
 
-설정 파일은 서버 시작 후 `plugins/NewGodWar/config.yml`에 생성됩니다. 파일을 직접 수정한 뒤에는 `/godwar reload`를 실행하거나 서버를 재시작하세요.
+설정 파일은 서버 시작 후 `plugins/NewGodWar/config.yml`에 생성됩니다. 파일을 직접 수정한 뒤에는 `/gw reload`를 실행하거나 서버를 재시작하세요.
 
 ## game
 
@@ -34,7 +34,7 @@
 
 우르프 명령에서 `80%`를 입력하면 쿨타임을 80% 줄인다는 의미입니다. 이때 저장되는 배율은 `0.2`입니다.
 
-기본 지급 아이템은 `game.give-skyblock-items`가 켜져 있을 때만 지급됩니다. 기본값은 용암 양동이 2개, 얼음 2개, 참나무 묘목 1개, 뼛가루 4개, 상자 1개, 익힌 소고기 64개입니다. 인게임에서는 `/godwar defaultitems`로 가상 창고를 열어 넣고 빼면 닫을 때 저장됩니다.
+기본 지급 아이템은 `game.give-skyblock-items`가 켜져 있을 때만 지급됩니다. 기본값은 용암 양동이 2개, 얼음 2개, 참나무 묘목 1개, 뼛가루 4개, 상자 1개, 익힌 소고기 64개입니다. 인게임에서는 `/gw defaultitems`로 가상 창고를 열어 넣고 빼면 닫을 때 저장됩니다.
 
 ## world
 
@@ -49,17 +49,17 @@
 | `world.start-time` | `6000` | 시작 후 월드 시간 |
 | `world.game-world` | `""` | 자동 초기화할 게임 월드 이름. 비어 있으면 자동 초기화 기능은 작동하지 않음 |
 | `world.reset-game-world-on-stop` | `true` | 게임 월드가 지정되어 있을 때 시작 시 백업하고 종료 시 해당 월드 복원 |
-| `world.managed-worlds` | `[]` | `/godwar world create`, `load`, `copy`, 백업 로드로 등록된 월드 목록. 서버 시작 시 자동 로드 |
-| `maps.<world>.spawns` | 자동 생성 | 맵별 팀 스폰 위치. `/godwar map <world>` 선택 후 `/godwar setspawn <team>`로 저장 |
-| `maps.<world>.temples` | 자동 생성 | 맵별 팀 심장 위치. `/godwar map <world>` 선택 후 `/godwar settemple <team>`로 저장 |
+| `world.managed-worlds` | `[]` | `/gw world create`, `load`, `copy`, 백업 로드로 등록된 월드 목록. 서버 시작 시 자동 로드 |
+| `maps.<world>.spawns` | 자동 생성 | 맵별 팀 스폰 위치. `/gw map <world>` 선택 후 `/gw setspawn <team>`로 저장 |
+| `maps.<world>.temples` | 자동 생성 | 맵별 팀 심장 위치. `/gw map <world>` 선택 후 `/gw settemple <team>`로 저장 |
 
-게임 맵은 `/godwar map <world>`로 선택하고 `/godwar map clear`로 해제합니다. 기존 `/godwar world game <world>`도 같은 설정을 사용합니다. 기존 서버의 `world.game-world`가 지정되어 있고 `spawns`, `temples` 위치의 월드명이 그 맵과 같으면 시작/리로드 시 `maps.<world>` 설정으로 자동 마이그레이션됩니다. 로비 월드는 게임 맵으로 지정할 수 없습니다. 게임 월드가 지정되어 있으면 게임 시작 직전에 해당 월드를 스냅샷으로 저장하고, 게임 종료 시 참가자를 로비로 이동시킨 뒤 월드를 언로드, 복원, 재로드합니다. 로비가 설정되어 있지 않거나 플레이어가 게임 월드에 남아 있으면 안전을 위해 월드 초기화를 건너뜁니다.
+게임 맵은 `/gw map <world>`로 선택하고 `/gw map clear`로 해제합니다. 기존 `/gw world game <world>`도 같은 설정을 사용합니다. 기존 서버의 `world.game-world`가 지정되어 있고 `spawns`, `temples` 위치의 월드명이 그 맵과 같으면 시작/리로드 시 `maps.<world>` 설정으로 자동 마이그레이션됩니다. 로비 월드는 게임 맵으로 지정할 수 없습니다. 게임 월드가 지정되어 있으면 게임 시작 직전에 해당 월드를 스냅샷으로 저장하고, 게임 종료 시 참가자를 로비로 이동시킨 뒤 월드를 언로드, 복원, 재로드합니다. 로비가 설정되어 있지 않거나 플레이어가 게임 월드에 남아 있으면 안전을 위해 월드 초기화를 건너뜁니다.
 
-인게임에서는 `/godwar world gui` 또는 `/godwar settings`의 `월드` 메뉴에서 `world.autosave`, `world.spawn-animals`, `world.spawn-monsters`, `world.difficulty`, `world.start-time`, `world.game-world`, `world.reset-game-world-on-stop`을 조정할 수 있습니다. 자세한 운영 흐름은 [월드 관리](world-management)를 참고하세요.
+인게임에서는 `/gw world gui` 또는 `/gw settings`의 `월드` 메뉴에서 `world.autosave`, `world.spawn-animals`, `world.spawn-monsters`, `world.difficulty`, `world.start-time`, `world.game-world`, `world.reset-game-world-on-stop`을 조정할 수 있습니다. 자세한 운영 흐름은 [월드 관리](world-management)를 참고하세요.
 
 ## lobby
 
-접속 위치와 게임 종료 후 복귀 위치를 관리합니다. 위치는 `/godwar setlobby`로 저장합니다.
+접속 위치와 게임 종료 후 복귀 위치를 관리합니다. 위치는 `/gw setlobby`로 저장합니다.
 
 | 키 | 기본값 | 설명 |
 | --- | --- | --- |
@@ -69,11 +69,11 @@
 
 게임 종료 시 참가자 팀 배정, 옵저버 상태, 팀 채팅 모드, 킬 기록도 함께 초기화됩니다.
 
-로비 월드와 게임 월드를 분리해서 운영할 수 있습니다. 로비 월드에서 `/godwar setlobby`를 실행하면 종료 후 참가자는 해당 월드로 돌아갑니다. 운영자는 `/godwar world help`, `/godwar world list`, `/godwar world game <world|clear>`, `/godwar world create <world> [normal|flat|void]`, `/godwar world load <world>`, `/godwar world copy <sourceWorld> <newWorld>`, `/godwar world tp <world> [player]`, `/godwar world lobby [player]`, `/godwar world unload <world>`, `/godwar world delete <world> confirm`으로 월드를 지정, 생성, 복사, 이동, 로드, 언로드, 삭제할 수 있습니다.
+로비 월드와 게임 월드를 분리해서 운영할 수 있습니다. 로비 월드에서 `/gw setlobby`를 실행하면 종료 후 참가자는 해당 월드로 돌아갑니다. 운영자는 `/gw world help`, `/gw world list`, `/gw world game <world|clear>`, `/gw world create <world> [normal|flat|void]`, `/gw world load <world>`, `/gw world copy <sourceWorld> <newWorld>`, `/gw world tp <world> [player]`, `/gw world lobby [player]`, `/gw world unload <world>`, `/gw world delete <world> confirm`으로 월드를 지정, 생성, 복사, 이동, 로드, 언로드, 삭제할 수 있습니다.
 
 ## updates
 
-서버가 켜져 있는 동안 GitHub Release를 확인하고, 새 버전이 있으면 관리자에게 알립니다. `updates.auto-download`를 켜거나 `/godwar update download`를 실행하면 업데이트 jar를 `plugins/update/`에 준비하고, 서버 재시작 후 새 버전이 적용됩니다.
+서버가 켜져 있는 동안 GitHub Release를 확인하고, 새 버전이 있으면 관리자에게 알립니다. `updates.auto-download`를 켜거나 `/gw update download`를 실행하면 업데이트 jar를 `plugins/update/`에 준비하고, 서버 재시작 후 새 버전이 적용됩니다.
 
 | 키 | 기본값 | 설명 |
 | --- | --- | --- |
@@ -87,7 +87,7 @@
 | `updates.github.owner` | `minjae9010` | GitHub 릴리즈 저장소 소유자 |
 | `updates.github.repo` | `NewGodWar` | GitHub 릴리즈 저장소 이름 |
 
-관리자는 `/godwar update check`로 즉시 확인하고, `/godwar update download`로 서버 실행 중 최신 jar를 내려받을 수 있습니다.
+관리자는 `/gw update check`로 즉시 확인하고, `/gw update download`로 서버 실행 중 최신 jar를 내려받을 수 있습니다.
 
 ## compatibility
 
@@ -116,7 +116,7 @@
 | `core.pickaxe-unlock.iron-seconds` | `1500` | 게임 시작 후 철 곡괭이 코어 파괴 허용 시간. `-1`이면 자동 해제 안 함 |
 | `core.pickaxe-unlock.diamond-seconds` | `1500` | 게임 시작 후 다이아 곡괭이 코어 파괴 허용 시간. `-1`이면 자동 해제 안 함 |
 
-곡괭이 시간 해제 값이 `0` 이상이면 `core.require-empty-hand`가 켜져 있어도 해당 시간이 지난 뒤 그 곡괭이로 코어를 파괴할 수 있습니다. 금 곡괭이는 코어 파괴 허용 대상에서 제외됩니다. 월드 / 코어 설정 GUI의 코어 보호 설정에서 곡괭이와 폭파 허용 시간을 좌클릭/우클릭해 1분 단위로, 쉬프트 좌클릭/쉬프트 우클릭해 5분 단위로 조정할 수 있습니다. 명령어로는 `/godwar pickaxe status`로 진행 시간과 해제 상태를 확인하고, `/godwar pickaxe <종류|all> <open|off|분>`으로 곡괭이 시간을 조정할 수 있습니다.
+곡괭이 시간 해제 값이 `0` 이상이면 `core.require-empty-hand`가 켜져 있어도 해당 시간이 지난 뒤 그 곡괭이로 코어를 파괴할 수 있습니다. 금 곡괭이는 코어 파괴 허용 대상에서 제외됩니다. 월드 / 코어 설정 GUI의 코어 보호 설정에서 곡괭이와 폭파 허용 시간을 좌클릭/우클릭해 1분 단위로, 쉬프트 좌클릭/쉬프트 우클릭해 5분 단위로 조정할 수 있습니다. 명령어로는 `/gw pickaxe status`로 진행 시간과 해제 상태를 확인하고, `/gw pickaxe <종류|all> <open|off|분>`으로 곡괭이 시간을 조정할 수 있습니다.
 
 ## abilities
 
@@ -144,7 +144,7 @@
 
 보상 항목은 `chance`, `material`, `amount`, `message` 또는 `messages`를 가집니다. 구버전 재료 호환이 필요하면 `legacy-material`을 함께 둘 수 있습니다.
 
-인게임에서는 `/godwar gamblereward <normal> <번호|add> hand|message|<material> [값]`로 보상 아이템과 멘트를 바꿀 수 있습니다.
+인게임에서는 `/gw gamblereward <normal> <번호|add> hand|message|<material> [값]`로 보상 아이템과 멘트를 바꿀 수 있습니다.
 
 ## scoreboard
 
@@ -159,11 +159,11 @@
 | --- | --- | --- |
 | `blacklist.abilities` | `[]` | 랜덤 배정에서 제외할 능력 ID 목록 |
 
-인게임에서는 `/godwar blacklist list`, `/godwar blacklist add <ability>`, `/godwar blacklist remove <ability>`, `/godwar blacklist toggle <ability>`을 사용할 수 있습니다.
+인게임에서는 `/gw blacklist list`, `/gw blacklist add <ability>`, `/gw blacklist remove <ability>`, `/gw blacklist toggle <ability>`을 사용할 수 있습니다.
 
 ## tips
 
-`/godwar tips`와 게임 시작 준비, 게임 진행 중 시간차 안내에 사용할 팁 문구입니다. 색상 코드는 `&` 문법을 사용할 수 있습니다.
+`/gw tips`와 게임 시작 준비, 게임 진행 중 시간차 안내에 사용할 팁 문구입니다. 색상 코드는 `&` 문법을 사용할 수 있습니다.
 
 | 키 | 기본값 | 설명 |
 | --- | --- | --- |
@@ -201,9 +201,9 @@ teams:
 
 ## spawns, temples, messages
 
-`spawns`와 `temples`는 `/godwar setspawn`, `/godwar settemple` 명령 또는 설정 GUI가 저장합니다. 직접 수정할 수 있지만 월드 이름과 좌표가 정확해야 합니다.
+`spawns`와 `temples`는 `/gw setspawn`, `/gw settemple` 명령 또는 설정 GUI가 저장합니다. 직접 수정할 수 있지만 월드 이름과 좌표가 정확해야 합니다.
 
-월드 백업은 `/godwar world backup create [이름]`으로 생성하고 `plugins/NewGodWar/world-backups/`에 저장됩니다. `/godwar world backup load <백업이름> [로드월드이름]`은 기존 월드를 덮어쓰지 않고 새 월드 폴더로 복사한 뒤 서버에 로드합니다.
+월드 백업은 `/gw world backup create [이름]`으로 생성하고 `plugins/NewGodWar/world-backups/`에 저장됩니다. `/gw world backup load <백업이름> [로드월드이름]`은 기존 월드를 덮어쓰지 않고 새 월드 폴더로 복사한 뒤 서버에 로드합니다.
 
 `messages`에서는 prefix와 주요 게임 메시지를 바꿀 수 있습니다.
 

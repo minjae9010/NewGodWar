@@ -295,7 +295,7 @@ public final class AbilityManager {
     private void sendTargetGuide(Player player) {
         player.sendMessage(ChatColor.AQUA + "이 능력은 타깃 지정이 필요합니다.");
         player.sendMessage(ChatColor.GRAY + "사용 전 " + ChatColor.YELLOW + "/x <플레이어>"
-            + ChatColor.GRAY + " 또는 " + ChatColor.YELLOW + "/godwar target <플레이어>"
+            + ChatColor.GRAY + " 또는 " + ChatColor.YELLOW + "/gw target <플레이어>"
             + ChatColor.GRAY + " 로 대상을 지정하세요.");
     }
 

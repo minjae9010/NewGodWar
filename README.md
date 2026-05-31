@@ -27,47 +27,48 @@ Wiki 배포 전 저장소 Settings > Features에서 Wiki 기능을 켜야 합니
 
 ## 명령어
 
-- `/godwar help` 도움말
-- `/gw` 또는 `/godwar` 기본 명령어, `/t` Themachy 스타일 호환 명령어 도움말
+- `/gw help` 도움말
+- `/gw` 기본 안내 명령어. Themachy 스타일 `/t`는 호환용으로 유지됩니다.
 - `/a` 자신의 현재 능력 빠른 확인
-- `/godwar a set <player> <ability>` 또는 `/t a <ability> <player>` 능력 수동 지정
-- `/godwar a list [검색어]` 또는 `/t a list [검색어]` 플레이어별 배정 능력 확인
-- `/godwar a skip [초]` 또는 `/t a skip [초]` 능력 확정 대기 스킵
-- `/godwar a random|reset|remove` 원본과 `/t a random|reset|remove` 호환 명령
-- `/godwar a cutin` 원본과 `/t a cutin` 진행 중 중간 참여 보조 명령
-- `/t yes` 또는 `/t no` 능력 재추첨 확정 / 다시 뽑기
-- `/godwar autoteam` 온라인 플레이어 자동 팀 배정
-- `/godwar join <red|blue|green> <player>` 관리자가 플레이어 팀 수동 배정
-- `/godwar changeteam <player> <red|blue|green>` 또는 `/godwar changeteam <red|blue|green> <player>` 관리자가 진행 중인 플레이어의 능력을 유지한 채 팀 변경
-- `/godwar midjoin <player> [red|blue|green|auto]` 관리자가 진행 중인 게임에 중간 참여 지정. 탈락 팀 플레이어도 살아있는 팀으로 재참여할 수 있습니다.
-- `/godwar leave <player>` 관리자가 플레이어 팀 제거
-- `/godwar setspawn <red|blue|green>` 현재 위치를 팀 스폰으로 등록
-- `/godwar setlobby` 현재 위치를 접속/게임 종료 로비로 등록
-- `/godwar settemple <red|blue|green>` 바라보는 다이아 블록을 팀 심장으로 등록
-- `/godwar world list|game|create|load|copy|tp|lobby|unload|delete|backup` 게임 월드 지정, 월드 생성, 로드, 복사, 이동, 로비 이동, 언로드, 삭제, 백업 관리
-- `/t info [team]` 팀원 목록 확인
-- `/t observer [list]` 옵저버 전환 또는 목록 확인
-- `/t clear [player]` 능력 쿨타임 초기화
-- `/도박` 또는 `/t con` 카지노 GUI 열기
-- `/godwar start` 게임 시작 및 능력 배정
-- `/godwar test [ability]` 혼자 능력 테스트 시작
-- `/godwar stop` 게임 종료
-- `/godwar status` 현재 게임 상태
-- `/godwar pickaxe [status]` 현재 진행 시간과 곡괭이 해제 상태 확인
-- `/godwar pickaxe <wooden|stone|iron|diamond|all> <open|off|분>` 곡괭이 코어 파괴 허용 시간 조정. 금 곡괭이는 제외
-- `/godwar update [check|download]` 최신 릴리즈 확인 및 다음 재시작에 적용할 업데이트 jar 다운로드
-- `/godwar tips` 서버 플레이 팁 확인
-- `/godwar gui` 또는 `/godwar settings` 관리자용 상자 GUI 설정 열기
-- `/godwar gamblereward <normal> <번호|add> hand|message|<material> [값]` 도박 당첨 아이템 변경/추가 및 멘트 수정
-- `/godwar defaultitems` 게임 시작 기본 지급 아이템 가상 창고 열기
-- `/godwar ability [player]` 본인 또는 같은 팀의 현재 능력만 확인
-- `/godwar abilities` 등록된 능력 도감 GUI 열기
-- `/godwar blacklist <list|add|remove|toggle> [ability]` 랜덤 배정에서 제외할 능력 관리
-- `/godwar gamerule <apply|restore>` 설정된 게임룰 수동 적용 또는 복구
-- `/godwar target <player>` 또는 `/x <player>` 타깃형 능력 대상 지정
-- `/godwar a set <player> <ability>` 능력 수동 지정
-- `/godwar spectate <player>` 관전 모드
-- `/godwar unspectate <player>` 관전 해제
+- `/gw a set <player> <ability>` 능력 수동 지정
+- `/gw a <ability> <player>` 호환 순서로 능력 수동 지정
+- `/gw a list [검색어]` 플레이어별 배정 능력 확인
+- `/gw a skip [초]` 능력 확정 대기 스킵
+- `/gw a random|reset|remove` 능력 배정 보조 명령
+- `/gw a cutin` 진행 중 중간 참여 보조 명령
+- `/gw yes` 또는 `/gw no` 능력 재추첨 확정 / 다시 뽑기
+- `/gw autoteam` 온라인 플레이어 자동 팀 배정
+- `/gw join <red|blue|green> <player>` 관리자가 플레이어 팀 수동 배정
+- `/gw changeteam <player> <red|blue|green>` 또는 `/gw changeteam <red|blue|green> <player>` 관리자가 진행 중인 플레이어의 능력을 유지한 채 팀 변경
+- `/gw midjoin <player> [red|blue|green|auto]` 관리자가 진행 중인 게임에 중간 참여 지정. 탈락 팀 플레이어도 살아있는 팀으로 재참여할 수 있습니다.
+- `/gw leave <player>` 관리자가 플레이어 팀 제거
+- `/gw setspawn <red|blue|green>` 현재 위치를 팀 스폰으로 등록
+- `/gw setlobby` 현재 위치를 접속/게임 종료 로비로 등록
+- `/gw settemple <red|blue|green>` 바라보는 다이아 블록을 팀 심장으로 등록
+- `/gw world list|game|create|load|copy|tp|lobby|unload|delete|backup` 게임 월드 지정, 월드 생성, 로드, 복사, 이동, 로비 이동, 언로드, 삭제, 백업 관리
+- `/gw info [team]` 팀원 목록 확인
+- `/gw observer [list]` 옵저버 전환 또는 목록 확인
+- `/gw clear [player]` 능력 쿨타임 초기화
+- `/도박` 또는 `/gw gamble` 카지노 GUI 열기
+- `/gw start` 게임 시작 및 능력 배정
+- `/gw test [ability]` 혼자 능력 테스트 시작
+- `/gw stop` 게임 종료
+- `/gw status` 현재 게임 상태
+- `/gw pickaxe [status]` 현재 진행 시간과 곡괭이 해제 상태 확인
+- `/gw pickaxe <wooden|stone|iron|diamond|all> <open|off|분>` 곡괭이 코어 파괴 허용 시간 조정. 금 곡괭이는 제외
+- `/gw update [check|download]` 최신 릴리즈 확인 및 다음 재시작에 적용할 업데이트 jar 다운로드
+- `/gw tips` 서버 플레이 팁 확인
+- `/gw gui` 또는 `/gw settings` 관리자용 상자 GUI 설정 열기
+- `/gw gamblereward <normal> <번호|add> hand|message|<material> [값]` 도박 당첨 아이템 변경/추가 및 멘트 수정
+- `/gw defaultitems` 게임 시작 기본 지급 아이템 가상 창고 열기
+- `/gw ability [player]` 본인 또는 같은 팀의 현재 능력만 확인
+- `/gw abilities` 등록된 능력 도감 GUI 열기
+- `/gw blacklist <list|add|remove|toggle> [ability]` 랜덤 배정에서 제외할 능력 관리
+- `/gw gamerule <apply|restore>` 설정된 게임룰 수동 적용 또는 복구
+- `/gw target <player>` 또는 `/x <player>` 타깃형 능력 대상 지정
+- `/gw a set <player> <ability>` 능력 수동 지정
+- `/gw spectate <player>` 관전 모드
+- `/gw unspectate <player>` 관전 해제
 - `/teamchat <message>` 팀 채팅, `/tc` 팀 채팅 모드 전환
 
 ## 내장 능력
@@ -100,7 +101,7 @@ Wiki 배포 전 저장소 Settings > Features에서 Wiki 기능을 켜야 합니
 - `abilities.voodoo.damage`, `abilities.voodoo.hit-interval-millis`: 부두술사 연결 피해량과 피해 간격
 - `abilities.darkness.incoming-damage-multiplier`: 다크니스가 받는 피해 배율
 - `world`: 시작 시 autosave, 동물/몬스터 스폰, 난이도, 시작 시간을 적용하고 종료 시 복구
-- `maps.<world>`: `/godwar map <world>`로 선택하는 맵별 팀 스폰과 심장 위치
+- `maps.<world>`: `/gw map <world>`로 선택하는 맵별 팀 스폰과 심장 위치
 - `lobby`: 접속 위치와 게임 종료 후 복귀 위치
 - `compatibility.clear-teleport-invulnerability`: 다른 플러그인의 텔레포트 보호로 생기는 전투 중 무적 틱 정리
 - `updates`: GitHub Release 최신 버전 확인, 선택적 자동 다운로드, 다음 재시작 적용 안내
@@ -110,7 +111,7 @@ Wiki 배포 전 저장소 Settings > Features에서 Wiki 기능을 켜야 합니
 - `scoreboard.enabled`: 우측 스코어보드에 내 팀, 능력, 킬 상태 표시
 - `scoreboard.team-prefixes`: 탭 목록과 머리 위 이름에 팀 Prefix 표시
 - `blacklist.abilities`: 랜덤 배정에서 제외할 능력 ID 목록
-- `tips`: `/godwar tips`, 게임 시작 준비, 게임 진행 중 시간차로 표시할 서버 플레이 팁
+- `tips`: `/gw tips`, 게임 시작 준비, 게임 진행 중 시간차로 표시할 서버 플레이 팁
 - `gamerules`: 게임 시작 시 모든 월드에 적용할 마인크래프트 게임룰과 종료 시 복구 여부
 
 ## 지원 버전
