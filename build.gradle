@@ -4,7 +4,7 @@ plugins {
 
 allprojects {
     group = "kr.newgodwar"
-    version = "0.2.9"
+    version = "0.2.10"
     description = "Modern Gods War minigame plugin with modular compatibility support."
 }
 
