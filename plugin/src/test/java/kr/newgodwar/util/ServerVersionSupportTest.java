@@ -20,4 +20,9 @@ public final class ServerVersionSupportTest {
         assertFalse(ServerVersionSupport.detectPaperServer("Spigot"));
         assertFalse(ServerVersionSupport.detectPaperServer("CraftBukkit"));
     }
+
+    @Test
+    public void includesMinecraft26_2AsPaperDownloadTarget() {
+        assertTrue(ServerVersionSupport.paperDownloadVersions().contains("26.2"));
+    }
 }

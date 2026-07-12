@@ -10,7 +10,7 @@ dependencies {
     testImplementation "junit:junit:4.13.2"
 }
 
-def testServerVersion = providers.gradleProperty("newGodWarMinecraftVersion").orElse("26.1.2")
+def testServerVersion = providers.gradleProperty("newGodWarMinecraftVersion").orElse("26.2")
 def testServerJavaVersion = providers.gradleProperty("newGodWarServerJavaVersion")
     .map { Integer.parseInt(it) }
     .orElse(25)

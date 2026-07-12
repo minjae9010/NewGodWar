@@ -206,6 +206,8 @@ jobs:
             java: "25"
           - minecraft: "26.1.2"
             java: "25"
+          - minecraft: "26.2"
+            java: "25"
 
     steps:
       - name: Checkout

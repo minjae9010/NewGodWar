@@ -8,7 +8,7 @@ param(
         "1.19.4",
         "1.20.6",
         "1.21.11",
-        "26.1.2"
+        "26.2"
     ),
     [string] $PluginJar = "",
     [string] $WorkDir = ".paper-smoke",
@@ -87,7 +87,8 @@ function Get-SupportedPaperVersions {
         "1.21.10",
         "1.21.11",
         "26.1.1",
-        "26.1.2"
+        "26.1.2",
+        "26.2"
     )
 }
 

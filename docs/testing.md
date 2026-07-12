@@ -22,7 +22,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\Test-PaperMatrix.ps1
 특정 버전만 확인하려면 다음처럼 실행합니다.
 
 ```powershell
-.\scripts\Test-PaperMatrix.ps1 -Versions 1.12.2,1.21.11,26.1.2
+.\scripts\Test-PaperMatrix.ps1 -Versions 1.12.2,1.21.11,26.2
 ```
 
 지원 목록 전체를 확인하려면 다음처럼 실행합니다.
@@ -48,7 +48,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\Test-PaperMatrix.ps1
 이미 빌드된 jar를 테스트하려면 다음처럼 실행합니다.
 
 ```powershell
-.\scripts\Test-PaperMatrix.ps1 -SkipBuild -PluginJar .\build\libs\NewGodWar-0.2.9.jar -Versions 26.1.2
+.\scripts\Test-PaperMatrix.ps1 -SkipBuild -PluginJar .\build\libs\NewGodWar-0.2.9.jar -Versions 26.2
 ```
 
 테스트 서버 파일은 `.paper-smoke/` 아래에 생성되며 git에는 포함되지 않습니다.
@@ -60,7 +60,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\Test-PaperMatrix.ps1
 `.github/workflows/compatibility.yml` 워크플로가 브랜치 push, pull request, 수동 실행에서 동작합니다.
 
 기본 매트릭스는 지원 목록 전체의 Paper 버전을 대상으로 합니다.
-별도 `Latest supported Paper / Java 25` job은 지원 목록의 가장 최신 버전, 현재 `26.1.2`, 서버 기동을 한 번 더 확인합니다.
+별도 `Latest supported Paper / Java 25` job은 지원 목록의 가장 최신 버전, 현재 `26.2`, 서버 기동을 한 번 더 확인합니다.
 
 | Minecraft | Java |
 | --- | --- |
@@ -68,7 +68,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\Test-PaperMatrix.ps1
 | 1.17 ~ 1.17.1 | 16 |
 | 1.18 ~ 1.20.4 | 17 |
 | 1.20.5 ~ 1.21.x | 21 |
-| 26.1.1 ~ 26.1.2 | 25 |
+| 26.1.1 ~ 26.2 | 25 |
 
 일부 버전만 빠르게 확인해야 하면 로컬 스크립트의 `-Versions`에 원하는 Paper 버전을 넘겨 실행하면 됩니다.
 
