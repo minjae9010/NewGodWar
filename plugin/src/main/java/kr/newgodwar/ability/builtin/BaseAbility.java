@@ -39,7 +39,26 @@ abstract class BaseAbility implements GodAbility {
     private final Map<String, Long> timers = new LinkedHashMap<String, Long>();
     private final Map<Integer, Long> cooldownAnnouncements = new LinkedHashMap<Integer, Long>();
     private final Map<String, Long> timerAnnouncements = new LinkedHashMap<String, Long>();
+    private final Map<Integer, Runnable> scheduledTasks = new LinkedHashMap<Integer, Runnable>();
     protected String targetName;
+
+    @Override
+    public void cancelScheduledTasks() {
+        Map<Integer, Runnable> tasks = new LinkedHashMap<Integer, Runnable>(scheduledTasks);
+        scheduledTasks.clear();
+        for (Map.Entry<Integer, Runnable> entry : tasks.entrySet()) {
+            Bukkit.getScheduler().cancelTask(entry.getKey().intValue());
+            if (entry.getValue() != null) {
+                try {
+                    entry.getValue().run();
+                } catch (RuntimeException ex) {
+                    Bukkit.getLogger().warning("Failed to clean up a cancelled NewGodWar ability task: " + ex.getMessage());
+                }
+            }
+        }
+        timers.clear();
+        timerAnnouncements.clear();
+    }
 
     @Override
     public void onInteract(AbilityPlayerContext context, PlayerInteractEvent event) {
@@ -285,7 +304,7 @@ abstract class BaseAbility implements GodAbility {
 
     protected void respawnEffect(final AbilityPlayerContext context, final PotionEffectType type, final int seconds, final int amplifier) {
         effect(context.player(), type, seconds, amplifier);
-        Bukkit.getScheduler().runTaskLater(context.plugin(), () -> {
+        scheduleLater(context, () -> {
             Player player = context.player();
             if (player != null && player.isOnline()) {
                 effect(player, type, seconds, amplifier);
@@ -302,7 +321,7 @@ abstract class BaseAbility implements GodAbility {
 
     protected void respawnFoodLevel(final AbilityPlayerContext context, final int foodLevel) {
         context.player().setFoodLevel(foodLevel);
-        Bukkit.getScheduler().runTaskLater(context.plugin(), () -> {
+        scheduleLater(context, () -> {
             Player player = context.player();
             if (player != null && player.isOnline()) {
                 player.setFoodLevel(foodLevel);
@@ -558,6 +577,15 @@ abstract class BaseAbility implements GodAbility {
     }
 
     protected void later(final AbilityPlayerContext context, final int seconds, final String timerName, final String triggerText, final Runnable runnable) {
+        later(context, seconds, timerName, triggerText, runnable, false);
+    }
+
+    protected void laterCleanup(final AbilityPlayerContext context, final int seconds, final String timerName, final String triggerText, final Runnable runnable) {
+        later(context, seconds, timerName, triggerText, runnable, true);
+    }
+
+    private void later(final AbilityPlayerContext context, final int seconds, final String timerName, final String triggerText,
+                       final Runnable runnable, boolean runOnCancel) {
         final String name = timerName == null || timerName.trim().length() == 0 ? "능력 타이머" : timerName;
         final String text = triggerText == null || triggerText.trim().length() == 0 ? "능력 효과" : triggerText;
         timers.put(name, System.currentTimeMillis() + seconds * 1000L);
@@ -565,13 +593,13 @@ abstract class BaseAbility implements GodAbility {
         sendAbilityMessage(context, context.player(), "timer", ChatColor.YELLOW + text + ChatColor.WHITE + " : "
             + ChatColor.AQUA + seconds + "초 후");
         refreshDisplay(context);
-        Bukkit.getScheduler().scheduleSyncDelayedTask(context.plugin(), () -> {
+        scheduleLater(context, () -> {
             timers.remove(name);
             timerAnnouncements.remove(name);
             refreshDisplay(context);
             runnable.run();
             refreshDisplay(context);
-        }, seconds * 20L);
+        }, seconds * 20L, runOnCancel ? runnable : null);
     }
 
     @Override
@@ -670,11 +698,43 @@ abstract class BaseAbility implements GodAbility {
             return;
         }
         final Vector vector = horizontal.normalize().multiply(power * 1.4D);
-        Bukkit.getScheduler().scheduleSyncDelayedTask(context.plugin(), () -> {
+        scheduleLater(context, () -> {
             for (Player target : targets) {
                 target.setVelocity(vector);
             }
         }, delayTicks);
+    }
+
+    protected int scheduleLater(final AbilityPlayerContext context, final Runnable runnable, long delayTicks) {
+        return scheduleLater(context, runnable, delayTicks, null);
+    }
+
+    private int scheduleLater(final AbilityPlayerContext context, final Runnable runnable, long delayTicks, Runnable cancelAction) {
+        final int[] taskId = new int[] {-1};
+        taskId[0] = Bukkit.getScheduler().scheduleSyncDelayedTask(context.plugin(), () -> {
+            scheduledTasks.remove(Integer.valueOf(taskId[0]));
+            runnable.run();
+        }, delayTicks);
+        if (taskId[0] >= 0) {
+            scheduledTasks.put(Integer.valueOf(taskId[0]), cancelAction);
+        }
+        return taskId[0];
+    }
+
+    protected int scheduleRepeating(AbilityPlayerContext context, Runnable runnable, long delayTicks, long periodTicks) {
+        int taskId = Bukkit.getScheduler().scheduleSyncRepeatingTask(context.plugin(), runnable, delayTicks, periodTicks);
+        if (taskId >= 0) {
+            scheduledTasks.put(Integer.valueOf(taskId), null);
+        }
+        return taskId;
+    }
+
+    protected void cancelScheduledTask(int taskId) {
+        if (taskId < 0) {
+            return;
+        }
+        Bukkit.getScheduler().cancelTask(taskId);
+        scheduledTasks.remove(Integer.valueOf(taskId));
     }
 
     protected boolean isPickaxe(Material material) {

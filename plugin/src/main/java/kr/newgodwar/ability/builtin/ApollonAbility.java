@@ -51,10 +51,10 @@ final class ApollonAbility extends BaseAbility {
         final String playerName = player.getName();
         final int[] count = new int[] {15};
         final int[] taskId = new int[1];
-        taskId[0] = Bukkit.getScheduler().scheduleSyncRepeatingTask(context.plugin(), () -> {
+        taskId[0] = scheduleRepeating(context, () -> {
             Player caster = Bukkit.getPlayer(playerName);
             if (caster == null || !caster.isOnline()) {
-                Bukkit.getScheduler().cancelTask(taskId[0]);
+                cancelScheduledTask(taskId[0]);
                 return;
             }
             if (count[0] > 0) {
@@ -66,7 +66,7 @@ final class ApollonAbility extends BaseAbility {
             } else {
                 Bukkit.broadcastMessage("태양이 힘을 잃었습니다.");
                 caster.getWorld().setTime(18000);
-                Bukkit.getScheduler().cancelTask(taskId[0]);
+                cancelScheduledTask(taskId[0]);
             }
             count[0]--;
         }, 100L, 40L);

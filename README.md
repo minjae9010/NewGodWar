@@ -96,7 +96,8 @@ Wiki 배포 전 저장소 Settings > Features에서 Wiki 기능을 켜야 합니
 - `game.ability-roll-message`: 능력 배정 타이틀 표시 여부
 - `game.ability-tick-interval-seconds`: 능력 반복 처리 주기
 - `game.killtime-bossbar`: 게임 시작 후 킬타임 상단 보스바 표시 여부
-- `game.killtime-seconds`: 게임 시작 후 공격 금지 안내 킬타임 초
+- `game.killtime-seconds`: 게임 시작 후 킬타임 보호 시간
+- `game.killtime-mode`: `player-combat` 유저 간 피해 차단 또는 `core-only` 코어 파괴 차단
 - `game.urf`: 우르프 모드 사용 여부와 능력 쿨타임 배율
 - `abilities.voodoo.damage`, `abilities.voodoo.hit-interval-millis`: 부두술사 연결 피해량과 피해 간격
 - `abilities.darkness.incoming-damage-multiplier`: 다크니스가 받는 피해 배율

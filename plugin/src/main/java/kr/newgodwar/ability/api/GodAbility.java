@@ -30,6 +30,9 @@ public interface GodAbility {
     default void onRemove(AbilityPlayerContext context) {
     }
 
+    default void cancelScheduledTasks() {
+    }
+
     default void onDamage(AbilityDamageContext context) {
     }
 

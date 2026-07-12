@@ -37,6 +37,8 @@ game:
   ability-tick-interval-seconds: 1
   killtime-bossbar: false
   killtime-seconds: 300
+  # player-combat: 유저 간 피해 차단, core-only: 유저 전투는 허용하고 코어 파괴만 차단
+  killtime-mode: player-combat
   urf:
     enabled: false
     cooldown-multiplier: 0.2

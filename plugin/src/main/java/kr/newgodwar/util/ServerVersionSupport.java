@@ -2,10 +2,11 @@ package kr.newgodwar.util;
 
 import org.bukkit.Bukkit;
 
+import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
-import java.lang.reflect.Method;
+import java.util.Locale;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -71,18 +72,30 @@ public final class ServerVersionSupport {
 
     private final String minecraftVersion;
     private final String bukkitVersion;
+    private final String serverName;
+    private final boolean paperServer;
     private final boolean paperDownloadVersion;
 
-    private ServerVersionSupport(String minecraftVersion, String bukkitVersion, boolean paperDownloadVersion) {
+    private ServerVersionSupport(String minecraftVersion, String bukkitVersion, String serverName,
+                                 boolean paperServer, boolean paperDownloadVersion) {
         this.minecraftVersion = minecraftVersion;
         this.bukkitVersion = bukkitVersion;
+        this.serverName = serverName;
+        this.paperServer = paperServer;
         this.paperDownloadVersion = paperDownloadVersion;
     }
 
     public static ServerVersionSupport detect() {
         String minecraft = detectMinecraftVersion();
         String bukkit = Bukkit.getBukkitVersion();
-        return new ServerVersionSupport(minecraft, bukkit, isPaperDownloadVersion(minecraft, bukkit));
+        String serverName = Bukkit.getName();
+        return new ServerVersionSupport(
+            minecraft,
+            bukkit,
+            serverName,
+            detectPaperServer(serverName),
+            isPaperDownloadVersion(minecraft, bukkit)
+        );
     }
 
     public String minecraftVersion() {
@@ -94,7 +107,11 @@ public final class ServerVersionSupport {
     }
 
     public boolean supported() {
-        return paperDownloadVersion;
+        return paperServer && paperDownloadVersion;
+    }
+
+    public boolean paperServer() {
+        return paperServer;
     }
 
     public boolean paperDownloadVersion() {
@@ -102,7 +119,7 @@ public final class ServerVersionSupport {
     }
 
     public String summary() {
-        return "Minecraft/Paper " + minecraftVersion + " (Bukkit API " + bukkitVersion + ")";
+        return "Minecraft " + minecraftVersion + " on " + serverName + " (Bukkit API " + bukkitVersion + ")";
     }
 
     private static String detectMinecraftVersion() {
@@ -123,6 +140,28 @@ public final class ServerVersionSupport {
             return true;
         }
         return PAPER_DOWNLOAD_VERSIONS.contains(normalize(bukkitVersion));
+    }
+
+    static boolean detectPaperServer(String serverName) {
+        String normalizedName = serverName == null ? "" : serverName.toLowerCase(Locale.ROOT);
+        if (normalizedName.contains("paper")
+            || normalizedName.contains("purpur")
+            || normalizedName.contains("pufferfish")
+            || normalizedName.contains("folia")) {
+            return true;
+        }
+        return classExists("io.papermc.paper.ServerBuildInfo")
+            || classExists("io.papermc.paper.configuration.Configuration")
+            || classExists("com.destroystokyo.paper.PaperConfig");
+    }
+
+    private static boolean classExists(String name) {
+        try {
+            Class.forName(name, false, ServerVersionSupport.class.getClassLoader());
+            return true;
+        } catch (ClassNotFoundException | LinkageError ex) {
+            return false;
+        }
     }
 
     private static String normalize(String value) {

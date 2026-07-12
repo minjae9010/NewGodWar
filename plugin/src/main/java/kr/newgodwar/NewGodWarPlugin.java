@@ -58,7 +58,7 @@ public final class NewGodWarPlugin extends JavaPlugin {
         this.versionSupport = ServerVersionSupport.detect();
         this.updater = new PluginUpdater(this);
         Metrics metrics = new Metrics(this, BSTATS_PLUGIN_ID);
-        metrics.addCustomChart(new SimplePie("paper_download_target", () -> versionSupport.paperDownloadVersion() ? "supported" : "unsupported"));
+        metrics.addCustomChart(new SimplePie("paper_download_target", () -> versionSupport.supported() ? "supported" : "unsupported"));
 
         this.nmsAdapter = NmsAdapters.create(this);
         this.abilityManager = new AbilityManager(this);
@@ -92,7 +92,11 @@ public final class NewGodWarPlugin extends JavaPlugin {
         BlazeRodRecipes.register(this);
         updater.start();
 
-        if (versionSupport.paperDownloadVersion()) {
+        if (!versionSupport.paperServer()) {
+            getLogger().warning("NewGodWar detected a non-Paper server: " + versionSupport.summary());
+            getLogger().warning("Automatic gamerule application and restoration are disabled to prevent Bukkit/Spigot API errors.");
+            getLogger().warning("Please run this server with Paper: https://papermc.io/downloads/paper");
+        } else if (versionSupport.paperDownloadVersion()) {
             getLogger().info("Detected Paper downloadable version target: " + versionSupport.summary());
         } else {
             getLogger().warning("Detected version is not in the Paper official download target list. The plugin will stay enabled, but this version is not a guaranteed support target: " + versionSupport.summary());

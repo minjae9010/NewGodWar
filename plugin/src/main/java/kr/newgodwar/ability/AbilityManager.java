@@ -62,6 +62,7 @@ public final class AbilityManager {
     public void clear() {
         for (Map.Entry<UUID, AbilitySession> entry : assignments.entrySet()) {
             Player player = plugin.getServer().getPlayer(entry.getKey());
+            entry.getValue().ability().cancelScheduledTasks();
             if (player != null) {
                 entry.getValue().ability().onRemove(playerContext(player, entry.getValue().definition()));
                 BukkitCompat.clearPotionEffects(player);
@@ -86,7 +87,7 @@ public final class AbilityManager {
         }
         AbilitySession previous = assignments.remove(player.getUniqueId());
         if (previous != null) {
-            previous.ability().onRemove(playerContext(player, previous.definition()));
+            deactivateSession(player, previous);
         }
         suppressedUntil.remove(player.getUniqueId());
         BukkitCompat.clearPotionEffects(player);
@@ -108,9 +109,8 @@ public final class AbilityManager {
         if (previous == null) {
             return false;
         }
-        previous.ability().onRemove(playerContext(player, previous.definition()));
+        deactivateSession(player, previous);
         suppressedUntil.remove(player.getUniqueId());
-        BukkitCompat.clearPotionEffects(player);
         if (plugin.game() != null) {
             plugin.game().refreshPlayerDisplay(player);
         }
@@ -129,8 +129,7 @@ public final class AbilityManager {
 
         final long until = System.currentTimeMillis() + seconds * 1000L;
         suppressedUntil.put(player.getUniqueId(), until);
-        session.ability().onRemove(playerContext(player, session.definition()));
-        BukkitCompat.clearPotionEffects(player);
+        deactivateSession(player, session);
         player.sendMessage(ChatColor.DARK_PURPLE + "능력이 " + seconds + "초 동안 봉인되었습니다.");
         if (plugin.game() != null) {
             plugin.game().refreshPlayerDisplay(player);
@@ -338,22 +337,16 @@ public final class AbilityManager {
         if (session != null) {
             session.ability().onKill(new AbilityKillContext(plugin, killer, victim, session.definition(), event));
         }
-
-        AbilitySession victimSession = activeSession(victim);
-        if (victimSession != null) {
-            victimSession.ability().onKill(new AbilityKillContext(plugin, killer, victim, victimSession.definition(), event));
-        }
     }
 
     public void handleDeath(PlayerDeathEvent event) {
         for (Map.Entry<UUID, AbilitySession> entry : assignments.entrySet()) {
             Player player = plugin.getServer().getPlayer(entry.getKey());
             if (player != null) {
-                if (isAbilitySuppressed(player)) {
-                    continue;
+                AbilitySession session = activeSession(player);
+                if (session != null) {
+                    session.ability().onDeath(playerContext(player, session.definition()), event);
                 }
-                AbilitySession session = entry.getValue();
-                session.ability().onDeath(playerContext(player, session.definition()), event);
             }
         }
     }
@@ -362,6 +355,16 @@ public final class AbilityManager {
         AbilitySession session = activeSession(player);
         if (session != null) {
             session.ability().onAssign(playerContext(player, session.definition()));
+        }
+    }
+
+    public void deactivate(Player player) {
+        if (player == null) {
+            return;
+        }
+        AbilitySession session = session(player);
+        if (session != null) {
+            deactivateSession(player, session);
         }
     }
 
@@ -449,10 +452,13 @@ public final class AbilityManager {
     public void handleBlockExplode(BlockExplodeEvent event) {
         for (Map.Entry<UUID, AbilitySession> entry : assignments.entrySet()) {
             Player player = plugin.getServer().getPlayer(entry.getKey());
-            if (player != null && isAbilitySuppressed(player)) {
+            if (player == null) {
                 continue;
             }
-            entry.getValue().ability().onBlockExplode(event);
+            AbilitySession session = activeSession(player);
+            if (session != null) {
+                session.ability().onBlockExplode(event);
+            }
         }
     }
 
@@ -473,11 +479,13 @@ public final class AbilityManager {
     public void handleItemConsume(Player consumer, PlayerItemConsumeEvent event) {
         for (Map.Entry<UUID, AbilitySession> entry : assignments.entrySet()) {
             Player owner = plugin.getServer().getPlayer(entry.getKey());
-            if (owner == null || isAbilitySuppressed(owner)) {
+            if (owner == null) {
                 continue;
             }
-            AbilitySession session = entry.getValue();
-            session.ability().onItemConsume(playerContext(owner, session.definition()), event);
+            AbilitySession session = activeSession(owner);
+            if (session != null) {
+                session.ability().onItemConsume(playerContext(owner, session.definition()), event);
+            }
         }
     }
 
@@ -541,7 +549,16 @@ public final class AbilityManager {
         if (isAbilitySuppressed(player)) {
             return null;
         }
+        if (plugin.game() != null && !plugin.game().canUseAbility(player)) {
+            return null;
+        }
         return session(player);
+    }
+
+    private void deactivateSession(Player player, AbilitySession session) {
+        session.ability().cancelScheduledTasks();
+        session.ability().onRemove(playerContext(player, session.definition()));
+        BukkitCompat.clearPotionEffects(player);
     }
 
     private void restoreSuppressedAbility(UUID uuid, Long expectedUntil) {
@@ -555,7 +572,7 @@ public final class AbilityManager {
         if (player == null) {
             return;
         }
-        AbilitySession session = session(player);
+        AbilitySession session = activeSession(player);
         if (session != null) {
             session.ability().onAssign(playerContext(player, session.definition()));
             player.sendMessage(ChatColor.LIGHT_PURPLE + "봉인되었던 능력이 돌아왔습니다.");

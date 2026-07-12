@@ -60,7 +60,7 @@ final class WizardAbility extends BaseAbility {
         for (Player target : targets) {
             target.setVelocity(new Vector(0, 1.6D, 0));
         }
-        Bukkit.getScheduler().scheduleSyncDelayedTask(context.plugin(), () -> {
+        scheduleLater(context, () -> {
             for (Player target : targets) {
                 target.getWorld().strikeLightning(target.getLocation());
                 target.setFireTicks(100);

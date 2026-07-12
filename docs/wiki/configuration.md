@@ -28,7 +28,8 @@
 | `game.ability-roll-message` | `true` | 능력 배정 타이틀 표시 여부 |
 | `game.ability-tick-interval-seconds` | `1` | 능력 반복 처리 주기 |
 | `game.killtime-bossbar` | `false` | 게임 시작 후 킬타임을 상단 보스바로 표시할지 여부 |
-| `game.killtime-seconds` | `300` | 게임 시작 후 공격 금지 안내 킬타임 초 |
+| `game.killtime-seconds` | `300` | 게임 시작 후 킬타임 보호가 유지되는 시간 |
+| `game.killtime-mode` | `player-combat` | `player-combat`은 유저 간 피해 차단, `core-only`는 유저 전투를 허용하고 코어 파괴만 차단 |
 | `game.urf.enabled` | `false` | 우르프 모드 사용 여부 |
 | `game.urf.cooldown-multiplier` | `0.2` | 우르프 모드 쿨타임 배율 |
 

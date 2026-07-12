@@ -3,6 +3,7 @@ package kr.newgodwar.gui;
 import kr.newgodwar.NewGodWarPlugin;
 import kr.newgodwar.game.GameManager;
 import kr.newgodwar.game.GodTeam;
+import kr.newgodwar.game.KilltimeMode;
 import kr.newgodwar.util.BukkitCompat;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -462,6 +463,8 @@ public final class SettingsGui implements Listener {
             changeKilltimeSeconds(click == ClickType.SHIFT_LEFT || click == ClickType.SHIFT_RIGHT ? -60 : -10);
         } else if (slot == 21) {
             changeKilltimeSeconds(click == ClickType.SHIFT_LEFT || click == ClickType.SHIFT_RIGHT ? 60 : 10);
+        } else if (slot == 22) {
+            cycleKilltimeMode();
         }
     }
 
@@ -801,6 +804,7 @@ public final class SettingsGui implements Listener {
             ChatColor.GREEN + "킬타임 +10초",
             ChatColor.GRAY + "Shift 클릭: +60초",
             ChatColor.GRAY + "현재: " + ChatColor.YELLOW + durationText(config.getInt("game.killtime-seconds", 300))));
+        inventory.setItem(22, killtimeModeItem());
     }
 
     private void fillGambling(Inventory inventory) {
@@ -874,13 +878,23 @@ public final class SettingsGui implements Listener {
     private ItemStack killtimeSecondsItem(FileConfiguration config) {
         int seconds = Math.max(0, config.getInt("game.killtime-seconds", 300));
         return item("WATCH", "WATCH", Math.max(1, Math.min(64, seconds <= 0 ? 1 : seconds / 10)), (short) 0,
-            ChatColor.YELLOW + "킬타임 공격 금지 시간",
+            ChatColor.YELLOW + "킬타임 보호 시간",
             ChatColor.GRAY + "게임 시작 후 이 시간이 끝날 때까지",
-            ChatColor.GRAY + "공격하지 말라는 안내 타이머입니다.",
+            ChatColor.GRAY + gameManager.killtimeMode().displayName() + "이 적용됩니다.",
             ChatColor.GRAY + "현재: " + ChatColor.YELLOW + durationText(seconds),
             ChatColor.GRAY + "좌우 버튼: 10초 단위",
             ChatColor.GRAY + "Shift 클릭: 60초 단위",
             ChatColor.DARK_GRAY + "game.killtime-seconds");
+    }
+
+    private ItemStack killtimeModeItem() {
+        KilltimeMode mode = gameManager.killtimeMode();
+        return item(mode == KilltimeMode.CORE_ONLY ? "DIAMOND_BLOCK" : "IRON_SWORD", "IRON_SWORD", 1, (short) 0,
+            ChatColor.YELLOW + "킬타임 방식: " + ChatColor.WHITE + mode.displayName(),
+            ChatColor.GRAY + "유저 간 공격 차단: PvP 피해를 막습니다.",
+            ChatColor.GRAY + "코어 파괴 차단: PvP는 허용하고 코어를 보호합니다.",
+            ChatColor.AQUA + "클릭: 보호 방식 전환",
+            ChatColor.DARK_GRAY + "game.killtime-mode");
     }
 
     private ItemStack gamblingItem(FileConfiguration config) {
@@ -1131,6 +1145,15 @@ public final class SettingsGui implements Listener {
 
     private void changeKilltimeSeconds(int delta) {
         changeInt("game.killtime-seconds", delta, 0, 7200);
+        gameManager.refreshGameTimerBar();
+        gameManager.refreshAllPlayerDisplays();
+    }
+
+    private void cycleKilltimeMode() {
+        KilltimeMode current = gameManager.killtimeMode();
+        KilltimeMode next = current == KilltimeMode.PLAYER_COMBAT ? KilltimeMode.CORE_ONLY : KilltimeMode.PLAYER_COMBAT;
+        plugin.getConfig().set("game.killtime-mode", next.configValue());
+        plugin.saveConfig();
         gameManager.refreshGameTimerBar();
         gameManager.refreshAllPlayerDisplays();
     }
@@ -1650,32 +1673,17 @@ public final class SettingsGui implements Listener {
     }
 
     private String teamWoolMaterial(GodTeam team) {
-        if ("red".equals(team.id())) {
-            return "RED_WOOL";
-        }
-        if ("blue".equals(team.id())) {
-            return "BLUE_WOOL";
-        }
-        if ("green".equals(team.id())) {
-            return "GREEN_WOOL";
-        }
         return woolMaterial(gameManager.teamColor(team));
     }
 
     private short teamWoolData(GodTeam team) {
-        if ("red".equals(team.id())) {
-            return 14;
-        }
-        if ("blue".equals(team.id())) {
-            return 11;
-        }
-        if ("green".equals(team.id())) {
-            return 13;
-        }
         return woolData(gameManager.teamColor(team));
     }
 
     private String woolMaterial(ChatColor color) {
+        if (color == ChatColor.RED) return "RED_WOOL";
+        if (color == ChatColor.BLUE) return "BLUE_WOOL";
+        if (color == ChatColor.GREEN) return "GREEN_WOOL";
         if (color == ChatColor.YELLOW) return "YELLOW_WOOL";
         if (color == ChatColor.AQUA) return "LIGHT_BLUE_WOOL";
         if (color == ChatColor.GOLD) return "ORANGE_WOOL";
@@ -1692,6 +1700,9 @@ public final class SettingsGui implements Listener {
     }
 
     private short woolData(ChatColor color) {
+        if (color == ChatColor.RED) return 14;
+        if (color == ChatColor.BLUE) return 11;
+        if (color == ChatColor.GREEN) return 13;
         if (color == ChatColor.YELLOW) return 4;
         if (color == ChatColor.AQUA) return 3;
         if (color == ChatColor.GOLD) return 1;

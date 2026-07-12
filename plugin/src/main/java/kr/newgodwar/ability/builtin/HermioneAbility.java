@@ -90,7 +90,7 @@ final class HermioneAbility extends BaseAbility {
         } else if (spell.equals("익스펙토 패트로눔") || spell.equalsIgnoreCase("Expecto Patronum")) {
             if (useAdvanced(context, player) && rollChance(harry ? 3 : 2, 4)) {
                 invincible = true;
-                later(context, 5, "보호 주문 종료", "보호 주문 종료", () -> invincible = false);
+                laterCleanup(context, 5, "보호 주문 종료", "보호 주문 종료", () -> invincible = false);
             }
         } else if (spell.equals("엑스펠리아무스") || spell.equalsIgnoreCase("Expelliarmus")) {
             Player target = targetPlayerInSight(context, player, 20, false);

@@ -43,7 +43,7 @@ final class AssasinAbility extends BaseAbility {
         if (useNormal(context, player)) {
             dash(player);
             dashLocked = true;
-            Bukkit.getScheduler().scheduleSyncDelayedTask(context.plugin(), () -> dashLocked = false, 12L);
+            scheduleLater(context, () -> dashLocked = false, 12L);
         }
     }
 

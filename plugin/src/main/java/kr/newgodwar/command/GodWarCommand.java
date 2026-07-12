@@ -1277,6 +1277,10 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             plugin.messages().send(sender, "&e/gw gamerule <apply|restore>");
             return;
         }
+        if (!plugin.versionSupport().paperServer()) {
+            plugin.messages().send(sender, "&c현재 서버는 Paper가 아닙니다. 오류 방지를 위해 게임룰 작업을 건너뛰었습니다. Paper 서버로 실행해 주세요.");
+            return;
+        }
         if (args[1].equalsIgnoreCase("apply")) {
             gameManager.applyGameRules();
             plugin.messages().send(sender, "&a설정된 게임룰을 모든 월드에 적용했습니다.");

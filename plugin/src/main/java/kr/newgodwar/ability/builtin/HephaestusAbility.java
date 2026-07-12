@@ -39,7 +39,7 @@ final class HephaestusAbility extends BaseAbility {
         if (block.getType() == Material.AIR && useNormal(context, player, 0)) {
             final Map<Location, Material> cleanupBlocks = temporaryLavaCleanupBlocks(block);
             block.setType(Material.LAVA);
-            later(context, 2, "용암 제거", "용암 제거", () -> {
+            laterCleanup(context, 2, "용암 제거", "용암 제거", () -> {
                 for (Map.Entry<Location, Material> entry : cleanupBlocks.entrySet()) {
                     Block cleanupBlock = entry.getKey().getBlock();
                     Material current = cleanupBlock.getType();

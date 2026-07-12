@@ -52,6 +52,7 @@ public final class GameManager {
     private final Map<GodTeam, GameLocation> spawns = new LinkedHashMap<GodTeam, GameLocation>();
     private final Set<GodTeam> eliminatedTeams = new HashSet<GodTeam>();
     private final Set<UUID> observers = new HashSet<UUID>();
+    private final Set<UUID> preparedPlayerInventories = new HashSet<UUID>();
     private final Set<UUID> teamChatModePlayers = Collections.synchronizedSet(new HashSet<UUID>());
     private final Map<UUID, Integer> pendingSelection = new HashMap<UUID, Integer>();
     private final Map<UUID, Integer> kills = new HashMap<UUID, Integer>();
@@ -195,6 +196,9 @@ public final class GameManager {
     }
 
     public boolean isCoreExplosionProtected() {
+        if (isCoreProtectedByKilltime()) {
+            return true;
+        }
         if (!plugin.getConfig().getBoolean("core.protect-diamond-from-explosion", true)) {
             return false;
         }
@@ -210,11 +214,32 @@ public final class GameManager {
             cancelGameTimerTask();
             return;
         }
-        if (gameTimerBossBarEnabled()) {
-            startGameTimerTask();
-        } else {
-            cancelGameTimerTask();
+        startGameTimerTask();
+    }
+
+    public KilltimeMode killtimeMode() {
+        return KilltimeMode.parse(plugin.getConfig().getString("game.killtime-mode", "player-combat"));
+    }
+
+    public boolean isKilltimeActive() {
+        return state == GameState.RUNNING && killtimeRemainingSeconds() > 0L;
+    }
+
+    public boolean isPlayerCombatProtectedByKilltime() {
+        return isKilltimeActive() && killtimeMode() == KilltimeMode.PLAYER_COMBAT;
+    }
+
+    public boolean isCoreProtectedByKilltime() {
+        return isKilltimeActive() && killtimeMode() == KilltimeMode.CORE_ONLY;
+    }
+
+    public boolean canUseAbility(Player player) {
+        if (player == null || isObserver(player)) {
+            return false;
         }
+        GodTeam team = teamOf(player);
+        return team != null && !eliminatedTeams.contains(team)
+            && player.getGameMode() != org.bukkit.GameMode.SPECTATOR;
     }
 
     public boolean isEliminated(GodTeam team) {
@@ -360,6 +385,9 @@ public final class GameManager {
     }
 
     public boolean canDamage(Player attacker, Player victim) {
+        if (isPlayerCombatProtectedByKilltime()) {
+            return false;
+        }
         if (!plugin.getConfig().getBoolean("game.friendly-fire", false)) {
             GodTeam attackerTeam = teamOf(attacker);
             GodTeam victimTeam = teamOf(victim);
@@ -389,6 +417,7 @@ public final class GameManager {
         if (state == GameState.READY || state == GameState.RUNNING) {
             throw new IllegalStateException("게임이 이미 시작 준비 중이거나 진행 중입니다.");
         }
+        ensureGameWorldResetComplete();
         if (plugin.getConfig().getBoolean("game.auto-balance-teams", true) && teams.isEmpty()) {
             autoBalance();
         }
@@ -440,6 +469,10 @@ public final class GameManager {
         if (player == null) {
             throw new IllegalStateException("테스트할 플레이어를 찾을 수 없습니다.");
         }
+        if (state == GameState.READY || state == GameState.RUNNING) {
+            throw new IllegalStateException("게임 준비 또는 진행 중에는 테스트 모드를 시작할 수 없습니다. 먼저 /gw stop을 실행해주세요.");
+        }
+        ensureGameWorldResetComplete();
 
         state = GameState.RUNNING;
         runningStartedAtMillis = System.currentTimeMillis();
@@ -675,12 +708,16 @@ public final class GameManager {
     }
 
     public void setSpectator(Player player) {
+        abilityManager.deactivate(player);
         BukkitCompat.setSpectatorOrAdventure(player);
         nmsAdapter.sendTitle(player, ChatColor.GRAY + "관전 모드", "팀이 탈락했거나 관리자가 관전으로 전환했습니다.", 10, 50, 10);
     }
 
     public void unsetSpectator(Player player) {
         BukkitCompat.setSurvival(player);
+        if (canUseAbility(player)) {
+            abilityManager.reapply(player);
+        }
         nmsAdapter.sendActionBar(player, ChatColor.GREEN + "관전 모드가 해제되었습니다.");
     }
 
@@ -903,6 +940,7 @@ public final class GameManager {
             clearActiveGameWorldSnapshot();
             return;
         }
+        ensureGameWorldResetComplete();
         String worldName = configuredGameWorldName();
         if (worldName == null) {
             clearActiveGameWorldSnapshot();
@@ -940,6 +978,7 @@ public final class GameManager {
             return;
         }
         String worldName = activeGameWorldName;
+        boolean resetCompleted = false;
         try {
             if (!unloadActiveGameWorld(worldName)) {
                 return;
@@ -950,13 +989,25 @@ public final class GameManager {
                 plugin.getLogger().warning("Restored game world folder, but Bukkit did not load it: " + worldName);
             } else {
                 plugin.getLogger().info("Reset and reloaded game world: " + worldName);
+                resetCompleted = true;
             }
         } catch (IOException ex) {
             plugin.getLogger().warning("Game world reset failed for '" + worldName + "': " + ex.getMessage());
         } catch (RuntimeException ex) {
             plugin.getLogger().warning("Game world reload failed for '" + worldName + "': " + ex.getMessage());
         } finally {
+            if (!resetCompleted) {
+                plugin.getLogger().warning("Keeping the game world snapshot so reset can be retried on the next stop: " + worldName);
+            }
+        }
+        if (resetCompleted) {
             clearActiveGameWorldSnapshot();
+        }
+    }
+
+    private void ensureGameWorldResetComplete() {
+        if (gameWorldResetEnabled() && activeGameWorldName != null && activeGameWorldSnapshotName != null) {
+            throw new IllegalStateException("이전 게임 월드 초기화가 아직 완료되지 않았습니다. 플레이어를 게임 월드 밖으로 이동한 뒤 /gw stop을 다시 실행해주세요.");
         }
     }
 
@@ -1045,6 +1096,9 @@ public final class GameManager {
             return;
         }
         for (Player player : players) {
+            if (!preparedPlayerInventories.contains(player.getUniqueId())) {
+                continue;
+            }
             player.getInventory().clear();
             player.getInventory().setHelmet(null);
             player.getInventory().setChestplate(null);
@@ -1067,6 +1121,7 @@ public final class GameManager {
         pendingSelection.clear();
         teamChatModePlayers.clear();
         playerScoreboards.clear();
+        preparedPlayerInventories.clear();
         ScoreboardManager manager = Bukkit.getScoreboardManager();
         if (manager != null) {
             for (Player player : BukkitCompat.onlinePlayers()) {
@@ -1132,6 +1187,7 @@ public final class GameManager {
         if (player == null) {
             return;
         }
+        abilityManager.deactivate(player);
         playerScoreboards.remove(player.getUniqueId());
         if (gameTimerBar != null) {
             gameTimerBar.removePlayer(player);
@@ -1199,7 +1255,8 @@ public final class GameManager {
         }
         long killtimeRemaining = killtimeRemainingSeconds();
         if (killtimeRemaining > 0L) {
-            setLine(objective, score--, ChatColor.RED + "공격금지 " + ChatColor.WHITE + formatClock(killtimeRemaining));
+            String label = killtimeMode() == KilltimeMode.CORE_ONLY ? "코어보호 " : "공격금지 ";
+            setLine(objective, score--, ChatColor.RED + label + ChatColor.WHITE + formatClock(killtimeRemaining));
         }
         setLine(objective, score--, ChatColor.YELLOW + "킬 " + ChatColor.WHITE + killsOf(player));
         setLine(objective, score--, ChatColor.YELLOW + "도박 " + state(plugin.getConfig().getBoolean("gambling.enabled", true)));
@@ -1496,10 +1553,11 @@ public final class GameManager {
         startGameTimerTask();
         refreshAllPlayerDisplays();
         Bukkit.broadcastMessage(plugin.messages().prefix() + plugin.messages().get("game-start"));
-        if (gameTimerBossBarEnabled() && killtimeDurationSeconds() > 0) {
+        if (killtimeDurationSeconds() > 0) {
+            String protection = killtimeMode() == KilltimeMode.CORE_ONLY ? "코어 파괴" : "유저 간 공격";
             Bukkit.broadcastMessage(plugin.messages().prefix() + ChatColor.AQUA
-                + "킬타임 공격 금지 타이머가 시작되었습니다. "
-                + ChatColor.YELLOW + formatSeconds(killtimeDurationSeconds()) + ChatColor.AQUA + " 동안 공격하지 마세요.");
+                + "킬타임 " + protection + " 금지가 시작되었습니다. "
+                + ChatColor.YELLOW + formatSeconds(killtimeDurationSeconds()) + ChatColor.AQUA + " 동안 보호됩니다.");
         }
         startWaterHealTask();
         startPickaxeUnlockNoticeTask();
@@ -1546,7 +1604,8 @@ public final class GameManager {
         Bukkit.broadcastMessage(ChatColor.WHITE + "침대 무시 : " + state(plugin.getConfig().getBoolean("game.ignore-bed", true)));
         Bukkit.broadcastMessage(ChatColor.WHITE + "종료 후 능력 공개 : " + state(plugin.getConfig().getBoolean("game.reveal-abilities-on-end", true)));
         Bukkit.broadcastMessage(ChatColor.WHITE + "킬타임 보스바 : " + state(gameTimerBossBarEnabled()));
-        Bukkit.broadcastMessage(ChatColor.WHITE + "킬타임 공격 금지 : " + ChatColor.YELLOW + formatSeconds(killtimeDurationSeconds()));
+        Bukkit.broadcastMessage(ChatColor.WHITE + "킬타임 보호 방식 : " + ChatColor.YELLOW + killtimeMode().displayName());
+        Bukkit.broadcastMessage(ChatColor.WHITE + "킬타임 보호 시간 : " + ChatColor.YELLOW + formatSeconds(killtimeDurationSeconds()));
         Bukkit.broadcastMessage(ChatColor.WHITE + "도박 : " + state(plugin.getConfig().getBoolean("gambling.enabled", true)));
         Bukkit.broadcastMessage(ChatColor.WHITE + "코어 폭파 보호 : " + coreExplosionProtectionSummary());
         Bukkit.broadcastMessage(ChatColor.WHITE + "코어 맨손 파괴 : " + state(plugin.getConfig().getBoolean("core.require-empty-hand", true)));
@@ -1679,6 +1738,9 @@ public final class GameManager {
             player.getInventory().setChestplate(null);
             player.getInventory().setLeggings(null);
             player.getInventory().setBoots(null);
+            preparedPlayerInventories.add(player.getUniqueId());
+        } else {
+            preparedPlayerInventories.remove(player.getUniqueId());
         }
         if (plugin.getConfig().getBoolean("game.give-skyblock-items", true)) {
             giveSkyblockItems(player);
@@ -1826,12 +1888,14 @@ public final class GameManager {
 
     private void startGameTimerTask() {
         cancelGameTimerTask();
-        if (!gameTimerBossBarEnabled() || killtimeDurationSeconds() <= 0 || killtimeRemainingSeconds() <= 0L) {
+        if (killtimeDurationSeconds() <= 0 || killtimeRemainingSeconds() <= 0L) {
             return;
         }
-        gameTimerBar = Bukkit.createBossBar(timerBarTitle(), BarColor.YELLOW, BarStyle.SOLID);
-        gameTimerBar.setProgress(timerBarProgress());
-        syncGameTimerBarPlayers();
+        if (gameTimerBossBarEnabled()) {
+            gameTimerBar = Bukkit.createBossBar(timerBarTitle(), BarColor.YELLOW, BarStyle.SOLID);
+            gameTimerBar.setProgress(timerBarProgress());
+            syncGameTimerBarPlayers();
+        }
         gameTimerTask = Bukkit.getScheduler().scheduleSyncRepeatingTask(plugin, () -> tickGameTimerBar(), 0L, 20L);
     }
 
@@ -1846,6 +1910,15 @@ public final class GameManager {
             refreshAllPlayerDisplays();
             return;
         }
+        if (!gameTimerBossBarEnabled()) {
+            if (gameTimerBar != null) {
+                for (Player player : new ArrayList<Player>(gameTimerBar.getPlayers())) {
+                    gameTimerBar.removePlayer(player);
+                }
+                gameTimerBar = null;
+            }
+            return;
+        }
         if (gameTimerBar == null) {
             gameTimerBar = Bukkit.createBossBar(timerBarTitle(), BarColor.YELLOW, BarStyle.SOLID);
         }
@@ -1855,7 +1928,8 @@ public final class GameManager {
     }
 
     private String timerBarTitle() {
-        return ChatColor.RED + "킬타임 공격 금지 " + ChatColor.WHITE + formatClock(killtimeRemainingSeconds());
+        String label = killtimeMode() == KilltimeMode.CORE_ONLY ? "킬타임 코어 파괴 금지 " : "킬타임 유저 공격 금지 ";
+        return ChatColor.RED + label + ChatColor.WHITE + formatClock(killtimeRemainingSeconds());
     }
 
     private boolean gameTimerBossBarEnabled() {
@@ -1884,8 +1958,9 @@ public final class GameManager {
             return;
         }
         killtimeEndAnnounced = true;
+        String action = killtimeMode() == KilltimeMode.CORE_ONLY ? "이제 코어를 파괴할 수 있습니다." : "이제 유저 간 공격이 가능합니다.";
         Bukkit.broadcastMessage(plugin.messages().prefix() + ChatColor.GREEN
-            + "킬타임이 종료되었습니다. 이제 공격할 수 있습니다.");
+            + "킬타임이 종료되었습니다. " + action);
     }
 
     private void syncGameTimerBarPlayers() {

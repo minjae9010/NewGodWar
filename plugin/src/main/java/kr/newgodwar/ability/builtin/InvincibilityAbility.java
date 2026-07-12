@@ -33,7 +33,7 @@ final class InvincibilityAbility extends BaseAbility {
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
         if (useNormal(context, player)) {
             invincible = true;
-            later(context, 7, "무적 종료", "무적 종료", () -> invincible = false);
+            laterCleanup(context, 7, "무적 종료", "무적 종료", () -> invincible = false);
         }
     }
 

@@ -46,7 +46,7 @@ final class HermesAbility extends BaseAbility {
     private void fly(final AbilityPlayerContext context, final Player player, int seconds) {
         player.setAllowFlight(true);
         player.setFlying(true);
-        later(context, seconds, "비행 종료", "비행 종료", () -> {
+        laterCleanup(context, seconds, "비행 종료", "비행 종료", () -> {
             player.setFlying(false);
             player.setAllowFlight(false);
         });

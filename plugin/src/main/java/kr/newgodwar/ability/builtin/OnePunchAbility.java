@@ -33,7 +33,7 @@ final class OnePunchAbility extends BaseAbility {
         if (useNormal(context, player)) {
             punchReady = true;
             player.sendMessage(ChatColor.RED + "다음 맨손 공격이 한 방으로 강화됩니다.");
-            later(context, 8, "원펀치 준비 해제", "원펀치 준비 해제", () -> punchReady = false);
+            laterCleanup(context, 8, "원펀치 준비 해제", "원펀치 준비 해제", () -> punchReady = false);
         }
     }
 

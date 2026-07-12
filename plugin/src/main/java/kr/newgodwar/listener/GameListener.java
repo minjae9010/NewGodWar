@@ -90,29 +90,44 @@ public final class GameListener implements Listener {
     public void onDamage(EntityDamageByEntityEvent event) {
         Entity damagerEntity = event.getDamager();
         Entity victimEntity = event.getEntity();
-        if (gameManager.isRunning() && victimEntity instanceof Player && damagerEntity instanceof org.bukkit.entity.Projectile) {
-            ProjectileSource shooter = ((org.bukkit.entity.Projectile) damagerEntity).getShooter();
-            if (shooter instanceof Player) {
-                abilityManager.handleProjectileHit((Player) shooter, (Player) victimEntity, event);
-            }
-        }
-
-        if (!(damagerEntity instanceof Player) || !(victimEntity instanceof Player)) {
+        if (!(victimEntity instanceof Player)) {
             return;
         }
 
-        Player damager = (Player) damagerEntity;
+        Player damager = null;
+        boolean projectileDamage = damagerEntity instanceof org.bukkit.entity.Projectile;
+        if (damagerEntity instanceof Player) {
+            damager = (Player) damagerEntity;
+        } else if (projectileDamage) {
+            ProjectileSource shooter = ((org.bukkit.entity.Projectile) damagerEntity).getShooter();
+            if (shooter instanceof Player) {
+                damager = (Player) shooter;
+            }
+        }
+        if (damager == null) {
+            return;
+        }
+
         Player victim = (Player) victimEntity;
         if (!gameManager.canDamage(damager, victim)) {
             event.setCancelled(true);
-            nmsAdapter.sendActionBar(damager, ChatColor.RED + "팀원은 공격할 수 없습니다.");
+            if (gameManager.isPlayerCombatProtectedByKilltime()) {
+                nmsAdapter.sendActionBar(damager, ChatColor.RED + "킬타임 동안 유저 간 공격은 금지됩니다. 남은 시간: "
+                    + gameManager.killtimeRemainingSeconds() + "초");
+            } else {
+                nmsAdapter.sendActionBar(damager, ChatColor.RED + "팀원은 공격할 수 없습니다.");
+            }
             return;
         }
         if (!gameManager.isRunning()) {
             return;
         }
 
-        abilityManager.handleDamage(damager, victim, event);
+        if (projectileDamage) {
+            abilityManager.handleProjectileHit(damager, victim, event);
+        } else {
+            abilityManager.handleDamage(damager, victim, event);
+        }
     }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
@@ -147,6 +162,12 @@ public final class GameListener implements Listener {
         }
         GodTeam team = gameManager.templeTeam(block);
         if (team == null) {
+            return;
+        }
+        if (gameManager.isCoreProtectedByKilltime()) {
+            event.setCancelled(true);
+            plugin.messages().send(event.getPlayer(), "&c킬타임 동안 코어를 파괴할 수 없습니다. 남은 시간: &f"
+                + gameManager.killtimeRemainingSeconds() + "초");
             return;
         }
         GodTeam breakerTeam = gameManager.teamOf(event.getPlayer());

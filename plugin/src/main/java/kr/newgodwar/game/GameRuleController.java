@@ -11,14 +11,24 @@ import java.util.Map;
 public final class GameRuleController {
 
     private final NewGodWarPlugin plugin;
+    private final GameRuleAccess gameRuleAccess;
     private final Map<String, Map<String, String>> previousValues = new HashMap<String, Map<String, String>>();
+    private boolean nonPaperWarningLogged;
     private static final Map<String, String> LEGACY_RULE_NAMES = legacyRuleNames();
 
     public GameRuleController(NewGodWarPlugin plugin) {
         this.plugin = plugin;
+        this.gameRuleAccess = new GameRuleAccess(plugin.getLogger());
     }
 
     public void applyConfiguredRules() {
+        if (!plugin.versionSupport().paperServer()) {
+            if (!nonPaperWarningLogged) {
+                plugin.getLogger().warning("Skipped gamerule application because this server is not Paper. Please run NewGodWar with Paper.");
+                nonPaperWarningLogged = true;
+            }
+            return;
+        }
         if (!plugin.getConfig().getBoolean("gamerules.enabled", true)) {
             return;
         }
@@ -27,9 +37,12 @@ public final class GameRuleController {
             return;
         }
 
-        previousValues.clear();
         for (World world : Bukkit.getWorlds()) {
-            Map<String, String> worldValues = new HashMap<String, String>();
+            Map<String, String> worldValues = previousValues.get(world.getName());
+            if (worldValues == null) {
+                worldValues = new HashMap<String, String>();
+                previousValues.put(world.getName(), worldValues);
+            }
             for (String rule : rules.getKeys(false)) {
                 String resolvedRule = resolveRuleName(world, rule);
                 if (resolvedRule == null) {
@@ -40,19 +53,24 @@ public final class GameRuleController {
                 }
                 String value = String.valueOf(rules.get(rule));
                 String resolvedValue = resolveRuleValue(rule, resolvedRule, value);
-                String previous = getGameRuleValue(world, resolvedRule);
-                if (previous != null) {
-                    worldValues.put(resolvedRule, previous);
+                if (!worldValues.containsKey(resolvedRule)) {
+                    String previous = getGameRuleValue(world, resolvedRule);
+                    if (previous != null) {
+                        worldValues.put(resolvedRule, previous);
+                    }
                 }
                 if (!setGameRuleValue(world, resolvedRule, resolvedValue)) {
                     plugin.getLogger().warning("Failed to set gamerule " + rule + " (" + resolvedRule + ") to " + resolvedValue);
                 }
             }
-            previousValues.put(world.getName(), worldValues);
         }
     }
 
     public void restorePreviousRules() {
+        if (!plugin.versionSupport().paperServer()) {
+            previousValues.clear();
+            return;
+        }
         if (!plugin.getConfig().getBoolean("gamerules.restore-on-stop", true)) {
             previousValues.clear();
             return;
@@ -96,7 +114,7 @@ public final class GameRuleController {
 
         String normalizedRule = normalizeRuleName(withoutNamespace);
         String normalizedLegacyName = legacyName == null ? null : normalizeRuleName(legacyName);
-        for (String availableRule : world.getGameRules()) {
+        for (String availableRule : gameRuleAccess.getGameRules(world)) {
             String availableWithoutNamespace = stripMinecraftNamespace(availableRule);
             String normalizedAvailableRule = normalizeRuleName(availableWithoutNamespace);
             if (availableRule.equalsIgnoreCase(rule)
@@ -129,29 +147,15 @@ public final class GameRuleController {
     }
 
     private boolean isGameRule(World world, String rule) {
-        try {
-            return world.isGameRule(rule);
-        } catch (IllegalArgumentException ex) {
-            return false;
-        }
+        return gameRuleAccess.isGameRule(world, rule);
     }
 
     private String getGameRuleValue(World world, String rule) {
-        try {
-            return world.getGameRuleValue(rule);
-        } catch (IllegalArgumentException ex) {
-            plugin.getLogger().warning("Failed to read gamerule " + rule + ": " + ex.getMessage());
-            return null;
-        }
+        return gameRuleAccess.getGameRuleValue(world, rule);
     }
 
     private boolean setGameRuleValue(World world, String rule, String value) {
-        try {
-            return world.setGameRuleValue(rule, value);
-        } catch (IllegalArgumentException ex) {
-            plugin.getLogger().warning("Failed to set gamerule " + rule + ": " + ex.getMessage());
-            return false;
-        }
+        return gameRuleAccess.setGameRuleValue(world, rule, value);
     }
 
     private static String stripMinecraftNamespace(String rule) {

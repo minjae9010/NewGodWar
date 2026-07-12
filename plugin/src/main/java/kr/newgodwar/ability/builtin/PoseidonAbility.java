@@ -129,7 +129,7 @@ final class PoseidonAbility extends BaseAbility {
                 }
             }
         }
-        later(context, seconds, timerName, triggerText, () -> {
+        laterCleanup(context, seconds, timerName, triggerText, () -> {
             for (Map.Entry<Location, Material> entry : oldBlocks.entrySet()) {
                 Block block = entry.getKey().getBlock();
                 if (isWater(block.getType())) {
