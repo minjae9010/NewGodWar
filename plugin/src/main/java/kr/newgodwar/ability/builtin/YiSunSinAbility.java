@@ -26,7 +26,7 @@ import java.util.List;
 )
 final class YiSunSinAbility extends BaseAbility {
     @Override
-    public void onAssign(AbilityPlayerContext context) {
+    public void onPrepare(AbilityPlayerContext context) {
         give(context.player(), Material.IRON_SWORD, 1);
     }
 
@@ -55,8 +55,8 @@ final class YiSunSinAbility extends BaseAbility {
         if (!useAdvanced(context, player)) {
             return;
         }
-        target.getWorld().createExplosion(target.getLocation(), 2.0F);
-        damage(target, 8.0D, player);
+        createExplosion(context, player, target.getLocation(), 2.0F, false, true);
+        damage(context, target, 8.0D, player);
         effect(target, "SLOWNESS", "SLOW", 11, 2);
         effect(target, PotionEffectType.WEAKNESS, 11, 0);
         target.sendMessage(ChatColor.RED + "거북선 포격이 전장을 뒤덮었습니다.");

@@ -29,13 +29,13 @@ final class SnowAbility extends BaseAbility {
     private int snowAttack;
 
     @Override
-    public void onAssign(AbilityPlayerContext context) {
+    public void onPrepare(AbilityPlayerContext context) {
         give(context.player(), material("SNOWBALL", "SNOW_BALL"), 1);
     }
 
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
-        if (useNormal(context, player, 0)) {
+        if (useNormal(context, player)) {
             give(player, material("SNOWBALL", "SNOW_BALL"), 1);
         }
     }
@@ -50,7 +50,7 @@ final class SnowAbility extends BaseAbility {
         Projectile projectile = (Projectile) event.getDamager();
         if (projectile.getType().name().contains("SNOW")) {
             event.setCancelled(true);
-            damage(victim, Math.max(1, snowAttack), context.player());
+            damage(context, victim, Math.max(1, snowAttack), context.player());
         }
     }
 

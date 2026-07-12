@@ -31,7 +31,7 @@ final class TajjaAbility extends BaseAbility {
 
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
-        if (useNormal(context, player, 0)) {
+        if (useNormal(context, player)) {
             stealSword(player);
         }
     }

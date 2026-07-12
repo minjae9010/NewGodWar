@@ -23,7 +23,7 @@ import org.bukkit.potion.PotionEffectType;
 )
 final class AhnJungGeunAbility extends BaseAbility {
     @Override
-    public void onAssign(AbilityPlayerContext context) {
+    public void onPrepare(AbilityPlayerContext context) {
         give(context.player(), Material.IRON_SWORD, 1);
     }
 
@@ -36,7 +36,7 @@ final class AhnJungGeunAbility extends BaseAbility {
         if (!useNormal(context, player)) {
             return;
         }
-        damage(target, 5.0D, player);
+        damage(context, target, 5.0D, player);
         effect(target, "SLOWNESS", "SLOW", 9, 1);
         effect(target, PotionEffectType.WEAKNESS, 9, 0);
         target.sendMessage(ChatColor.RED + "의거의 결의가 움직임을 꺾었습니다.");
@@ -51,7 +51,7 @@ final class AhnJungGeunAbility extends BaseAbility {
         if (!useAdvanced(context, player)) {
             return;
         }
-        damage(target, 9.0D, player);
+        damage(context, target, 9.0D, player);
         effect(target, PotionEffectType.BLINDNESS, 7, 0);
         effect(target, "SLOWNESS", "SLOW", 9, 2);
         if (context.plugin().abilities().session(target) != null) {

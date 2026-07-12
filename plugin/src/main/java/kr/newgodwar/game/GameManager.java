@@ -541,7 +541,7 @@ public final class GameManager {
             ability = abilityManager.assignRandom(player);
         } else {
             ability = existingAbility;
-            abilityManager.reapply(player);
+            abilityManager.prepare(player);
             player.sendMessage(ChatColor.GREEN + "기존 능력을 유지한 채 중간 참여했습니다.");
         }
         BukkitCompat.setSurvival(player);
@@ -570,6 +570,8 @@ public final class GameManager {
         teleportToTeamSpawn(player, team);
         if (ability == null) {
             ability = abilityManager.assignRandom(player);
+        } else {
+            abilityManager.reapply(player);
         }
         BukkitCompat.setSurvival(player);
         nmsAdapter.sendTitle(player, ChatColor.GREEN + "중간 참여", ability.name(), 10, 60, 10);
@@ -1548,7 +1550,7 @@ public final class GameManager {
         for (Player player : participants()) {
             preparePlayerForGame(player);
             teleportToTeamSpawn(player, teamOf(player));
-            abilityManager.reapply(player);
+            abilityManager.prepare(player);
         }
         startGameTimerTask();
         refreshAllPlayerDisplays();

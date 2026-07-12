@@ -36,7 +36,7 @@ final class HephaestusAbility extends BaseAbility {
     private void lava(Player player, AbilityPlayerContext context) {
         Block base = targetBlock(player, 5);
         final Block block = base.getLocation().add(0, 1, 0).getBlock();
-        if (block.getType() == Material.AIR && useNormal(context, player, 0)) {
+        if (block.getType() == Material.AIR && useNormal(context, player)) {
             final Map<Location, Material> cleanupBlocks = temporaryLavaCleanupBlocks(block);
             block.setType(Material.LAVA);
             laterCleanup(context, 2, "용암 제거", "용암 제거", () -> {

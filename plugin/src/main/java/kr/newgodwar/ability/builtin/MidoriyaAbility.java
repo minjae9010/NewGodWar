@@ -30,7 +30,7 @@ final class MidoriyaAbility extends BaseAbility {
 
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
-        if (hasNormalCost(context, player) && readyNormal(context, player, 0)) {
+        if (hasNormalCost(context, player) && readyNormal(context, player, 1)) {
             ready = true;
             player.sendMessage(ChatColor.YELLOW + "원" + ChatColor.GREEN + " 포 " + ChatColor.AQUA + "올" + ChatColor.WHITE + "이 준비되었습니다!");
         }
@@ -39,7 +39,7 @@ final class MidoriyaAbility extends BaseAbility {
     @Override
     public void onDamageByEntity(AbilityPlayerContext context, EntityDamageByEntityEvent event, Player opponent, boolean attacker) {
         Player player = context.player();
-        if (attacker && ready && player.getItemInHand().getType() == Material.AIR && useNormal(context, player, 0)) {
+        if (attacker && ready && player.getItemInHand().getType() == Material.AIR && useNormal(context, player)) {
             ready = false;
             event.setDamage(200.0D);
             effect(player, "NAUSEA", "CONFUSION", 12, 0);

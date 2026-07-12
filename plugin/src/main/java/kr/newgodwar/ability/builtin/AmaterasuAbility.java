@@ -45,7 +45,7 @@ final class AmaterasuAbility extends BaseAbility {
         if (useAdvanced(context, player)) {
             target.setFireTicks(120);
             effect(target, PotionEffectType.BLINDNESS, 7, 0);
-            damage(target, 5.0D, player);
+            damage(context, target, 5.0D, player);
         }
     }
 

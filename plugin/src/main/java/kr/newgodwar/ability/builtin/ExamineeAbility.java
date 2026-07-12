@@ -31,7 +31,7 @@ final class ExamineeAbility extends BaseAbility {
 
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
-        if (useNormal(context, player, 0)) {
+        if (useNormal(context, player)) {
             askQuestion(player);
         }
     }

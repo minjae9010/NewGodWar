@@ -30,8 +30,8 @@ final class CreeperAbility extends BaseAbility {
 
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
-        if (useNormal(context, player, 0)) {
-            player.getWorld().createExplosion(player.getLocation(), plasma ? 6.0F : 3.0F);
+        if (useNormal(context, player)) {
+            createExplosion(context, player, player.getLocation(), plasma ? 6.0F : 3.0F, false, true);
             player.setHealth(0.0D);
         }
     }

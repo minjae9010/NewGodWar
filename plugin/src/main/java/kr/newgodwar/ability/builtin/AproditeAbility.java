@@ -28,19 +28,18 @@ import java.util.List;
 final class AproditeAbility extends BaseAbility {
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
-        if (useNormal(context, player, 0)) {
-            pullAll(player, 20);
-        }
-    }
-
-    private void pullAll(Player player, int range) {
         if (player.isSneaking() || player.getLocation().clone().add(0, -1, 0).getBlock().getType() == Material.AIR) {
             player.sendMessage(ChatColor.RED + "웅크리고 있거나 발 밑의 블록이 없어 능력이 발동되지 않았습니다.");
             return;
         }
-        for (Entity entity : player.getNearbyEntities(range, range, range)) {
-            if (entity instanceof Player) {
-                entity.teleport(player);
+        List<Player> targets = nearbyPlayers(context, player, 20, false);
+        if (targets.isEmpty()) {
+            player.sendMessage(ChatColor.RED + "능력을 사용할 수 있는 대상이 없습니다.");
+            return;
+        }
+        if (useNormal(context, player)) {
+            for (Player target : targets) {
+                target.teleport(player);
             }
         }
     }

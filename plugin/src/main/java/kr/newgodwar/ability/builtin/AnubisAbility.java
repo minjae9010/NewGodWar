@@ -52,7 +52,7 @@ final class AnubisAbility extends BaseAbility {
         if (useAdvanced(context, player)) {
             double healed = 0.0D;
             for (Player target : targets) {
-                damage(target, 4.0D, player);
+                damage(context, target, 4.0D, player);
                 healed += 2.0D;
             }
             player.setHealth(Math.min(player.getMaxHealth(), player.getHealth() + healed));

@@ -100,6 +100,7 @@ com.example.godwar.SampleAbilityRegistrar
 ```java
 public interface GodAbility {
     default void onAssign(AbilityPlayerContext context) {}
+    default void onPrepare(AbilityPlayerContext context) {}
     default void onRemove(AbilityPlayerContext context) {}
     default void onDamage(AbilityDamageContext context) {}
     default void onTick(AbilityPlayerContext context) {}
@@ -130,6 +131,8 @@ public interface GodAbility {
     default boolean supports(Player player) { return true; }
 }
 ```
+
+`onAssign`은 능력 배정과 재접속·봉인 해제 때 지속 효과를 복구하는 용도입니다. 시작 장비처럼 한 번만 지급해야 하는 아이템은 `onPrepare`에서 지급해야 하며, 이 메서드는 게임 시작 준비 또는 진행 중 능력 변경 시에만 호출됩니다.
 
 필요한 메서드만 override하면 됩니다. 이벤트 객체를 받는 메서드에서는 Bukkit 이벤트 취소 여부와 동기/비동기 실행 맥락을 고려해야 합니다. 채팅 이벤트에서 월드나 인벤토리를 직접 수정해야 한다면 서버 메인 스레드로 넘기는 방식이 안전합니다.
 

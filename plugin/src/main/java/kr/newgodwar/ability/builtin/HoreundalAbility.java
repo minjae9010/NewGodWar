@@ -28,7 +28,7 @@ import java.util.List;
 final class HoreundalAbility extends BaseAbility {
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
-        if (useNormal(context, player, 0)) {
+        if (useNormal(context, player)) {
             recall(context, player);
         }
     }

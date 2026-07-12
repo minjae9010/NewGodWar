@@ -26,7 +26,7 @@ import java.util.List;
 )
 final class FisherAbility extends BaseAbility {
     @Override
-    public void onAssign(AbilityPlayerContext context) {
+    public void onPrepare(AbilityPlayerContext context) {
         give(context.player(), Material.FISHING_ROD, 1);
     }
 

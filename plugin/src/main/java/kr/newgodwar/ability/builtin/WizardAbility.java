@@ -29,7 +29,7 @@ import java.util.List;
 final class WizardAbility extends BaseAbility {
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
-        List<Player> targets = nearbyPlayers(player, 10);
+        List<Player> targets = nearbyPlayers(context, player, 10, false);
         if (targets.isEmpty()) {
             player.sendMessage("능력을 사용할 수 있는 대상이 없습니다.");
             return;
@@ -41,7 +41,7 @@ final class WizardAbility extends BaseAbility {
 
     @Override
     protected void onStaffRight(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
-        if (nearbyPlayers(player, 5).isEmpty()) {
+        if (nearbyPlayers(context, player, 5, false).isEmpty()) {
             player.sendMessage("능력을 사용할 수 있는 대상이 없습니다.");
             return;
         }
@@ -51,7 +51,7 @@ final class WizardAbility extends BaseAbility {
     }
 
     private void judgment(AbilityPlayerContext context, final Player player) {
-        final List<Player> targets = nearbyPlayers(player, 5);
+        final List<Player> targets = nearbyPlayers(context, player, 5, false);
         if (targets.isEmpty()) {
             player.sendMessage("능력을 사용할 수 있는 대상이 없습니다.");
             return;
@@ -62,7 +62,7 @@ final class WizardAbility extends BaseAbility {
         }
         scheduleLater(context, () -> {
             for (Player target : targets) {
-                target.getWorld().strikeLightning(target.getLocation());
+                strikeLightning(context, player, target.getLocation());
                 target.setFireTicks(100);
             }
         }, 4L);

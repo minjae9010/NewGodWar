@@ -95,6 +95,7 @@ public final class GameListener implements Listener {
         }
 
         Player damager = null;
+        boolean attributedAbilityDamage = false;
         boolean projectileDamage = damagerEntity instanceof org.bukkit.entity.Projectile;
         if (damagerEntity instanceof Player) {
             damager = (Player) damagerEntity;
@@ -103,13 +104,20 @@ public final class GameListener implements Listener {
             if (shooter instanceof Player) {
                 damager = (Player) shooter;
             }
+        } else {
+            damager = abilityManager.attributedEntitySource(damagerEntity);
+            attributedAbilityDamage = damager != null;
         }
         if (damager == null) {
             return;
         }
 
         Player victim = (Player) victimEntity;
-        if (!gameManager.canDamage(damager, victim)) {
+        if (attributedAbilityDamage && !canApplyAbilityDamage(damager, victim)) {
+            event.setCancelled(true);
+            return;
+        }
+        if (!attributedAbilityDamage && !gameManager.canDamage(damager, victim)) {
             event.setCancelled(true);
             if (gameManager.isPlayerCombatProtectedByKilltime()) {
                 nmsAdapter.sendActionBar(damager, ChatColor.RED + "킬타임 동안 유저 간 공격은 금지됩니다. 남은 시간: "
@@ -123,6 +131,11 @@ public final class GameListener implements Listener {
             return;
         }
 
+        if (attributedAbilityDamage) {
+            abilityManager.rememberDamageSource(victim, damager);
+            return;
+        }
+
         if (projectileDamage) {
             abilityManager.handleProjectileHit(damager, victim, event);
         } else {
@@ -132,9 +145,22 @@ public final class GameListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onGenericDamage(EntityDamageEvent event) {
-        if (gameManager.isRunning() && event.getEntity() instanceof Player) {
-            abilityManager.handleGenericDamage((Player) event.getEntity(), event);
+        if (!gameManager.isRunning() || !(event.getEntity() instanceof Player)) {
+            return;
         }
+        Player victim = (Player) event.getEntity();
+        Player source = abilityManager.currentAttributedDamageSource();
+        if (source == null && event instanceof EntityDamageByEntityEvent) {
+            source = abilityManager.attributedEntitySource(((EntityDamageByEntityEvent) event).getDamager());
+        }
+        if (source != null && !source.equals(victim)) {
+            if (!canApplyAbilityDamage(source, victim)) {
+                event.setCancelled(true);
+                return;
+            }
+            abilityManager.rememberDamageSource(victim, source);
+        }
+        abilityManager.handleGenericDamage(victim, event);
     }
 
     @EventHandler(ignoreCancelled = true)
@@ -436,13 +462,29 @@ public final class GameListener implements Listener {
             forceInventoryDrop(event);
             abilityManager.handleDeath(event);
         }
+        Player attributedKiller = abilityManager.consumeRecentDamageSource(event.getEntity());
         Player killer = event.getEntity().getKiller();
+        if (killer == null) {
+            killer = attributedKiller;
+        }
         if (killer != null && gameManager.isRunning()) {
             gameManager.recordKill(killer);
             abilityManager.handleKill(killer, event.getEntity(), event);
             event.setDeathMessage(plugin.messages().prefix() + gameManager.playerColoredName(event.getEntity())
                 + ChatColor.GRAY + " 님이 " + gameManager.playerColoredName(killer) + ChatColor.GRAY + " 님에게 쓰러졌습니다.");
         }
+    }
+
+    private boolean canApplyAbilityDamage(Player source, Player victim) {
+        if (source == null || victim == null) {
+            return false;
+        }
+        if (source.equals(victim)) {
+            return true;
+        }
+        return gameManager.canUseAbility(source)
+            && gameManager.canUseAbility(victim)
+            && gameManager.canDamage(source, victim);
     }
 
     private void protectTempleDiamonds(java.util.List<Block> blocks) {

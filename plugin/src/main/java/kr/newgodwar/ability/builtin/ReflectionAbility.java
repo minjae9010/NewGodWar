@@ -25,10 +25,17 @@ import java.util.List;
     grade = AbilityGrade.A
 )
 final class ReflectionAbility extends BaseAbility {
+    private boolean reflecting;
+
     @Override
     public void onDamageByEntity(AbilityPlayerContext context, EntityDamageByEntityEvent event, Player opponent, boolean attacker) {
-        if (!attacker && oneIn(3)) {
-            opponent.damage(event.getDamage(), context.player());
+        if (!attacker && !reflecting && event.getFinalDamage() > 0.0D && oneIn(3)) {
+            reflecting = true;
+            try {
+                opponent.damage(event.getFinalDamage(), context.player());
+            } finally {
+                reflecting = false;
+            }
         }
     }
 }

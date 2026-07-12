@@ -27,6 +27,9 @@ public interface GodAbility {
     default void onAssign(AbilityPlayerContext context) {
     }
 
+    default void onPrepare(AbilityPlayerContext context) {
+    }
+
     default void onRemove(AbilityPlayerContext context) {
     }
 

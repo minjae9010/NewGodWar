@@ -40,8 +40,8 @@ final class BomberAbility extends BaseAbility {
             player.sendMessage("TNT가 설치되지 않았습니다.");
             return;
         }
-        if (useAdvanced(context, player, 0)) {
-            player.getWorld().createExplosion(bombLocation, 2.0F, true);
+        if (useAdvanced(context, player)) {
+            createExplosion(context, player, bombLocation, 2.0F, true, true);
             bombLocation = null;
             player.sendMessage("TNT가 폭발했습니다!");
         }

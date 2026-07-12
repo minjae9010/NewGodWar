@@ -25,7 +25,7 @@ import java.util.List;
 )
 final class SejongAbility extends BaseAbility {
     @Override
-    public void onAssign(AbilityPlayerContext context) {
+    public void onPrepare(AbilityPlayerContext context) {
         give(context.player(), Material.BOOK, 1);
     }
 

@@ -37,7 +37,7 @@ final class MorpiousAbility extends BaseAbility {
         if (target == null) {
             return;
         }
-        if (useNormal(context, player, 0)) {
+        if (useNormal(context, player)) {
             sleepTarget(target);
         }
     }

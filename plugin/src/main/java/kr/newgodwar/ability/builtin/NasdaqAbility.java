@@ -35,13 +35,13 @@ final class NasdaqAbility extends BaseAbility {
     }
 
     private void nasdaq(AbilityPlayerContext context, Player player) {
-        if (!readyNormal(context, player, 0) || !hasNormalCost(context, player)) {
+        if (!readyNormal(context, player, 1) || !hasNormalCost(context, player)) {
             return;
         }
         ItemStack item = player.getItemInHand();
         int successPercent = successPercent(context, item.getType());
         takeNormalCost(context, player);
-        setCooldown(context, 0, context.ability().normalCooldownSeconds());
+        setCooldown(context, 1, context.ability().normalCooldownSeconds());
         if (rollPercent(successPercent)) {
             player.getInventory().addItem(item.clone());
             sendAbilityMessage(context, player, "success", ChatColor.GREEN + "복사에 성공했습니다. 확률 " + successPercent + "%");

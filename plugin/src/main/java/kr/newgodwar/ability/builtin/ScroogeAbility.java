@@ -25,11 +25,4 @@ import java.util.List;
     grade = AbilityGrade.S
 )
 final class ScroogeAbility extends BaseAbility {
-    @Override
-    public void onAssign(AbilityPlayerContext context) {
-        GodTeam team = context.plugin().game().teamOf(context.player());
-        if (team != null) {
-            SCROOGE_TEAMS.add(team.id());
-        }
-    }
 }

@@ -33,7 +33,7 @@ final class BlinderAbility extends BaseAbility {
             player.sendMessage("능력을 사용할 수 있는 대상이 없습니다.");
             return;
         }
-        if (useNormal(context, player, 0)) {
+        if (useNormal(context, player)) {
             for (Player target : targets) {
                 effect(target, PotionEffectType.BLINDNESS, 10, 0);
             }

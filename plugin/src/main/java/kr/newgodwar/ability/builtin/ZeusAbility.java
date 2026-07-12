@@ -30,7 +30,7 @@ final class ZeusAbility extends BaseAbility {
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
         if (useNormal(context, player)) {
-            player.getWorld().strikeLightning(targetLocation(player, 50));
+            strikeLightning(context, player, targetLocation(player, 50));
         }
     }
 
@@ -39,7 +39,7 @@ final class ZeusAbility extends BaseAbility {
         if (useAdvanced(context, player)) {
             Location center = targetLocation(player, 30);
             for (int i = 0; i < 5; i++) {
-                player.getWorld().strikeLightning(center.clone().add(RANDOM.nextInt(11) - 5, 0, RANDOM.nextInt(11) - 5));
+                strikeLightning(context, player, center.clone().add(RANDOM.nextInt(11) - 5, 0, RANDOM.nextInt(11) - 5));
             }
         }
     }

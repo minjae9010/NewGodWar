@@ -25,13 +25,21 @@ import java.util.List;
     grade = AbilityGrade.B
 )
 final class StanceAbility extends BaseAbility {
+    private boolean applyingStanceDamage;
+
     @Override
-    public void onGenericDamage(AbilityPlayerContext context, EntityDamageEvent event) {
-        EntityDamageEvent.DamageCause cause = event.getCause();
-        if (cause == EntityDamageEvent.DamageCause.ENTITY_ATTACK || cause == EntityDamageEvent.DamageCause.PROJECTILE) {
-            double damage = event.getDamage();
-            event.setCancelled(true);
+    public void onDamageByEntity(AbilityPlayerContext context, EntityDamageByEntityEvent event, Player opponent, boolean attacker) {
+        if (attacker || applyingStanceDamage) {
+            return;
+        }
+        double damage = event.getDamage();
+        event.setCancelled(true);
+        context.plugin().abilities().rememberDamageSource(context.player(), opponent);
+        applyingStanceDamage = true;
+        try {
             context.player().damage(damage);
+        } finally {
+            applyingStanceDamage = false;
         }
     }
 }

@@ -71,7 +71,7 @@ final class PoseidonAbility extends BaseAbility {
             createTemporarySea(context, player.getLocation(), 2, 6, "해일 소멸", "해일 소멸");
             push(context, player, targets, 2.6D, 6L);
             for (Player target : targets) {
-                damage(target, TIDAL_DAMAGE, player);
+                damage(context, target, TIDAL_DAMAGE, player);
                 createTemporarySea(context, target.getLocation(), 1, 6, "해일 소멸", "해일 소멸");
                 effect(target, "SLOWNESS", "SLOW", 10, 2);
                 effect(target, PotionEffectType.WEAKNESS, 10, 0);

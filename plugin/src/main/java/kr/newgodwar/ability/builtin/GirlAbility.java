@@ -28,7 +28,7 @@ import java.util.List;
 final class GirlAbility extends BaseAbility {
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
-        if (useNormal(context, player, 0)) {
+        if (useNormal(context, player)) {
             for (Player target : nearbyPlayers(context, player, 5, 0, 5, false)) {
                 target.teleport(player);
                 target.setFoodLevel(0);

@@ -29,7 +29,7 @@ final class SniperAbility extends BaseAbility {
     private boolean ready;
 
     @Override
-    public void onAssign(AbilityPlayerContext context) {
+    public void onPrepare(AbilityPlayerContext context) {
         give(context.player(), Material.BOW, 1);
         give(context.player(), Material.ARROW, 10);
     }

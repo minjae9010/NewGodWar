@@ -34,13 +34,13 @@ final class VoodooAbility extends BaseAbility {
         if (postSign != null && event.getAction() == Action.LEFT_CLICK_BLOCK && event.getClickedBlock().equals(postSign)) {
             Player target = targetPlayer();
             if (target != null && readyPulse(context)) {
-                damage(target, damagePerPulse(context), context.player());
+                damage(context, target, damagePerPulse(context), context.player());
             }
             return;
         }
         if (postSign == null && holdingSign(context.player()) && isLeft(event.getAction())) {
             Player player = context.player();
-            if (readyNormal(context, player, 0) && hasNormalCost(context, player)) {
+            if (readyNormal(context, player, 1) && hasNormalCost(context, player)) {
                 player.sendMessage("스킬을 사용 할 수 있습니다.");
             }
         }
@@ -48,7 +48,7 @@ final class VoodooAbility extends BaseAbility {
 
     @Override
     public void onBlockPlace(AbilityPlayerContext context, BlockPlaceEvent event) {
-        if (isSign(event.getBlock()) && (!readyNormal(context, context.player(), 0) || !hasNormalCost(context, context.player()))) {
+        if (isSign(event.getBlock()) && (!readyNormal(context, context.player(), 1) || !hasNormalCost(context, context.player()))) {
             event.setCancelled(true);
         }
     }
@@ -56,7 +56,7 @@ final class VoodooAbility extends BaseAbility {
     @Override
     public void onSignChange(final AbilityPlayerContext context, SignChangeEvent event) {
         Player target = Bukkit.getPlayer(event.getLine(0));
-        if (target != null && useNormal(context, context.player(), 0)) {
+        if (target != null && canAffectEnemy(context, context.player(), target) && useNormal(context, context.player())) {
             targetName = target.getName();
             postSign = event.getBlock();
             lastPulseMillis = 0L;

@@ -28,7 +28,7 @@ import java.util.List;
 final class NaroAbility extends BaseAbility {
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
-        if (useNormal(context, player, 0)) {
+        if (useNormal(context, player)) {
             Vector vector = player.getEyeLocation().getDirection();
             vector.setY(3.0D);
             player.setVelocity(vector);

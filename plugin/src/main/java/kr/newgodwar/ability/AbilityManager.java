@@ -6,10 +6,12 @@ import kr.newgodwar.ability.api.AbilityDefinition;
 import kr.newgodwar.ability.api.AbilityKillContext;
 import kr.newgodwar.ability.api.AbilityPlayerContext;
 import kr.newgodwar.ability.api.AbilityRegistrar;
+import kr.newgodwar.game.GodTeam;
 import kr.newgodwar.util.BukkitCompat;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Arrow;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
 import org.bukkit.entity.Snowball;
@@ -43,11 +45,16 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public final class AbilityManager {
 
+    private static final long DAMAGE_ATTRIBUTION_MILLIS = 15000L;
+
     private final NewGodWarPlugin plugin;
     private final Random random = new Random();
     private final AbilityRegistry registry = new AbilityRegistry();
     private final Map<UUID, AbilitySession> assignments = new ConcurrentHashMap<UUID, AbilitySession>();
     private final Map<UUID, Long> suppressedUntil = new ConcurrentHashMap<UUID, Long>();
+    private final DamageAttributionTracker recentDamageSources = new DamageAttributionTracker(DAMAGE_ATTRIBUTION_MILLIS);
+    private final DamageAttributionTracker attributedEntities = new DamageAttributionTracker(DAMAGE_ATTRIBUTION_MILLIS);
+    private final ThreadLocal<UUID> synchronousDamageSource = new ThreadLocal<UUID>();
     private final List<String> recentRandomAbilityIds = Collections.synchronizedList(new ArrayList<String>());
 
     public AbilityManager(NewGodWarPlugin plugin) {
@@ -70,6 +77,9 @@ public final class AbilityManager {
         }
         assignments.clear();
         suppressedUntil.clear();
+        recentDamageSources.clear();
+        attributedEntities.clear();
+        synchronousDamageSource.remove();
         recentRandomAbilityIds.clear();
     }
 
@@ -95,6 +105,9 @@ public final class AbilityManager {
         AbilitySession session = new AbilitySession(definition, definition.create());
         assignments.put(player.getUniqueId(), session);
         session.ability().onAssign(playerContext(player, definition));
+        if (plugin.game() != null && plugin.game().isRunning()) {
+            session.ability().onPrepare(playerContext(player, definition));
+        }
         sendAbilityInfo(player, definition);
         if (session.ability().requiresTarget()) {
             sendTargetGuide(player);
@@ -358,6 +371,15 @@ public final class AbilityManager {
         }
     }
 
+    public void prepare(Player player) {
+        AbilitySession session = activeSession(player);
+        if (session != null) {
+            AbilityPlayerContext context = playerContext(player, session.definition());
+            session.ability().onAssign(context);
+            session.ability().onPrepare(context);
+        }
+    }
+
     public void deactivate(Player player) {
         if (player == null) {
             return;
@@ -418,6 +440,81 @@ public final class AbilityManager {
         if (session != null) {
             session.ability().onProjectileHit(playerContext(shooter, session.definition()), event, victim);
         }
+        if (event.isCancelled()) {
+            return;
+        }
+        AbilitySession victimSession = activeSession(victim);
+        if (victimSession != null) {
+            victimSession.ability().onDamageByEntity(playerContext(victim, victimSession.definition()), event, shooter, false);
+        }
+    }
+
+    public boolean hasActiveAbilityOnTeam(GodTeam team, String abilityId) {
+        if (team == null || abilityId == null) {
+            return false;
+        }
+        for (Map.Entry<UUID, AbilitySession> entry : assignments.entrySet()) {
+            Player player = plugin.getServer().getPlayer(entry.getKey());
+            if (player == null || plugin.game().teamOf(player) != team) {
+                continue;
+            }
+            AbilitySession session = activeSession(player);
+            if (session != null && abilityId.equalsIgnoreCase(session.definition().id())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public void runAttributedDamage(Player source, Runnable action) {
+        if (source == null || action == null) {
+            return;
+        }
+        UUID previous = synchronousDamageSource.get();
+        synchronousDamageSource.set(source.getUniqueId());
+        try {
+            action.run();
+        } finally {
+            if (previous == null) {
+                synchronousDamageSource.remove();
+            } else {
+                synchronousDamageSource.set(previous);
+            }
+        }
+    }
+
+    public Player currentAttributedDamageSource() {
+        UUID uuid = synchronousDamageSource.get();
+        return uuid == null ? null : plugin.getServer().getPlayer(uuid);
+    }
+
+    public void registerAttributedEntity(Entity entity, Player source) {
+        if (entity != null && source != null) {
+            attributedEntities.remember(entity.getUniqueId(), source.getUniqueId(), System.currentTimeMillis());
+        }
+    }
+
+    public Player attributedEntitySource(Entity entity) {
+        if (entity == null) {
+            return null;
+        }
+        UUID sourceId = attributedEntities.resolve(entity.getUniqueId(), System.currentTimeMillis());
+        return sourceId == null ? null : plugin.getServer().getPlayer(sourceId);
+    }
+
+    public void rememberDamageSource(Player victim, Player source) {
+        if (victim == null || source == null || victim.equals(source)) {
+            return;
+        }
+        recentDamageSources.remember(victim.getUniqueId(), source.getUniqueId(), System.currentTimeMillis());
+    }
+
+    public Player consumeRecentDamageSource(Player victim) {
+        if (victim == null) {
+            return null;
+        }
+        UUID sourceId = recentDamageSources.consume(victim.getUniqueId(), System.currentTimeMillis());
+        return sourceId == null ? null : plugin.getServer().getPlayer(sourceId);
     }
 
     public void handleProjectileLaunch(ProjectileLaunchEvent event) {

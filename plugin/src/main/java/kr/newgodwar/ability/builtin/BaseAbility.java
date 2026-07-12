@@ -11,6 +11,7 @@ import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.LightningStrike;
 import org.bukkit.entity.Player;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.EntityDamageEvent;
@@ -22,18 +23,15 @@ import org.bukkit.util.BlockIterator;
 import org.bukkit.util.Vector;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.Set;
 
 abstract class BaseAbility implements GodAbility {
     protected static final Material COBBLESTONE = Material.COBBLESTONE;
     protected static final Material STAFF = Material.BLAZE_ROD;
     protected static final Random RANDOM = new Random();
-    protected static final Set<String> SCROOGE_TEAMS = new HashSet<String>();
 
     private final Map<Integer, Long> cooldowns = new LinkedHashMap<Integer, Long>();
     private final Map<String, Long> timers = new LinkedHashMap<String, Long>();
@@ -200,7 +198,7 @@ abstract class BaseAbility implements GodAbility {
 
     protected int cost(AbilityPlayerContext context, int amount) {
         GodTeam team = context.plugin().game().teamOf(context.player());
-        if (team != null && SCROOGE_TEAMS.contains(team.id())) {
+        if (team != null && context.plugin().abilities().hasActiveAbilityOnTeam(team, "scrooge")) {
             return Math.max(0, amount / 2);
         }
         return amount;
@@ -355,8 +353,38 @@ abstract class BaseAbility implements GodAbility {
         player.setHealth(player.getMaxHealth());
     }
 
-    protected void damage(Player target, double amount, Player source) {
-        target.damage(Math.min(target.getHealth(), amount), source);
+    protected void damage(AbilityPlayerContext context, Player target, double amount, Player source) {
+        if (target == null || source == null || amount <= 0.0D) {
+            return;
+        }
+        if (!target.equals(source)
+            && (!source.isOnline()
+                || !target.isOnline()
+                || !context.plugin().game().canUseAbility(source)
+                || !context.plugin().game().canUseAbility(target)
+                || !context.plugin().game().canDamage(source, target)
+                || !source.getWorld().equals(target.getWorld()))) {
+            return;
+        }
+        target.damage(amount, source);
+    }
+
+    protected void lethalDamage(AbilityPlayerContext context, Player target, Player source) {
+        damage(context, target, 2048.0D, source);
+    }
+
+    protected void createExplosion(final AbilityPlayerContext context, final Player source, final Location location,
+                                   final float power, final boolean setFire, final boolean breakBlocks) {
+        context.plugin().abilities().runAttributedDamage(source, () ->
+            location.getWorld().createExplosion(location, power, setFire, breakBlocks));
+    }
+
+    protected void strikeLightning(final AbilityPlayerContext context, final Player source, final Location location) {
+        final LightningStrike[] strike = new LightningStrike[1];
+        context.plugin().abilities().runAttributedDamage(source, () -> strike[0] = location.getWorld().strikeLightning(location));
+        if (strike[0] != null) {
+            context.plugin().abilities().registerAttributedEntity(strike[0], source);
+        }
     }
 
     protected boolean setWorldTime(AbilityPlayerContext context, Player player, long time) {
@@ -418,19 +446,9 @@ abstract class BaseAbility implements GodAbility {
         for (Entity entity : player.getNearbyEntities(range, range, range)) {
             if (entity instanceof Player) {
                 Player target = (Player) entity;
-                if (sameTeam == sameTeam(context, player, target)) {
+                if (canTarget(context, player, target, sameTeam)) {
                     players.add(target);
                 }
-            }
-        }
-        return players;
-    }
-
-    protected List<Player> nearbyPlayers(Player player, int range) {
-        List<Player> players = new ArrayList<Player>();
-        for (Entity entity : player.getNearbyEntities(range, range, range)) {
-            if (entity instanceof Player) {
-                players.add((Player) entity);
             }
         }
         return players;
@@ -441,7 +459,7 @@ abstract class BaseAbility implements GodAbility {
         for (Entity entity : player.getNearbyEntities(x, y, z)) {
             if (entity instanceof Player) {
                 Player target = (Player) entity;
-                if (sameTeam == sameTeam(context, player, target)) {
+                if (canTarget(context, player, target, sameTeam)) {
                     players.add(target);
                 }
             }
@@ -459,7 +477,7 @@ abstract class BaseAbility implements GodAbility {
             if (!includeSelf && target.equals(player)) {
                 continue;
             }
-            if (team == context.plugin().game().teamOf(target)) {
+            if (eligibleTarget(context, target) && team == context.plugin().game().teamOf(target)) {
                 players.add(target);
             }
         }
@@ -469,7 +487,7 @@ abstract class BaseAbility implements GodAbility {
     protected List<Player> enemyPlayers(AbilityPlayerContext context, Player player) {
         List<Player> players = new ArrayList<Player>();
         for (Player target : BukkitCompat.onlinePlayers()) {
-            if (!target.equals(player) && !sameTeam(context, player, target)) {
+            if (!target.equals(player) && canTarget(context, player, target, false)) {
                 players.add(target);
             }
         }
@@ -480,6 +498,24 @@ abstract class BaseAbility implements GodAbility {
         GodTeam first = context.plugin().game().teamOf(a);
         GodTeam second = context.plugin().game().teamOf(b);
         return first != null && first == second;
+    }
+
+    protected boolean canAffectEnemy(AbilityPlayerContext context, Player source, Player target) {
+        return canTarget(context, source, target, false);
+    }
+
+    private boolean canTarget(AbilityPlayerContext context, Player source, Player target, boolean allied) {
+        if (target == null || target.equals(source) || !eligibleTarget(context, target)) {
+            return false;
+        }
+        if (sameTeam(context, source, target) != allied) {
+            return false;
+        }
+        return allied || context.plugin().game().canDamage(source, target);
+    }
+
+    private boolean eligibleTarget(AbilityPlayerContext context, Player target) {
+        return target.isOnline() && context.plugin().game().canUseAbility(target);
     }
 
     protected Player targetPlayer() {
@@ -493,7 +529,7 @@ abstract class BaseAbility implements GodAbility {
             if (candidate.equals(player) || candidate.getWorld() != player.getWorld()) {
                 continue;
             }
-            if (sameTeam(context, player, candidate) != sameTeam || !lookingAt(player, candidate, range)) {
+            if (!canTarget(context, player, candidate, sameTeam) || !lookingAt(player, candidate, range)) {
                 continue;
             }
             double distance = player.getLocation().distanceSquared(candidate.getLocation());
@@ -542,7 +578,7 @@ abstract class BaseAbility implements GodAbility {
             player.sendMessage(ChatColor.RED + "타깃이 해당 구역에 없습니다.");
             return null;
         }
-        if (sameTeam(context, player, target) != sameTeam) {
+        if (!canTarget(context, player, target, sameTeam)) {
             player.sendMessage(ChatColor.RED + "타깃이 해당 구역에 없습니다.");
             return null;
         }

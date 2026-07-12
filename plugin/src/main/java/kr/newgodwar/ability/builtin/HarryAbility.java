@@ -31,7 +31,7 @@ final class HarryAbility extends BaseAbility {
     private boolean invincible;
 
     @Override
-    public void onAssign(AbilityPlayerContext context) {
+    public void onPrepare(AbilityPlayerContext context) {
         giveSpellBook(context.player(), true);
     }
 
@@ -72,7 +72,7 @@ final class HarryAbility extends BaseAbility {
             }
         } else if (spell.equals("봄바르다") || spell.equalsIgnoreCase("Bombarda")) {
             if (useNormal(context, player)) {
-                player.getWorld().createExplosion(targetLocation(player, 5), 1.0F);
+                createExplosion(context, player, targetLocation(player, 5), 1.0F, false, true);
             }
         } else if (spell.equals("스투페파이") || spell.equalsIgnoreCase("Stupefy")) {
             List<Player> targets = nearbyPlayers(context, player, 10, false);
@@ -100,7 +100,7 @@ final class HarryAbility extends BaseAbility {
         } else if (spell.equals("아바다 케다브라") || spell.equalsIgnoreCase("Avada Kedavra")) {
             Player target = targetPlayerInSight(context, player, 20, false);
             if (target != null && useAdvanced(context, player) && rollPercent(harry ? 20 : 15)) {
-                target.setHealth(0.0D);
+                lethalDamage(context, target, player);
             }
         }
     }

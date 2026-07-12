@@ -58,8 +58,8 @@ final class ApollonAbility extends BaseAbility {
                 return;
             }
             if (count[0] > 0) {
-                for (Player target : caster.getWorld().getPlayers()) {
-                    if (!target.equals(caster) && target.getLocation().getBlock().getLightLevel() == 15) {
+                for (Player target : enemyPlayers(context, caster)) {
+                    if (target.getWorld().equals(caster.getWorld()) && target.getLocation().getBlock().getLightLevel() == 15) {
                         target.setFireTicks(100);
                     }
                 }

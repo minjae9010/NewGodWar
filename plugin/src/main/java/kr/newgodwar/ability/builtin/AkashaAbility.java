@@ -53,7 +53,7 @@ final class AkashaAbility extends BaseAbility {
         if (useAdvanced(context, player)) {
             for (Player target : targets) {
                 effect(target, "NAUSEA", "CONFUSION", 8, 0);
-                damage(target, 4.0D, player);
+                damage(context, target, 4.0D, player);
             }
         }
     }

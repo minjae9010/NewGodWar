@@ -29,7 +29,7 @@ import java.util.List;
 )
 final class ThorAbility extends BaseAbility {
     @Override
-    public void onAssign(AbilityPlayerContext context) {
+    public void onPrepare(AbilityPlayerContext context) {
         give(context.player(), Material.IRON_AXE, 1);
     }
 
@@ -40,7 +40,7 @@ final class ThorAbility extends BaseAbility {
             return;
         }
         if (useNormal(context, player)) {
-            target.getWorld().strikeLightning(target.getLocation());
+            strikeLightning(context, player, target.getLocation());
         }
     }
 
@@ -53,7 +53,7 @@ final class ThorAbility extends BaseAbility {
         }
         if (useAdvanced(context, player)) {
             for (Player target : targets) {
-                target.getWorld().strikeLightning(target.getLocation());
+                strikeLightning(context, player, target.getLocation());
             }
             push(context, player, targets, 2.0D, 8L);
         }

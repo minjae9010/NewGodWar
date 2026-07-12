@@ -33,24 +33,32 @@ final class HadesAbility extends BaseAbility {
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
         if (useNormal(context, player)) {
-            abyss(player, 2, true);
+            abyss(context, player, 2, true);
         }
     }
 
     @Override
     protected void onStaffRight(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
         if (useAdvanced(context, player)) {
-            abyss(player, 4, false);
+            abyss(context, player, 4, false);
         }
     }
 
-    private void abyss(Player player, int radius, boolean includeSelf) {
+    private void abyss(AbilityPlayerContext context, Player player, int radius, boolean includeSelf) {
         Location destination = player.getLocation().clone();
         destination.setY(-2.0D);
         for (Entity entity : player.getNearbyEntities(radius, radius, radius)) {
-            if (entity instanceof LivingEntity) {
-                entity.teleport(destination);
+            if (!(entity instanceof LivingEntity)) {
+                continue;
             }
+            if (entity instanceof Player) {
+                Player target = (Player) entity;
+                if (!canAffectEnemy(context, player, target)) {
+                    continue;
+                }
+                context.plugin().abilities().rememberDamageSource(target, player);
+            }
+            entity.teleport(destination);
         }
         if (includeSelf) {
             player.teleport(destination);

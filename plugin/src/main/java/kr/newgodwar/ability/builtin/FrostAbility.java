@@ -59,7 +59,10 @@ final class FrostAbility extends BaseAbility {
         }
         laterCleanup(context, seconds, "얼음 구체 복구", "얼음 구체 복구", () -> {
             for (Map.Entry<Location, Material> entry : oldBlocks.entrySet()) {
-                entry.getKey().getBlock().setType(entry.getValue());
+                Block block = entry.getKey().getBlock();
+                if (block.getType() == Material.ICE || block.getType() == Material.AIR) {
+                    block.setType(entry.getValue());
+                }
             }
         });
     }
