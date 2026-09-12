@@ -109,3 +109,22 @@ tasks.register("verifyShadowJarContents") {
 tasks.named("build") {
     dependsOn("shadowJar", "verifyShadowJarContents")
 }
+
+// Isolated Paper integration fixture, never bundled in the production plugin.
+sourceSets {
+    coreRegression {
+        compileClasspath += sourceSets.main.output + configurations.testRuntimeClasspath
+        runtimeClasspath += output + compileClasspath
+    }
+}
+
+tasks.register("coreRegressionJar", Jar) {
+    dependsOn tasks.named("coreRegressionClasses")
+    archiveFileName = "CoreRegressionProbe.jar"
+    destinationDirectory = layout.buildDirectory.dir("core-regression")
+    from sourceSets.coreRegression.output
+}
+
+tasks.named("build") {
+    dependsOn("coreRegressionJar")
+}

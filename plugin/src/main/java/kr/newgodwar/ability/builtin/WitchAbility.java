@@ -17,7 +17,7 @@ import java.util.List;
     id = "witch",
     name = "마녀",
     description = "주변 적과 공격자에게 저주를 겁니다.",
-    normalSkill = "주변 적에게 저주를 겁니다.",
+    normalSkill = "블레이즈 막대기 좌클릭: 주변 적에게 저주를 겁니다.",
     normalStoneCost = 15,
     normalCooldownSeconds = 60,
     advancedSkill = "없음",

@@ -1,0 +1,5 @@
+name: CoreRegressionProbe
+main: kr.newgodwar.regression.CoreRegressionProbe
+version: 1
+depend: [NewGodWar]
+description: Isolated test server fixture - do not install on a live server.

@@ -30,7 +30,7 @@ final class GuiTheme {
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {
             meta.setDisplayName(title);
-            meta.setLore(Arrays.asList(lore));
+            meta.setLore(GuiText.wrap(Arrays.asList(lore)));
             meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES, ItemFlag.HIDE_ENCHANTS);
             item.setItemMeta(meta);
         }

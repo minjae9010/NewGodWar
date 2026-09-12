@@ -10,6 +10,8 @@ import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.AsyncPlayerChatEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
@@ -19,7 +21,6 @@ import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -27,10 +28,12 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 public final class AbilityGui implements Listener {
 
     private static final String CURRENT_TITLE = ChatColor.BLACK + "능력 정보";
+    private static final String DETAIL_TITLE = ChatColor.BLACK + "능력 상세";
     private static final String LIST_TITLE = ChatColor.BLACK + "능력 목록";
     private static final int CURRENT_SIZE = 45;
     private static final int LIST_SIZE = 54;
@@ -47,6 +50,16 @@ public final class AbilityGui implements Listener {
     private final Map<UUID, Integer> listPages = new HashMap<UUID, Integer>();
     private final Map<UUID, String> listQueries = new HashMap<UUID, String>();
 
+    private final Map<UUID, SearchRequest> searches = new ConcurrentHashMap<UUID, SearchRequest>();
+    private final Map<UUID, UUID> currentTargets = new HashMap<UUID, UUID>();
+    private final Set<UUID> navigating = new HashSet<UUID>();
+
+    private static final class SearchRequest {
+        final int page;
+        final String query;
+        SearchRequest(int page, String query) { this.page = page; this.query = query; }
+    }
+
     public AbilityGui(NewGodWarPlugin plugin, AbilityManager abilityManager) {
         this.plugin = plugin;
         this.abilityManager = abilityManager;
@@ -57,10 +70,19 @@ public final class AbilityGui implements Listener {
     }
 
     public void openCurrent(Player viewer, Player target) {
+        Player shown = target == null ? viewer : target;
+        if (!viewer.equals(shown) && !viewer.hasPermission("newgodwar.admin")
+            && (plugin.game().teamOf(viewer) == null || !plugin.game().teamOf(viewer).equals(plugin.game().teamOf(shown)))) {
+            viewer.closeInventory();
+            plugin.messages().send(viewer, "&c본인 또는 같은 팀의 능력만 볼 수 있습니다.");
+            return;
+        }
+        searches.remove(viewer.getUniqueId());
         Inventory inventory = Bukkit.createInventory(viewer, CURRENT_SIZE, CURRENT_TITLE);
         fillCurrent(inventory, viewer, target);
         viewer.openInventory(inventory);
         openViewers.add(viewer.getUniqueId());
+        currentTargets.put(viewer.getUniqueId(), (target == null ? viewer : target).getUniqueId());
     }
 
     public void openList(Player viewer) {
@@ -76,6 +98,7 @@ public final class AbilityGui implements Listener {
     }
 
     private void openList(Player viewer, int page, String query) {
+        searches.remove(viewer.getUniqueId());
         Inventory inventory = Bukkit.createInventory(viewer, LIST_SIZE, LIST_TITLE);
         int currentPage = fillList(inventory, viewer, page, query);
         viewer.openInventory(inventory);
@@ -91,38 +114,115 @@ public final class AbilityGui implements Listener {
         }
         event.setCancelled(true);
 
-        boolean list = LIST_TITLE.equals(event.getView().getTitle());
-        if (!list && event.getRawSlot() == CURRENT_CLOSE_SLOT) {
-            event.getWhoClicked().closeInventory();
-            return;
-        }
-        if (!list) {
-            return;
-        }
+        final Player player = (Player) event.getWhoClicked();
+        final int slot = event.getRawSlot();
+        if (slot < 0 || slot >= event.getView().getTopInventory().getSize()) return;
+        final String title = event.getView().getTitle();
+        final Inventory clickedInventory = event.getView().getTopInventory();
+        final boolean rightClick = event.isRightClick(), leftClick = event.isLeftClick();
+        // Inventory transitions must happen after the click transaction completes.
+        Bukkit.getScheduler().runTask(plugin, () -> {
+            if (!player.isOnline() || !openViewers.contains(player.getUniqueId())
+                || player.getOpenInventory().getTopInventory() != clickedInventory) return;
+            if ((LIST_TITLE.equals(title) && slot == LIST_CLOSE_SLOT)
+                || (!LIST_TITLE.equals(title) && slot == CURRENT_CLOSE_SLOT)) {
+                player.closeInventory();
+                return;
+            }
 
-        Player player = (Player) event.getWhoClicked();
-        if (event.getRawSlot() == LIST_CLOSE_SLOT) {
-            event.getWhoClicked().closeInventory();
-            return;
-        }
-        if (event.getRawSlot() == LIST_PREVIOUS_SLOT) {
-            openList(player, listPage(player) - 1);
-            return;
-        }
-        if (event.getRawSlot() == LIST_NEXT_SLOT) {
-            openList(player, listPage(player) + 1);
-            return;
-        }
-        if (ChestLayout.catalogIndex(event.getRawSlot()) < 0) {
-            return;
-        }
+            if (CURRENT_TITLE.equals(title)) {
+                if (slot == 36) openList(player);
+                if (slot == 44) {
+                    UUID targetId = currentTargets.get(player.getUniqueId());
+                    Player target = targetId == null ? null : Bukkit.getPlayer(targetId);
+                    if (target != null) openCurrent(player, target);
+                }
+                return;
+            }
+            if (DETAIL_TITLE.equals(title)) {
+                if (slot == 36) openList(player, listPage(player));
+                return;
+            }
+            if (slot == 47) { beginSearch(player); return; }
+            if (slot == 46) { openList(player); return; }
+            if (slot == LIST_PREVIOUS_SLOT) { openList(player, listPage(player) - 1); return; }
+            if (slot == LIST_NEXT_SLOT) { openList(player, listPage(player) + 1); return; }
+            AbilityDefinition ability = abilityAtSlot(slot, player);
+            if (ability == null) return;
+            if (rightClick && player.hasPermission("newgodwar.admin")) {
+                abilityManager.toggleBlacklisted(ability.id());
+                plugin.messages().send(player, "&a" + ability.name() + ": "
+                    + (abilityManager.isBlacklisted(ability) ? "랜덤 배정 제외" : "블랙리스트 해제"));
+                openList(player, listPage(player));
+            } else if (leftClick) {
+                openDetail(player, ability);
+            }
+        });
+    }
 
-        AbilityDefinition ability = abilityAtSlot(event.getRawSlot(), player);
-        if (ability != null && event.isRightClick() && player.hasPermission("newgodwar.admin")) {
-            abilityManager.toggleBlacklisted(ability.id());
-            plugin.messages().send(player, "&a" + ability.name() + " 블랙리스트 상태를 전환했습니다.");
-            openList(player, listPage(player));
-        }
+    private void beginSearch(Player player) {
+        SearchRequest request = new SearchRequest(listPage(player), listQuery(player));
+        player.closeInventory();
+        searches.put(player.getUniqueId(), request);
+        plugin.messages().send(player, "&e검색할 능력 이름이나 특징을 채팅에 입력하세요. &f취소&e를 입력하면 돌아갑니다. (60초)");
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            if (searches.remove(player.getUniqueId(), request) && player.isOnline()) {
+                plugin.messages().send(player, "&e능력 검색 입력 시간이 끝났습니다. 도감의 검색 버튼으로 다시 시작하세요.");
+            }
+        }, 1200L);
+    }
+
+    @EventHandler(priority = org.bukkit.event.EventPriority.LOWEST)
+    public void onChat(AsyncPlayerChatEvent event) {
+        SearchRequest request = searches.remove(event.getPlayer().getUniqueId());
+        if (request == null) return;
+        event.setCancelled(true);
+        final String query = event.getMessage().trim();
+        Bukkit.getScheduler().runTask(plugin, () -> {
+            if (!event.getPlayer().isOnline()) return;
+            if ("취소".equals(query)) openList(event.getPlayer(), request.page, request.query);
+            else openList(event.getPlayer(), query.length() > 64 ? query.substring(0, 64) : query);
+        });
+    }
+
+    @EventHandler
+    public void onOpen(org.bukkit.event.inventory.InventoryOpenEvent event) {
+        searches.remove(event.getPlayer().getUniqueId());
+    }
+
+    @EventHandler
+    public void onQuit(PlayerQuitEvent event) {
+        UUID id = event.getPlayer().getUniqueId();
+        searches.remove(id);
+        openViewers.remove(id);
+        listPages.remove(id);
+        listQueries.remove(id);
+        currentTargets.remove(id);
+        navigating.remove(id);
+    }
+
+    private void openDetail(Player player, AbilityDefinition ability) {
+        Inventory inventory = Bukkit.createInventory(player, CURRENT_SIZE, DETAIL_TITLE);
+        GuiTheme.frame(inventory);
+        inventory.setItem(4, GuiTheme.heading(ability.name(), "각 항목에 마우스를 올려 사용법을 확인하세요."));
+        inventory.setItem(22, item("NETHER_STAR", "NETHER_STAR", 1, (short) 0,
+            ChatColor.AQUA + ability.name(), ChatColor.WHITE + ability.description(),
+            ChatColor.GRAY + "등급: " + ability.gradeText(), ChatColor.GRAY + "제작자: " + ability.author()));
+        if (hasSkill(ability.normalSkill())) inventory.setItem(20, skillItem("LIGHT_BLUE_STAINED_GLASS", (short) 3,
+            ChatColor.AQUA + "일반 능력 · 사용법", ability.normalSkill(), ability.normalStoneCost(), ability.normalCooldown(),
+            ChatColor.DARK_GRAY + "도감은 기본 수치를 표시합니다."));
+        if (hasSkill(ability.advancedSkill())) inventory.setItem(24, skillItem("RED_STAINED_GLASS", (short) 14,
+            ChatColor.RED + "고급 능력 · 사용법", ability.advancedSkill(), ability.advancedStoneCost(), ability.advancedCooldown(),
+            ChatColor.DARK_GRAY + "추가 재료·조건은 위 사용법을 확인하세요."));
+        inventory.setItem(30, item("EMERALD", "EMERALD", 1, (short) 0,
+            ChatColor.GREEN + "패시브 · 조건에 따라 자동 적용", ChatColor.WHITE + ability.passiveSkill()));
+        inventory.setItem(36, GuiTheme.item("ARROW", "ARROW", (short) 0, ChatColor.YELLOW + "도감으로 돌아가기",
+            ChatColor.GRAY + "검색어와 페이지를 유지합니다."));
+        inventory.setItem(CURRENT_CLOSE_SLOT, closeItem());
+        navigating.add(player.getUniqueId());
+        try { player.openInventory(inventory); }
+        finally { navigating.remove(player.getUniqueId()); }
+        openViewers.add(player.getUniqueId());
     }
 
     @EventHandler
@@ -134,6 +234,8 @@ public final class AbilityGui implements Listener {
 
     @EventHandler
     public void onClose(InventoryCloseEvent event) {
+        if (navigating.contains(event.getPlayer().getUniqueId())) return;
+        currentTargets.remove(event.getPlayer().getUniqueId());
         openViewers.remove(event.getPlayer().getUniqueId());
         listPages.remove(event.getPlayer().getUniqueId());
         listQueries.remove(event.getPlayer().getUniqueId());
@@ -142,15 +244,13 @@ public final class AbilityGui implements Listener {
     private boolean isAbilityInventory(InventoryClickEvent event) {
         return openViewers.contains(event.getWhoClicked().getUniqueId())
             && event.getView() != null
-            && (CURRENT_TITLE.equals(event.getView().getTitle()) || LIST_TITLE.equals(event.getView().getTitle()))
-            && event.getRawSlot() >= 0
-            && event.getRawSlot() < event.getView().getTopInventory().getSize();
+            && (CURRENT_TITLE.equals(event.getView().getTitle()) || DETAIL_TITLE.equals(event.getView().getTitle()) || LIST_TITLE.equals(event.getView().getTitle()));
     }
 
     private boolean isAbilityInventory(InventoryDragEvent event) {
         return openViewers.contains(event.getWhoClicked().getUniqueId())
             && event.getView() != null
-            && (CURRENT_TITLE.equals(event.getView().getTitle()) || LIST_TITLE.equals(event.getView().getTitle()));
+            && (CURRENT_TITLE.equals(event.getView().getTitle()) || DETAIL_TITLE.equals(event.getView().getTitle()) || LIST_TITLE.equals(event.getView().getTitle()));
     }
 
     private void fillCurrent(Inventory inventory, Player viewer, Player target) {
@@ -185,6 +285,9 @@ public final class AbilityGui implements Listener {
                 ChatColor.GRAY + "타이머: " + currentTimerText(shown)));
         }
 
+        inventory.setItem(36, GuiTheme.item("BOOK", "BOOK", (short) 0, ChatColor.AQUA + "능력 도감"));
+        inventory.setItem(44, GuiTheme.item("CLOCK", "WATCH", (short) 0, ChatColor.YELLOW + "상태 새로고침",
+            ChatColor.GRAY + "남은 시간과 재료 상태는 열거나 새로고침한 시점의 값입니다."));
         inventory.setItem(CURRENT_CLOSE_SLOT, closeItem());
     }
 
@@ -201,14 +304,18 @@ public final class AbilityGui implements Listener {
             inventory.setItem(ChestLayout.CATALOG[i - start], abilityItem(abilities.get(i), viewer.hasPermission("newgodwar.admin")));
         }
 
-        inventory.setItem(4, GuiTheme.heading("능력 도감", "능력 위에 마우스를 올려 스킬과 등급을 확인하세요."));
+        inventory.setItem(4, GuiTheme.heading("능력 도감", "능력을 좌클릭하면 사용법과 상세 수치를 볼 수 있습니다."));
         inventory.setItem(45, guideItem(viewer));
+        inventory.setItem(47, GuiTheme.item("OAK_SIGN", "SIGN", (short) 0, ChatColor.AQUA + "능력 검색",
+            ChatColor.GRAY + "클릭 후 채팅에 이름이나 특징을 입력하세요."));
+        if (abilities.isEmpty()) inventory.setItem(22, GuiTheme.item("BARRIER", "BARRIER", (short) 0,
+            ChatColor.YELLOW + "검색 결과가 없습니다", ChatColor.GRAY + "검색 버튼으로 다른 단어를 입력하거나 전체 보기를 누르세요."));
         if (hasQuery(query)) {
             inventory.setItem(46, item("COMPASS", "COMPASS", 1, (short) 0,
-                ChatColor.AQUA + "" + ChatColor.BOLD + "검색 결과",
+                ChatColor.AQUA + "" + ChatColor.BOLD + "검색 해제 · 전체 보기",
                 ChatColor.GRAY + "검색어: " + ChatColor.WHITE + query,
                 ChatColor.GRAY + "일치한 능력: " + ChatColor.WHITE + abilities.size() + "개",
-                ChatColor.DARK_GRAY + "/gw abilities 로 전체 목록을 봅니다."));
+                ChatColor.DARK_GRAY + "클릭하면 전체 목록을 봅니다."));
         }
         if (page > 1) {
             inventory.setItem(LIST_PREVIOUS_SLOT, item("ARROW", "ARROW", 1, (short) 0, ChatColor.AQUA + "이전 페이지"));
@@ -228,12 +335,12 @@ public final class AbilityGui implements Listener {
             return item("NAME_TAG", "NAME_TAG", 1, (short) 0,
                 ChatColor.GOLD + "" + ChatColor.BOLD + "관리자 조작",
                 ChatColor.GRAY + "우클릭: 능력 블랙리스트 전환",
-                ChatColor.GRAY + "/gw abilities <검색어>: 능력 검색",
+                ChatColor.GRAY + "검색 버튼: 이름·설명·등급으로 찾기",
                 ChatColor.GRAY + "/gw blacklist 로도 관리할 수 있습니다.");
         }
         return item("NAME_TAG", "NAME_TAG", 1, (short) 0,
             ChatColor.GOLD + "" + ChatColor.BOLD + "보기 안내",
-            ChatColor.GRAY + "/gw abilities <검색어>: 능력 검색",
+            ChatColor.GRAY + "검색 버튼: 이름·설명·등급으로 찾기",
             ChatColor.GRAY + "능력 이름, 설명, 돌 소모량을 확인하세요.");
     }
 
@@ -261,7 +368,7 @@ public final class AbilityGui implements Listener {
             name,
             ChatColor.WHITE + skill,
             "",
-            ChatColor.GRAY + "조약돌: " + ChatColor.WHITE + stoneCost(cost),
+            ChatColor.GRAY + "기본 조약돌 소모: " + ChatColor.WHITE + stoneCost(cost),
             ChatColor.GRAY + "기본 쿨타임: " + ChatColor.WHITE + cooldown(cooldown),
             state);
     }
@@ -277,17 +384,7 @@ public final class AbilityGui implements Listener {
         lore.add("");
         lore.add(ChatColor.WHITE + ability.description());
         lore.add("");
-        if (hasSkill(ability.normalSkill())) {
-            lore.add(ChatColor.AQUA + "일반: " + ChatColor.GRAY + ability.normalSkill());
-            lore.add(ChatColor.GRAY + "조약돌: " + ChatColor.WHITE + stoneCost(ability.normalStoneCost()));
-            lore.add(ChatColor.GRAY + "쿨타임: " + ChatColor.WHITE + cooldown(ability.normalCooldown()));
-        }
-        if (hasSkill(ability.advancedSkill())) {
-            lore.add(ChatColor.RED + "고급: " + ChatColor.GRAY + ability.advancedSkill());
-            lore.add(ChatColor.GRAY + "조약돌: " + ChatColor.WHITE + stoneCost(ability.advancedStoneCost()));
-            lore.add(ChatColor.GRAY + "쿨타임: " + ChatColor.WHITE + cooldown(ability.advancedCooldown()));
-        }
-        lore.add(ChatColor.AQUA + "패시브: " + ChatColor.GRAY + ability.passiveSkill());
+        lore.add(ChatColor.YELLOW + "좌클릭: 사용법 · 재료 · 쿨타임 상세 보기");
         lore.add(ChatColor.DARK_GRAY + "ID: " + ability.id());
         if (showAdminState) {
             lore.add("");
@@ -388,11 +485,33 @@ public final class AbilityGui implements Listener {
     }
 
     private String cooldownLine(Player player, AbilityDefinition ability, int slot) {
+        if (abilityManager.isAbilitySuppressed(player)) return ChatColor.RED + "현재 능력이 봉인되어 있습니다.";
+        if (!plugin.game().canUseAbility(player)) return ChatColor.RED + "현재 참가 상태에서는 능력을 사용할 수 없습니다.";
+        int baseCost = slot == 1 ? ability.normalStoneCost() : ability.advancedStoneCost();
+        int cost = abilityManager.effectiveResourceCost(player, baseCost);
+        int held = 0;
+        for (ItemStack stack : player.getInventory().getStorageContents()) {
+            if (stack != null && stack.getType() == Material.COBBLESTONE) held += stack.getAmount();
+        }
+        String resources = "\n" + (held < cost ? ChatColor.RED + "조약돌 부족: " : ChatColor.GRAY + "조약돌 보유/필요: ")
+            + held + "/" + cost + "개";
+        if ("blacksmith".equals(ability.id()) && slot == 2) {
+            int iron = 0;
+            for (ItemStack stack : player.getInventory().getStorageContents())
+                if (stack != null && stack.getType() == Material.IRON_INGOT) iron += stack.getAmount();
+            int requiredIron = abilityManager.effectiveResourceCost(player, 15);
+            resources += "\n" + (iron < requiredIron ? ChatColor.RED + "철괴 부족: " : ChatColor.GRAY + "철괴 보유/필요: ")
+                + iron + "/" + requiredIron + "개";
+        }
+        int seconds = slot == 1 ? ability.normalCooldownSeconds() : ability.advancedCooldownSeconds();
+        if (seconds > 0) resources += "\n" + ChatColor.GRAY + "현재 적용 쿨타임: "
+            + (abilityManager.scaleCooldownMillis(seconds * 1000L) / 1000.0D) + "초";
         long millis = semanticCooldownMillis(player, ability, slot);
         if (millis <= 0L) {
-            return ChatColor.WHITE + "상태: " + ChatColor.GREEN + "사용 가능";
+            return ChatColor.WHITE + "쿨타임: " + ChatColor.GREEN + "준비 완료"
+                + ChatColor.GRAY + " · 발동 조건은 사용법 참고" + resources;
         }
-        return ChatColor.WHITE + "상태: " + ChatColor.YELLOW + "쿨타임 " + ((millis + 999L) / 1000L) + "초";
+        return ChatColor.WHITE + "상태: " + ChatColor.YELLOW + "쿨타임 " + ((millis + 999L) / 1000L) + "초" + resources;
     }
 
     private String currentTimerText(Player player) {
@@ -400,7 +519,7 @@ public final class AbilityGui implements Listener {
         if (timers.isEmpty()) {
             return ChatColor.GREEN + "없음";
         }
-        return timers.get(0);
+        return String.join("\n", timers);
     }
 
     private long semanticCooldownMillis(Player player, AbilityDefinition ability, int slot) {
@@ -462,7 +581,7 @@ public final class AbilityGui implements Listener {
             meta.setDisplayName(name);
             meta.addItemFlags(org.bukkit.inventory.ItemFlag.HIDE_ATTRIBUTES, org.bukkit.inventory.ItemFlag.HIDE_ENCHANTS);
             if (lore != null && !lore.isEmpty()) {
-                meta.setLore(lore);
+                meta.setLore(GuiText.wrap(lore));
             }
             stack.setItemMeta(meta);
         }

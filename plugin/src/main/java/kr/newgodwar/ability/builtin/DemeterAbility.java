@@ -17,7 +17,7 @@ import java.util.List;
     id = "demeter",
     name = "데메테르",
     description = "식량을 만들고 허기 감소를 막으며 상시 재생으로 버팁니다.",
-    normalSkill = "빵 10개를 생성합니다.",
+    normalSkill = "블레이즈 막대기 좌클릭: 빵 10개를 생성합니다.",
     normalStoneCost = 12,
     normalCooldownSeconds = 25,
     advancedSkill = "없음",

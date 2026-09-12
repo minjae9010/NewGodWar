@@ -17,7 +17,7 @@ import java.util.List;
     id = "tajja",
     name = "타짜",
     description = "검을 숨겨 맨손 공격에 검 피해를 싣습니다.",
-    normalSkill = "인벤토리의 검 하나를 숨깁니다.",
+    normalSkill = "블레이즈 막대기 좌클릭: 인벤토리의 검 하나를 숨깁니다.",
     normalStoneCost = 10,
     normalCooldownSeconds = 60,
     advancedSkill = "없음",

@@ -146,10 +146,21 @@ Windows PowerShell에서는 다음처럼 실행할 수 있습니다.
 .\gradlew.bat clean build
 ```
 
-빌드 결과물은 `build/libs/NewGodWar-0.3.0.jar`에 복사되며, 모듈 산출물은 `plugin/build/libs/NewGodWar-0.3.0.jar`에서도 확인할 수 있습니다.
+빌드 결과물은 `build/libs/NewGodWar-0.3.1.jar`에 복사되며, 모듈 산출물은 `plugin/build/libs/NewGodWar-0.3.1.jar`에서도 확인할 수 있습니다.
 
 ## 라이선스
 
 Copyright (c) 2026 minjae9010
 
 이 프로젝트는 MIT License를 따릅니다. 자세한 내용은 [LICENSE](LICENSE)를 확인하세요.
+
+
+## 코어 회귀 테스트
+
+`build`는 배포 플러그인과 별도로 `plugin/build/core-regression/CoreRegressionProbe.jar`를 생성합니다. 이 파일은 테스트 전용이며 운영 서버에 설치하면 안 됩니다.
+
+```powershell
+./scripts/Test-PaperMatrix.ps1 -SkipBuild -LatestVersion -PluginJar build/libs/NewGodWar-0.3.1.jar -ProbeJar plugin/build/core-regression/CoreRegressionProbe.jar -WorkDir .paper-smoke/core-regression
+```
+
+격리된 Paper 서버에서 비참가자·관전자 등의 심장 파괴 차단, 정상 파괴, 중복 위치, 동시 폭발의 일괄 탈락, 종료 후 이벤트 차단, 준비 인원 재검사와 타이머 정리를 검사합니다. 릴리즈는 이 검사를 통과해야 게시됩니다.

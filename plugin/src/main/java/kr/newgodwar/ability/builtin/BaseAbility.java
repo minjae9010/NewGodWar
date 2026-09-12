@@ -197,11 +197,7 @@ public abstract class BaseAbility implements GodAbility {
     }
 
     protected int cost(AbilityPlayerContext context, int amount) {
-        GodTeam team = context.plugin().game().teamOf(context.player());
-        if (team != null && context.plugin().abilities().hasActiveAbilityOnTeam(team, "scrooge")) {
-            return Math.max(0, amount / 2);
-        }
-        return amount;
+        return context.plugin().abilities().effectiveResourceCost(context.player(), amount);
     }
 
     protected boolean has(AbilityPlayerContext context, Player player, Material material, int amount) {

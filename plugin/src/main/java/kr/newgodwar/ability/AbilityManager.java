@@ -326,6 +326,11 @@ public final class AbilityManager {
         return Math.max(0.0D, plugin.getConfig().getDouble("game.urf.cooldown-multiplier", 0.2D));
     }
 
+    public int effectiveResourceCost(Player player, int amount) {
+        kr.newgodwar.game.GodTeam team = plugin.game().teamOf(player);
+        return team != null && hasActiveAbilityOnTeam(team, "scrooge") ? Math.max(0, amount / 2) : amount;
+    }
+
     public long scaleCooldownMillis(long baseMillis) {
         if (!urfEnabled()) {
             return baseMillis;

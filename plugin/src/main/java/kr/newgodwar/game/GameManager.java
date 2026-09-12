@@ -33,6 +33,8 @@ import org.bukkit.scoreboard.Team;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -247,6 +249,10 @@ public final class GameManager {
             && player.getGameMode() != org.bukkit.GameMode.SPECTATOR;
     }
 
+    public boolean canBreakTemple(Player player) {
+        return state == GameState.RUNNING && canUseAbility(player) && isTeamEnabled(teamOf(player));
+    }
+
     public boolean isEliminated(GodTeam team) {
         return eliminatedTeams.contains(team);
     }
@@ -327,8 +333,13 @@ public final class GameManager {
     }
 
     public boolean setTemple(GodTeam team, Block block) {
-        if (block == null || block.getType() != Material.DIAMOND_BLOCK) {
+        if (team == null || block == null || block.getType() != Material.DIAMOND_BLOCK) {
             return false;
+        }
+        for (Map.Entry<GodTeam, TempleLocation> entry : temples.entrySet()) {
+            if (!team.equals(entry.getKey()) && entry.getValue().matches(block)) {
+                return false;
+            }
         }
         TempleLocation location = TempleLocation.fromBlock(block);
         temples.put(team, location);
@@ -712,21 +723,27 @@ public final class GameManager {
     }
 
     public void eliminate(GodTeam team, Player breaker) {
-        if (team == null || eliminatedTeams.contains(team)) {
-            return;
-        }
-        eliminatedTeams.add(team);
-        GodTeam breakerTeam = breaker == null ? null : teamOf(breaker);
-        String message = plugin.messages().get("team-eliminated").replace("{team}", teamColoredName(team));
-        Bukkit.broadcastMessage(plugin.messages().prefix() + message);
-        List<Player> eliminatedPlayers = new ArrayList<Player>();
-        for (Player player : BukkitCompat.onlinePlayers()) {
-            if (team.equals(teamOf(player))) {
-                eliminatedPlayers.add(player);
+        eliminateTeams(Collections.singletonList(team), breaker);
+    }
+
+    /** Apply a single destruction event atomically before transfers or victory checks. */
+    public void eliminateTeams(Collection<GodTeam> destroyedTeams, Player breaker) {
+        if (state != GameState.RUNNING || activeMode != null) return;
+        Set<GodTeam> newlyEliminated = new LinkedHashSet<GodTeam>();
+        for (GodTeam team : destroyedTeams) {
+            if (team != null && isTeamEnabled(team) && eliminatedTeams.add(team)) {
+                newlyEliminated.add(team);
             }
         }
-        for (Player player : eliminatedPlayers) {
-            handleEliminatedPlayer(player, team, breakerTeam);
+        if (newlyEliminated.isEmpty()) return;
+        GodTeam breakerTeam = breaker == null ? null : teamOf(breaker);
+        for (GodTeam team : newlyEliminated) {
+            String message = plugin.messages().get("team-eliminated").replace("{team}", teamColoredName(team));
+            Bukkit.broadcastMessage(plugin.messages().prefix() + message);
+        }
+        for (Player player : new ArrayList<Player>(BukkitCompat.onlinePlayers())) {
+            GodTeam team = teamOf(player);
+            if (newlyEliminated.contains(team)) handleEliminatedPlayer(player, team, breakerTeam);
         }
         refreshAllPlayerDisplays();
         checkWinner();
@@ -1499,8 +1516,59 @@ public final class GameManager {
         return players;
     }
 
+    /** Read-only preparation summary; start() still performs final validation and backups. */
+    public List<String> startChecklist() {
+        List<String> lines = new ArrayList<String>();
+        lines.add("게임 상태: " + (state == GameState.RUNNING ? "진행 중" : state == GameState.READY ? "시작 준비 중" : "대기"));
+        if (plugin.api().configuredGameMode() != null) {
+            lines.add("애드온 게임 모드: 시작 조건은 해당 모드가 검사합니다.");
+            lines.add("기본 팀전의 스폰·심장 조건은 적용되지 않습니다.");
+            return lines;
+        }
+        int required = plugin.getConfig().getInt("game.min-players", 2);
+        lines.add("팀 배정 인원: " + participants().size() + " / 최소 " + required + "명");
+        if (plugin.getConfig().getBoolean("game.auto-balance-teams", true) && teams.isEmpty()) {
+            lines.add("시작 시 온라인 플레이어를 자동 팀 배정합니다.");
+        }
+        List<GodTeam> active = activeTeams();
+        int spawnCount = 0, templeCount = 0;
+        for (GodTeam team : active) {
+            GameLocation spawn = spawns.get(team);
+            TempleLocation temple = temples.get(team);
+            if (spawn != null && spawn.toLocation() != null) spawnCount++;
+            if (temple != null && temple.toLocation() != null) templeCount++;
+        }
+        lines.add("활성 팀: " + active.size() + "개");
+        lines.add("스폰 위치 준비: " + spawnCount + " / " + active.size() + "팀");
+        lines.add("심장 위치 준비: " + templeCount + " / " + active.size() + "팀 (시작 시 블록 복원)");
+        String worldName = configuredGameWorldName();
+        lines.add("게임 월드: " + (worldName == null ? "미지정 · 월드 메뉴에서 확인" : worldName
+            + (Bukkit.getWorld(worldName) == null ? " (로드 필요)" : " (로드됨)")));
+        if (gameWorldResetEnabled() && worldName != null && Bukkit.getWorld(worldName) != null
+            && isLobbyWorld(Bukkit.getWorld(worldName))) lines.add("확인 필요: 자동 초기화할 게임 월드와 로비가 같습니다.");
+        if ((state == GameState.WAITING || state == GameState.ENDED) && gameWorldResetEnabled()
+            && activeGameWorldName != null && activeGameWorldSnapshotName != null)
+            lines.add("이전 월드 초기화가 남아 있습니다. 게임 종료로 정리하세요.");
+        lines.addAll(duplicateTempleSettings());
+        lines.add("최종 시작 검사와 월드 백업은 시작 버튼을 누를 때 실행됩니다.");
+        return lines;
+    }
+
+    private List<String> duplicateTempleSettings() {
+        Map<Location, GodTeam> owners = new HashMap<Location, GodTeam>();
+        List<String> duplicates = new ArrayList<String>();
+        for (GodTeam team : activeTeams()) {
+            TempleLocation temple = temples.get(team);
+            Location location = temple == null ? null : temple.toLocation();
+            if (location == null) continue;
+            GodTeam previous = owners.put(location, team);
+            if (previous != null) duplicates.add(teamDisplayName(previous) + "/" + teamDisplayName(team) + " 팀 심장 위치 중복");
+        }
+        return duplicates;
+    }
+
     private void validateStartSettings() {
-        List<String> missing = new ArrayList<String>();
+        List<String> missing = duplicateTempleSettings();
         for (GodTeam team : activeTeams()) {
             GameLocation spawn = spawns.get(team);
             if (spawn == null || spawn.toLocation() == null) {
@@ -1607,6 +1675,18 @@ public final class GameManager {
     }
 
     private void finishStart() {
+        if (state != GameState.READY) return;
+        int minimum = plugin.getConfig().getInt("game.min-players", 2);
+        try {
+            if (participants().size() < minimum) {
+                throw new IllegalStateException("최소 " + minimum + "명의 참가자가 필요합니다.");
+            }
+            validateStartSettings();
+        } catch (IllegalStateException ex) {
+            Bukkit.broadcastMessage(plugin.messages().prefix() + ChatColor.RED + "게임 시작이 취소되었습니다: " + ex.getMessage());
+            stop(false);
+            return;
+        }
         if (readyTask != -1) {
             Bukkit.getScheduler().cancelTask(readyTask);
             readyTask = -1;
@@ -1939,8 +2019,14 @@ public final class GameManager {
     }
 
     private void checkWinner() {
-        if (activeMode != null) return;
+        if (state != GameState.RUNNING || activeMode != null) return;
         Set<GodTeam> alive = aliveTeams();
+        if (alive.isEmpty()) {
+            Bukkit.broadcastMessage(plugin.messages().prefix() + plugin.messages().color(
+                plugin.getConfig().getString("messages.draw", "&e모든 팀의 심장이 파괴되어 무승부로 종료합니다.")));
+            stop(false);
+            return;
+        }
         if (alive.size() == 1) {
             GodTeam winner = alive.iterator().next();
             String message = plugin.messages().get("winner").replace("{team}", teamColoredName(winner));

@@ -135,6 +135,7 @@ public final class SettingsGui implements Listener {
         }
 
         SettingsView view = viewOf(event.getView().getTitle());
+        if (view != currentView(player)) return;
         handle(player, view, event.getRawSlot(), event.getClick());
     }
 
@@ -205,7 +206,16 @@ public final class SettingsGui implements Listener {
         slot = ChestLayout.logicalSlot(view, slot);
         if (slot < 0) return;
 
-        if (view == SettingsView.MAIN) {
+        if (view == SettingsView.STOP_CONFIRM) {
+            if (slot == 10 && click == ClickType.LEFT) {
+                // Consume this confirmation before executing; duplicate clicks cannot stop twice.
+                switchView(player, SettingsView.GAME);
+                gameManager.stop(true);
+                plugin.messages().send(player, "&a게임을 종료했습니다.");
+            } else if (slot == 16) {
+                switchView(player, SettingsView.GAME);
+            }
+        } else if (view == SettingsView.MAIN) {
             handleMain(player, slot);
         } else if (view == SettingsView.GAME) {
             handleGame(player, slot, click);
@@ -231,7 +241,9 @@ public final class SettingsGui implements Listener {
     }
 
     private void handleMain(Player player, int slot) {
-        if (slot == 10) {
+        if (slot == 4) {
+            switchView(player, SettingsView.TEAM);
+        } else if (slot == 10) {
             switchView(player, SettingsView.GAME);
         } else if (slot == 11) {
             switchView(player, SettingsView.TEAM);
@@ -300,7 +312,9 @@ public final class SettingsGui implements Listener {
     }
 
     private void handleGame(Player player, int slot, ClickType click) {
-        if (slot == 0) {
+        if (slot == 4) {
+            switchView(player, SettingsView.TEAM);
+        } else if (slot == 0) {
             changeInt("game.min-players", -1, 1, 100);
         } else if (slot == 2) {
             changeInt("game.min-players", 1, 1, 100);
@@ -339,7 +353,7 @@ public final class SettingsGui implements Listener {
         } else if (slot == 19) {
             toggle("game.reveal-abilities-on-end");
         } else if (slot == 20) {
-            gameManager.stop(true);
+            switchView(player, SettingsView.STOP_CONFIRM);
         } else if (slot == 21) {
             gameManager.autoBalance();
             plugin.messages().send(player, "&a온라인 플레이어를 자동으로 팀 배정했습니다.");
@@ -531,6 +545,7 @@ public final class SettingsGui implements Listener {
     }
 
     private SettingsView backView(SettingsView view) {
+        if (view == SettingsView.STOP_CONFIRM) return SettingsView.GAME;
         if (view == SettingsView.GAMBLING_NORMAL) {
             return SettingsView.GAMBLING;
         }
@@ -557,7 +572,13 @@ public final class SettingsGui implements Listener {
     private void fill(Inventory inventory, SettingsView view, Player player) {
         GuiTheme.frame(inventory);
         Inventory content = Bukkit.createInventory(null, 27);
-        if (view == SettingsView.MAIN) {
+        if (view == SettingsView.STOP_CONFIRM) {
+            content.setItem(10, item("REDSTONE_BLOCK", "REDSTONE_BLOCK", 1, (short) 0,
+                ChatColor.RED + "게임 종료 확정", ChatColor.GRAY + "좌클릭하면 진행 중인 게임을 종료합니다.",
+                ChatColor.GRAY + "능력·진행 상태가 정리되고 종료 설정이 적용됩니다."));
+            content.setItem(16, item("EMERALD_BLOCK", "EMERALD_BLOCK", 1, (short) 0,
+                ChatColor.GREEN + "취소 · 게임 계속하기", ChatColor.GRAY + "뒤로가기 또는 창 닫기로도 취소할 수 있습니다."));
+        } else if (view == SettingsView.MAIN) {
             fillMain(content);
         } else if (view == SettingsView.GAME) {
             fillGame(content);
@@ -592,7 +613,19 @@ public final class SettingsGui implements Listener {
         inventory.setItem(CLOSE_SLOT, closeItem());
     }
 
+    private ItemStack readinessItem() {
+        ArrayList<String> lines = new ArrayList<String>();
+        for (String line : gameManager.startChecklist()) lines.add(ChatColor.GRAY + line);
+        lines.add("");
+        lines.add(ChatColor.YELLOW + "클릭: 팀별 미등록 위치 확인·등록");
+        lines.add(ChatColor.GRAY + "월드 메뉴 → 팀 메뉴 → 게임 진행에서 시작");
+        lines.add(ChatColor.DARK_GRAY + "열거나 설정을 변경한 시점의 점검 결과입니다.");
+        return GuiTheme.item("BOOK", "BOOK", (short) 0, ChatColor.AQUA + "게임 시작 준비 체크리스트",
+            lines.toArray(new String[0]));
+    }
+
     private void fillMain(Inventory inventory) {
+        inventory.setItem(4, readinessItem());
         inventory.setItem(10, categoryItem("EMERALD_BLOCK", "게임 진행",
             ChatColor.GRAY + "시작 조건, 지급, 시작/종료",
             ChatColor.DARK_GRAY + "클릭해서 열기"));
@@ -614,10 +647,12 @@ public final class SettingsGui implements Listener {
             ChatColor.DARK_GRAY + "클릭해서 열기"));
         inventory.setItem(24, item("BOOK", "BOOK", 1, (short) 0,
             ChatColor.YELLOW + "설정 다시 불러오기",
-            ChatColor.GRAY + "config.yml을 다시 읽습니다."));
+            ChatColor.GRAY + "GUI 변경은 자동 저장됩니다.",
+            ChatColor.GRAY + "이 버튼은 외부에서 수정한 config.yml을 다시 읽습니다."));
     }
 
     private void fillGame(Inventory inventory) {
+        inventory.setItem(4, readinessItem());
         FileConfiguration config = plugin.getConfig();
         inventory.setItem(0, item("REDSTONE_TORCH", "REDSTONE_TORCH_ON", 1, (short) 0,
             ChatColor.RED + "최소 인원 -1",
@@ -663,7 +698,7 @@ public final class SettingsGui implements Listener {
         inventory.setItem(19, toggleItem("game.reveal-abilities-on-end", "종료 후 능력 공개", "ENCHANTED_BOOK"));
         inventory.setItem(20, item("REDSTONE_BLOCK", "REDSTONE_BLOCK", 1, (short) 0,
             ChatColor.RED + "게임 종료",
-            ChatColor.GRAY + "/gw stop"));
+            ChatColor.GRAY + "클릭 후 확인 화면에서 종료를 확정합니다."));
         inventory.setItem(21, item("COMPASS", "COMPASS", 1, (short) 0,
             ChatColor.AQUA + "팀 자동 배정",
             ChatColor.GRAY + "/gw autoteam"));
@@ -840,7 +875,8 @@ public final class SettingsGui implements Listener {
             ChatColor.DARK_GRAY + "/gw gamblereward normal <번호> hand"));
         inventory.setItem(17, item("BOOK", "BOOK", 1, (short) 0,
             ChatColor.YELLOW + "상품 설정 다시 불러오기",
-            ChatColor.GRAY + "config.yml을 다시 읽습니다."));
+            ChatColor.GRAY + "GUI 변경은 자동 저장됩니다.",
+            ChatColor.GRAY + "이 버튼은 외부에서 수정한 config.yml을 다시 읽습니다."));
     }
 
     private void fillRewardChance(Inventory inventory, String path, String title) {
@@ -942,8 +978,8 @@ public final class SettingsGui implements Listener {
     private ItemStack teamListItem(GodTeam team) {
         ChatColor color = gameManager.teamColor(team);
         boolean enabled = gameManager.isTeamEnabled(team);
-        boolean spawnConfigured = gameManager.spawns().containsKey(team);
-        boolean templeConfigured = gameManager.temples().containsKey(team);
+        boolean spawnConfigured = (gameManager.spawns().get(team) != null && gameManager.spawns().get(team).toLocation() != null);
+        boolean templeConfigured = (gameManager.temples().get(team) != null && gameManager.temples().get(team).toLocation() != null);
         ChatColor enabledColor = enabled ? ChatColor.GREEN : ChatColor.RED;
         ChatColor spawnColor = spawnConfigured ? ChatColor.GREEN : ChatColor.RED;
         ChatColor templeColor = templeConfigured ? ChatColor.GREEN : ChatColor.RED;
@@ -952,8 +988,8 @@ public final class SettingsGui implements Listener {
             titleColor + gameManager.teamDisplayName(team) + ChatColor.YELLOW + " 팀",
             ChatColor.GRAY + "참가 상태: " + enabledColor + (enabled ? "활성" : "비활성"),
             ChatColor.GRAY + "팀원: " + ChatColor.WHITE + teamMemberCount(team) + "명",
-            ChatColor.GRAY + "스폰: " + spawnColor + (spawnConfigured ? "설정됨" : "미설정")
-                + ChatColor.GRAY + " / 심장: " + templeColor + (templeConfigured ? "설정됨" : "미설정"),
+            ChatColor.GRAY + "스폰: " + spawnColor + (spawnConfigured ? "설정됨" : "위치 미등록/월드 미로드")
+                + ChatColor.GRAY + " / 심장: " + templeColor + (templeConfigured ? "설정됨" : "위치 미등록/월드 미로드"),
             ChatColor.GRAY + "현재 색상: " + color + colorLabel(color),
             ChatColor.DARK_GRAY + "클릭해서 팀 설정 열기");
     }
@@ -961,8 +997,8 @@ public final class SettingsGui implements Listener {
     private ItemStack teamSummaryItem(GodTeam team) {
         ChatColor color = gameManager.teamColor(team);
         boolean enabled = gameManager.isTeamEnabled(team);
-        boolean spawnConfigured = gameManager.spawns().containsKey(team);
-        boolean templeConfigured = gameManager.temples().containsKey(team);
+        boolean spawnConfigured = (gameManager.spawns().get(team) != null && gameManager.spawns().get(team).toLocation() != null);
+        boolean templeConfigured = (gameManager.temples().get(team) != null && gameManager.temples().get(team).toLocation() != null);
         ChatColor enabledColor = enabled ? ChatColor.GREEN : ChatColor.RED;
         ChatColor spawnColor = spawnConfigured ? ChatColor.GREEN : ChatColor.RED;
         ChatColor templeColor = templeConfigured ? ChatColor.GREEN : ChatColor.RED;
@@ -971,8 +1007,8 @@ public final class SettingsGui implements Listener {
             titleColor + gameManager.teamDisplayName(team) + ChatColor.YELLOW + " 팀 기본 정보",
             ChatColor.GRAY + "참가 상태: " + enabledColor + (enabled ? "활성" : "비활성"),
             ChatColor.GRAY + "팀원: " + ChatColor.WHITE + teamMemberCount(team) + "명",
-            ChatColor.GRAY + "스폰: " + spawnColor + (spawnConfigured ? "설정됨" : "미설정")
-                + ChatColor.GRAY + " / 심장: " + templeColor + (templeConfigured ? "설정됨" : "미설정"),
+            ChatColor.GRAY + "스폰: " + spawnColor + (spawnConfigured ? "설정됨" : "위치 미등록/월드 미로드")
+                + ChatColor.GRAY + " / 심장: " + templeColor + (templeConfigured ? "설정됨" : "위치 미등록/월드 미로드"),
             ChatColor.GRAY + "현재 색상: " + color + colorLabel(color));
     }
 
@@ -1001,7 +1037,7 @@ public final class SettingsGui implements Listener {
     }
 
     private ItemStack teamSpawnItem(GodTeam team) {
-        boolean configured = gameManager.spawns().containsKey(team);
+        boolean configured = (gameManager.spawns().get(team) != null && gameManager.spawns().get(team).toLocation() != null);
         boolean enabled = gameManager.isTeamEnabled(team);
         ChatColor stateColor = configured ? ChatColor.GREEN : ChatColor.RED;
         ChatColor titleColor = enabled ? stateColor : ChatColor.DARK_GRAY;
@@ -1009,7 +1045,7 @@ public final class SettingsGui implements Listener {
         return item("BED", "BED", 1, (short) 0,
             titleColor + gameManager.teamDisplayName(team) + " 팀 스폰",
             ChatColor.GRAY + "참가 상태: " + enabledColor + (enabled ? "활성" : "비활성"),
-            ChatColor.GRAY + "상태: " + stateColor + (configured ? "설정됨" : "미설정"),
+            ChatColor.GRAY + "상태: " + stateColor + (configured ? "설정됨" : "위치 미등록/월드 미로드"),
             ChatColor.GRAY + "클릭하면 현재 위치로 등록합니다.",
             enabled
                 ? ChatColor.DARK_GRAY + "활성 팀은 게임 시작 전에 필요합니다."
@@ -1017,7 +1053,7 @@ public final class SettingsGui implements Listener {
     }
 
     private ItemStack teamTempleItem(GodTeam team) {
-        boolean configured = gameManager.temples().containsKey(team);
+        boolean configured = (gameManager.temples().get(team) != null && gameManager.temples().get(team).toLocation() != null);
         boolean enabled = gameManager.isTeamEnabled(team);
         ChatColor stateColor = configured ? ChatColor.GREEN : ChatColor.RED;
         ChatColor titleColor = enabled ? stateColor : ChatColor.DARK_GRAY;
@@ -1025,7 +1061,7 @@ public final class SettingsGui implements Listener {
         return item("DIAMOND_BLOCK", "DIAMOND_BLOCK", 1, (short) 0,
             titleColor + gameManager.teamDisplayName(team) + " 팀 다이아 심장",
             ChatColor.GRAY + "참가 상태: " + enabledColor + (enabled ? "활성" : "비활성"),
-            ChatColor.GRAY + "상태: " + stateColor + (configured ? "설정됨" : "미설정"),
+            ChatColor.GRAY + "상태: " + stateColor + (configured ? "설정됨" : "위치 미등록/월드 미로드"),
             ChatColor.GRAY + "바라보는 다이아 블록을 등록합니다.",
             enabled
                 ? ChatColor.DARK_GRAY + "활성 팀은 게임 시작 전에 필요합니다."
@@ -1652,6 +1688,8 @@ public final class SettingsGui implements Listener {
         }
         if (gameManager.setTemple(team, block)) {
             plugin.messages().send(player, "&a" + gameManager.teamColoredName(team) + " 팀의 다이아 심장을 등록했습니다.");
+        } else {
+            plugin.messages().send(player, "&c이미 다른 팀의 심장으로 등록된 블록입니다. 다른 다이아몬드 블록을 선택하세요.");
         }
     }
 
@@ -1739,7 +1777,7 @@ public final class SettingsGui implements Listener {
             meta.setDisplayName(name);
             meta.addItemFlags(org.bukkit.inventory.ItemFlag.HIDE_ATTRIBUTES, org.bukkit.inventory.ItemFlag.HIDE_ENCHANTS);
             if (lore != null && lore.length > 0) {
-                meta.setLore(new ArrayList<String>(Arrays.asList(lore)));
+                meta.setLore(GuiText.wrap(Arrays.asList(lore)));
             }
             stack.setItemMeta(meta);
         }
@@ -1793,7 +1831,7 @@ public final class SettingsGui implements Listener {
             meta.setDisplayName(name);
             meta.addItemFlags(org.bukkit.inventory.ItemFlag.HIDE_ATTRIBUTES, org.bukkit.inventory.ItemFlag.HIDE_ENCHANTS);
             if (lore != null && lore.length > 0) {
-                meta.setLore(new ArrayList<String>(Arrays.asList(lore)));
+                meta.setLore(GuiText.wrap(Arrays.asList(lore)));
             }
             stack.setItemMeta(meta);
         }

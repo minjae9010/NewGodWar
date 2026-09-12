@@ -17,7 +17,7 @@ import java.util.List;
     id = "horeundal",
     name = "호른달",
     description = "위험한 섬 진입 후 10초 뒤 저장한 위치로 귀환합니다.",
-    normalSkill = "현재 위치를 저장하고 10초 후 되돌아옵니다.",
+    normalSkill = "블레이즈 막대기 좌클릭: 현재 위치를 저장하고 10초 후 되돌아옵니다.",
     normalStoneCost = 18,
     normalCooldownSeconds = 100,
     advancedSkill = "없음",

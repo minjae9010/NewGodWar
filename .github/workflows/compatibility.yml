@@ -33,6 +33,13 @@ jobs:
           path: build/libs/NewGodWar-*.jar
           if-no-files-found: error
 
+      - name: Upload core regression fixture
+        uses: actions/upload-artifact@v4
+        with:
+          name: core-regression-fixture
+          path: plugin/build/core-regression/CoreRegressionProbe.jar
+          if-no-files-found: error
+
   smoke:
     name: Paper ${{ matrix.minecraft }} / Java ${{ matrix.java }}
     needs: build
@@ -206,3 +213,35 @@ jobs:
           name: paper-smoke-latest
           path: .paper-smoke/**
           if-no-files-found: ignore
+
+
+  core-regression:
+    name: Game core regression / Paper
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: newgodwar-plugin
+          path: build/libs
+      - uses: actions/download-artifact@v4
+        with:
+          name: core-regression-fixture
+          path: build/core-regression
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+      - name: Test core lifecycle and temple rules
+        shell: pwsh
+        run: |
+          $jar = (Get-ChildItem build/libs -Filter 'NewGodWar-*.jar' | Select-Object -First 1).FullName
+          ./scripts/Test-PaperMatrix.ps1 -SkipBuild -LatestVersion -PluginJar $jar -ProbeJar build/core-regression/CoreRegressionProbe.jar -WorkDir .paper-smoke/core-regression -TimeoutSeconds 180
+      - name: Upload core regression logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: core-regression-logs
+          path: .paper-smoke/core-regression/**/logs/latest.log

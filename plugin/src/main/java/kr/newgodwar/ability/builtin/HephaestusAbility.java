@@ -19,7 +19,7 @@ import java.util.Map;
     id = "hephaestus",
     name = "헤파이토스",
     description = "짧은 용암 장악과 화염 면역으로 근접 전장을 압박합니다.",
-    normalSkill = "5블록 안의 바라보는 위치에 2초 동안 용암을 만듭니다.",
+    normalSkill = "블레이즈 막대기 좌클릭: 5블록 안의 바라보는 위치에 2초 동안 용암을 만듭니다.",
     normalStoneCost = 4,
     normalCooldownSeconds = 20,
     advancedSkill = "없음",

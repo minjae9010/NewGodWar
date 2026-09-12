@@ -17,7 +17,7 @@ import java.util.List;
     id = "hermes",
     name = "헤르메스",
     description = "상시 빠른 이동과 짧은 비행으로 섬 사이 이동을 보조합니다.",
-    normalSkill = "7초 동안 비행합니다.",
+    normalSkill = "블레이즈 막대기 좌클릭: 7초 동안 비행합니다.",
     normalStoneCost = 14,
     normalCooldownSeconds = 75,
     advancedSkill = "없음",

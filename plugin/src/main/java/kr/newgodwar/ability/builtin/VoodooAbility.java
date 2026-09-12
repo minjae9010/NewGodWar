@@ -17,12 +17,12 @@ import java.util.List;
     id = "voodoo",
     name = "부두술사",
     description = "팻말로 대상을 연결해 원격 피해를 줍니다.",
-    normalSkill = "팻말 첫 줄에 대상 이름을 적어 연결합니다.",
+    normalSkill = "팻말 설치 후 첫 줄에 적 이름을 적고, 연결된 팻말을 좌클릭해 피해를 줍니다.",
     normalStoneCost = 5,
     normalCooldownSeconds = 180,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "연결은 잠시 유지되며 팻말이 자동 제거됩니다.",
+    passiveSkill = "연결은 7초 유지되며 팻말이 자동 제거됩니다. 피해량과 타격 간격은 서버 설정을 따릅니다.",
     grade = AbilityGrade.B
 )
 final class VoodooAbility extends BaseAbility {

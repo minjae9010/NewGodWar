@@ -17,7 +17,7 @@ import java.util.List;
     id = "clocking",
     name = "클로킹",
     description = "투명화 후 공격 시 확률로 즉사시킵니다.",
-    normalSkill = "잠시 투명화합니다.",
+    normalSkill = "블레이즈 막대기 좌클릭: 잠시 투명화합니다.",
     normalStoneCost = 25,
     normalCooldownSeconds = 60,
     advancedSkill = "없음",

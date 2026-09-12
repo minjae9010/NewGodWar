@@ -17,7 +17,7 @@ import java.util.List;
     id = "aprodite",
     name = "아프로디테",
     description = "지면에 서 있을 때 주변 플레이어를 자신의 섬 위치로 끌어옵니다.",
-    normalSkill = "반경 20블록 플레이어를 자신의 위치로 끌어옵니다.",
+    normalSkill = "블레이즈 막대기 좌클릭: 반경 20블록 플레이어를 자신의 위치로 끌어옵니다.",
     normalStoneCost = 24,
     normalCooldownSeconds = 120,
     advancedSkill = "없음",

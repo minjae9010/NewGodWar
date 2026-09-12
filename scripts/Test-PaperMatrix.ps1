@@ -11,6 +11,7 @@ param(
         "26.2"
     ),
     [string] $PluginJar = "",
+    [string] $ProbeJar = "",
     [string] $WorkDir = ".paper-smoke",
     [string] $JavaExecutable = "java",
     [int] $TimeoutSeconds = 150,
@@ -291,7 +292,11 @@ function Test-PaperVersion {
     )
 
     $safeVersion = $MinecraftVersion -replace "[^0-9A-Za-z_.-]", "_"
-    $versionDir = Join-Path $WorkRoot $safeVersion
+    $versionDir = [System.IO.Path]::GetFullPath((Join-Path $WorkRoot $safeVersion))
+    $rootPrefix = $RootDir.TrimEnd([System.IO.Path]::DirectorySeparatorChar) + [System.IO.Path]::DirectorySeparatorChar
+    if (-not $versionDir.StartsWith($rootPrefix, [System.StringComparison]::OrdinalIgnoreCase) -or $versionDir -eq $RootDir) {
+        throw "Test server directory must be inside the repository: $versionDir"
+    }
     if ((Test-Path $versionDir) -and -not $KeepWorkDirs) {
         Remove-Item -LiteralPath $versionDir -Recurse -Force
     }
@@ -300,6 +305,9 @@ function Test-PaperVersion {
     $pluginsDir = Join-Path $versionDir "plugins"
     New-Item -ItemType Directory -Force -Path $pluginsDir | Out-Null
     Copy-Item -LiteralPath $JarToTest -Destination (Join-Path $pluginsDir "NewGodWar.jar") -Force
+    if ($ProbeJar) {
+        Copy-Item -LiteralPath $ProbeJar -Destination (Join-Path $pluginsDir "CoreRegressionProbe.jar") -Force
+    }
 
     Set-Content -LiteralPath (Join-Path $versionDir "eula.txt") -Encoding UTF8 -Value @(
         "# Local NewGodWar compatibility smoke test"
@@ -348,6 +356,7 @@ function Test-PaperVersion {
         $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
         $enabled = $false
         $ready = $false
+        $probePassed = [string]::IsNullOrWhiteSpace($ProbeJar)
         $failure = $null
 
         while ((Get-Date) -lt $deadline) {
@@ -365,16 +374,21 @@ function Test-PaperVersion {
                 $failure = "Plugin load error detected."
                 break
             }
+            if ($ProbeJar -and $logText -match "CORE REGRESSION FAILED") {
+                $failure = "Game core regression failed."
+                break
+            }
+            if ($ProbeJar -and $logText -match "CORE REGRESSION PASS") { $probePassed = $true }
             if ($process.HasExited) {
                 $failure = "Server process exited before the plugin finished loading."
                 break
             }
-            if ($enabled -and $ready) {
+            if ($enabled -and $ready -and $probePassed) {
                 break
             }
         }
 
-        if (-not $enabled -or -not $ready) {
+        if ($null -ne $failure -or -not $enabled -or -not $ready -or -not $probePassed) {
             if ($null -eq $failure) {
                 $failure = "Timed out waiting for Paper $MinecraftVersion to finish startup."
             }
@@ -382,6 +396,7 @@ function Test-PaperVersion {
         }
 
         Write-Host "PASS Paper $MinecraftVersion loaded NewGodWar successfully."
+        if ($ProbeJar) { Write-Host "PASS game core regression fixture." }
     } finally {
         Stop-ServerProcess -Process $process
     }

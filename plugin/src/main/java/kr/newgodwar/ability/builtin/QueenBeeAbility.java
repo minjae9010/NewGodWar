@@ -17,7 +17,7 @@ import java.util.List;
     id = "queenbee",
     name = "여왕벌",
     description = "가까운 지정 대상을 끌어오고 피격 시 독으로 반격합니다.",
-    normalSkill = "10블록 안의 지정한 적을 자신의 위치로 끌어옵니다.",
+    normalSkill = "먼저 /x <플레이어>로 적 지정. 블레이즈 막대기 좌클릭: 10블록 안의 지정한 적을 자신의 위치로 끌어옵니다.",
     normalStoneCost = 30,
     normalCooldownSeconds = 150,
     advancedSkill = "없음",

@@ -4,6 +4,7 @@ import org.bukkit.ChatColor;
 
 enum SettingsView {
     MAIN(ChatColor.BLACK + "설정 메인"),
+    STOP_CONFIRM(ChatColor.BLACK + "게임 종료 확인"),
     GAME(ChatColor.BLACK + "게임 진행 설정"),
     TEAM(ChatColor.BLACK + "팀 설정"),
     TEAM_DETAIL(ChatColor.BLACK + "팀 상세 설정"),

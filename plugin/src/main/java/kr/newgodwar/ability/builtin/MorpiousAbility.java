@@ -17,7 +17,7 @@ import java.util.List;
     id = "morpious",
     name = "모르피우스",
     description = "지정한 적을 수면 상태로 만듭니다.",
-    normalSkill = "지정한 적에게 실명과 강한 감속을 부여합니다.",
+    normalSkill = "먼저 /x <플레이어>로 적 지정. 블레이즈 막대기 좌클릭: 지정한 적에게 실명과 강한 감속을 부여합니다.",
     normalStoneCost = 20,
     normalCooldownSeconds = 100,
     advancedSkill = "없음",

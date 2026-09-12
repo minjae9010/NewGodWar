@@ -17,10 +17,10 @@ import java.util.List;
     id = "snow",
     name = "사이코스노우",
     description = "눈덩이로 고정 피해를 주고 사망할 때마다 공격 지수가 성장합니다.",
-    normalSkill = "눈덩이를 1개 생성합니다.",
+    normalSkill = "블레이즈 막대기 좌클릭: 눈덩이를 1개 생성합니다.",
     normalStoneCost = 2,
     normalCooldownSeconds = 3,
-    advancedSkill = "현재 공격 지수를 확인합니다.",
+    advancedSkill = "블레이즈 막대기 우클릭: 현재 공격 지수를 확인합니다.",
     advancedStoneCost = 0,
     passiveSkill = "눈덩이 피해가 공격 지수를 따르고 사망할 때 최대 5까지 성장합니다.",
     grade = AbilityGrade.A

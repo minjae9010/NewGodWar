@@ -17,7 +17,7 @@ import java.util.List;
     id = "megumin",
     name = "메구밍",
     description = "게임 중 한 번 모든 것을 걸고 강력한 지연 폭발을 일으킵니다.",
-    normalSkill = "25블록 안의 바라보는 위치에 3초 후 폭발을 일으키고 사망합니다.",
+    normalSkill = "블레이즈 막대기 좌클릭: 25블록 안의 바라보는 위치에 3초 후 폭발을 일으키고 사망합니다.",
     normalStoneCost = 32,
     advancedSkill = "없음",
     advancedStoneCost = 0,

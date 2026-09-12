@@ -205,3 +205,4 @@ messages:
   team-eliminated: "&c{team} 팀의 다이아 심장이 파괴되었습니다."
   team-eliminated-kick: "&c{team} 팀이 탈락했습니다."
   winner: "&a{team} 팀이 신들의 전쟁에서 승리했습니다!"
+  draw: "&e모든 팀의 심장이 파괴되어 무승부로 종료합니다."

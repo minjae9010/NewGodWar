@@ -17,7 +17,7 @@ import java.util.List;
     id = "girl",
     name = "안락소녀",
     description = "가까운 적을 자신의 섬 위치로 끌어와 허기와 움직임을 끊습니다.",
-    normalSkill = "수평 반경 5블록 적을 끌어오고 허기를 0으로 만듭니다.",
+    normalSkill = "블레이즈 막대기 좌클릭: 수평 반경 5블록 적을 끌어오고 허기를 0으로 만듭니다.",
     normalStoneCost = 22,
     normalCooldownSeconds = 90,
     advancedSkill = "없음",

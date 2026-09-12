@@ -713,6 +713,8 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         }
         if (gameManager.setTemple(team, block)) {
             plugin.messages().send(sender, "&a" + teamName(team) + " 팀의 다이아 심장을 등록했습니다.");
+        } else {
+            plugin.messages().send(sender, "&c이미 다른 팀의 심장으로 등록된 블록입니다. 다른 다이아몬드 블록을 선택하세요.");
         }
     }
 

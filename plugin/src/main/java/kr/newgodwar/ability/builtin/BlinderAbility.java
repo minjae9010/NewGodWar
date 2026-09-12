@@ -17,7 +17,7 @@ import java.util.List;
     id = "blinder",
     name = "블라인더",
     description = "주변 적이나 공격자에게 실명을 겁니다.",
-    normalSkill = "주변 적에게 실명을 겁니다.",
+    normalSkill = "블레이즈 막대기 좌클릭: 주변 적에게 실명을 겁니다.",
     normalStoneCost = 10,
     normalCooldownSeconds = 30,
     advancedSkill = "없음",

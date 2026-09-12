@@ -17,7 +17,7 @@ import java.util.List;
     id = "creeper",
     name = "크리퍼",
     description = "자폭으로 섬 지형을 흔들고 번개를 맞으면 다음 폭발력이 커집니다.",
-    normalSkill = "자신의 위치에서 자폭 폭발을 일으키고 사망합니다.",
+    normalSkill = "블레이즈 막대기 좌클릭: 자신의 위치에서 자폭 폭발을 일으키고 사망합니다.",
     normalStoneCost = 24,
     normalCooldownSeconds = 90,
     advancedSkill = "없음",

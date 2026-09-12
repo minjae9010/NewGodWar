@@ -17,7 +17,7 @@ import java.util.List;
     id = "naro",
     name = "나로호",
     description = "강한 수직 도약으로 진입하거나 탈출하고 낙하 피해를 무시합니다.",
-    normalSkill = "바라보는 방향으로 높게 도약합니다.",
+    normalSkill = "블레이즈 막대기 좌클릭: 바라보는 방향으로 높게 도약합니다.",
     normalStoneCost = 5,
     normalCooldownSeconds = 18,
     advancedSkill = "없음",

@@ -17,7 +17,7 @@ import java.util.List;
     id = "jujak",
     name = "주작",
     description = "화염을 무시하고 긴 비행으로 공중 섬 전장을 가로지릅니다.",
-    normalSkill = "12초 동안 비행합니다.",
+    normalSkill = "블레이즈 막대기 좌클릭: 12초 동안 비행합니다.",
     normalStoneCost = 18,
     normalCooldownSeconds = 100,
     advancedSkill = "없음",

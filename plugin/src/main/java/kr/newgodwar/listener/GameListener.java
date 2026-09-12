@@ -203,6 +203,11 @@ public final class GameListener implements Listener {
                 + gameManager.killtimeRemainingSeconds() + "초");
             return;
         }
+        if (!gameManager.canBreakTemple(event.getPlayer()) || !gameManager.isTeamEnabled(team)) {
+            event.setCancelled(true);
+            plugin.messages().send(event.getPlayer(), "&c게임에 참가 중인 생존 팀의 플레이어만 심장을 파괴할 수 있습니다.");
+            return;
+        }
         GodTeam breakerTeam = gameManager.teamOf(event.getPlayer());
         if (team.equals(breakerTeam)) {
             event.setCancelled(true);
@@ -542,15 +547,17 @@ public final class GameListener implements Listener {
         if (!gameManager.isRunning() || gameManager.isCoreExplosionProtected()) {
             return;
         }
+        java.util.Set<GodTeam> destroyedTeams = new java.util.LinkedHashSet<GodTeam>();
         for (Block block : blocks) {
             if (block.getType() != Material.DIAMOND_BLOCK) {
                 continue;
             }
             GodTeam team = gameManager.templeTeam(block);
             if (team != null) {
-                gameManager.eliminate(team, null);
+                destroyedTeams.add(team);
             }
         }
+        gameManager.eliminateTeams(destroyedTeams, null);
     }
 
     private void forceInventoryDrop(PlayerDeathEvent event) {

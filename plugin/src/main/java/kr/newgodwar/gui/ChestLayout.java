@@ -18,9 +18,11 @@ final class ChestLayout {
         Arrays.fill(slots, -1);
         switch (view) {
             case MAIN:
-                put(slots, 10,20, 11,22, 12,24, 13,29, 15,31, 16,33, 24,40); break;
+                put(slots, 4,13, 10,20, 11,22, 12,24, 13,29, 15,31, 16,33, 24,40); break;
+            case STOP_CONFIRM:
+                put(slots, 10,20, 16,24); break;
             case GAME:
-                put(slots, 0,10, 1,11, 2,12, 5,14, 6,15, 7,16,
+                put(slots, 4,13, 0,10, 1,11, 2,12, 5,14, 6,15, 7,16,
                     9,19, 10,20, 11,21, 12,22, 13,23, 14,24, 19,25,
                     15,28, 16,29, 17,30, 18,37, 20,43, 21,39, 23,41); break;
             case TEAM:
