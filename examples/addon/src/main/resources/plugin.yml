@@ -1,0 +1,5 @@
+name: NewGodWarExampleAddon
+main: example.godwar.ExampleAddon
+version: ${version}
+depend: [NewGodWar]
+description: Example custom ability and game feature for NewGodWar

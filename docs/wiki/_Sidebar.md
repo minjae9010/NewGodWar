@@ -8,4 +8,5 @@
 - [설정](configuration)
 - [능력 목록](abilities)
 - [능력 구현](ability-development)
+- [애드온 설치·개발](addon-development)
 - [문제 해결](troubleshooting)

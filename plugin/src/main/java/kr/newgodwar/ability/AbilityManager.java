@@ -40,6 +40,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 import java.util.ServiceLoader;
+import java.util.Set;
+import java.util.HashSet;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -66,12 +68,53 @@ public final class AbilityManager {
         return registry;
     }
 
+    /** Removes online and offline sessions owned by an unloaded addon. */
+    public void removeDefinitions(Set<String> ids) {
+        for (Map.Entry<UUID, AbilitySession> entry : assignments.entrySet()) {
+            AbilitySession session = entry.getValue();
+            if (!ids.contains(session.definition().id().trim().toLowerCase(Locale.ROOT))
+                || !assignments.remove(entry.getKey(), session)) {
+                continue;
+            }
+            suppressedUntil.remove(entry.getKey());
+            Player player = plugin.getServer().getPlayer(entry.getKey());
+            try {
+                session.ability().cancelScheduledTasks();
+            } catch (RuntimeException | LinkageError ex) {
+                plugin.getLogger().log(java.util.logging.Level.WARNING, "Addon task cleanup failed", ex);
+            }
+            if (player != null) {
+                try {
+                    session.ability().onRemove(playerContext(player, session.definition()));
+                } catch (RuntimeException | LinkageError ex) {
+                    plugin.getLogger().log(java.util.logging.Level.WARNING, "Addon ability cleanup failed", ex);
+                } finally {
+                    BukkitCompat.clearPotionEffects(player);
+                    if (plugin.game() != null) {
+                        plugin.game().refreshPlayerDisplay(player);
+                    }
+                }
+            }
+        }
+        synchronized (recentRandomAbilityIds) {
+            recentRandomAbilityIds.removeIf(ids::contains);
+        }
+    }
+
     public void clear() {
         for (Map.Entry<UUID, AbilitySession> entry : assignments.entrySet()) {
             Player player = plugin.getServer().getPlayer(entry.getKey());
-            entry.getValue().ability().cancelScheduledTasks();
+            try {
+                entry.getValue().ability().cancelScheduledTasks();
+            } catch (RuntimeException | LinkageError ex) {
+                plugin.getLogger().log(java.util.logging.Level.WARNING, "Ability task cleanup failed", ex);
+            }
             if (player != null) {
-                entry.getValue().ability().onRemove(playerContext(player, entry.getValue().definition()));
+                try {
+                    entry.getValue().ability().onRemove(playerContext(player, entry.getValue().definition()));
+                } catch (RuntimeException | LinkageError ex) {
+                    plugin.getLogger().log(java.util.logging.Level.WARNING, "Ability cleanup failed", ex);
+                }
                 BukkitCompat.clearPotionEffects(player);
             }
         }
@@ -207,8 +250,10 @@ public final class AbilityManager {
 
     public List<AbilityDefinition> enabledAbilities(Player player) {
         List<AbilityDefinition> enabled = new ArrayList<AbilityDefinition>();
+        Set<String> blacklist = new HashSet<String>(blacklistedAbilityIds());
         for (AbilityDefinition definition : registry.all()) {
-            if (!isEnabled(definition)) {
+            if (!plugin.getConfig().getBoolean("abilities." + definition.id() + ".enabled", definition.enabledByDefault())
+                || blacklist.contains(definition.id().toLowerCase(Locale.ROOT))) {
                 continue;
             }
             if (!definition.create().supports(player)) {

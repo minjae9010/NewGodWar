@@ -43,7 +43,7 @@ public final class AbilityDefinition {
         this.grade = grade == null ? AbilityGrade.UNRATED : grade;
         this.author = author;
         this.enabledByDefault = enabledByDefault;
-        this.factory = factory;
+        this.factory = java.util.Objects.requireNonNull(factory, "Ability factory");
     }
 
     public String id() {

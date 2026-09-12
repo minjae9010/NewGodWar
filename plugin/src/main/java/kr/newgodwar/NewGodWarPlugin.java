@@ -1,6 +1,9 @@
 package kr.newgodwar;
 
 import kr.newgodwar.ability.AbilityManager;
+import kr.newgodwar.api.NewGodWarApi;
+import kr.newgodwar.addon.AddonLoader;
+import org.bukkit.plugin.ServicePriority;
 import kr.newgodwar.command.GodWarCommand;
 import kr.newgodwar.command.TeamChatCommand;
 import kr.newgodwar.game.BlazeRodRecipes;
@@ -35,6 +38,8 @@ public final class NewGodWarPlugin extends JavaPlugin {
     private Messages messages;
     private NmsAdapter nmsAdapter;
     private AbilityManager abilityManager;
+    private NewGodWarApi addonApi;
+    private AddonLoader addonLoader;
     private GameManager gameManager;
     private ServerVersionSupport versionSupport;
     private PluginUpdater updater;
@@ -90,7 +95,13 @@ public final class NewGodWarPlugin extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(abilityGui, this);
         Bukkit.getPluginManager().registerEvents(gamblingGui, this);
         BlazeRodRecipes.register(this);
+        this.addonApi = new NewGodWarApi(this);
+        Bukkit.getPluginManager().registerEvents(addonApi, this);
+        Bukkit.getServicesManager().register(NewGodWarApi.class, addonApi, this, ServicePriority.Normal);
         updater.start();
+        addonLoader = new AddonLoader(this);
+        // Other ordinary Bukkit plugins finish enabling before addon dependencies are resolved.
+        Bukkit.getScheduler().runTask(this, () -> addonLoader.load());
 
         if (!versionSupport.paperServer()) {
             getLogger().warning("NewGodWar detected a non-Paper server: " + versionSupport.summary());
@@ -109,8 +120,17 @@ public final class NewGodWarPlugin extends JavaPlugin {
         if (updater != null) {
             updater.shutdown();
         }
-        if (gameManager != null) {
-            gameManager.shutdown();
+        try {
+            if (gameManager != null) gameManager.shutdown();
+        } finally {
+            try {
+                if (addonLoader != null) addonLoader.shutdown();
+            } finally {
+                if (addonApi != null) {
+                    addonApi.shutdown();
+                    Bukkit.getServicesManager().unregisterAll(this);
+                }
+            }
         }
     }
 
@@ -124,6 +144,10 @@ public final class NewGodWarPlugin extends JavaPlugin {
 
     public AbilityManager abilities() {
         return abilityManager;
+    }
+
+    public NewGodWarApi api() {
+        return addonApi;
     }
 
     public GameManager game() {

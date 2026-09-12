@@ -8,6 +8,7 @@ dependencies {
     implementation "org.bstats:bstats-bukkit:3.2.1"
     runtimeOnly project(":compatibility:reflection")
     testImplementation "junit:junit:4.13.2"
+    testImplementation "com.destroystokyo.paper:paper-api:1.12.2-R0.1-SNAPSHOT"
 }
 
 def testServerVersion = providers.gradleProperty("newGodWarMinecraftVersion").orElse("26.2")

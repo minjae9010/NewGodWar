@@ -1,4 +1,6 @@
 game:
+  # default: built-in core war; addon mode id: complete replacement (e.g. example_timed)
+  mode: default
   min-players: 2
   friendly-fire: false
   auto-balance-teams: true

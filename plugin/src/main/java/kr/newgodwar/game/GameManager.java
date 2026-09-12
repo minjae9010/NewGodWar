@@ -1,6 +1,8 @@
 package kr.newgodwar.game;
 
 import kr.newgodwar.NewGodWarPlugin;
+import kr.newgodwar.api.event.GameStateChangeEvent;
+import kr.newgodwar.api.GameMode;
 import kr.newgodwar.ability.AbilityManager;
 import kr.newgodwar.ability.api.AbilityDefinition;
 import kr.newgodwar.nms.NmsAdapter;
@@ -69,6 +71,9 @@ public final class GameManager {
     };
 
     private GameState state = GameState.WAITING;
+    private volatile GameMode activeMode;
+    private boolean stoppingCustomMode;
+    private boolean lastGameWasCustom;
     private int waterHealTask = -1;
     private int abilityNoticeTask = -1;
     private int gameTimerTask = -1;
@@ -385,6 +390,7 @@ public final class GameManager {
     }
 
     public boolean canDamage(Player attacker, Player victim) {
+        if (activeMode != null) return activeMode.canDamage(attacker, victim);
         if (isPlayerCombatProtectedByKilltime()) {
             return false;
         }
@@ -413,10 +419,63 @@ public final class GameManager {
         return spawn == null ? null : spawn.toLocation();
     }
 
+    public boolean hasCustomMode() { return activeMode != null; }
+
+    /** Called when a mode's owning addon is disabled. */
+    public void stopMode(GameMode mode) {
+        if (activeMode == mode && mode != null) stop(false);
+    }
+
+    private void startCustomMode(GameMode mode) {
+        ensureGameWorldResetComplete();
+        GameState previous = state;
+        lastGameWasCustom = true;
+        activeMode = mode;
+        state = GameState.RUNNING;
+        runningStartedAtMillis = System.currentTimeMillis();
+        try {
+            mode.onStart(this);
+        } catch (RuntimeException | LinkageError ex) {
+            stopCustomMode();
+            throw ex;
+        }
+        if (activeMode == mode && state == GameState.RUNNING) notifyStateChange(previous);
+    }
+
+    private void stopCustomMode() {
+        if (stoppingCustomMode) return;
+        stoppingCustomMode = true;
+        GameState previous = state;
+        state = GameState.ENDED;
+        try {
+            activeMode.onStop(this);
+        } catch (RuntimeException | LinkageError ex) {
+            plugin.getLogger().log(java.util.logging.Level.SEVERE, "Custom game mode cleanup failed", ex);
+        } finally {
+            try {
+                abilityManager.clear();
+            } finally {
+                activeMode = null;
+                runningStartedAtMillis = 0L;
+                clearGameParticipation();
+                stoppingCustomMode = false;
+                refreshAllPlayerDisplays();
+                notifyStateChange(previous);
+            }
+        }
+    }
+
     public void start() {
+        if (stoppingCustomMode) throw new IllegalStateException("게임 모드 종료 처리 중입니다.");
         if (state == GameState.READY || state == GameState.RUNNING) {
             throw new IllegalStateException("게임이 이미 시작 준비 중이거나 진행 중입니다.");
         }
+        GameMode customMode = plugin.api().configuredGameMode();
+        if (customMode != null) {
+            startCustomMode(customMode);
+            return;
+        }
+        lastGameWasCustom = false;
         ensureGameWorldResetComplete();
         if (plugin.getConfig().getBoolean("game.auto-balance-teams", true) && teams.isEmpty()) {
             autoBalance();
@@ -430,6 +489,7 @@ public final class GameManager {
         validateStartSettings();
         prepareGameWorldSnapshot();
 
+        GameState previousState = state;
         state = GameState.READY;
         eliminatedTeams.clear();
         kills.clear();
@@ -463,6 +523,7 @@ public final class GameManager {
             abilitySelectionWaitEnded = true;
         }
         startReadyTask();
+        notifyStateChange(previousState);
     }
 
     public AbilityDefinition startTest(Player player, AbilityDefinition preferredAbility) {
@@ -473,7 +534,9 @@ public final class GameManager {
             throw new IllegalStateException("게임 준비 또는 진행 중에는 테스트 모드를 시작할 수 없습니다. 먼저 /gw stop을 실행해주세요.");
         }
         ensureGameWorldResetComplete();
+        lastGameWasCustom = false;
 
+        GameState previousState = state;
         state = GameState.RUNNING;
         runningStartedAtMillis = System.currentTimeMillis();
         killtimeEndAnnounced = false;
@@ -503,6 +566,7 @@ public final class GameManager {
         startPickaxeUnlockNoticeTask();
         refreshAllPlayerDisplays();
         startWaterHealTask();
+        notifyStateChange(previousState);
         return ability;
     }
 
@@ -586,7 +650,14 @@ public final class GameManager {
     }
 
     private void stop(boolean announce, boolean resetGameWorld) {
+        if (activeMode != null) {
+            stopCustomMode();
+            return;
+        }
+        if (lastGameWasCustom && state == GameState.ENDED) return;
+
         List<Player> endingPlayers = endingPlayers();
+        GameState previousState = state;
         state = GameState.ENDED;
         runningStartedAtMillis = 0L;
         killtimeEndAnnounced = false;
@@ -626,6 +697,7 @@ public final class GameManager {
         }
         clearGameParticipation();
         refreshAllPlayerDisplays();
+        notifyStateChange(previousState);
     }
 
     public void recordKill(Player killer) {
@@ -1218,59 +1290,58 @@ public final class GameManager {
     }
 
     private void refreshSidebar(Player player, Scoreboard board) {
-        Objective previous = board.getObjective(SIDEBAR_OBJECTIVE_NAME);
-        if (previous != null) {
-            previous.unregister();
-        }
+        Objective objective = board.getObjective(SIDEBAR_OBJECTIVE_NAME);
         if (!plugin.getConfig().getBoolean("scoreboard.enabled", true)) {
+            if (objective != null) {
+                objective.unregister();
+            }
             return;
         }
-        fillSidebar(player, board);
-    }
-
-    private void fillSidebar(Player player, Scoreboard board) {
-        Objective objective = board.registerNewObjective(SIDEBAR_OBJECTIVE_NAME, "dummy");
-        objective.setDisplayName(ChatColor.GOLD + "신들의 전쟁");
-        objective.setDisplaySlot(DisplaySlot.SIDEBAR);
-
+        if (objective == null) {
+            objective = board.registerNewObjective(SIDEBAR_OBJECTIVE_NAME, "dummy");
+            objective.setDisplayName(ChatColor.GOLD + "신들의 전쟁");
+            objective.setDisplaySlot(DisplaySlot.SIDEBAR);
+        }
+        Map<String, Integer> lines = new LinkedHashMap<String, Integer>();
         AbilityDefinition ability = abilityManager.get(player);
         GodTeam team = teamOf(player);
         int score = 15;
-        setLine(objective, score--, ChatColor.YELLOW + "상태 " + ChatColor.WHITE + stateLabel());
-        setLine(objective, score--, ChatColor.YELLOW + "팀 " + (team == null ? ChatColor.GRAY + "미참가" : teamColoredName(team)));
-        setLine(objective, score--, ChatColor.YELLOW + "능력 " + ChatColor.WHITE + (ability == null ? "없음" : ability.name()));
+        setLine(lines, score--, ChatColor.YELLOW + "상태 " + ChatColor.WHITE + stateLabel());
+        setLine(lines, score--, ChatColor.YELLOW + "팀 " + (team == null ? ChatColor.GRAY + "미참가" : teamColoredName(team)));
+        setLine(lines, score--, ChatColor.YELLOW + "능력 " + ChatColor.WHITE + (ability == null ? "없음" : ability.name()));
         if (ability != null) {
-            setLine(objective, score--, ChatColor.YELLOW + "등급 " + ChatColor.WHITE + ability.grade().symbol());
+            setLine(lines, score--, ChatColor.YELLOW + "등급 " + ChatColor.WHITE + ability.grade().symbol());
         }
         if (hasSkill(ability == null ? null : ability.normalSkill())) {
-            setLine(objective, score--, ChatColor.AQUA + "일반 " + cooldownStatus(player, ability, 1));
+            setLine(lines, score--, ChatColor.AQUA + "일반 " + cooldownStatus(player, ability, 1));
         }
         if (hasSkill(ability == null ? null : ability.advancedSkill())) {
-            setLine(objective, score--, ChatColor.RED + "고급 " + cooldownStatus(player, ability, 2));
+            setLine(lines, score--, ChatColor.RED + "고급 " + cooldownStatus(player, ability, 2));
         }
         List<String> timers = abilityManager.activeTimerLines(player);
         if (!timers.isEmpty()) {
-            setLine(objective, score--, ChatColor.LIGHT_PURPLE + "타이머 " + timers.get(0));
+            setLine(lines, score--, ChatColor.LIGHT_PURPLE + "타이머 " + timers.get(0));
         }
         if (timers.size() > 1) {
-            setLine(objective, score--, ChatColor.LIGHT_PURPLE + "타이머 " + timers.get(1));
+            setLine(lines, score--, ChatColor.LIGHT_PURPLE + "타이머 " + timers.get(1));
         }
         long killtimeRemaining = killtimeRemainingSeconds();
         if (killtimeRemaining > 0L) {
             String label = killtimeMode() == KilltimeMode.CORE_ONLY ? "코어보호 " : "공격금지 ";
-            setLine(objective, score--, ChatColor.RED + label + ChatColor.WHITE + formatClock(killtimeRemaining));
+            setLine(lines, score--, ChatColor.RED + label + ChatColor.WHITE + formatClock(killtimeRemaining));
         }
-        setLine(objective, score--, ChatColor.YELLOW + "킬 " + ChatColor.WHITE + killsOf(player));
-        setLine(objective, score--, ChatColor.YELLOW + "도박 " + state(plugin.getConfig().getBoolean("gambling.enabled", true)));
+        setLine(lines, score--, ChatColor.YELLOW + "킬 " + ChatColor.WHITE + killsOf(player));
+        setLine(lines, score--, ChatColor.YELLOW + "도박 " + state(plugin.getConfig().getBoolean("gambling.enabled", true)));
         if (abilityManager.urfEnabled()) {
-            setLine(objective, score, ChatColor.YELLOW + "우르프 " + state(true)
+            setLine(lines, score, ChatColor.YELLOW + "우르프 " + state(true)
                 + ChatColor.GRAY + " 감소 " + abilityManager.urfCooldownPercent() + "%");
         }
+        SidebarUpdater.update(objective, lines);
     }
 
-    private void setLine(Objective objective, int score, String text) {
+    private void setLine(Map<String, Integer> lines, int score, String text) {
         String line = text.length() > 32 ? text.substring(0, 32) : text;
-        objective.getScore(line).setScore(score);
+        lines.put(line, score);
     }
 
     private String teamPrefix(GodTeam team) {
@@ -1417,7 +1488,8 @@ public final class GameManager {
         return selected;
     }
 
-    private List<Player> participants() {
+    /** Snapshot of online participants, excluding observers. Call on the server thread. */
+    public List<Player> participants() {
         List<Player> players = new ArrayList<Player>();
         for (Player player : BukkitCompat.onlinePlayers()) {
             if (teamOf(player) != null && !isObserver(player)) {
@@ -1539,6 +1611,7 @@ public final class GameManager {
             Bukkit.getScheduler().cancelTask(readyTask);
             readyTask = -1;
         }
+        GameState previousState = state;
         state = GameState.RUNNING;
         runningStartedAtMillis = System.currentTimeMillis();
         killtimeEndAnnounced = false;
@@ -1564,6 +1637,13 @@ public final class GameManager {
         startWaterHealTask();
         startPickaxeUnlockNoticeTask();
         startGameTipTask();
+        notifyStateChange(previousState);
+    }
+
+    private void notifyStateChange(GameState previousState) {
+        if (previousState != state) {
+            Bukkit.getPluginManager().callEvent(new GameStateChangeEvent(this, previousState, state));
+        }
     }
 
     private void broadcastPendingSelection() {
@@ -1859,6 +1939,7 @@ public final class GameManager {
     }
 
     private void checkWinner() {
+        if (activeMode != null) return;
         Set<GodTeam> alive = aliveTeams();
         if (alive.size() == 1) {
             GodTeam winner = alive.iterator().next();

@@ -39,12 +39,12 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public final class SettingsGui implements Listener {
 
-    private static final int SIZE = 27;
-    private static final int BACK_SLOT = 22;
+    private static final int SIZE = 54;
+    private static final int BACK_SLOT = 49;
     private static final int TEAM_PREV_SLOT = 21;
     private static final int TEAM_NEXT_SLOT = 23;
     private static final int TEAM_ADD_SLOT = 24;
-    private static final int CLOSE_SLOT = 26;
+    private static final int CLOSE_SLOT = 53;
     private static final int[] TEAM_LIST_SLOTS = new int[] {10, 11, 12, 13, 14, 15, 16};
     private static final int TEAMS_PER_PAGE = TEAM_LIST_SLOTS.length;
     private static final ChatColor[] TEAM_COLORS = new ChatColor[] {
@@ -173,9 +173,7 @@ public final class SettingsGui implements Listener {
     private boolean isSettingsInventory(InventoryClickEvent event) {
         return event.getView() != null
             && openViewers.contains(event.getWhoClicked().getUniqueId())
-            && viewOf(event.getView().getTitle()) != null
-            && event.getRawSlot() >= 0
-            && event.getRawSlot() < SIZE;
+            && viewOf(event.getView().getTitle()) != null;
     }
 
     private boolean isSettingsInventory(InventoryDragEvent event) {
@@ -203,6 +201,9 @@ public final class SettingsGui implements Listener {
             reopen(player, currentView(player));
             return;
         }
+
+        slot = ChestLayout.logicalSlot(view, slot);
+        if (slot < 0) return;
 
         if (view == SettingsView.MAIN) {
             handleMain(player, slot);
@@ -554,28 +555,37 @@ public final class SettingsGui implements Listener {
     }
 
     private void fill(Inventory inventory, SettingsView view, Player player) {
-        fillBackground(inventory);
+        GuiTheme.frame(inventory);
+        Inventory content = Bukkit.createInventory(null, 27);
         if (view == SettingsView.MAIN) {
-            fillMain(inventory);
+            fillMain(content);
         } else if (view == SettingsView.GAME) {
-            fillGame(inventory);
+            fillGame(content);
         } else if (view == SettingsView.TEAM) {
-            fillTeam(inventory, player);
+            fillTeam(content, player);
         } else if (view == SettingsView.TEAM_DETAIL) {
-            fillTeamDetail(inventory, player);
+            fillTeamDetail(content, player);
         } else if (view == SettingsView.WORLD) {
-            fillWorld(inventory, player);
+            fillWorld(content, player);
         } else if (view == SettingsView.WORLD_CORE) {
-            fillWorldCore(inventory);
+            fillWorldCore(content);
         } else if (view == SettingsView.PICKAXE_UNLOCK) {
-            fillPickaxeUnlock(inventory);
+            fillPickaxeUnlock(content);
         } else if (view == SettingsView.DISPLAY) {
-            fillDisplay(inventory);
+            fillDisplay(content);
         } else if (view == SettingsView.GAMBLING) {
-            fillGambling(inventory);
+            fillGambling(content);
         } else if (view == SettingsView.GAMBLING_NORMAL) {
-            fillRewardChance(inventory, "gambling.rewards.normal", "도박");
+            fillRewardChance(content, "gambling.rewards.normal", "도박");
         }
+        int[] slots = ChestLayout.settings(view);
+        for (int logical = 0; logical < content.getSize(); logical++) {
+            ItemStack entry = content.getItem(logical);
+            if (entry == null) continue;
+            if (slots[logical] < 0) throw new IllegalStateException("Unmapped GUI control: " + view + "/" + logical);
+            inventory.setItem(slots[logical], entry);
+        }
+        inventory.setItem(4, GuiTheme.heading(ChatColor.stripColor(view.title), "항목에 마우스를 올려 설정과 조작 방법을 확인하세요."));
         if (view != SettingsView.MAIN) {
             inventory.setItem(BACK_SLOT, backItem());
         }
@@ -855,19 +865,12 @@ public final class SettingsGui implements Listener {
             ChatColor.DARK_GRAY + "확률은 chance 가중치 기준입니다."));
     }
 
-    private void fillBackground(Inventory inventory) {
-        for (int i = 0; i < SIZE; i++) {
-            inventory.setItem(i, item("BLACK_STAINED_GLASS_PANE", "STAINED_GLASS_PANE", 1, (short) 15, " "));
-        }
-    }
-
     private ItemStack urfItem() {
         boolean enabled = plugin.getConfig().getBoolean("game.urf.enabled", false);
         ChatColor color = enabled ? ChatColor.GREEN : ChatColor.RED;
-        String state = enabled ? "켜짐" : "꺼짐";
         int percent = plugin.abilities().urfCooldownPercent();
         return item("BLAZE_POWDER", "BLAZE_POWDER", 1, (short) 0,
-            color + "우르프 모드: " + state,
+            color + "우르프 모드: " + (enabled ? "켜짐" : "꺼짐"),
             ChatColor.GRAY + "능력 쿨타임 감소율: " + ChatColor.YELLOW + percent + "%",
             ChatColor.GRAY + "좌클릭: 우르프 켜기/끄기",
             ChatColor.GRAY + "우클릭: 감소율 +5%",
@@ -900,11 +903,10 @@ public final class SettingsGui implements Listener {
     private ItemStack gamblingItem(FileConfiguration config) {
         boolean enabled = config.getBoolean("gambling.enabled", true);
         ChatColor color = enabled ? ChatColor.GREEN : ChatColor.RED;
-        String state = enabled ? "켜짐" : "꺼짐";
         int cost = Math.max(1, config.getInt("gambling.cost.cobblestone", 32));
         int rewards = config.getMapList("gambling.rewards.normal").size();
         return item("GOLD_INGOT", "GOLD_INGOT", 1, (short) 0,
-            color + "도박 허용: " + state,
+            color + "도박 허용: " + (enabled ? "켜짐" : "꺼짐"),
             ChatColor.GRAY + "가격: " + ChatColor.YELLOW + "조약돌 " + cost + "개",
             ChatColor.GRAY + "상품: " + ChatColor.WHITE + rewards + "개",
             ChatColor.GRAY + "클릭: 도박 켜기/끄기",
@@ -1050,20 +1052,21 @@ public final class SettingsGui implements Listener {
     private ItemStack toggleItem(String path, String title, String icon, String... extraLore) {
         boolean enabled = plugin.getConfig().getBoolean(path, defaultToggleValue(path));
         ChatColor color = enabled ? ChatColor.GREEN : ChatColor.RED;
-        String state = enabled ? "켜짐" : "꺼짐";
         List<String> lore = new ArrayList<String>();
-        lore.add(ChatColor.GRAY + "클릭하면 설정이 전환됩니다.");
+        lore.add("");
+        lore.add(ChatColor.GRAY + "현재 상태  " + color + (enabled ? "● 사용 중" : "○ 사용 안 함"));
         if (extraLore != null) {
             lore.addAll(Arrays.asList(extraLore));
         }
-        lore.add(ChatColor.DARK_GRAY + path);
+        lore.add("");
+        lore.add(ChatColor.YELLOW + "클릭 → " + (enabled ? "끄기" : "켜기"));
         return item(icon, icon, 1, (short) 0,
-            color + title + ": " + state,
+            ChatColor.WHITE + title,
             lore.toArray(new String[lore.size()]));
     }
 
     private ItemStack categoryItem(String icon, String title, String... lore) {
-        return item(icon, icon, 1, (short) 0, ChatColor.YELLOW + title, lore);
+        return item(icon, icon, 1, (short) 0, ChatColor.AQUA + "" + ChatColor.BOLD + title, lore);
     }
 
     private ItemStack sectionItem(String title, short damage, String... lore) {
@@ -1074,11 +1077,11 @@ public final class SettingsGui implements Listener {
     private ItemStack backItem() {
         return item("ARROW", "ARROW", 1, (short) 0,
             ChatColor.AQUA + "뒤로",
-            ChatColor.GRAY + "설정 메인으로 돌아갑니다.");
+            ChatColor.GRAY + "이전 설정 화면으로 돌아갑니다.");
     }
 
     private ItemStack closeItem() {
-        return item("BARRIER", "BARRIER", 1, (short) 0, ChatColor.RED + "닫기");
+        return GuiTheme.close();
     }
 
     private void toggle(String path) {
@@ -1734,6 +1737,7 @@ public final class SettingsGui implements Listener {
         ItemMeta meta = stack.getItemMeta();
         if (meta != null) {
             meta.setDisplayName(name);
+            meta.addItemFlags(org.bukkit.inventory.ItemFlag.HIDE_ATTRIBUTES, org.bukkit.inventory.ItemFlag.HIDE_ENCHANTS);
             if (lore != null && lore.length > 0) {
                 meta.setLore(new ArrayList<String>(Arrays.asList(lore)));
             }
@@ -1787,6 +1791,7 @@ public final class SettingsGui implements Listener {
         ItemMeta meta = stack.getItemMeta();
         if (meta != null) {
             meta.setDisplayName(name);
+            meta.addItemFlags(org.bukkit.inventory.ItemFlag.HIDE_ATTRIBUTES, org.bukkit.inventory.ItemFlag.HIDE_ENCHANTS);
             if (lore != null && lore.length > 0) {
                 meta.setLore(new ArrayList<String>(Arrays.asList(lore)));
             }
@@ -1848,6 +1853,8 @@ public final class SettingsGui implements Listener {
         if (modern != null) {
             return modern;
         }
+        if ("GRASS_BLOCK".equals(legacyName)) legacyName = "GRASS";
+        if ("COMMAND_BLOCK".equals(legacyName)) legacyName = "COMMAND";
         Material legacy = Material.matchMaterial(legacyName);
         if (legacy != null) {
             return legacy;

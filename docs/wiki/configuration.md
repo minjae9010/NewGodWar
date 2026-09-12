@@ -216,3 +216,7 @@ teams:
 | `messages.team-eliminated` | 팀 탈락 방송 |
 | `messages.team-eliminated-kick` | 탈락 팀 kick 메시지 |
 | `messages.winner` | 승리 방송 |
+
+## 애드온 게임 모드
+
+`game.mode`의 기본값은 `default`입니다. `plugins/NewGodWar/addon/`에 설치한 애드온이 등록한 모드 ID로 변경하면 다음 게임부터 해당 모드를 사용합니다. 자세한 내용은 [애드온 개발](addon-development)을 참고하세요.

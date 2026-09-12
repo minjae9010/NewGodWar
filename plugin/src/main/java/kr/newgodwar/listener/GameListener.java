@@ -61,6 +61,7 @@ public final class GameListener implements Listener {
 
     @EventHandler
     public void onJoin(PlayerJoinEvent event) {
+        if (gameManager.hasCustomMode()) return;
         Player player = event.getPlayer();
         plugin.updater().notifyAdminIfOutdated(player);
         if (gameManager.isRunning() && gameManager.teamOf(player) != null) {
@@ -79,6 +80,7 @@ public final class GameListener implements Listener {
 
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
+        if (gameManager.hasCustomMode()) return;
         if (!gameManager.isRunning()) {
             gameManager.leave(event.getPlayer());
             return;
@@ -88,6 +90,7 @@ public final class GameListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onDamage(EntityDamageByEntityEvent event) {
+        if (gameManager.hasCustomMode()) return;
         Entity damagerEntity = event.getDamager();
         Entity victimEntity = event.getEntity();
         if (!(victimEntity instanceof Player)) {
@@ -145,6 +148,7 @@ public final class GameListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onGenericDamage(EntityDamageEvent event) {
+        if (gameManager.hasCustomMode()) return;
         if (!gameManager.isRunning() || !(event.getEntity() instanceof Player)) {
             return;
         }
@@ -165,6 +169,7 @@ public final class GameListener implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onProjectileLaunch(ProjectileLaunchEvent event) {
+        if (gameManager.hasCustomMode()) return;
         if (gameManager.isRunning()) {
             abilityManager.handleProjectileLaunch(event);
         }
@@ -172,6 +177,7 @@ public final class GameListener implements Listener {
 
     @EventHandler
     public void onInteract(PlayerInteractEvent event) {
+        if (gameManager.hasCustomMode()) return;
         if (gameManager.isRunning()) {
             abilityManager.handleInteract(event.getPlayer(), event);
         }
@@ -179,6 +185,7 @@ public final class GameListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onBlockBreak(BlockBreakEvent event) {
+        if (gameManager.hasCustomMode()) return;
         if (!gameManager.isRunning()) {
             return;
         }
@@ -311,6 +318,7 @@ public final class GameListener implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onAbilityBlockBreak(BlockBreakEvent event) {
+        if (gameManager.hasCustomMode()) return;
         if (gameManager.isRunning() && event.getBlock().getType() != Material.DIAMOND_BLOCK) {
             abilityManager.handleBlockBreak(event.getPlayer(), event);
         }
@@ -318,6 +326,7 @@ public final class GameListener implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onBlockPlace(BlockPlaceEvent event) {
+        if (gameManager.hasCustomMode()) return;
         if (gameManager.isRunning()) {
             abilityManager.handleBlockPlace(event.getPlayer(), event);
         }
@@ -325,6 +334,7 @@ public final class GameListener implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onBlockPistonExtend(BlockPistonExtendEvent event) {
+        if (gameManager.hasCustomMode()) return;
         if (movesTempleBlock(event.getBlocks(), event.getDirection())) {
             event.setCancelled(true);
         }
@@ -332,6 +342,7 @@ public final class GameListener implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onBlockPistonRetract(BlockPistonRetractEvent event) {
+        if (gameManager.hasCustomMode()) return;
         if (movesTempleBlock(event.getBlocks(), event.getDirection())
             || movesTempleBlock(event.getBlocks(), event.getDirection().getOppositeFace())) {
             event.setCancelled(true);
@@ -340,6 +351,7 @@ public final class GameListener implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onBlockExplode(BlockExplodeEvent event) {
+        if (gameManager.hasCustomMode()) return;
         protectTempleDiamonds(event.blockList());
         if (gameManager.isRunning()) {
             abilityManager.handleBlockExplode(event);
@@ -348,21 +360,25 @@ public final class GameListener implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onBlockExplodeMonitor(BlockExplodeEvent event) {
+        if (gameManager.hasCustomMode()) return;
         eliminateExplodedTempleDiamonds(event.blockList());
     }
 
     @EventHandler(ignoreCancelled = true)
     public void onEntityExplode(EntityExplodeEvent event) {
+        if (gameManager.hasCustomMode()) return;
         protectTempleDiamonds(event.blockList());
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onEntityExplodeMonitor(EntityExplodeEvent event) {
+        if (gameManager.hasCustomMode()) return;
         eliminateExplodedTempleDiamonds(event.blockList());
     }
 
     @EventHandler(ignoreCancelled = true)
     public void onSignChange(SignChangeEvent event) {
+        if (gameManager.hasCustomMode()) return;
         if (gameManager.isRunning()) {
             abilityManager.handleSignChange(event.getPlayer(), event);
         }
@@ -370,6 +386,7 @@ public final class GameListener implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onFoodLevelChange(FoodLevelChangeEvent event) {
+        if (gameManager.hasCustomMode()) return;
         if (gameManager.isRunning() && event.getEntity() instanceof Player) {
             abilityManager.handleFoodLevelChange((Player) event.getEntity(), event);
         }
@@ -377,6 +394,7 @@ public final class GameListener implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onItemConsume(PlayerItemConsumeEvent event) {
+        if (gameManager.hasCustomMode()) return;
         if (gameManager.isRunning()) {
             abilityManager.handleItemConsume(event.getPlayer(), event);
         }
@@ -384,6 +402,7 @@ public final class GameListener implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onRegainHealth(EntityRegainHealthEvent event) {
+        if (gameManager.hasCustomMode()) return;
         if (gameManager.isRunning() && event.getEntity() instanceof Player) {
             abilityManager.handleRegainHealth((Player) event.getEntity(), event);
         }
@@ -391,6 +410,7 @@ public final class GameListener implements Listener {
 
     @EventHandler
     public void onRespawn(PlayerRespawnEvent event) {
+        if (gameManager.hasCustomMode()) return;
         if (gameManager.isRunning()) {
             try {
                 org.bukkit.Location location = gameManager.respawnLocation(event.getPlayer(), event.isBedSpawn());
@@ -409,6 +429,7 @@ public final class GameListener implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onMove(PlayerMoveEvent event) {
+        if (gameManager.hasCustomMode()) return;
         if (gameManager.isRunning()) {
             abilityManager.handleMove(event.getPlayer(), event);
         }
@@ -416,6 +437,7 @@ public final class GameListener implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onTeleport(PlayerTeleportEvent event) {
+        if (gameManager.hasCustomMode()) return;
         if (!gameManager.isRunning()
             || !plugin.getConfig().getBoolean("compatibility.clear-teleport-invulnerability.enabled", true)
             || gameManager.teamOf(event.getPlayer()) == null) {
@@ -430,6 +452,7 @@ public final class GameListener implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onChat(AsyncPlayerChatEvent event) {
+        if (gameManager.hasCustomMode()) return;
         final Player player = event.getPlayer();
         final String message = event.getMessage();
         final boolean running = gameManager.isRunning();
@@ -451,6 +474,7 @@ public final class GameListener implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onFish(PlayerFishEvent event) {
+        if (gameManager.hasCustomMode()) return;
         if (gameManager.isRunning()) {
             abilityManager.handleFish(event.getPlayer(), event);
         }
@@ -458,6 +482,7 @@ public final class GameListener implements Listener {
 
     @EventHandler
     public void onDeath(PlayerDeathEvent event) {
+        if (gameManager.hasCustomMode()) return;
         if (gameManager.isRunning()) {
             forceInventoryDrop(event);
             abilityManager.handleDeath(event);

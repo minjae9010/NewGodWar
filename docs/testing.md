@@ -48,7 +48,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\Test-PaperMatrix.ps1
 이미 빌드된 jar를 테스트하려면 다음처럼 실행합니다.
 
 ```powershell
-.\scripts\Test-PaperMatrix.ps1 -SkipBuild -PluginJar .\build\libs\NewGodWar-0.2.10.jar -Versions 26.2
+.\scripts\Test-PaperMatrix.ps1 -SkipBuild -PluginJar .\build\libs\NewGodWar-0.3.0.jar -Versions 26.2
 ```
 
 테스트 서버 파일은 `.paper-smoke/` 아래에 생성되며 git에는 포함되지 않습니다.
@@ -74,7 +74,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\Test-PaperMatrix.ps1
 
 ## 자동 릴리즈
 
-`v*` 형식의 태그를 GitHub에 push하면 `.github/workflows/release.yml` 워크플로가 실행됩니다.
+`master`에 새 버전의 `build.gradle`을 push하거나 `v*` 형식의 태그를 push하면 `.github/workflows/release.yml` 워크플로가 실행됩니다.
 
 1. 플러그인 jar를 빌드합니다.
 2. 최신 지원 Paper 서버 기동 스모크 테스트를 통과해야 합니다.

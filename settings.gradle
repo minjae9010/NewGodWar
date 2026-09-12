@@ -29,3 +29,5 @@ rootProject.name = "NewGodWar"
 include "compatibility:common"
 include "compatibility:reflection"
 include "plugin"
+include "example-addon"
+project(":example-addon").projectDir = file("examples/addon")

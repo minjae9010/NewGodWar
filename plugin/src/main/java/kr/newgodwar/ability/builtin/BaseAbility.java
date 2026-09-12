@@ -28,7 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-abstract class BaseAbility implements GodAbility {
+public abstract class BaseAbility implements GodAbility {
     protected static final Material COBBLESTONE = Material.COBBLESTONE;
     protected static final Material STAFF = Material.BLAZE_ROD;
     protected static final Random RANDOM = new Random();

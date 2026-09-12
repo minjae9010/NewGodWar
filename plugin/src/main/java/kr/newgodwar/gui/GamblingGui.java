@@ -29,7 +29,7 @@ import java.util.concurrent.ThreadLocalRandom;
 
 public final class GamblingGui implements Listener, CommandExecutor {
 
-    private static final String TITLE = ChatColor.BLACK + ":::::::: 카지노 ::::::::";
+    private static final String TITLE = ChatColor.DARK_GRAY + "신들의 전쟁 · 카지노";
     private final NewGodWarPlugin plugin;
     private final Set<UUID> openViewers = new HashSet<UUID>();
 
@@ -52,10 +52,15 @@ public final class GamblingGui implements Listener, CommandExecutor {
             player.sendMessage(ChatColor.RED + "이 기능은 잠겨있습니다!");
             return;
         }
-        Inventory inventory = Bukkit.createInventory(player, 9, TITLE);
+        Inventory inventory = Bukkit.createInventory(player, 27, TITLE);
+        GuiTheme.frame(inventory);
+        inventory.setItem(4, GuiTheme.heading("행운의 상자", "조약돌로 보상을 뽑아 보세요."));
+        inventory.setItem(22, GuiTheme.close());
+        inventory.setItem(10, GuiTheme.item("COBBLESTONE", "COBBLESTONE", (short) 0, ChatColor.WHITE + "참가 비용", ChatColor.GRAY + "1회 조약돌 " + gambleCost() + "개"));
+        inventory.setItem(16, GuiTheme.item("CHEST", "CHEST", (short) 0, ChatColor.WHITE + "랜덤 보상", ChatColor.GRAY + "서버에 설정된 보상 중 하나를 받습니다."));
         int cost = gambleCost();
-        inventory.setItem(4, item("GOLD_INGOT", "GOLD_INGOT",
-            ChatColor.YELLOW + "가챠" + ChatColor.AQUA + " ★ " + ChatColor.GREEN + "가챠",
+        inventory.setItem(13, item("GOLD_INGOT", "GOLD_INGOT",
+            ChatColor.GOLD + "" + ChatColor.BOLD + "보상 뽑기",
             ChatColor.WHITE + "조약돌 " + cost + "개를 소모해 다양한 아이템을",
             ChatColor.WHITE + "뽑을 수 있습니다.",
             ChatColor.DARK_GRAY + "상품은 관리자 설정에서 변경됩니다."));
@@ -69,7 +74,11 @@ public final class GamblingGui implements Listener, CommandExecutor {
             return;
         }
         event.setCancelled(true);
-        if (event.getRawSlot() == 4) {
+        if (event.getRawSlot() == 22) {
+            event.getWhoClicked().closeInventory();
+            return;
+        }
+        if (event.getRawSlot() == 13) {
             gamble((Player) event.getWhoClicked());
         }
     }
@@ -91,15 +100,13 @@ public final class GamblingGui implements Listener, CommandExecutor {
     private boolean isGamblingInventory(InventoryClickEvent event) {
         return openViewers.contains(event.getWhoClicked().getUniqueId())
             && event.getView() != null
-            && TITLE.equals(event.getView().getTitle())
-            && event.getRawSlot() >= 0
-            && event.getRawSlot() < event.getView().getTopInventory().getSize();
+            && TITLE.equals(event.getView().getTitle());
     }
 
     private void gamble(Player player) {
         int cost = gambleCost();
         if (!player.getInventory().contains(Material.COBBLESTONE, cost)) {
-            player.sendMessage(ChatColor.RED + "조약돌이 부족합니다! 정신차려임마.");
+            player.sendMessage(ChatColor.RED + "조약돌이 부족합니다. 필요한 수량을 확인해주세요.");
             return;
         }
         player.getInventory().removeItem(new ItemStack(Material.COBBLESTONE, cost));

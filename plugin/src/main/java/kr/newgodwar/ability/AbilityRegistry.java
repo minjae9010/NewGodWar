@@ -63,6 +63,12 @@ public final class AbilityRegistry {
         if (definition == null) {
             throw new IllegalArgumentException("Ability definition cannot be null.");
         }
+        if (blank(definition.id()) || blank(definition.name()) || blank(definition.description())) {
+            throw new IllegalArgumentException("Ability id, name and description must not be empty.");
+        }
+        if (definition.normalStoneCost() < 0 || definition.advancedStoneCost() < 0) {
+            throw new IllegalArgumentException("Ability stone costs must not be negative.");
+        }
         String id = normalize(definition.id());
         String name = normalizeName(definition.name());
         if (abilities.containsKey(id)) {
@@ -80,6 +86,16 @@ public final class AbilityRegistry {
 
     public AbilityDefinition get(String id) {
         return abilities.get(normalize(id));
+    }
+
+    /** Removes all lookup indexes; callers must first remove active sessions. */
+    public AbilityDefinition unregister(String id) {
+        AbilityDefinition removed = abilities.remove(normalize(id));
+        if (removed != null) {
+            abilitiesByName.remove(normalizeName(removed.name()));
+            abilitiesByClass.values().removeIf(value -> value == removed);
+        }
+        return removed;
     }
 
     public AbilityDefinition getByName(String name) {

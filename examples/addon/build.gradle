@@ -1,0 +1,14 @@
+dependencies {
+    compileOnly project(":plugin")
+}
+
+tasks.jar {
+    archiveBaseName = "NewGodWar-ExampleAddon"
+}
+
+tasks.processResources {
+    filteringCharset = "UTF-8"
+    filesMatching("plugin.yml") {
+        expand(version: project.version)
+    }
+}

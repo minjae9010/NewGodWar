@@ -9,6 +9,7 @@
 - [명령어](docs/wiki/commands.md)
 - [설정](docs/wiki/configuration.md)
 - [능력 목록](docs/wiki/abilities.md)
+- [애드온 설치·개발](docs/wiki/addon-development.md)
 
 `docs/wiki` 문서는 `Wiki` GitHub Actions 워크플로를 통해 GitHub Wiki에 자동 반영됩니다. GitHub Wiki의 첫 화면은 `Home.md`입니다.
 
@@ -145,7 +146,7 @@ Windows PowerShell에서는 다음처럼 실행할 수 있습니다.
 .\gradlew.bat clean build
 ```
 
-빌드 결과물은 `build/libs/NewGodWar-0.2.10.jar`에 복사되며, 모듈 산출물은 `plugin/build/libs/NewGodWar-0.2.10.jar`에서도 확인할 수 있습니다.
+빌드 결과물은 `build/libs/NewGodWar-0.3.0.jar`에 복사되며, 모듈 산출물은 `plugin/build/libs/NewGodWar-0.3.0.jar`에서도 확인할 수 있습니다.
 
 ## 라이선스
 

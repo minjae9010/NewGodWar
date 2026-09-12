@@ -1,6 +1,6 @@
 # 능력 구현
 
-능력은 `@AbilityInfo`와 `GodAbility`로 구현합니다. 내장 능력은 `kr.newgodwar.ability.builtin` 패키지에서 자동 스캔되고, 외부 addon jar는 `AbilityRegistrar` service 파일로 등록합니다.
+능력은 `@AbilityInfo`와 `GodAbility`로 구현합니다. 외부 애드온은 Bukkit 플러그인으로 만들고 `NewGodWarApi`로 등록합니다. 설치와 빌드 예제는 [애드온 개발](addon-development)을 참고하세요.
 
 ## 기본 구조
 
@@ -27,35 +27,23 @@ public final class SampleAbility implements GodAbility {
 }
 ```
 
-블레이즈 막대 좌클릭/우클릭 능력을 만들 때는 내장 능력의 `BaseAbility`처럼 `onInteract`를 처리하면 됩니다. 외부 addon에서는 `GodAbility` 이벤트 메서드만 공개 API로 간주하고, 내장 전용 base class에 의존하지 않는 편이 안전합니다.
+블레이즈 막대 좌클릭/우클릭 능력은 공개된 `kr.newgodwar.ability.builtin.BaseAbility`를 상속할 수 있습니다. `useNormal`, `useAdvanced`는 비용과 쿨타임을 처리하고, `scheduleLater`, `scheduleRepeating`은 능력 해제 시 취소되는 작업을 등록합니다.
 
-## 자동 등록
+## 외부 애드온 등록
 
-능력은 addon jar의 `AbilityRegistrar`를 통해 자동 등록합니다.
+`plugin.yml`에 `depend: [NewGodWar]`를 넣고 애드온의 `onEnable()`에서 등록합니다.
 
 ```java
-public final class SampleAbilityRegistrar implements AbilityRegistrar {
-
-    @Override
-    public void registerAbilities(AbilityRegistry registry) {
-        registry.register(SampleAbility.class);
-    }
+NewGodWarApi api = getServer().getServicesManager().load(NewGodWarApi.class);
+if (api == null) {
+    throw new IllegalStateException("NewGodWar API is unavailable");
 }
+api.registerAbility(this, SampleAbility.class);
 ```
 
-addon jar에 아래 service 파일을 추가하면 서버 시작 시 자동으로 로드됩니다.
+등록한 능력은 기존 능력 도감, 수동 지정, 랜덤 배정, 블랙리스트에서 사용할 수 있습니다. 등록한 애드온이 비활성화되면 능력 등록과 배정도 해제됩니다.
 
-```text
-META-INF/services/kr.newgodwar.ability.api.AbilityRegistrar
-```
-
-파일 내용은 registrar 클래스의 전체 경로입니다.
-
-```text
-com.example.godwar.SampleAbilityRegistrar
-```
-
-플러그인은 Java `ServiceLoader` 방식으로 registrar를 찾습니다. addon jar가 서버의 `plugins` 폴더에 함께 들어 있으면 서버 시작 시 등록됩니다.
+`AbilityRegistrar`와 `META-INF/services`는 NewGodWar 자체 클래스 로더에서 발견할 수 있는 내장 모듈용으로 유지됩니다. 별도 JAR를 `plugins` 폴더에 넣는 것만으로 그 서비스 파일이 발견되지는 않습니다. 외부 애드온에는 위 API를 사용하세요.
 
 ## 어노테이션
 

@@ -32,10 +32,10 @@ public final class AbilityGui implements Listener {
 
     private static final String CURRENT_TITLE = ChatColor.BLACK + "능력 정보";
     private static final String LIST_TITLE = ChatColor.BLACK + "능력 목록";
-    private static final int CURRENT_SIZE = 27;
+    private static final int CURRENT_SIZE = 45;
     private static final int LIST_SIZE = 54;
-    private static final int LIST_PAGE_SIZE = 36;
-    private static final int CURRENT_CLOSE_SLOT = 22;
+    private static final int LIST_PAGE_SIZE = ChestLayout.CATALOG.length;
+    private static final int CURRENT_CLOSE_SLOT = 40;
     private static final int LIST_PREVIOUS_SLOT = 48;
     private static final int LIST_PAGE_SLOT = 49;
     private static final int LIST_NEXT_SLOT = 50;
@@ -113,7 +113,7 @@ public final class AbilityGui implements Listener {
             openList(player, listPage(player) + 1);
             return;
         }
-        if (event.getRawSlot() >= LIST_PAGE_SIZE) {
+        if (ChestLayout.catalogIndex(event.getRawSlot()) < 0) {
             return;
         }
 
@@ -154,7 +154,7 @@ public final class AbilityGui implements Listener {
     }
 
     private void fillCurrent(Inventory inventory, Player viewer, Player target) {
-        fill(inventory, deco());
+        GuiTheme.frame(inventory);
 
         Player shown = target == null ? viewer : target;
         AbilityDefinition current = abilityManager.get(shown);
@@ -163,21 +163,21 @@ public final class AbilityGui implements Listener {
             ChatColor.GRAY + "/a 로 다시 열 수 있습니다."));
 
         if (current == null) {
-            inventory.setItem(13, noAbilityItem(shown));
+            inventory.setItem(22, noAbilityItem(shown));
         } else {
             if (hasSkill(current.normalSkill())) {
-                inventory.setItem(10, skillItem("LIGHT_BLUE_STAINED_GLASS", (short) 3, ChatColor.AQUA + "일반 능력",
+                inventory.setItem(20, skillItem("LIGHT_BLUE_STAINED_GLASS", (short) 3, ChatColor.AQUA + "일반 능력",
                     current.normalSkill(), current.normalStoneCost(), current.normalCooldown(), cooldownLine(shown, current, 1)));
             }
-            inventory.setItem(13, currentAbilityItem(shown, current));
+            inventory.setItem(22, currentAbilityItem(shown, current));
             if (hasSkill(current.advancedSkill())) {
-                inventory.setItem(16, skillItem("RED_STAINED_GLASS", (short) 14, ChatColor.RED + "고급 능력",
+                inventory.setItem(24, skillItem("RED_STAINED_GLASS", (short) 14, ChatColor.RED + "고급 능력",
                     current.advancedSkill(), current.advancedStoneCost(), current.advancedCooldown(), cooldownLine(shown, current, 2)));
             }
-            inventory.setItem(20, item("EMERALD", "EMERALD", 1, (short) 0,
+            inventory.setItem(30, item("EMERALD", "EMERALD", 1, (short) 0,
                 ChatColor.GREEN + "" + ChatColor.BOLD + "패시브",
                 ChatColor.WHITE + current.passiveSkill()));
-            inventory.setItem(24, item("PAPER", "PAPER", 1, (short) 0,
+            inventory.setItem(32, item("PAPER", "PAPER", 1, (short) 0,
                 ChatColor.GOLD + "" + ChatColor.BOLD + "세부 정보",
                 ChatColor.GRAY + "ID: " + ChatColor.WHITE + current.id(),
                 ChatColor.GRAY + "등급: " + gradeColor(current.grade()) + current.gradeText(),
@@ -189,7 +189,7 @@ public final class AbilityGui implements Listener {
     }
 
     private int fillList(Inventory inventory, Player viewer, int requestedPage, String query) {
-        fill(inventory, deco());
+        GuiTheme.frame(inventory);
 
         List<AbilityDefinition> abilities = filteredAbilities(query);
         int maxPage = Math.max(1, ((abilities.size() - 1) / LIST_PAGE_SIZE) + 1);
@@ -198,9 +198,10 @@ public final class AbilityGui implements Listener {
         int end = Math.min(abilities.size(), start + LIST_PAGE_SIZE);
 
         for (int i = start; i < end; i++) {
-            inventory.setItem(i - start, abilityItem(abilities.get(i), viewer.hasPermission("newgodwar.admin")));
+            inventory.setItem(ChestLayout.CATALOG[i - start], abilityItem(abilities.get(i), viewer.hasPermission("newgodwar.admin")));
         }
 
+        inventory.setItem(4, GuiTheme.heading("능력 도감", "능력 위에 마우스를 올려 스킬과 등급을 확인하세요."));
         inventory.setItem(45, guideItem(viewer));
         if (hasQuery(query)) {
             inventory.setItem(46, item("COMPASS", "COMPASS", 1, (short) 0,
@@ -292,18 +293,24 @@ public final class AbilityGui implements Listener {
             lore.add("");
             lore.add(ChatColor.DARK_GRAY + "우클릭: 블랙리스트 전환");
         }
-        String material = blacklisted ? "RED_STAINED_GLASS" : (enabled ? "IRON_BLOCK" : "GRAY_STAINED_GLASS");
+        String icon = ability.grade() == AbilityGrade.S ? "NETHER_STAR"
+            : ability.grade() == AbilityGrade.A ? "DIAMOND"
+            : ability.grade() == AbilityGrade.B ? "EMERALD"
+            : ability.grade() == AbilityGrade.C ? "GOLD_INGOT"
+            : ability.grade() == AbilityGrade.D ? "IRON_INGOT" : "BOOK";
+        String material = blacklisted ? "RED_STAINED_GLASS" : (enabled ? icon : "GRAY_STAINED_GLASS");
         short damage = blacklisted ? (short) 14 : (enabled ? (short) 0 : (short) 7);
-        return item(material, blacklisted || !enabled ? "STAINED_GLASS" : "IRON_BLOCK", 1, damage,
+        return item(material, blacklisted || !enabled ? "STAINED_GLASS" : icon, 1, damage,
             color + ability.name(), lore);
     }
 
     private AbilityDefinition abilityAtSlot(int slot, Player viewer) {
-        if (slot < 0 || slot >= LIST_PAGE_SIZE) {
+        int offset = ChestLayout.catalogIndex(slot);
+        if (offset < 0) {
             return null;
         }
 
-        int index = (listPage(viewer) - 1) * LIST_PAGE_SIZE + slot;
+        int index = (listPage(viewer) - 1) * LIST_PAGE_SIZE + offset;
         List<AbilityDefinition> abilities = filteredAbilities(listQuery(viewer));
         if (index < 0 || index >= abilities.size()) {
             return null;
@@ -439,18 +446,8 @@ public final class AbilityGui implements Listener {
         return skill != null && skill.trim().length() > 0 && !"없음".equals(skill.trim());
     }
 
-    private void fill(Inventory inventory, ItemStack item) {
-        for (int i = 0; i < inventory.getSize(); i++) {
-            inventory.setItem(i, item);
-        }
-    }
-
-    private ItemStack deco() {
-        return item("GRAY_STAINED_GLASS_PANE", "STAINED_GLASS_PANE", 1, (short) 7, ChatColor.WHITE.toString());
-    }
-
     private ItemStack closeItem() {
-        return item("SPRUCE_DOOR", "WOOD_DOOR", 1, (short) 0, ChatColor.DARK_AQUA + "나가기");
+        return GuiTheme.close();
     }
 
     private ItemStack item(String modernMaterial, String legacyMaterial, int amount, short damage, String name, String... lore) {
@@ -463,6 +460,7 @@ public final class AbilityGui implements Listener {
         ItemMeta meta = stack.getItemMeta();
         if (meta != null) {
             meta.setDisplayName(name);
+            meta.addItemFlags(org.bukkit.inventory.ItemFlag.HIDE_ATTRIBUTES, org.bukkit.inventory.ItemFlag.HIDE_ENCHANTS);
             if (lore != null && !lore.isEmpty()) {
                 meta.setLore(lore);
             }
