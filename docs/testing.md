@@ -10,6 +10,8 @@
 
 PowerShell에서 실행합니다.
 
+Gradle 빌드는 CI와 같은 JDK 21을 사용하도록 `JAVA_HOME`을 지정합니다. `-JavaExecutable`은 테스트 서버용 Java만 선택하므로 빌드용 JDK와 별도로 설정하세요. 여러 Java 버전이 필요한 서버들은 아래 설명대로 `-Versions`로 나누어 실행합니다.
+
 ```powershell
 .\scripts\Test-PaperMatrix.ps1
 ```
@@ -49,7 +51,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\Test-PaperMatrix.ps1
 이미 빌드된 jar를 테스트하려면 다음처럼 실행합니다.
 
 ```powershell
-.\scripts\Test-PaperMatrix.ps1 -SkipBuild -PluginJar .\build\libs\NewGodWar-0.3.2.jar -Versions 26.3
+.\scripts\Test-PaperMatrix.ps1 -SkipBuild -PluginJar .\build\libs\NewGodWar-0.3.3.jar -Versions 26.3
 ```
 
 테스트 서버 파일은 `.paper-smoke/` 아래에 생성되며 git에는 포함되지 않습니다.

@@ -21,9 +21,9 @@
 
 ## 다운로드 또는 빌드
 
-릴리즈 jar를 사용하는 경우 GitHub Release의 Assets에서 `NewGodWar-<version>.jar`를 받아 서버의 `plugins/` 폴더에 넣습니다.
+릴리즈 jar를 사용하는 경우 [GitHub Releases](https://github.com/minjae9010/NewGodWar/releases)의 Assets에서 `NewGodWar-<version>.jar`를 받아 서버의 `plugins/` 폴더에 넣습니다.
 
-직접 빌드하려면 저장소 루트에서 다음 명령을 실행합니다.
+직접 빌드할 때는 CI와 같은 **JDK 21**을 사용하세요. 위 표는 마인크래프트 서버 실행용 Java이며, 빌드용 JDK는 별도로 선택합니다. `JAVA_HOME`을 JDK 21 경로로 지정하고 저장소 루트에서 다음 명령을 실행합니다.
 
 ```powershell
 .\gradlew.bat clean build
@@ -35,7 +35,7 @@ Linux/macOS에서는 다음처럼 실행합니다.
 ./gradlew clean build
 ```
 
-최종 플러그인 jar는 `build/libs/NewGodWar-<version>.jar`에 복사됩니다. 모듈 산출물은 `plugin/build/libs/`에서도 확인할 수 있습니다.
+최종 플러그인 jar는 `build/libs/NewGodWar-<version>.jar`에 복사됩니다. 모듈 산출물은 `plugin/build/libs/`에서도 확인할 수 있습니다. 빌드 결과는 Java 8 바이트코드입니다. `*-plain.jar`와 `*RegressionProbe.jar`는 배포용 파일이 아니므로 설치할 때는 `build/libs/`의 JAR를 사용하세요.
 
 ## 설치
 
@@ -48,6 +48,8 @@ Linux/macOS에서는 다음처럼 실행합니다.
 ## 첫 게임 준비
 
 관리자는 OP 또는 `newgodwar.admin` 권한이 있어야 합니다.
+
+게임 종료 후 맵을 원래 상태로 복원하려면 먼저 별도 로비 월드에서 `/gw setlobby`를 실행하고 `/gw map <게임월드>`로 게임 맵을 선택하세요. 기본값에서 게임 월드를 지정하지 않으면 자동 맵 복원이 작동하지 않습니다. 팀 스폰과 심장은 맵을 선택한 뒤 등록합니다. 자세한 내용은 [월드 관리](https://github.com/minjae9010/NewGodWar/wiki/world-management)를 참고하세요.
 
 1. `/gw settings` 또는 `/gw gui`로 설정 GUI를 엽니다.
 2. 사용할 팀이 켜져 있는지 확인합니다.
@@ -67,6 +69,8 @@ Linux/macOS에서는 다음처럼 실행합니다.
 ```
 
 `[ability]`를 생략하면 무작위 능력이 배정됩니다. 예를 들어 `zeus`를 직접 테스트하려면 `/gw test zeus`를 사용합니다.
+
+테스트에도 킬타임 설정이 적용됩니다. 기본값에서는 시작 후 300초 동안 유저 간 피해가 차단됩니다. 테스트를 마치면 `/gw stop`으로 종료하세요.
 
 ## 기본 조합법
 

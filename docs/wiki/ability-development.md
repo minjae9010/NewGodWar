@@ -1,20 +1,20 @@
 # 능력 구현
 
-능력은 `@AbilityInfo`와 `GodAbility`로 구현합니다. 외부 애드온은 Bukkit 플러그인으로 만들고 `NewGodWarApi`로 등록합니다. 설치와 빌드 예제는 [애드온 개발](addon-development)을 참고하세요.
+능력은 `@AbilityInfo`와 `GodAbility`로 구현합니다. 외부 애드온은 Bukkit 플러그인으로 만들고 `NewGodWarApi`로 등록합니다. 설치와 빌드 예제는 [애드온 개발](https://github.com/minjae9010/NewGodWar/wiki/addon-development)을 참고하세요.
 
 ## 기본 구조
 
+아래는 플레이어에게 주는 공격 피해를 2배로 만드는 패시브 능력 예제입니다. `SampleAbility.java`로 저장하고 애드온에서 등록하세요.
+
 ```java
+import kr.newgodwar.ability.api.AbilityDamageContext;
+import kr.newgodwar.ability.api.AbilityInfo;
+import kr.newgodwar.ability.api.GodAbility;
+
 @AbilityInfo(
     id = "sample",
     name = "샘플",
     description = "공격 피해량을 2배로 올립니다.",
-    normalSkill = "바라보는 적에게 피해를 줍니다.",
-    normalStoneCost = 10,
-    normalCooldownSeconds = 30,
-    advancedSkill = "주변 적에게 피해를 줍니다.",
-    advancedStoneCost = 25,
-    advancedCooldownSeconds = 90,
     passiveSkill = "공격 피해량을 2배로 올립니다.",
     author = "minjae9010"
 )
@@ -27,7 +27,7 @@ public final class SampleAbility implements GodAbility {
 }
 ```
 
-블레이즈 막대 좌클릭/우클릭 능력은 공개된 `kr.newgodwar.ability.builtin.BaseAbility`를 상속할 수 있습니다. `useNormal`, `useAdvanced`는 비용과 쿨타임을 처리하고, `scheduleLater`, `scheduleRepeating`은 능력 해제 시 취소되는 작업을 등록합니다.
+`@AbilityInfo`는 도감에 표시할 설명과 기본 수치를 정의합니다. 일반/고급 설명을 적는 것만으로 스킬이 구현되지는 않습니다. 블레이즈 막대 좌클릭/우클릭 능력은 공개된 `kr.newgodwar.ability.builtin.BaseAbility`를 상속하고 `onStaffLeft`/`onStaffRight`를 구현할 수 있습니다. `useNormal`, `useAdvanced`는 비용과 쿨타임을 처리하고, `scheduleLater`, `scheduleRepeating`은 능력 해제 시 취소되는 작업을 등록합니다.
 
 ## 외부 애드온 등록
 
@@ -87,9 +87,12 @@ api.registerAbility(this, SampleAbility.class);
 
 ```java
 public interface GodAbility {
+    default void saveSession(org.bukkit.configuration.ConfigurationSection data) {}
+    default void loadSession(org.bukkit.configuration.ConfigurationSection data) {}
     default void onAssign(AbilityPlayerContext context) {}
     default void onPrepare(AbilityPlayerContext context) {}
     default void onRemove(AbilityPlayerContext context) {}
+    default void cancelScheduledTasks() {}
     default void onDamage(AbilityDamageContext context) {}
     default void onTick(AbilityPlayerContext context) {}
     default void onKill(AbilityKillContext context) {}
@@ -104,6 +107,7 @@ public interface GodAbility {
     default void onBlockExplode(BlockExplodeEvent event) {}
     default void onSignChange(AbilityPlayerContext context, SignChangeEvent event) {}
     default void onFoodLevelChange(AbilityPlayerContext context, FoodLevelChangeEvent event) {}
+    default void onItemConsume(AbilityPlayerContext context, PlayerItemConsumeEvent event) {}
     default void onRegainHealth(AbilityPlayerContext context, EntityRegainHealthEvent event) {}
     default void onRespawn(AbilityPlayerContext context, PlayerRespawnEvent event) {}
     default void onMove(AbilityPlayerContext context, PlayerMoveEvent event) {}
@@ -122,7 +126,17 @@ public interface GodAbility {
 
 `onAssign`은 능력 배정과 재접속·봉인 해제 때 지속 효과를 복구하는 용도입니다. 시작 장비처럼 한 번만 지급해야 하는 아이템은 `onPrepare`에서 지급해야 하며, 이 메서드는 게임 시작 준비 또는 진행 중 능력 변경 시에만 호출됩니다.
 
-필요한 메서드만 override하면 됩니다. 이벤트 객체를 받는 메서드에서는 Bukkit 이벤트 취소 여부와 동기/비동기 실행 맥락을 고려해야 합니다. 채팅 이벤트에서 월드나 인벤토리를 직접 수정해야 한다면 서버 메인 스레드로 넘기는 방식이 안전합니다.
+`onDeath`는 누군가 사망할 때 활성 능력들에 전달됩니다. 능력 소유자 자신의 사망만 처리하려면 `event.getEntity().equals(context.player())`를 먼저 검사하세요. `onItemConsume`은 음식·물약 등 아이템 섭취 이벤트를 받습니다.
+
+채팅 능력은 `onChatMessage`를 구현하세요. 기본 게임 리스너는 채팅 문자열을 복사해 서버 메인 스레드에서 이 콜백을 호출합니다. `onChat`은 인터페이스에 남아 있지만 현재 기본 게임 경로에서는 호출하지 않습니다. `onChatMessage`에서는 원본 채팅 이벤트를 취소하거나 수정할 수 없습니다. 애드온이 직접 비동기 Bukkit 리스너를 등록한다면 월드·인벤토리 변경은 메인 스레드로 예약해야 합니다.
+
+### 작업 정리와 게임 복구
+
+`cancelScheduledTasks()`는 오프라인 플레이어의 능력을 해제할 때도 호출됩니다. `onRemove`만으로 작업을 정리하지 마세요. `BaseAbility`를 상속해 이 메서드를 재정의하면 `super.cancelScheduledTasks()`도 호출해 기본 예약 작업을 취소해야 합니다.
+
+기본 게임과 능력 테스트의 서버 재시작 복구에 필요한 추가 값은 `saveSession`과 `loadSession`으로 저장·복원합니다. `BaseAbility`는 타깃 이름과 남은 쿨타임을 저장하므로, 이 메서드들을 재정의할 때는 각각 `super.saveSession(data)`와 `super.loadSession(data)`도 호출하세요. 직접 `GodAbility`를 구현하면 필요한 쿨타임 저장도 직접 처리해야 합니다.
+
+복구는 새로운 능력 인스턴스에 저장 데이터를 읽으며 `onPrepare`를 다시 호출하지 않습니다. `loadSession`은 플레이어가 오프라인인 상태에서도 실행되므로 플레이어 객체에 의존하지 말고, 접속 후 지속 효과 적용은 `onAssign`에서 처리하세요. 실행 중이던 임시 효과나 예약 작업은 자동으로 재생되지 않습니다.
 
 ## 타깃형 능력
 

@@ -37,9 +37,9 @@ NewGodWar는 로비 월드와 게임 월드를 분리해서 운영할 수 있습
 
 | 명령어 | 설명 |
 | --- | --- |
-| `/gw world create <world> [normal|flat|void]` | 새 월드를 생성하고 로드합니다. |
-| `/gw world load <world> [normal|flat|void]` | 서버 폴더에 있는 월드를 로드하고 자동 로드 목록에 등록합니다. |
-| `/gw world copy <sourceWorld> <newWorld> [normal|flat|void]` | 기존 월드 폴더를 복사해 새 월드로 로드합니다. |
+| `/gw world create <world> [normal\|flat\|void]` | 새 월드를 생성하고 로드합니다. |
+| `/gw world load <world> [normal\|flat\|void]` | 서버 폴더에 있는 월드를 로드하고 자동 로드 목록에 등록합니다. |
+| `/gw world copy <sourceWorld> <newWorld> [normal\|flat\|void]` | 기존 월드 폴더를 복사해 새 월드로 로드합니다. |
 
 `void` 타입은 공허 월드 생성용입니다. `normal`, `flat`, `void`를 생략하면 일반 월드로 처리되거나 저장된 관리 월드 타입을 사용합니다.
 
@@ -60,9 +60,11 @@ NewGodWar는 로비 월드와 게임 월드를 분리해서 운영할 수 있습
 | --- | --- |
 | `/gw world backup create [이름]` | 현재 로드된 모든 월드를 `plugins/NewGodWar/world-backups/`에 백업합니다. |
 | `/gw world backup list` | 저장된 백업 목록을 확인합니다. |
-| `/gw world backup load <백업이름> [로드월드이름]` | 백업을 새 월드 폴더로 복사해 로드합니다. |
+| `/gw world backup load <백업이름> [로드월드이름]` | 백업의 모든 월드를 새 폴더로 복사해 로드합니다. |
 
-백업 로드는 기존 월드에 직접 덮어쓰지 않습니다. 예를 들어 `/gw world backup load arena-1 reset-arena`는 `arena-1` 백업을 `reset-arena` 월드로 새로 로드합니다.
+백업 로드는 기존 월드에 직접 덮어쓰지 않습니다. 백업에 월드가 하나면 지정한 이름을 그대로 사용하고, 여러 개면 `<로드월드이름>-<원본월드명>`으로 각각 생성합니다. 이름을 생략하면 `ngw-<백업이름>`을 기준으로 같은 규칙을 적용합니다.
+
+예를 들어 `/gw world backup load arena-1 reset-arena`를 실행할 때 `arena-1` 백업에 월드가 하나만 있으면 `reset-arena`로 로드합니다. `world`, `world_nether`, `world_the_end`가 들어 있으면 `reset-arena-world`, `reset-arena-world_nether`, `reset-arena-world_the_end`로 모두 로드합니다. 이동하거나 게임 맵으로 지정할 때는 `/gw world list`에서 실제 생성된 이름을 확인하세요.
 
 ## 운영 주의사항
 

@@ -6,23 +6,24 @@ NewGodWar는 마인크래프트 신들의 전쟁 스타일 팀 기반 미니게�
 
 처음 운영한다면 아래 순서로 확인하세요.
 
-1. [시작하기](getting-started)에서 서버 버전별 Java와 설치 방법을 확인합니다.
+1. [시작하기](https://github.com/minjae9010/NewGodWar/wiki/getting-started)에서 서버 버전별 Java와 설치 방법을 확인합니다.
 2. `/gw setspawn <team>`과 `/gw settemple <team>`으로 팀 스폰과 다이아 심장을 등록합니다.
-3. [게임 진행 가이드](gameplay)에서 시작, 능력 확정, 승리 조건을 확인합니다.
-4. 문제가 생기면 [문제 해결](troubleshooting)에서 증상별 체크리스트를 확인합니다.
+3. [게임 진행 가이드](https://github.com/minjae9010/NewGodWar/wiki/gameplay)에서 시작, 능력 확정, 승리 조건을 확인합니다.
+4. 문제가 생기면 [문제 해결](https://github.com/minjae9010/NewGodWar/wiki/troubleshooting)에서 증상별 체크리스트를 확인합니다.
 
 ## 문서 바로가기
 
 | 문서 | 내용 |
 | --- | --- |
-| [시작하기](getting-started) | 설치, 빌드, 서버 적용, 첫 게임 준비 순서 |
-| [게임 진행 가이드](gameplay) | 팀 배정, 신전, 능력 확정, 승리 조건, 운영 흐름 |
-| [명령어](commands) | 플레이어/관리자/Themachy 호환 명령어 전체 목록 |
-| [월드 관리](world-management) | 월드 생성, 게임 월드 지정, 자동 초기화, 백업과 GUI 설정 |
-| [설정](configuration) | `config.yml` 주요 항목과 운영 팁 |
-| [능력 목록](abilities) | 내장 능력 92개, 비용, 쿨타임, 패시브 |
-| [능력 구현](ability-development) | 애드온 능력 제작과 자동 등록 방법 |
-| [문제 해결](troubleshooting) | 자주 막히는 설정, 시작 실패, 호환성 점검 |
+| [시작하기](https://github.com/minjae9010/NewGodWar/wiki/getting-started) | 설치, 빌드, 서버 적용, 첫 게임 준비 순서 |
+| [게임 진행 가이드](https://github.com/minjae9010/NewGodWar/wiki/gameplay) | 팀 배정, 신전, 능력 확정, 승리 조건, 운영 흐름 |
+| [명령어](https://github.com/minjae9010/NewGodWar/wiki/commands) | 플레이어/관리자/Themachy 호환 명령어 전체 목록 |
+| [월드 관리](https://github.com/minjae9010/NewGodWar/wiki/world-management) | 월드 생성, 게임 월드 지정, 자동 초기화, 백업과 GUI 설정 |
+| [설정](https://github.com/minjae9010/NewGodWar/wiki/configuration) | `config.yml` 주요 항목과 운영 팁 |
+| [능력 목록](https://github.com/minjae9010/NewGodWar/wiki/abilities) | 내장 능력 93개, 비용, 쿨타임, 패시브 |
+| [능력 구현](https://github.com/minjae9010/NewGodWar/wiki/ability-development) | 애드온 능력 제작과 자동 등록 방법 |
+| [애드온 설치·개발](https://github.com/minjae9010/NewGodWar/wiki/addon-development) | 애드온 설치 경로, 빌드 예제, 게임 모드 확장 |
+| [문제 해결](https://github.com/minjae9010/NewGodWar/wiki/troubleshooting) | 자주 막히는 설정, 시작 실패, 호환성 점검 |
 
 ## 현재 기능 요약
 

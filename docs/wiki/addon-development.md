@@ -13,14 +13,14 @@
 
 ## 실행 가능한 예제
 
-저장소의 `examples/addon`은 능력과 게임 기능을 모두 포함합니다.
+저장소의 `examples/addon`은 능력과 게임 기능을 모두 포함합니다. 아래 JAR 경로는 `0.3.3` 기준입니다. 다른 버전을 빌드하면 저장소 루트 `build.gradle`의 `version`에 맞춰 경로를 바꾸세요.
 
 ```powershell
 .\gradlew.bat build :example-addon:build
 ```
 
-- 본체: `build/libs/NewGodWar-0.3.0.jar`
-- 예제: `examples/addon/build/libs/NewGodWar-ExampleAddon-0.3.0.jar`
+- 본체: `build/libs/NewGodWar-0.3.3.jar`
+- 예제: `examples/addon/build/libs/NewGodWar-ExampleAddon-0.3.3.jar`
 - 능력: 바람 주자. 블레이즈 막대 좌클릭으로 조약돌 4개를 소모해 5초간 신속 II, 쿨타임 15초.
 - 게임 기능: 실제 게임 시작 또는 테스트 시작 후 참가자에게 안내 메시지 표시.
 - 교체 모드: `game.mode: example_timed`로 설정하면 `/gw start`가 코어·팀 준비 없이 60초 자유 게임을 시작합니다. `/gw stop`으로 조기 종료할 수도 있습니다. 이 예제는 승리 점수나 능력 자동 배정이 없는 최소 구현입니다.
@@ -38,7 +38,7 @@ repositories {
     maven { url = uri('https://repo.papermc.io/repository/maven-public/') }
 }
 dependencies {
-    compileOnly files('libs/NewGodWar-0.3.0.jar')
+    compileOnly files('libs/NewGodWar-0.3.3.jar')
     compileOnly 'com.destroystokyo.paper:paper-api:1.12.2-R0.1-SNAPSHOT'
 }
 java {
@@ -64,7 +64,7 @@ api.registerAbility(this, WindRunnerAbility.class);
 
 등록된 능력은 기존 GUI·명령어·랜덤 추첨에 반영됩니다. 설정은 `abilities.<id>.enabled`, 제외 목록은 `blacklist.abilities`를 사용합니다. `BaseAbility`의 `useNormal`/`useAdvanced`를 사용하면 기존 우르프 쿨타임 배율도 적용됩니다.
 
-`onAssign`, `onPrepare`, `onRemove`, 전투·이동·상호작용 등의 콜백은 [능력 구현](ability-development)을 참고하세요. 능력 내부 작업은 `BaseAbility.scheduleLater`/`scheduleRepeating`을 사용하거나 `cancelScheduledTasks()`에서 직접 취소해야 합니다. `onRemove`는 온라인 플레이어에게만 호출되므로 작업 정리를 이 메서드에만 의존하지 마세요.
+`onAssign`, `onPrepare`, `onRemove`, 전투·이동·상호작용 등의 콜백은 [능력 구현](https://github.com/minjae9010/NewGodWar/wiki/ability-development)을 참고하세요. 능력 내부 작업은 `BaseAbility.scheduleLater`/`scheduleRepeating`을 사용하거나 `cancelScheduledTasks()`에서 직접 취소해야 합니다. `onRemove`는 온라인 플레이어에게만 호출되므로 작업 정리를 이 메서드에만 의존하지 마세요.
 
 애드온 비활성화 시 소유한 등록과 온라인·오프라인 배정을 해제하고 작업 취소를 호출합니다. 해제된 플레이어는 능력이 없는 상태가 됩니다. 필요하면 관리자가 다른 능력을 지정하세요. 직접 해제하려면 `api.unregisterAbilities(this)`를 호출합니다.
 
@@ -84,7 +84,7 @@ api.registerAbility(this, WindRunnerAbility.class);
 
 `api.game()`은 현재 `GameManager`를 제공합니다. `participants()`는 온라인 참가자의 새 목록이며 `teamOf`, `state`, `isRunning` 등으로 게임 상황을 확인할 수 있습니다. 기존 `GameManager`의 상세 API는 본체 버전에 맞춰 컴파일하세요.
 
-API 등록·해제와 게임 변경은 서버 메인 스레드에서 실행해야 합니다. `onChat`처럼 비동기 Bukkit 이벤트를 받는 콜백에서 게임을 변경하려면 메인 스레드로 예약하세요.
+API 등록·해제와 게임 변경은 서버 메인 스레드에서 실행해야 합니다. 기본 게임의 채팅 능력은 메인 스레드에서 전달되는 `onChatMessage`를 사용합니다. `onChat`은 현재 기본 게임 경로에서 호출하지 않습니다. 애드온이 직접 비동기 Bukkit 리스너를 등록했다면 게임 변경을 메인 스레드로 예약하세요.
 
 ## 자기장 같은 기능 추가
 

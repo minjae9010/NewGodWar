@@ -6,6 +6,8 @@
 
 | 키 | 기본값 | 설명 |
 | --- | --- | --- |
+| `game.mode` | `default` | 기본 코어전 또는 애드온이 등록한 게임 모드 ID. 다음 게임부터 적용 |
+| `game.recovery-save-interval-seconds` | `10` | 기본 게임·능력 테스트의 진행 상태와 월드/플레이어 데이터 저장 간격(초). 최소 1초, 변경 후 서버 재시작 필요 |
 | `game.min-players` | `2` | 시작에 필요한 최소 팀 배정 인원 |
 | `game.friendly-fire` | `false` | 같은 팀 공격 허용 여부 |
 | `game.auto-balance-teams` | `true` | 팀 배정이 비어 있을 때 시작 시 자동 배정 |
@@ -20,7 +22,7 @@
 | `game.fast-start` | `true` | 빠른 시작 카운트다운 사용 |
 | `game.ready-countdown-seconds` | `40` | 일반 준비 카운트다운 초 |
 | `game.fast-ready-countdown-seconds` | `5` | 빠른 준비 카운트다운 초 |
-| `game.skip-ready-countdown-seconds` | `5` | 능력 확정 자동 skip 및 관리자 skip 기본 초 |
+| `game.skip-ready-countdown-seconds` | `5` | 능력 확정 대기 자동 종료 시간 및 관리자 skip의 기본 카운트다운 초. `0`이면 자동 종료 안 함 |
 | `game.select-right` | `true` | 능력 재추첨 선택 사용 여부 |
 | `game.ability-reroll-count` | `1` | 플레이어별 재추첨 가능 횟수 |
 | `game.reveal-abilities-on-end` | `true` | 게임 종료 시 플레이어별 능력 공개 여부 |
@@ -56,7 +58,7 @@
 
 게임 맵은 `/gw map <world>`로 선택하고 `/gw map clear`로 해제합니다. 기존 `/gw world game <world>`도 같은 설정을 사용합니다. 기존 서버의 `world.game-world`가 지정되어 있고 `spawns`, `temples` 위치의 월드명이 그 맵과 같으면 시작/리로드 시 `maps.<world>` 설정으로 자동 마이그레이션됩니다. 로비 월드는 게임 맵으로 지정할 수 없습니다. 게임 월드가 지정되어 있으면 게임 시작 직전에 해당 월드를 스냅샷으로 저장하고, 게임 종료 시 참가자를 로비로 이동시킨 뒤 월드를 언로드, 복원, 재로드합니다. 로비가 설정되어 있지 않거나 플레이어가 게임 월드에 남아 있으면 안전을 위해 월드 초기화를 건너뜁니다.
 
-인게임에서는 `/gw world gui` 또는 `/gw settings`의 `월드` 메뉴에서 `world.autosave`, `world.spawn-animals`, `world.spawn-monsters`, `world.difficulty`, `world.start-time`, `world.game-world`, `world.reset-game-world-on-stop`을 조정할 수 있습니다. 자세한 운영 흐름은 [월드 관리](world-management)를 참고하세요.
+인게임에서는 `/gw world gui` 또는 `/gw settings`의 `월드` 메뉴에서 `world.autosave`, `world.spawn-animals`, `world.spawn-monsters`, `world.difficulty`, `world.start-time`, `world.game-world`, `world.reset-game-world-on-stop`을 조정할 수 있습니다. 자세한 운영 흐름은 [월드 관리](https://github.com/minjae9010/NewGodWar/wiki/world-management)를 참고하세요.
 
 ## lobby
 
@@ -110,14 +112,14 @@
 | --- | --- | --- |
 | `core.protect-diamond-from-explosion` | `true` | 등록된 다이아 심장 폭발 보호 |
 | `core.explosion-unlock-seconds` | `1800` | 게임 시작 후 폭발로 코어 파괴를 허용할 시간. `-1`이면 자동 해제 안 함 |
-| `core.require-empty-hand` | `true` | 심장을 맨손으로만 파괴 가능 |
+| `core.require-empty-hand` | `true` | 시간 해제된 곡괭이를 제외하면 심장을 맨손으로만 파괴 가능 |
 | `core.forbid-diamond-pickaxe` | `true` | 다이아몬드 곡괭이 심장 파괴 금지 |
 | `core.pickaxe-unlock.wooden-seconds` | `1500` | 게임 시작 후 나무 곡괭이 코어 파괴 허용 시간. `-1`이면 자동 해제 안 함 |
 | `core.pickaxe-unlock.stone-seconds` | `1500` | 게임 시작 후 돌 곡괭이 코어 파괴 허용 시간. `-1`이면 자동 해제 안 함 |
 | `core.pickaxe-unlock.iron-seconds` | `1500` | 게임 시작 후 철 곡괭이 코어 파괴 허용 시간. `-1`이면 자동 해제 안 함 |
 | `core.pickaxe-unlock.diamond-seconds` | `1500` | 게임 시작 후 다이아 곡괭이 코어 파괴 허용 시간. `-1`이면 자동 해제 안 함 |
 
-곡괭이 시간 해제 값이 `0` 이상이면 `core.require-empty-hand`가 켜져 있어도 해당 시간이 지난 뒤 그 곡괭이로 코어를 파괴할 수 있습니다. 금 곡괭이는 코어 파괴 허용 대상에서 제외됩니다. 월드 / 코어 설정 GUI의 코어 보호 설정에서 곡괭이와 폭파 허용 시간을 좌클릭/우클릭해 1분 단위로, 쉬프트 좌클릭/쉬프트 우클릭해 5분 단위로 조정할 수 있습니다. 명령어로는 `/gw pickaxe status`로 진행 시간과 해제 상태를 확인하고, `/gw pickaxe <종류|all> <open|off|분>`으로 곡괭이 시간을 조정할 수 있습니다.
+곡괭이 시간 해제 값이 `0` 이상이면 `core.require-empty-hand`가 켜져 있어도 해당 시간이 지난 뒤 그 곡괭이로 코어를 파괴할 수 있습니다. 시간 해제는 나무·돌·철·다이아 곡괭이에만 적용됩니다. 금·네더라이트 곡괭이는 시간 해제 항목이 없고, 맨손 제한이 켜져 있으면 사용할 수 없습니다. 맨손 제한을 끄면 다른 아이템도 사용할 수 있으며, 다이아 곡괭이의 별도 금지 설정은 유지됩니다. 월드 / 코어 설정 GUI의 코어 보호 설정에서 곡괭이와 폭파 허용 시간을 좌클릭/우클릭해 1분 단위로, 쉬프트 좌클릭/쉬프트 우클릭해 5분 단위로 조정할 수 있습니다. 명령어로는 `/gw pickaxe status`로 진행 시간과 해제 상태를 확인하고, `/gw pickaxe <종류|all> <open|off|분>`으로 곡괭이 시간을 조정할 수 있습니다.
 
 ## abilities
 
@@ -132,8 +134,8 @@
 | `abilities.messages.success` | `true` | 능력 성공 메시지 |
 | `abilities.messages.failure` | `true` | 능력 실패 메시지 |
 | `abilities.messages.timer` | `true` | 쿨타임/타이머 안내 메시지 |
-| `abilities.nasdaq.iron-success-percent` | `75` | 나스닥 철괴 복사 성공률 |
-| `abilities.nasdaq.diamond-success-percent` | `25` | 나스닥 다이아몬드 복사 성공률 |
+| `abilities.nasdaq.iron-success-percent` | `25` | 나스닥 철괴 복사 성공률 |
+| `abilities.nasdaq.diamond-success-percent` | `5` | 나스닥 다이아몬드 복사 성공률 |
 | `abilities.voodoo.damage` | `0.5` | 부두술사 연결 피해량 |
 | `abilities.voodoo.hit-interval-millis` | `1000` | 부두술사 연결 피해 간격 |
 | `abilities.darkness.incoming-damage-multiplier` | `0.25` | 다크니스가 받는 피해 배율 |
@@ -213,7 +215,7 @@ teams:
 
 `spawns`와 `temples`는 `/gw setspawn`, `/gw settemple` 명령 또는 설정 GUI가 저장합니다. 직접 수정할 수 있지만 월드 이름과 좌표가 정확해야 합니다.
 
-월드 백업은 `/gw world backup create [이름]`으로 생성하고 `plugins/NewGodWar/world-backups/`에 저장됩니다. `/gw world backup load <백업이름> [로드월드이름]`은 기존 월드를 덮어쓰지 않고 새 월드 폴더로 복사한 뒤 서버에 로드합니다.
+월드 백업은 `/gw world backup create [이름]`으로 생성하고 `plugins/NewGodWar/world-backups/`에 저장됩니다. `/gw world backup load <백업이름> [로드월드이름]`은 백업의 모든 월드를 새 폴더로 복사한 뒤 서버에 로드합니다. 백업에 월드가 하나면 지정한 이름을 그대로 사용하고, 여러 개면 `<로드월드이름>-<원본월드명>`으로 각각 생성합니다. 이름을 생략하면 `ngw-<백업이름>`을 기준으로 같은 규칙을 적용합니다. 기존 월드는 덮어쓰지 않습니다.
 
 `messages`에서는 prefix와 주요 게임 메시지를 바꿀 수 있습니다.
 
@@ -228,7 +230,7 @@ teams:
 
 ## 애드온 게임 모드
 
-`game.mode`의 기본값은 `default`입니다. `plugins/NewGodWar/addon/`에 설치한 애드온이 등록한 모드 ID로 변경하면 다음 게임부터 해당 모드를 사용합니다. 자세한 내용은 [애드온 개발](addon-development)을 참고하세요.
+`game.mode`의 기본값은 `default`입니다. `plugins/NewGodWar/addon/`에 설치한 애드온이 등록한 모드 ID로 변경하면 다음 게임부터 해당 모드를 사용합니다. 자세한 내용은 [애드온 개발](https://github.com/minjae9010/NewGodWar/wiki/addon-development)을 참고하세요.
 
 
 ## GUI로 준비하고 시작하기

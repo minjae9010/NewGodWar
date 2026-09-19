@@ -71,9 +71,9 @@
 | `/gw team auto` | `/gautoteam`, `/gw at`, `/gw autoteam` | 관리자: 자동 팀 배정 |
 | `/gw team join <team> <player>` | `/gjoin <team> <player>`, `/gw j <team> <player>` | 관리자: 팀 배정. 게임 진행 중에는 중간 참여로 처리 |
 | `/gw team change <player> <team>` | `/gw ct <player> <team>`, `/gw changeteam ...` | 관리자: 능력·인벤토리를 유지한 팀 변경. 팀과 플레이어 순서 교환 가능 |
-| `/gw team midjoin <player> [team|auto]` | `/gw mj ...`, `/gw midjoin ...` | 관리자: 진행 중 중간 참여 |
+| `/gw team midjoin <player> [team\|auto]` | `/gw mj ...`, `/gw midjoin ...` | 관리자: 진행 중 중간 참여 |
 | `/gw team leave <player>` | `/gw out <player>`, `/gw leave <player>` | 관리자: 팀 배정 해제 |
-| `/gw team list [검색어|팀]` | `/gplayers`, `/gw p`, `/gw participants` | 관리자: 참가자의 팀·능력·킬·관전 현황 |
+| `/gw team list [검색어\|팀]` | `/gplayers`, `/gw p`, `/gw participants` | 관리자: 참가자의 팀·능력·킬·관전 현황 |
 | `/gw team spectate <player>` | `/gw spec <player>`, `/gw spectate <player>` | 관리자: 관전 전환 |
 | `/gw team unspectate <player>` | `/gw unspec <player>` | 관리자: 관전 해제 |
 | `/gw team observer [list]` | `/gw obs [list]`, `/gw observer [list]` | 관리자: 내 옵저버 모드 전환 / 목록 |
@@ -97,7 +97,7 @@
 | `/gw ability remove <player>` | `/a remove <player>` | 관리자: 능력 삭제 |
 | `/gw ability reset [player]` | `/a reset [player]` | 관리자: 능력 배정 초기화. 생략하면 전체 |
 | `/gw ability skip [초]` | `/a skip [초]` | 관리자: 능력 선택 대기 종료 |
-| `/gw ability cutin <player> [team|auto]` | `/a cutin ...` | 관리자: 중간 참여 |
+| `/gw ability cutin <player> [team\|auto]` | `/a cutin ...` | 관리자: 중간 참여 |
 | `/gw ability target <player>` | `/gw target <player>`, `/x <player>`, `/gw 대상 <player>` | 타깃형 능력 대상 지정 |
 | `/gw gamble` | `/도박`, `/gamble`, `/gw con` | 도박 GUI 열기 |
 
@@ -122,17 +122,17 @@
 | 단계형 명령어 | 간편 / 기존 명령 | 동작 (모두 관리자) |
 | --- | --- | --- |
 | `/gw settings open [화면] [team]` | `/gmenu [화면] [team]`, `/gw gui [화면] [team]` | 원하는 설정 GUI로 바로 이동 |
-| `/gw settings items [gui|list|add|set|remove|clear|reset]` | `/gkit`, `/gw kit`, `/gw defaultitems` | 기본 지급 아이템 창고 / 목록 관리 |
+| `/gw settings items [gui\|list\|add\|set\|remove\|clear\|reset]` | `/gkit`, `/gw kit`, `/gw defaultitems` | 기본 지급 아이템 창고 / 목록 관리 |
 | `/gw settings rerolls <횟수>` | `/gw rerolls`, `/gw reroll`, `/gw 재추첨` | 능력 재추첨 가능 횟수 설정 |
 | `/gw settings skipseconds <초>` | `/gw skipseconds` | 기본 시작 카운트다운 설정 |
 | `/gw settings pickaxe [status]` | `/gw pickaxe` | 곡괭이별 코어 파괴 허용 상태 확인 |
-| `/gw settings pickaxe <wooden|stone|iron|diamond|all> <open|off|분>` | `/gw pickaxe ...` | 코어 파괴 허용 시간. 금 곡괭이 제외 |
-| `/gw settings urf <on|off|toggle|퍼센트>` | `/gw urf ...` | 우르프 모드 / 쿨타임 감소율 |
-| `/gw settings blacklist <list|add|remove|toggle> [ability]` | `/gw bl ...`, `/gw blacklist ...` | 랜덤 배정 제외 능력 관리 |
-| `/gw settings gamerule <apply|restore>` | `/gw gamerule ...` | 게임룰 수동 적용 / 복구 |
-| `/gw settings rewards <normal> <번호|add> <hand|message|material> [값]` | `/gw gamblereward ...` | 도박 보상 변경 |
+| `/gw settings pickaxe <wooden\|stone\|iron\|diamond\|all> <open\|off\|분>` | `/gw pickaxe ...` | 코어 파괴 시간 해제 설정. 금·네더라이트 곡괭이는 시간 설정 대상 아님 |
+| `/gw settings urf <on\|off\|toggle\|퍼센트>` | `/gw urf ...` | 우르프 모드 / 쿨타임 감소율 |
+| `/gw settings blacklist <list\|add\|remove\|toggle> [ability]` | `/gw bl ...`, `/gw blacklist ...` | 랜덤 배정 제외 능력 관리 |
+| `/gw settings gamerule <apply\|restore>` | `/gw gamerule ...` | 게임룰 수동 적용 / 복구 |
+| `/gw settings rewards <normal> <번호\|add> <hand\|message\|material> [값]` | `/gw gamblereward ...` | 도박 보상 변경 |
 | `/gw server reload` | `/gw rl`, `/gw reload` | 설정 다시 불러오기 |
-| `/gw server update [check|download]` | `/gw update ...` | 최신 릴리즈 확인 / 다음 재시작용 다운로드 |
+| `/gw server update [check\|download]` | `/gw update ...` | 최신 릴리즈 확인 / 다음 재시작용 다운로드 |
 
 예: `/gw settings items set 1 LAVA_BUCKET 2`, `/gw 설정 기본템`, `/gw 서버 리로드`.
 
@@ -147,18 +147,18 @@
 | `/gw setup spawn <team>` | 현재 위치를 팀 스폰으로 저장. 기존 `/gw s <team>`, `/gw setspawn <team>` 지원 |
 | `/gw setup temple <team>` | 바라보는 다이아 블록을 심장으로 저장. 기존 `/gw d <team>`, `/gw settemple <team>` 지원 |
 | `/gw setup lobby` | 현재 위치를 로비로 저장. 기존 `/gw sl`, `/gw setlobby`, `/gw lobby` 지원 |
-| `/gw map [world|clear|help]` 또는 `/gmap ...` | 게임 맵 목록, 선택, 해제, 도움말 |
+| `/gw map [world\|clear\|help]` 또는 `/gmap ...` | 게임 맵 목록, 선택, 해제, 도움말 |
 | `/gw world gui` | 월드 전용 설정 GUI |
 | `/gw world list` | 로드된 월드 목록 |
-| `/gw world game <world|clear>` | 게임 월드 지정 / 해제 |
-| `/gw world create <world> [normal|flat|void]` | 새 월드 생성 |
-| `/gw world load <world> [normal|flat|void]` | 기존 월드 로드 |
-| `/gw world copy <sourceWorld> <newWorld> [normal|flat|void]` | 월드 복사 |
+| `/gw world game <world\|clear>` | 게임 월드 지정 / 해제 |
+| `/gw world create <world> [normal\|flat\|void]` | 새 월드 생성 |
+| `/gw world load <world> [normal\|flat\|void]` | 기존 월드 로드 |
+| `/gw world copy <sourceWorld> <newWorld> [normal\|flat\|void]` | 월드 복사 |
 | `/gw world tp <world> [player]` | 본인 또는 지정 플레이어 이동 |
 | `/gw world lobby [player]` | 저장된 로비로 이동 |
 | `/gw world unload <world> [save]` | 플레이어가 없는 월드 언로드 (기본 저장) |
 | `/gw world delete <world> confirm` | 플레이어가 없는 월드를 언로드하고 폴더 삭제 |
-| `/gw world backup <create|list|load> [이름]` | 백업 생성, 목록, 새 월드로 로드 |
+| `/gw world backup <create\|list\|load> [이름]` | 백업 생성, 목록, 새 월드로 로드 |
 
 `/gw lobby`는 **현재 위치를 로비로 등록**하는 기존 명령입니다. 로비로 이동하려면 `/gw world lobby`를 사용하세요.
 
@@ -179,7 +179,7 @@
 | `/t a remove <player>` | `/gw a remove <player>` |
 | `/t a reset [player]` | `/gw a reset [player]` |
 | `/t a skip [초]` | `/gw a skip [초]` |
-| `/t a cutin <player> [team|auto]` | `/gw a cutin <player> [team|auto]` |
+| `/t a cutin <player> [team\|auto]` | `/gw a cutin <player> [team\|auto]` |
 | `/t observer [list]` | `/gw observer [list]` |
 | `/t con` | `/gw gamble` |
 
@@ -191,4 +191,4 @@
 - 기본 지급 아이템은 `/gw defaultitems`로 가상 창고를 열어 넣고 빼면 저장됩니다. 콘솔에서는 `/gw defaultitems list`, `/gw defaultitems set 1 LAVA_BUCKET 2`처럼 수정할 수 있습니다.
 - 맵 선택은 `/gw map <world>`로 합니다. 선택된 맵의 팀 스폰과 심장은 맵별로 저장되므로, 새 맵을 선택한 뒤 `/gw setspawn <team>`, `/gw settemple <team>`로 한 번씩 설정하세요.
 - 월드 설정은 `/gw world gui` 또는 `/gw gui`의 `월드` 메뉴에서 변경할 수 있습니다. 현재 월드를 게임 월드로 지정하거나 자동 초기화, 시작 난이도, 시작 시간을 조정할 수 있습니다.
-- 월드 백업 로드는 안전을 위해 기존 월드 폴더에 바로 덮어쓰지 않습니다. 예를 들어 `/gw world backup load arena-1 reset-arena`는 백업을 `reset-arena` 월드로 새로 로드합니다.
+- 월드 백업 로드는 기존 월드 폴더에 바로 덮어쓰지 않습니다. `/gw world backup load arena-1 reset-arena`는 백업에 월드가 하나면 `reset-arena`로, 여러 개면 `reset-arena-<원본월드명>`으로 모두 로드합니다. 이름을 생략하면 `ngw-<백업이름>`을 기준으로 같은 규칙을 적용합니다. 생성된 이름은 `/gw world list`에서 확인하세요.
