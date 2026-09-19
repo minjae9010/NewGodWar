@@ -129,6 +129,27 @@ final class FeedbackRegressionChecks {
             require(count(particles, "Near") <= 25 && from.getX() == 0 && to.getX() == 20,
                 "Particle path is unbounded or mutated gameplay locations");
 
+            clearOutput(); feedback.spiral(context("graviton"), from, 1000);
+            require(count(particles, "Near") == 24 && from.getY() == 65,
+                "Spiral must have bounded particles and preserve its center");
+            clearOutput(); feedback.sigil(context("runesmith"), from, 1000, AbilityTheme.FROST);
+            require(count(particles, "Near") == 64 && from.getX() == 0,
+                "Rune sigil must have bounded particles and preserve its center");
+
+            clearOutput(); signatureEffects(feedback, from);
+            require(count(particles, "Near") > 150 && count(particles, "Near") < 300 && count(sounds, "Near") == 3,
+                "Named ability signatures are missing or unbounded");
+            require(count(particles, "Far") == 0 && count(particles, "CannotSee") == 0 && from.getY() == 65,
+                "Signature effects ignored visibility/range or mutated their position");
+            clearOutput(); namedKitEffects(feedback, from);
+            require(count(particles, "Near") > 350 && count(particles, "Near") < 850 && count(sounds, "Near") >= 5,
+                "Named kit effects were missing or unbounded");
+            require(count(particles, "Far") == 0 && count(particles, "CannotSee") == 0 && from.getY() == 65,
+                "Named kit effects leaked visibility/range or changed their anchor");
+            clearOutput(); invisible = true; namedKitEffects(feedback, from);
+            require(count(particles, "Near") == 0 && count(sounds, "Near") == 0, "Named kits revealed an invisible caster");
+            invisible = false;
+
             clearOutput();
             for (String key : Arrays.asList("particles", "sounds", "action-bar", "titles"))
                 core.getConfig().set("abilities.effects." + key, false);
@@ -139,6 +160,10 @@ final class FeedbackRegressionChecks {
                 core.getConfig().set("abilities.effects." + key, true);
             core.getConfig().set("abilities.effects.enabled", false);
             clearOutput(); feedback.activated(context, caster, true);
+            feedback.spiral(context, from, 3);
+            feedback.sigil(context, from, 3);
+            signatureEffects(feedback, from);
+            namedKitEffects(feedback, from);
             require(particles.isEmpty() && sounds.isEmpty() && bars.isEmpty() && titles.isEmpty(), "Master effects toggle ignored");
             core.getConfig().set("abilities.effects.enabled", true);
 
@@ -162,6 +187,29 @@ final class FeedbackRegressionChecks {
     }
 
     private AbilityPlayerContext context(String id) { return new AbilityPlayerContext(core, caster, core.abilities().registry().get(id)); }
+    private void signatureEffects(AbilityFeedback feedback, Location center) {
+        feedback.hammer(context("thor"), center);
+        feedback.thunderbolt(context("thor"), center);
+        feedback.huntMark(context("artemis"), viewers.get(1), 2);
+        feedback.echoSlash(context("echo"), center, 3);
+        feedback.rune(context("runesmith"), center, 3, true);
+        feedback.runeBurst(context("runesmith"), center, false);
+        feedback.shield(context("hermione"), center, 5);
+    }
+    private void namedKitEffects(AbilityFeedback feedback, Location center) {
+        feedback.clockFace(context("chronos"), center, 6, 2);
+        feedback.flock(context("odin"), viewers.get(1), 0, false);
+        feedback.spear(context("odin"), center, center.clone().add(0, 1, 5));
+        feedback.forge(context("hephaestus"), center, true);
+        feedback.phalanx(context("athena"), center, new org.bukkit.util.Vector(0, 0, 1));
+        feedback.oath(context("hera"), caster, viewers.get(1));
+        feedback.scales(context("anubis"), viewers.get(1), 4);
+        feedback.flock(context("queenbee"), viewers.get(1), 0, true);
+        feedback.honeycomb(context("queenbee"), center);
+        feedback.wings(context("nike"), center, 3);
+        feedback.harvest(context("demeter"), center, 3);
+        feedback.melody(context("pan"), center, 7, 2, true);
+    }
     private void clearOutput() { particles.clear(); sounds.clear(); messages.clear(); bars.clear(); titles.clear(); }
     private int count(Map<String, Integer> map, String key) { return map.containsKey(key) ? map.get(key) : 0; }
     private boolean contains(List<String> lines, String text) { for (String line : lines) if (line.contains(text)) return true; return false; }

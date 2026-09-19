@@ -60,6 +60,7 @@ public final class AbilityRegressionProbe extends JavaPlugin {
                 new ItemGrantRegressionChecks().run(core);
                 new FeedbackRegressionChecks(core).run();
                 runChecks();
+                new AbilityVarietyChecks(core).run();
                 getLogger().info("ABILITY REGRESSION PASS");
             } catch (Throwable ex) {
                 getLogger().log(java.util.logging.Level.SEVERE, "ABILITY REGRESSION FAILED", ex);

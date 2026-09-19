@@ -111,6 +111,15 @@ final class ItemGrantRegressionChecks {
             require(drops.get(0).getItemMeta() instanceof BookMeta
                 && ((BookMeta) drops.get(0).getItemMeta()).hasPages(), id + " lost its spellbook pages");
         }
+        for (String id : Arrays.asList("thor", "artemis")) {
+            reset(true);
+            AbilityDefinition definition = core.abilities().registry().get(id);
+            definition.create().onPrepare(new AbilityPlayerContext(core, player, definition));
+            String expected = id.equals("thor") ? "묠니르" : "은빛 사냥활";
+            require(!drops.isEmpty() && drops.get(0).hasItemMeta()
+                && expected.equals(ChatColor.stripColor(drops.get(0).getItemMeta().getDisplayName())),
+                id + " did not grant its named weapon with intact metadata");
+        }
         core.getLogger().info("PASS item grants: normal/full/partial/stacking/multiple rewards, original stacks and special item metadata");
     }
 

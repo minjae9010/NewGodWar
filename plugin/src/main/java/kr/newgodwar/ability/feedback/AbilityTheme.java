@@ -18,7 +18,13 @@ public enum AbilityTheme {
     GUARD(ChatColor.YELLOW, "END_ROD", "END_ROD", "ITEM_SHIELD_BLOCK", "ITEM_SHIELD_BLOCK"),
     COMBAT(ChatColor.RED, "CRIT", "CRIT", "ENTITY_PLAYER_ATTACK_SWEEP", "ENTITY_PLAYER_ATTACK_SWEEP"),
     CRAFT(ChatColor.GOLD, "FIREWORK", "FIREWORKS_SPARK", "BLOCK_ANVIL_USE", "BLOCK_ANVIL_USE"),
-    MUSIC(ChatColor.AQUA, "NOTE", "NOTE", "BLOCK_NOTE_BLOCK_HARP", "BLOCK_NOTE_HARP");
+    MUSIC(ChatColor.AQUA, "NOTE", "NOTE", "BLOCK_NOTE_BLOCK_HARP", "BLOCK_NOTE_HARP"),
+    GRAVITY(ChatColor.DARK_PURPLE, "PORTAL", "PORTAL", "BLOCK_BEACON_ACTIVATE", "BLOCK_END_PORTAL_SPAWN"),
+    ECHO(ChatColor.AQUA, "SWEEP_ATTACK", "SWEEP_ATTACK", "ENTITY_PLAYER_ATTACK_SWEEP", "ENTITY_PLAYER_ATTACK_SWEEP"),
+    RUNE(ChatColor.GOLD, "ENCHANT", "ENCHANTMENT_TABLE", "BLOCK_ENCHANTMENT_TABLE_USE", "BLOCK_ENCHANTMENT_TABLE_USE"),
+    HUNT(ChatColor.GREEN, "CRIT", "CRIT", "ENTITY_ARROW_HIT_PLAYER", "ENTITY_ARROW_HIT_PLAYER"),
+    TIME(ChatColor.AQUA, "END_ROD", "END_ROD", "BLOCK_NOTE_BLOCK_HAT", "BLOCK_NOTE_HAT"),
+    SWARM(ChatColor.GOLD, "CRIT", "CRIT", "ENTITY_BEE_LOOP", "ENTITY_BAT_TAKEOFF");
 
     private final ChatColor color;
     private final Particle particle;
@@ -37,9 +43,15 @@ public enum AbilityTheme {
     public static AbilityTheme of(String id) {
         if (id == null) return ARCANE;
         switch (id) {
+            case "graviton": return GRAVITY;
+            case "echo": return ECHO;
+            case "runesmith": case "odin": return RUNE;
+            case "artemis": return HUNT;
+            case "chronos": return TIME;
+            case "queenbee": return SWARM;
             case "zeus": case "thor": return LIGHTNING;
-            case "apollon": case "amaterasu": case "ra": case "hephaestus":
-            case "jujak": case "thisisfine": case "bomber": case "creeper": case "megumin": return FIRE;
+            case "apollon": case "amaterasu": case "ra":
+            case "jujak": case "thisisfine": case "bomber": case "creeper": case "megumin": case "zet": return FIRE;
             case "poseidon": case "fisher": case "yisunsin": return WATER;
             case "frost": case "snow": return FROST;
             case "aeolus": case "hermes": case "naro": case "nike": case "quetzalcoatl": return WIND;
@@ -49,11 +61,11 @@ public enum AbilityTheme {
             case "hades": case "anubis": case "witch": case "voodoo": case "blinder":
             case "clocking": case "hecate": case "loki": case "sus": case "honggildong":
             case "selene": case "morpious": case "assasin": return SHADOW;
-            case "hera": case "invincibility": case "darkness": case "reflection":
-            case "stance": case "odin": case "yugwansun": return GUARD;
-            case "ares": case "archer": case "artemis": case "acidarcher": case "sniper":
+            case "hera": case "athena": case "invincibility": case "darkness": case "reflection":
+            case "stance": case "bulter": case "yugwansun": return GUARD;
+            case "ares": case "archer": case "acidarcher": case "sniper":
             case "onepunch": case "midoriya": case "gigachad": case "anjunggeun": return COMBAT;
-            case "blacksmith": case "jangyeongsil": case "athena": case "nasdaq":
+            case "blacksmith": case "jangyeongsil": case "hephaestus": case "nasdaq":
             case "miner": case "goldspoon": case "scrooge": case "tajja": return CRAFT;
             case "rickroll": case "pan": return MUSIC;
             default: return ARCANE;

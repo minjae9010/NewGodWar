@@ -2,55 +2,80 @@ package kr.newgodwar.ability.builtin;
 
 import kr.newgodwar.ability.api.*;
 import kr.newgodwar.game.GodTeam;
-import org.bukkit.*;
-import org.bukkit.block.Block;
-import org.bukkit.entity.*;
-import org.bukkit.event.block.*;
-import org.bukkit.event.entity.*;
-import org.bukkit.event.player.*;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.potion.PotionEffectType;
+import org.bukkit.entity.Player;
+import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.util.Vector;
-
 import java.util.List;
 
 @AbilityInfo(
-    id = "nike",
-    name = "니케",
-    description = "짧은 기동력과 처치 후 작은 승전 효과를 얻습니다.",
-    normalSkill = "블레이즈 막대기 좌클릭: 짧게 신속과 점프 강화 효과를 얻습니다.",
-    normalStoneCost = 10,
-    normalCooldownSeconds = 45,
-    advancedSkill = "블레이즈 막대기 우클릭: 주변 아군에게 짧은 신속과 공격력 증가를 부여합니다.",
-    advancedStoneCost = 24,
-    advancedCooldownSeconds = 120,
-    passiveSkill = "직접 처치하면 짧은 재생과 신속을 얻습니다.",
+    id = "nike", name = "니케",
+    description = "승리의 날개로 진입하고 처치로 얻은 월계관을 아군의 승전 축복으로 바꿉니다.",
+    normalSkill = "블레이즈 막대기 좌클릭: 바라보는 방향으로 날개 돌진합니다. 6초 안의 첫 낙하 피해를 무시합니다.",
+    normalStoneCost = 10, normalCooldownSeconds = 25,
+    advancedSkill = "블레이즈 막대기 우클릭: 월계관을 모두 소비해 반경 8블록 아군을 월계관 수 + 2만큼 회복하고 4 + 월계관 수 × 2초간 신속 I을 부여합니다.",
+    advancedStoneCost = 18, advancedCooldownSeconds = 60,
+    passiveSkill = "적을 직접 처치하면 월계관을 1개 얻습니다. 최대 3개이며 사망하거나 능력을 잃으면 사라집니다.",
     grade = AbilityGrade.B
 )
-final class NikeAbility extends BaseAbility {
+final class NikeAbility extends TransientAbility {
+    private int laurels;
+    private boolean wingGuard;
+    private int wingTask = -1;
+
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
-        if (useNormal(context, player)) {
-            effect(player, PotionEffectType.SPEED, 10, 1);
-            effect(player, PotionEffectType.JUMP, 10, 0);
-        }
+        if (!useNormal(context, player)) return;
+        Vector direction = player.getLocation().getDirection().setY(0);
+        if (direction.lengthSquared() < 0.01D) direction.setZ(1);
+        player.setVelocity(direction.normalize().multiply(1.1D).setY(0.35D));
+        wingGuard = true;
+        cancelScheduledTask(wingTask);
+        wingTask = scheduleLater(context, () -> { wingGuard = false; wingTask = -1; }, 120);
+        feedback.wings(context, player.getLocation(), laurels);
     }
 
     @Override
-    protected void onStaffRight(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
-        List<Player> targets = nearbyPlayers(context, player, 10, true);
-        targets.add(player);
-        if (useAdvanced(context, player)) {
-            for (Player target : targets) {
-                effect(target, PotionEffectType.SPEED, 9, 0);
-                effect(target, "STRENGTH", "INCREASE_DAMAGE", 8, 0);
-            }
+    public void onGenericDamage(AbilityPlayerContext context, EntityDamageEvent event) {
+        if (wingGuard && !event.isCancelled() && event.getCause() == EntityDamageEvent.DamageCause.FALL) {
+            event.setCancelled(true);
+            wingGuard = false; cancelScheduledTask(wingTask); wingTask = -1;
         }
     }
 
     @Override
     public void onKill(AbilityKillContext context) {
-        effect(context.killer(), PotionEffectType.REGENERATION, 8, 0);
-        effect(context.killer(), PotionEffectType.SPEED, 8, 0);
+        AbilityPlayerContext playerContext = new AbilityPlayerContext(context.plugin(), context.killer(), context.ability());
+        GodTeam victimTeam = context.plugin().game().teamOf(context.victim());
+        if (!active(playerContext) || victimTeam == null || victimTeam == context.plugin().game().teamOf(context.killer())) return;
+        laurels = Math.min(3, laurels + 1);
+        feedback.passive(playerContext, "승리의 월계관 · " + laurels + "/3");
+        feedback.wings(playerContext, context.killer().getLocation(), laurels);
     }
+
+    @Override
+    protected void onStaffRight(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
+        if (laurels == 0) {
+            sendAbilityMessage(context, player, "failure", "적 처치로 승리의 월계관을 얻으세요.");
+            return;
+        }
+        if (!useAdvanced(context, player)) return;
+        int victory = laurels;
+        laurels = 0;
+        for (Player target : alliesInRange(context, player.getLocation(), 8)) {
+            restoreHealth(target, 2 + victory);
+            effect(target, "SPEED", "SPEED", 4 + victory * 2, 0);
+            feedback.wings(context, target.getLocation(), victory);
+        }
+    }
+
+    @Override
+    public List<String> activeTimerLines() {
+        List<String> lines = super.activeTimerLines();
+        lines.add("승리의 월계관 · " + laurels + "/3");
+        return lines;
+    }
+
+    @Override
+    protected void clearTransientState() { laurels = 0; wingGuard = false; wingTask = -1; }
 }

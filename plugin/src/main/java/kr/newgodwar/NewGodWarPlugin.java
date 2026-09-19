@@ -13,7 +13,6 @@ import kr.newgodwar.gui.AbilityGui;
 import kr.newgodwar.gui.GamblingGui;
 import kr.newgodwar.gui.SettingsGui;
 import kr.newgodwar.gui.StarterItemsGui;
-import kr.newgodwar.listener.AthenaEnchantListener;
 import kr.newgodwar.listener.GameListener;
 import kr.newgodwar.nms.NmsAdapter;
 import kr.newgodwar.nms.NmsAdapters;
@@ -90,7 +89,6 @@ public final class NewGodWarPlugin extends JavaPlugin {
         getCommand("teamchat").setExecutor(new TeamChatCommand(this, gameManager));
 
         Bukkit.getPluginManager().registerEvents(new GameListener(this, gameManager, abilityManager, nmsAdapter), this);
-        Bukkit.getPluginManager().registerEvents(new AthenaEnchantListener(this, abilityManager), this);
         Bukkit.getPluginManager().registerEvents(settingsGui, this);
         Bukkit.getPluginManager().registerEvents(starterItemsGui, this);
         Bukkit.getPluginManager().registerEvents(abilityGui, this);

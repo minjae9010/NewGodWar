@@ -132,6 +132,287 @@ public final class AbilityFeedback {
         }
     }
 
+    /** A bounded spiral for gravity wells, charged weapons and marked prey. */
+    public void spiral(AbilityPlayerContext context, Location center, double radius) {
+        if (center == null || center.getWorld() == null || !enabled(context, "particles")) return;
+        AbilityTheme theme = AbilityTheme.of(context.ability().id());
+        List<Player> audience = effectViewers(context, center);
+        double size = Math.max(0.3D, Math.min(6.0D, radius));
+        for (int i = 0; i < 24; i++) {
+            double angle = Math.PI * 4.0D * i / 24.0D;
+            particle(context, center.clone().add(Math.cos(angle) * size, i / 16.0D, Math.sin(angle) * size),
+                theme.particle(), audience, 1, 0.0D);
+        }
+    }
+
+    /** A visible four-point seal; gameplay continues when cosmetics are disabled. */
+    public void sigil(AbilityPlayerContext context, Location center, double radius) {
+        sigil(context, center, radius, AbilityTheme.of(context.ability().id()));
+    }
+
+    public void sigil(AbilityPlayerContext context, Location center, double radius, AbilityTheme theme) {
+        if (center == null || center.getWorld() == null || !enabled(context, "particles")) return;
+        List<Player> audience = effectViewers(context, center);
+        double size = Math.max(0.5D, Math.min(6.0D, radius));
+        ring(context, center, size, theme, audience);
+        for (int i = 0; i < 16; i++) {
+            double offset = size * (i / 7.5D - 1.0D);
+            particle(context, center.clone().add(offset, 0.2D, 0), theme.particle(), audience, 1, 0);
+            particle(context, center.clone().add(0, 0.2D, offset), theme.particle(), audience, 1, 0);
+        }
+    }
+
+    private List<Player> effectViewers(AbilityPlayerContext context, Location center) {
+        return hidden(context.player()) || AbilityTheme.privateCast(context.ability().id())
+            ? Collections.singletonList(context.player()) : viewers(center, context.player());
+    }
+
+    /** A small hammer silhouette, used along Mjolnir's actual outbound/return path. */
+    public void hammer(AbilityPlayerContext context, Location center) {
+        if (center == null || center.getWorld() == null || !enabled(context, "particles")) return;
+        List<Player> audience = effectViewers(context, center);
+        for (int i = 0; i < 7; i++) {
+            particle(context, center.clone().add((i - 3) * 0.13D, 0.25D, 0), AbilityTheme.LIGHTNING.particle(), audience, 1, 0);
+            particle(context, center.clone().add(0, 0.25D - i * 0.13D, 0), AbilityTheme.LIGHTNING.particle(), audience, 1, 0);
+        }
+    }
+
+    /** Cosmetic lightning never ignites blocks or damages teammates. */
+    public void thunderbolt(AbilityPlayerContext context, Location center) {
+        if (center == null || center.getWorld() == null) return;
+        List<Player> audience = effectViewers(context, center);
+        for (int i = 0; i <= 24; i++) {
+            double offset = i == 24 ? 0 : Math.sin(i * 1.9D) * 0.35D;
+            particle(context, center.clone().add(offset, 6.0D - i * 0.25D, -offset),
+                AbilityTheme.LIGHTNING.particle(), audience, 1, 0);
+        }
+        sound(context, center, audience, AbilityTheme.LIGHTNING.sound(), 0.6F, 1.1F);
+    }
+
+    /** Silver crescent and one star per mark, attached to the hunted player's position. */
+    public void huntMark(AbilityPlayerContext context, Player target, int marks) {
+        if (target == null || !target.isOnline() || !enabled(context, "particles")) return;
+        Location center = target.getLocation().add(0, 2.3D, 0);
+        List<Player> audience = hidden(target) || hidden(context.player())
+            ? Collections.singletonList(context.player()) : viewers(center, target);
+        for (int i = 0; i < 15; i++) {
+            double angle = Math.PI * (0.25D + i * 1.5D / 14.0D);
+            particle(context, center.clone().add(Math.cos(angle) * 0.4D, Math.sin(angle) * 0.4D, 0),
+                AbilityTheme.LIGHTNING.particle(), audience, 1, 0);
+        }
+        for (int i = 0; i < Math.min(3, Math.max(0, marks)); i++) {
+            particle(context, center.clone().add((i - 1) * 0.3D, 0.65D, 0), AbilityTheme.HUNT.particle(), audience, 2, 0);
+        }
+    }
+
+    public void echoSlash(AbilityPlayerContext context, Location center, double radius) {
+        if (center == null || center.getWorld() == null) return;
+        List<Player> audience = effectViewers(context, center);
+        double size = Math.max(0.5D, Math.min(3, radius));
+        for (int i = 0; i < 24; i++) {
+            double angle = Math.PI * 2.0D * i / 24.0D;
+            particle(context, center.clone().add(Math.cos(angle) * size, 0.8D + Math.sin(angle) * 0.3D, Math.sin(angle) * size),
+                AbilityTheme.ECHO.particle(), audience, 1, 0);
+        }
+        sound(context, center, audience, AbilityTheme.ECHO.sound(), 0.4F, 1.2F);
+    }
+
+    public void rune(AbilityPlayerContext context, Location center, double radius, boolean frost) {
+        if (center == null || center.getWorld() == null || !enabled(context, "particles")) return;
+        AbilityTheme theme = frost ? AbilityTheme.FROST : AbilityTheme.FIRE;
+        List<Player> audience = effectViewers(context, center);
+        double size = Math.max(0.5D, Math.min(3, radius));
+        ring(context, center, size, theme, audience);
+        int arms = frost ? 6 : 3;
+        for (int arm = 0; arm < arms; arm++) {
+            double angle = Math.PI * 2.0D * arm / arms;
+            for (int i = 1; i <= 5; i++) {
+                double length = size * i / 5.0D;
+                particle(context, center.clone().add(Math.cos(angle) * length, 0.2D, Math.sin(angle) * length),
+                    theme.particle(), audience, 1, 0);
+            }
+        }
+    }
+
+    public void shield(AbilityPlayerContext context, Location center, double radius) {
+        if (center == null || center.getWorld() == null || !enabled(context, "particles")) return;
+        List<Player> audience = effectViewers(context, center);
+        double size = Math.max(0.5D, Math.min(5, radius));
+        for (int layer = 0; layer < 3; layer++) {
+            double elevation = layer * Math.PI / 6.0D;
+            for (int i = 0; i < 16; i++) {
+                double angle = i * Math.PI / 8.0D;
+                particle(context, center.clone().add(Math.cos(angle) * Math.cos(elevation) * size,
+                    0.2D + Math.sin(elevation) * size, Math.sin(angle) * Math.cos(elevation) * size),
+                    AbilityTheme.GUARD.particle(), audience, 1, 0);
+            }
+        }
+    }
+
+    public void runeBurst(AbilityPlayerContext context, Location center, boolean frost) {
+        if (center == null || center.getWorld() == null) return;
+        rune(context, center, 3, frost);
+        AbilityTheme theme = frost ? AbilityTheme.FROST : AbilityTheme.FIRE;
+        List<Player> audience = effectViewers(context, center);
+        burst(context, center.clone().add(0, 1, 0), theme, audience, 16);
+        sound(context, center, audience, theme.sound(), 0.6F, frost ? 1.4F : 0.8F);
+    }
+
+    public void clockFace(AbilityPlayerContext context, Location center, double radius, int phase) {
+        if (center == null || center.getWorld() == null) return;
+        List<Player> audience = effectViewers(context, center);
+        double size = Math.max(0.5D, Math.min(6, radius));
+        for (int i = 0; i < 12; i++) {
+            double angle = i * Math.PI / 6;
+            particle(context, center.clone().add(Math.cos(angle) * size, 0.15D, Math.sin(angle) * size),
+                AbilityTheme.TIME.particle(), audience, 2, 0);
+        }
+        double angle = phase * Math.PI / 3;
+        segment(context, center.clone().add(0, 0.2D, 0),
+            center.clone().add(Math.cos(angle) * size, 0.2D, Math.sin(angle) * size), AbilityTheme.TIME, audience);
+        sound(context, center, audience, AbilityTheme.TIME.sound(), 0.3F, 1.4F);
+    }
+
+    /** Small wing silhouettes follow a visible target; no persistent entities are spawned. */
+    public void flock(AbilityPlayerContext context, Player target, int phase, boolean bees) {
+        if (target == null || !target.isOnline()) return;
+        Location center = target.getLocation().add(0, bees ? 1.2D : 2.5D, 0);
+        List<Player> audience = targetViewers(context, target, center);
+        Particle kind = bees ? AbilityTheme.SWARM.particle()
+            : AbilityTheme.resolve(Particle.class, "SMOKE", "SMOKE_NORMAL");
+        int count = bees ? 3 : 2;
+        for (int i = 0; i < count; i++) {
+            double angle = phase * 0.7D + Math.PI * 2 * i / count;
+            Location bird = center.clone().add(Math.cos(angle) * 0.8D, Math.sin(angle * 2) * 0.2D, Math.sin(angle) * 0.8D);
+            for (int wing = -2; wing <= 2; wing++)
+                particle(context, bird.clone().add(wing * 0.12D, Math.abs(wing) * (phase % 2 == 0 ? 0.1D : -0.1D), 0),
+                    kind, audience, 1, 0);
+        }
+        if (bees && phase % 4 == 0) sound(context, center, audience, AbilityTheme.SWARM.sound(), 0.25F, 1.5F);
+    }
+
+    public void spear(AbilityPlayerContext context, Location from, Location to) {
+        if (from == null || to == null || from.getWorld() == null || !from.getWorld().equals(to.getWorld())) return;
+        List<Player> audience = effectViewers(context, to);
+        segment(context, from, to, AbilityTheme.GUARD, audience);
+        segment(context, to.clone().add(-0.3D, 0.4D, 0), to, AbilityTheme.GUARD, audience);
+        segment(context, to.clone().add(0.3D, 0.4D, 0), to, AbilityTheme.GUARD, audience);
+        sound(context, to, audience, AbilityTheme.COMBAT.sound(), 0.5F, 0.7F);
+    }
+
+    public void forge(AbilityPlayerContext context, Location center, boolean quenched) {
+        if (center == null || center.getWorld() == null) return;
+        List<Player> audience = effectViewers(context, center);
+        AbilityTheme theme = quenched ? AbilityTheme.WATER : AbilityTheme.FIRE;
+        for (int i = 0; i < 12; i++) {
+            double angle = i * Math.PI / 6;
+            particle(context, center.clone().add(Math.cos(angle) * 0.65D, 0.7D, Math.sin(angle) * 0.65D),
+                theme.particle(), audience, 2, 0.05D);
+        }
+        burst(context, center.clone().add(0, 1, 0), AbilityTheme.CRAFT, audience, 8);
+        sound(context, center, audience, AbilityTheme.CRAFT.sound(), 0.4F, quenched ? 1.6F : 0.8F);
+    }
+
+    public void phalanx(AbilityPlayerContext context, Location center, org.bukkit.util.Vector facing) {
+        if (center == null || center.getWorld() == null) return;
+        List<Player> audience = effectViewers(context, center);
+        org.bukkit.util.Vector side = new org.bukkit.util.Vector(-facing.getZ(), 0, facing.getX());
+        for (int i = 0; i < 5; i++) {
+            double angle = (i - 2) * Math.PI / 5;
+            Location point = center.clone().add(facing.clone().multiply(Math.cos(angle) * 5))
+                .add(side.clone().multiply(Math.sin(angle) * 5));
+            for (int y = 0; y < 4; y++)
+                particle(context, point.clone().add(0, 0.3D + y * 0.4D, 0), AbilityTheme.GUARD.particle(), audience, 2, 0.1D);
+        }
+        segment(context, center.clone().add(side.clone().multiply(-5)),
+            center.clone().add(side.clone().multiply(5)), AbilityTheme.GUARD, audience);
+    }
+
+    public void oath(AbilityPlayerContext context, Player first, Player second) {
+        Location from = first.getLocation().add(0, 1, 0), to = second.getLocation().add(0, 1, 0);
+        if (!from.getWorld().equals(to.getWorld())) return;
+        List<Player> audience = hidden(first) || hidden(second) ? Collections.singletonList(first) : targetViewers(context, second, to);
+        segment(context, from, to, AbilityTheme.GUARD, audience);
+        for (Location center : new Location[] {from, to}) {
+            ring(context, center, 0.6D, AbilityTheme.GUARD, audience);
+            particle(context, center.clone().add(0, 1.2D, 0), AbilityTheme.HEALING.particle(), audience, 2, 0.1D);
+        }
+    }
+
+    public void scales(AbilityPlayerContext context, Player target, double burden) {
+        if (target == null || !target.isOnline()) return;
+        Location center = target.getLocation().add(0, 2.6D, 0);
+        List<Player> audience = targetViewers(context, target, center);
+        double tilt = Math.max(0, Math.min(4, burden)) * 0.1D;
+        segment(context, center.clone().add(0, -0.5D, 0), center.clone().add(0, 0.4D, 0), AbilityTheme.GUARD, audience);
+        segment(context, center.clone().add(-0.6D, tilt, 0), center.clone().add(0.6D, -tilt, 0), AbilityTheme.GUARD, audience);
+        for (int side : new int[] {-1, 1}) {
+            Location pan = center.clone().add(side * 0.6D, -side * tilt - 0.3D, 0);
+            segment(context, pan.clone().add(0, 0.3D, 0), pan, AbilityTheme.SHADOW, audience);
+            ring(context, pan, 0.2D, AbilityTheme.SHADOW, audience);
+        }
+    }
+
+    public void honeycomb(AbilityPlayerContext context, Location center) {
+        if (center == null || center.getWorld() == null) return;
+        List<Player> audience = effectViewers(context, center);
+        for (int i = 0; i < 6; i++) {
+            double a = i * Math.PI / 3, b = (i + 1) * Math.PI / 3;
+            segment(context, center.clone().add(Math.cos(a) * 4, 0.2D, Math.sin(a) * 4),
+                center.clone().add(Math.cos(b) * 4, 0.2D, Math.sin(b) * 4), AbilityTheme.SWARM, audience);
+        }
+        particle(context, center.clone().add(0, 0.5D, 0), AbilityTheme.HEALING.particle(), audience, 5, 0.4D);
+    }
+
+    public void wings(AbilityPlayerContext context, Location center, int laurels) {
+        if (center == null || center.getWorld() == null) return;
+        List<Player> audience = effectViewers(context, center);
+        for (int side : new int[] {-1, 1}) for (int feather = 0; feather < 6; feather++) {
+            double x = side * (0.3D + feather * 0.22D);
+            segment(context, center.clone().add(x, 1.2D + feather * 0.12D, 0),
+                center.clone().add(x, 0.7D + feather * 0.07D, 0.25D), AbilityTheme.WIND, audience);
+        }
+        for (int i = 0; i < Math.min(3, laurels); i++)
+            particle(context, center.clone().add((i - 1) * 0.3D, 2.4D, 0), AbilityTheme.NATURE.particle(), audience, 2, 0);
+    }
+
+    public void harvest(AbilityPlayerContext context, Location center, int stage) {
+        if (center == null || center.getWorld() == null) return;
+        List<Player> audience = effectViewers(context, center);
+        ring(context, center, 5, AbilityTheme.NATURE, audience);
+        double height = 0.2D + Math.min(3, Math.max(0, stage)) * 0.3D;
+        for (int i = 0; i < 8; i++) {
+            double angle = i * Math.PI / 4;
+            Location stalk = center.clone().add(Math.cos(angle) * 3, 0.2D, Math.sin(angle) * 3);
+            segment(context, stalk, stalk.clone().add(0, height, 0), AbilityTheme.NATURE, audience);
+            particle(context, stalk.clone().add(0, height, 0), AbilityTheme.SWARM.particle(), audience, 3, 0.1D);
+        }
+        sound(context, center, audience, AbilityTheme.NATURE.sound(), 0.4F, 0.8F + stage * 0.2F);
+    }
+
+    public void melody(AbilityPlayerContext context, Location center, double radius, int note, boolean joyful) {
+        if (center == null || center.getWorld() == null) return;
+        List<Player> audience = effectViewers(context, center);
+        ring(context, center, radius, AbilityTheme.MUSIC, audience);
+        particle(context, center.clone().add(0, 1.8D, 0), AbilityTheme.MUSIC.particle(), audience, 3, 0.3D);
+        sound(context, center, audience, AbilityTheme.MUSIC.sound(), 0.6F, (joyful ? 1.0F : 0.5F) + note * 0.2F);
+    }
+
+    private List<Player> targetViewers(AbilityPlayerContext context, Player target, Location center) {
+        if (hidden(target) || hidden(context.player())) return Collections.singletonList(context.player());
+        List<Player> audience = viewers(center, target);
+        audience.removeIf(viewer -> !viewer.equals(context.player()) && !viewer.canSee(context.player()));
+        return audience;
+    }
+
+    private void segment(AbilityPlayerContext context, Location from, Location to, AbilityTheme theme, List<Player> audience) {
+        if (!enabled(context, "particles")) return;
+        int steps = Math.max(2, Math.min(24, (int) Math.ceil(from.distance(to) * 3)));
+        org.bukkit.util.Vector delta = to.toVector().subtract(from.toVector());
+        for (int i = 0; i <= steps; i++)
+            particle(context, from.clone().add(delta.clone().multiply(i / (double) steps)), theme.particle(), audience, 1, 0);
+    }
+
     private void burst(AbilityPlayerContext context, Location center, AbilityTheme theme, List<Player> viewers, int count) {
         particle(context, center, theme.particle(), viewers, count, 0.45D);
     }
