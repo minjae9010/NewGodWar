@@ -1,6 +1,45 @@
 # 명령어
 
-기본 안내 명령어는 `/gw`입니다. 긴 명령어 이름과 `/godswar`, `/신들의전쟁`도 alias로 사용할 수 있으며, `/t`는 Themachy 스타일 호환 명령어로 별도 유지됩니다. 별도 단축 명령으로 `/a`, `/x`, `/teamchat`, `/도박`도 제공됩니다.
+기본 형식은 `/gw <분류> <동작> [대상/값]`입니다. 각 단계에서 Tab으로 다음 동작과 대상을 찾을 수 있습니다. `/godwar`, `/godswar`, `/신들의전쟁`도 같은 명령이며, `/t`는 Themachy 호환 입력을 함께 지원합니다.
+
+## 도움말과 검색
+
+- `/gw help` 또는 `/ghelp`: 기능별 목차. 게임, 팀, 능력, 설정, 설정 화면, 월드 등의 분류를 선택합니다.
+- `/gw help all [페이지]`: 전체 명령 목록. 기존 `/gw help 2`도 전체 목록의 2페이지를 엽니다.
+- `/gw help team`, `/gw help ability 2`: 해당 분류만 봅니다. `general`, `game`, `team`, `ability`, `settings`, `admin` 분류를 지원합니다.
+- `/gw help 쿨타임`, `/gw help gkit`: 명령어 이름, 별칭, 설명으로 검색합니다.
+- `/gw help world backup`, `/gw help ability cooldown`: 여러 단어로 검색하거나 하위 분류를 바로 봅니다.
+- `/gw help 간편`: 간편 명령 목록. `/gw help 간편 2`로 페이지를 이동합니다.
+- `/gw game help`, `/gw team help`, `/a help`, `/gw settings help`, `/gw setup help`, `/gw server help`: 각 분류의 하위 동작을 확인합니다.
+- `/gw ability cooldown` 또는 `/gw ability cooldown help`: 쿨타임 관리의 다음 단계를 안내합니다.
+- `/gw world help`, `/gw map help`: 월드·맵 상세 도움말. 기존 `/gw help world`, `/gw help map`도 지원합니다.
+- `/gw gui help` 또는 `/gw help gui`: 설정 화면 바로가기 목록. `/gw gui help 2`로 다음 화면 목록을 봅니다.
+
+상세 도움말은 페이지당 5개 항목으로 표시합니다. 분류·이전·다음·목차는 클릭으로 이동하며, 명령어는 클릭하면 입력창에 들어갑니다. 마우스를 올리면 간편 명령과 별칭을 볼 수 있습니다. 명령 클릭만으로 게임을 시작하거나 설정을 변경하지 않습니다. 콘솔에서는 이동 명령이 텍스트로 표시됩니다.
+
+명령어를 잘못 입력하면 도움말이나 유사 명령을 안내합니다. 도움말과 자동완성에는 사용할 수 있는 권한의 명령만 표시합니다. `[관리]`는 관리자용 동작, `<값>`은 필수 인수, `[값]`은 선택 인수입니다.
+
+## 설정 GUI 바로가기
+
+`/gw gui <화면>`, `/gmenu <화면>`, `/gw settings open <화면>`은 같은 화면을 엽니다. 모든 화면은 관리자 플레이어 전용이며, 화면 이름과 팀 이름을 Tab으로 완성할 수 있습니다. 각 GUI 상단 안내 아이템에도 바로가기 명령이 표시됩니다.
+
+| 화면 | 바로가기 | 한글 또는 짧은 별칭 |
+| --- | --- | --- |
+| 설정 메인 | `/gw gui main` 또는 `/gmenu` | `메인`, `home` |
+| 게임 진행 | `/gw gui game` | `게임`, `진행` |
+| 팀 목록 | `/gw gui team` | `팀`, `teams` |
+| 특정 팀 상세 | `/gw gui team red` | `/gmenu team red`, `/gw 설정 열기 팀 red` |
+| 월드 | `/gw gui world` | `월드`, `맵` |
+| 코어 / 게임룰 | `/gw gui core` | `코어`, `게임룰`, `gamerule` |
+| 코어 보호 / 곡괭이 시간 | `/gw gui protection` | `보호`, `곡괭이`, `pickaxe` |
+| 표시 / 우르프 | `/gw gui display` | `표시`, `우르프`, `urf` |
+| 도박 | `/gw gui gambling` | `도박`, `gamble` |
+| 도박 확률 | `/gw gui rewards` | `보상`, `확률`, `chance` |
+| 기본 지급 아이템 창고 | `/gw gui items` | `기본템`, `시작템`, `kit` |
+
+예: `/gmenu protection`, `/gw settings open world`, `/gw gui team blue`. 팀 상세에서 뒤로 가면 팀 목록으로, 코어 보호에서 뒤로 가면 코어 설정으로 돌아갑니다.
+
+`/gw settings urf 80%` 같은 기존 설정 값 변경 명령은 유지됩니다. 해당 GUI를 열려면 `/gw settings open urf` 또는 `/gmenu urf`를 쓰세요. 잘못된 화면·팀 이름은 안내만 표시하고 다른 화면을 열지 않습니다.
 
 ## 권한
 
@@ -9,82 +48,119 @@
 | `newgodwar.play` | 모든 플레이어 | 기본 플레이 명령 |
 | `newgodwar.admin` | OP | 게임 운영, 설정, 강제 지정 명령 |
 
-팀 참가, 팀 해제, 중간 참여, 능력, 관전 상태를 바꾸는 운영 명령은 `newgodwar.admin` 권한이 필요합니다.
+아래 표에서 **관리자**로 표시한 동작은 간편 명령이나 한글 별칭으로 실행해도 `newgodwar.admin` 권한이 필요합니다. 같은 팀의 능력만 볼 수 있는 제한도 모든 진입점에서 동일합니다.
 
-## 플레이어 명령어
+## 게임 진행
 
-| 명령어 | 설명 |
+| 단계형 명령어 | 간편 / 기존 명령 | 권한과 동작 |
+| --- | --- | --- |
+| `/gw game status` | `/gstatus`, `/gw st`, `/gw status` | 현재 상태 확인 |
+| `/gw game start` | `/gstart`, `/gw go`, `/gw start` | 관리자: 게임 시작 및 능력 배정 |
+| `/gw game stop` | `/gstop`, `/gw end`, `/gw stop` | 관리자: 게임 종료 |
+| `/gw game test [ability]` | `/gw test [ability]` | 관리자: 혼자 능력 테스트 |
+| `/gw game skip [초]` | `/gskip [초]`, `/gw skip [초]` | 관리자: 능력 선택 대기 종료 및 시작 카운트다운 조정 |
+| `/gw game tips` | `/gw tips`, `/gw 팁` | 서버 플레이 팁 |
+
+한글 예: `/gw 게임 시작`, `/gw 게임 상태`, `/gw 게임 스킵 5`.
+
+## 팀과 참가자
+
+| 단계형 명령어 | 간편 / 기존 명령 | 권한과 동작 |
+| --- | --- | --- |
+| `/gw team info [team]` | `/gw i [team]`, `/gw info [team]` | 본인 또는 지정 팀의 팀원 확인 |
+| `/gw team auto` | `/gautoteam`, `/gw at`, `/gw autoteam` | 관리자: 자동 팀 배정 |
+| `/gw team join <team> <player>` | `/gjoin <team> <player>`, `/gw j <team> <player>` | 관리자: 팀 배정. 게임 진행 중에는 중간 참여로 처리 |
+| `/gw team change <player> <team>` | `/gw ct <player> <team>`, `/gw changeteam ...` | 관리자: 능력·인벤토리를 유지한 팀 변경. 팀과 플레이어 순서 교환 가능 |
+| `/gw team midjoin <player> [team|auto]` | `/gw mj ...`, `/gw midjoin ...` | 관리자: 진행 중 중간 참여 |
+| `/gw team leave <player>` | `/gw out <player>`, `/gw leave <player>` | 관리자: 팀 배정 해제 |
+| `/gw team list [검색어|팀]` | `/gplayers`, `/gw p`, `/gw participants` | 관리자: 참가자의 팀·능력·킬·관전 현황 |
+| `/gw team spectate <player>` | `/gw spec <player>`, `/gw spectate <player>` | 관리자: 관전 전환 |
+| `/gw team unspectate <player>` | `/gw unspec <player>` | 관리자: 관전 해제 |
+| `/gw team observer [list]` | `/gw obs [list]`, `/gw observer [list]` | 관리자: 내 옵저버 모드 전환 / 목록 |
+| `/tc [message]` | `/teamchat`, `/팀채팅` | 메시지 전송, 생략하면 팀 채팅 모드 전환 |
+
+한글 예: `/gw 팀 자동`, `/gw 팀 배정 red Steve`, `/gw 팀 변경 Steve blue`.
+
+## 능력
+
+`/a`는 기존처럼 내 능력 GUI를 엽니다. 이제 `/a help`, `/a set ...`처럼 모든 능력 하위 명령도 사용할 수 있습니다. `/ability`, `/능력`도 같은 단축 명령입니다.
+
+| 단계형 명령어 | 간편 / 기존 명령 | 권한과 동작 |
+| --- | --- | --- |
+| `/gw ability show [player]` | `/a [player]`, `/gw a [player]` | 본인/같은 팀 능력 확인. 관리자는 모든 플레이어 조회 |
+| `/gw ability catalog [검색어]` | `/a catalog`, `/gw book`, `/gw abilities` | 능력 도감 검색 |
+| `/gw ability confirm` | `/gconfirm`, `/gw y`, `/gw yes`, `/gw 확정` | 내 능력 확정 |
+| `/gw ability reroll` | `/greroll`, `/gw rr`, `/gw n`, `/gw no` | 남은 횟수로 내 능력 다시 뽑기 |
+| `/gw ability set <player> <ability>` | `/a set ...`, `/gw sa ...`, `/gw setability ...` | 관리자: 능력 수동 지정 |
+| `/gw ability list [검색어]` | `/a list [검색어]`, `/gw assigned [검색어]` | 관리자: 배정 능력 목록 |
+| `/gw ability random [player]` | `/a random [player]` | 관리자: 특정 플레이어에게 랜덤 능력 배정. 생략하면 참가자 전체 |
+| `/gw ability remove <player>` | `/a remove <player>` | 관리자: 능력 삭제 |
+| `/gw ability reset [player]` | `/a reset [player]` | 관리자: 능력 배정 초기화. 생략하면 전체 |
+| `/gw ability skip [초]` | `/a skip [초]` | 관리자: 능력 선택 대기 종료 |
+| `/gw ability cutin <player> [team|auto]` | `/a cutin ...` | 관리자: 중간 참여 |
+| `/gw ability target <player>` | `/gw target <player>`, `/x <player>`, `/gw 대상 <player>` | 타깃형 능력 대상 지정 |
+| `/gw gamble` | `/도박`, `/gamble`, `/gw con` | 도박 GUI 열기 |
+
+한글 예: `/gw 능력 지정 Steve zeus`, `/gw 능력 확정`, `/gw 능력 다시뽑기`.
+
+### 쿨타임 초기화
+
+쿨타임은 **능력 → 쿨타임 → 초기화 → 대상** 순서로 관리합니다. 능력 배정 자체를 지우는 `/a reset`과 구분됩니다. 모든 쿨타임 초기화는 관리자 권한이 필요합니다.
+
+| 대상 | 단계형 명령 | 간편 명령 |
+| --- | --- | --- |
+| 본인 | `/gw ability cooldown reset` 또는 `/gw ability cooldown reset self` | `/gcd`, `/gw cd`, `/gw clear` |
+| 특정 플레이어 | `/gw ability cooldown reset Steve` | `/gcd Steve`, `/gw clear Steve` |
+| 전체 | `/gw ability cooldown reset all` | `/gcd all`, `/gw clear all` |
+
+`/a cd reset all`, `/gw cooldown reset all`, `/gw 능력 쿨타임 초기화 전체`도 같습니다. 대상은 `self`/`본인`, 정확한 온라인 플레이어 이름, `all`/`전체`/`*`를 사용합니다. `all`, `self`는 대상 선택에 쓰는 예약어입니다.
+
+**콘솔은 대상을 반드시 지정해야 합니다.** 기존 `/gw clear`의 콘솔 전체 초기화는 `/gw clear all`로 바꿔 입력하세요. 대상 이름 오타, 없는 플레이어, 대상 뒤 추가 인수가 있으면 아무 쿨타임도 초기화하지 않습니다.
+
+## 설정과 서버 관리
+
+| 단계형 명령어 | 간편 / 기존 명령 | 동작 (모두 관리자) |
+| --- | --- | --- |
+| `/gw settings open [화면] [team]` | `/gmenu [화면] [team]`, `/gw gui [화면] [team]` | 원하는 설정 GUI로 바로 이동 |
+| `/gw settings items [gui|list|add|set|remove|clear|reset]` | `/gkit`, `/gw kit`, `/gw defaultitems` | 기본 지급 아이템 창고 / 목록 관리 |
+| `/gw settings rerolls <횟수>` | `/gw rerolls`, `/gw reroll`, `/gw 재추첨` | 능력 재추첨 가능 횟수 설정 |
+| `/gw settings skipseconds <초>` | `/gw skipseconds` | 기본 시작 카운트다운 설정 |
+| `/gw settings pickaxe [status]` | `/gw pickaxe` | 곡괭이별 코어 파괴 허용 상태 확인 |
+| `/gw settings pickaxe <wooden|stone|iron|diamond|all> <open|off|분>` | `/gw pickaxe ...` | 코어 파괴 허용 시간. 금 곡괭이 제외 |
+| `/gw settings urf <on|off|toggle|퍼센트>` | `/gw urf ...` | 우르프 모드 / 쿨타임 감소율 |
+| `/gw settings blacklist <list|add|remove|toggle> [ability]` | `/gw bl ...`, `/gw blacklist ...` | 랜덤 배정 제외 능력 관리 |
+| `/gw settings gamerule <apply|restore>` | `/gw gamerule ...` | 게임룰 수동 적용 / 복구 |
+| `/gw settings rewards <normal> <번호|add> <hand|message|material> [값]` | `/gw gamblereward ...` | 도박 보상 변경 |
+| `/gw server reload` | `/gw rl`, `/gw reload` | 설정 다시 불러오기 |
+| `/gw server update [check|download]` | `/gw update ...` | 최신 릴리즈 확인 / 다음 재시작용 다운로드 |
+
+예: `/gw settings items set 1 LAVA_BUCKET 2`, `/gw 설정 기본템`, `/gw 서버 리로드`.
+
+`/gw reroll <횟수>`는 기존대로 **관리자의 횟수 설정**입니다. 플레이어가 다시 뽑으려면 `/greroll`, `/gw rr`, `/a reroll`을 사용하세요.
+
+## 맵과 월드
+
+아래 명령은 모두 관리자용입니다. `/gw world`는 `/gworld`, `/gw w`, `/gw 월드`로 줄일 수 있습니다.
+
+| 명령어 | 동작 |
 | --- | --- |
-| `/gw help [페이지|섹션]` | 도움말을 봅니다. |
-| `/gw status` | 현재 게임 상태와 주요 설정을 확인합니다. |
-| `/gw tips` | 서버 플레이 팁을 확인합니다. |
-| `/gw info [team]` | 팀원 목록을 확인합니다. |
-| `/gw ability [player]` 또는 `/gw a [player]` | 본인 또는 같은 팀 플레이어의 현재 능력을 확인합니다. 관리자는 모든 플레이어를 볼 수 있습니다. |
-| `/gw abilities [검색어]` | 등록된 능력 도감 GUI를 엽니다. |
-| `/gw target <player>` | 타깃형 능력의 대상을 지정합니다. |
-| `/gw yes` | 배정된 능력을 확정합니다. |
-| `/gw no` | 남은 재추첨 횟수를 사용해 능력을 다시 뽑습니다. |
-| `/gw gamble` 또는 `/도박` | 도박 GUI를 엽니다. |
-| `/a` | 내 능력 GUI를 빠르게 엽니다. |
-| `/x <player>` | 타깃형 능력 대상을 빠르게 지정합니다. |
-| `/teamchat <message>` 또는 `/tc <message>` | 같은 팀에게만 메시지를 보냅니다. |
-| `/teamchat` 또는 `/tc` | 팀 채팅 모드를 전환합니다. 켜진 동안 일반 채팅이 팀챗으로 전송됩니다. |
+| `/gw setup spawn <team>` | 현재 위치를 팀 스폰으로 저장. 기존 `/gw s <team>`, `/gw setspawn <team>` 지원 |
+| `/gw setup temple <team>` | 바라보는 다이아 블록을 심장으로 저장. 기존 `/gw d <team>`, `/gw settemple <team>` 지원 |
+| `/gw setup lobby` | 현재 위치를 로비로 저장. 기존 `/gw sl`, `/gw setlobby`, `/gw lobby` 지원 |
+| `/gw map [world|clear|help]` 또는 `/gmap ...` | 게임 맵 목록, 선택, 해제, 도움말 |
+| `/gw world gui` | 월드 전용 설정 GUI |
+| `/gw world list` | 로드된 월드 목록 |
+| `/gw world game <world|clear>` | 게임 월드 지정 / 해제 |
+| `/gw world create <world> [normal|flat|void]` | 새 월드 생성 |
+| `/gw world load <world> [normal|flat|void]` | 기존 월드 로드 |
+| `/gw world copy <sourceWorld> <newWorld> [normal|flat|void]` | 월드 복사 |
+| `/gw world tp <world> [player]` | 본인 또는 지정 플레이어 이동 |
+| `/gw world lobby [player]` | 저장된 로비로 이동 |
+| `/gw world unload <world> [save]` | 플레이어가 없는 월드 언로드 (기본 저장) |
+| `/gw world delete <world> confirm` | 플레이어가 없는 월드를 언로드하고 폴더 삭제 |
+| `/gw world backup <create|list|load> [이름]` | 백업 생성, 목록, 새 월드로 로드 |
 
-## 관리자 명령어
-
-| 명령어 | 설명 |
-| --- | --- |
-| `/gw gui` 또는 `/gw settings` | 관리자 설정 GUI를 엽니다. |
-| `/gw autoteam` | 온라인 플레이어를 활성 팀에 자동 배정합니다. |
-| `/gw join <team> <player>` | 플레이어를 팀에 배정합니다. 진행 중에는 중간 참여로 처리될 수 있습니다. |
-| `/gw changeteam <player> <team>` 또는 `/gw changeteam <team> <player>` | 진행 중 플레이어의 능력과 인벤토리를 유지한 채 팀만 변경합니다. |
-| `/gw midjoin <player> [team|auto]` | 진행 중인 게임에 플레이어를 중간 참여시킵니다. |
-| `/gw leave <player>` | 플레이어의 팀 배정을 해제합니다. |
-| `/gw setspawn <team>` | 현재 위치를 팀 스폰으로 저장합니다. |
-| `/gw setlobby` | 현재 위치를 접속/게임 종료 후 이동할 로비 위치로 저장합니다. |
-| `/gw settemple <team>` | 바라보는 다이아몬드 블록을 팀 심장으로 저장합니다. |
-| `/gw map [world|clear]` | 게임에 사용할 맵을 확인, 선택, 해제합니다. 월드 폴더만 있으면 자동 로드 후 선택합니다. |
-| `/gw world help` 또는 `/gw help world` | 월드 생성, 로드, 이동, 백업, GUI 설정 도움말을 봅니다. |
-| `/gw world gui` | 월드 전용 설정 GUI를 엽니다. |
-| `/gw world list` | 현재 로드된 월드 목록을 확인합니다. |
-| `/gw world game <world|clear>` | 게임 월드를 지정하거나 해제합니다. 지정된 월드는 시작 시 백업되고 종료 시 초기화됩니다. |
-| `/gw world create <world> [normal|flat|void]` | 일반, 평지, 공허 월드를 생성하고 로드합니다. |
-| `/gw world load <world> [normal|flat|void]` | 서버 폴더에 있는 월드를 로드하고 자동 로드 목록에 등록합니다. |
-| `/gw world copy <sourceWorld> <newWorld> [normal|flat|void]` | 특정 월드를 기준으로 새 월드를 복사하고 로드합니다. |
-| `/gw world tp <world> [player]` | 자신 또는 지정한 플레이어를 해당 월드 스폰으로 이동시킵니다. |
-| `/gw world lobby [player]` | 자신 또는 지정한 플레이어를 저장된 로비 위치로 이동시킵니다. |
-| `/gw world unload <world> [save]` | 플레이어가 없는 월드를 언로드합니다. 기본값은 저장입니다. |
-| `/gw world delete <world> confirm` | 플레이어가 없는 월드를 언로드하고 월드 폴더를 삭제합니다. |
-| `/gw world backup <create|list|load> [이름]` | 월드 백업 생성, 목록 확인, 새 월드로 로드를 처리합니다. |
-| `/gw start` | 게임 시작 준비를 시작하고 능력을 배정합니다. |
-| `/gw test [ability]` | 혼자 능력 테스트를 시작합니다. |
-| `/gw stop` | 게임을 종료하고 적용된 게임룰/월드 설정을 복구합니다. |
-| `/gw a set <player> <ability>` | 플레이어에게 특정 능력을 지정합니다. |
-| `/gw a <ability> <player>` | 호환 순서로 플레이어에게 특정 능력을 지정합니다. |
-| `/gw a list [검색어]` | 플레이어별 배정 능력을 확인합니다. |
-| `/gw a catalog [검색어]` | 등록된 능력 도감을 능력 그룹에서 검색합니다. |
-| `/gw a random [player]` | 특정 플레이어 또는 참가자 전체에게 랜덤 능력을 배정합니다. |
-| `/gw a remove <player>` | 플레이어의 능력을 삭제합니다. |
-| `/gw a reset [player]` | 특정 플레이어 또는 전체 능력 배정을 초기화합니다. |
-| `/gw a skip [초]` | 능력 확정 대기를 종료하고 시작 카운트다운을 지정합니다. |
-| `/gw a cutin <player> [team|auto]` | 진행 중 중간 참여를 능력 그룹에서 처리합니다. |
-| `/gw participants [검색어|팀]` | 참가자, 팀, 능력, 킬, 관전 상태를 확인합니다. |
-| `/gw clear [player]` | 능력 쿨타임을 초기화합니다. |
-| `/gw rerolls <횟수>` | 능력 재추첨 가능 횟수를 설정합니다. |
-| `/gw skip [초]` | 능력 확정 대기를 종료하고 시작 카운트다운을 지정합니다. |
-| `/gw skipseconds <초>` | 자동/관리자 skip 기본 초를 설정합니다. |
-| `/gw pickaxe [status]` | 현재 진행 시간과 곡괭이별 코어 파괴 허용 상태를 확인합니다. |
-| `/gw pickaxe <wooden|stone|iron|diamond|all> <open|off|분>` | 곡괭이별 코어 파괴 허용 시간을 조정합니다. 금 곡괭이는 제외됩니다. `open`은 즉시 허용, `off`는 자동 해제 안 함입니다. |
-| `/gw urf <on|off|toggle|퍼센트>` | 우르프 모드와 쿨타임 감소율을 설정합니다. |
-| `/gw blacklist <list|add|remove|toggle> [ability]` | 랜덤 배정 제외 능력을 관리합니다. |
-| `/gw gamerule <apply|restore>` | 설정된 게임룰을 수동 적용하거나 복구합니다. |
-| `/gw spectate <player>` | 플레이어를 관전 상태로 전환합니다. |
-| `/gw unspectate <player>` | 관전 상태를 해제합니다. |
-| `/gw observer [list]` | 자신을 옵저버로 전환하거나 옵저버 목록을 봅니다. |
-| `/gw gamblereward <normal> <번호|add> hand|message|<material> [값]` | 도박 보상 아이템 또는 멘트를 변경합니다. |
-| `/gw defaultitems [gui|list|add|set|remove|clear|reset]` | 게임 시작 시 지급할 기본 아이템 창고를 열거나 목록을 관리합니다. |
-| `/gw reload` | `config.yml`을 다시 불러오고 팀/스폰/심장 설정을 갱신합니다. |
-| `/gw update [check|download]` | 최신 릴리즈를 확인하고 다음 서버 재시작 때 적용할 업데이트 jar를 다운로드합니다. |
+`/gw lobby`는 **현재 위치를 로비로 등록**하는 기존 명령입니다. 로비로 이동하려면 `/gw world lobby`를 사용하세요.
 
 ## Themachy 호환 명령어
 

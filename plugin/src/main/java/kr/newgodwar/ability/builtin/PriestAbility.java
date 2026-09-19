@@ -13,6 +13,7 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
 import java.util.List;
+import java.util.ArrayList;
 @AbilityInfo(
     id = "priest",
     name = "사제",
@@ -30,7 +31,7 @@ final class PriestAbility extends BaseAbility {
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
         if (useNormal(context, player)) {
-            bless(player);
+            bless(context, player);
         }
     }
 
@@ -43,35 +44,37 @@ final class PriestAbility extends BaseAbility {
         }
         if (useAdvanced(context, player)) {
             for (Player target : targets) {
-                bless(target);
+                bless(context, target);
             }
         }
     }
 
-    private void bless(Player player) {
-        boolean applied = false;
+    private void bless(AbilityPlayerContext context, Player player) {
+        List<String> blessings = new ArrayList<String>();
         if (RANDOM.nextBoolean()) {
             effect(player, "RESISTANCE", "DAMAGE_RESISTANCE", 30, 0);
-            applied = true;
+            blessings.add("저항");
         }
         if (RANDOM.nextBoolean()) {
             effect(player, "STRENGTH", "INCREASE_DAMAGE", 30, 0);
-            applied = true;
+            blessings.add("공격력 증가");
         }
         if (RANDOM.nextBoolean()) {
             effect(player, PotionEffectType.REGENERATION, 30, 0);
-            applied = true;
+            blessings.add("재생");
         }
         if (RANDOM.nextBoolean()) {
             effect(player, PotionEffectType.SPEED, 30, 0);
-            applied = true;
+            blessings.add("신속");
         }
         if (RANDOM.nextBoolean()) {
             effect(player, "HASTE", "FAST_DIGGING", 30, 0);
-            applied = true;
+            blessings.add("성급함");
         }
-        if (!applied) {
+        if (blessings.isEmpty()) {
             effect(player, PotionEffectType.REGENERATION, 30, 0);
+            blessings.add("재생");
         }
+        feedback.affected(context, player, "축복 · " + String.join(" / ", blessings) + " 30초", false);
     }
 }

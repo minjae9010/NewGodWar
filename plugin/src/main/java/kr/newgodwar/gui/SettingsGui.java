@@ -105,17 +105,41 @@ public final class SettingsGui implements Listener {
     }
 
     public void open(Player player) {
-        open(player, SettingsView.MAIN);
+        openPage(player, SettingsPage.MAIN, null);
     }
 
     public void openWorld(Player player) {
-        open(player, SettingsView.WORLD);
+        openPage(player, SettingsPage.WORLD, null);
+    }
+
+    public void openPage(Player player, SettingsPage page, GodTeam team) {
+        if (!player.hasPermission("newgodwar.admin")) {
+            plugin.messages().send(player, "&c권한이 없습니다.");
+            return;
+        }
+        UUID uuid = player.getUniqueId();
+        // A direct navigation cancels a pending chat rename and any previous team selection.
+        pendingTeamRenameIds.remove(uuid);
+        selectedTeamIds.remove(uuid);
+        teamPages.remove(uuid);
+        if (page == SettingsPage.ITEMS) {
+            starterItemsGui.open(player);
+            return;
+        }
+        if (page == SettingsPage.TEAM && team != null) selectedTeamIds.put(uuid, team.id());
+        open(player, page == SettingsPage.TEAM && team != null ? SettingsView.TEAM_DETAIL : page.view);
     }
 
     private void open(Player player, SettingsView view) {
         Inventory inventory = Bukkit.createInventory(player, SIZE, view.title);
         fill(inventory, view, player);
-        player.openInventory(inventory);
+        // Closing the previous inventory fires synchronously; preserve destination state during it.
+        boolean alreadyRefreshing = !refreshingViewers.add(player.getUniqueId());
+        try {
+            player.openInventory(inventory);
+        } finally {
+            if (!alreadyRefreshing) refreshingViewers.remove(player.getUniqueId());
+        }
         openViewers.add(player.getUniqueId());
         openViews.put(player.getUniqueId(), view);
     }
@@ -561,7 +585,7 @@ public final class SettingsGui implements Listener {
     private void reopen(final Player player, final SettingsView view) {
         Bukkit.getScheduler().runTask(plugin, () -> {
             final UUID uuid = player.getUniqueId();
-            if (player.isOnline() && openViewers.contains(uuid)) {
+            if (player.isOnline() && openViewers.contains(uuid) && currentView(player) == view) {
                 refreshingViewers.add(uuid);
                 open(player, view);
                 Bukkit.getScheduler().runTask(plugin, () -> refreshingViewers.remove(uuid));
@@ -606,7 +630,15 @@ public final class SettingsGui implements Listener {
             if (slots[logical] < 0) throw new IllegalStateException("Unmapped GUI control: " + view + "/" + logical);
             inventory.setItem(slots[logical], entry);
         }
-        inventory.setItem(4, GuiTheme.heading(ChatColor.stripColor(view.title), "항목에 마우스를 올려 설정과 조작 방법을 확인하세요."));
+        String shortcut = null;
+        for (SettingsPage page : SettingsPage.values()) {
+            if (page.view == view) shortcut = "/gw gui " + page.id();
+        }
+        if (view == SettingsView.TEAM_DETAIL && selectedTeam(player) != null) shortcut = "/gw gui team " + selectedTeam(player).id();
+        inventory.setItem(4, shortcut == null
+            ? GuiTheme.heading(ChatColor.stripColor(view.title), "항목에 마우스를 올려 설정과 조작 방법을 확인하세요.")
+            : GuiTheme.item("BOOK", "BOOK", (short) 0, ChatColor.AQUA + "" + ChatColor.BOLD + ChatColor.stripColor(view.title),
+                "", ChatColor.GRAY + "항목에 마우스를 올려 설정과 조작 방법을 확인하세요.", ChatColor.YELLOW + "바로 열기: " + shortcut));
         if (view != SettingsView.MAIN) {
             inventory.setItem(BACK_SLOT, backItem());
         }

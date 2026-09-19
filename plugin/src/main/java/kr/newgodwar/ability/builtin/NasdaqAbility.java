@@ -42,8 +42,9 @@ final class NasdaqAbility extends BaseAbility {
         int successPercent = successPercent(context, item.getType());
         takeNormalCost(context, player);
         setCooldown(context, 1, context.ability().normalCooldownSeconds());
+        feedback.activated(context, player, false);
         if (rollPercent(successPercent)) {
-            player.getInventory().addItem(item.clone());
+            give(player, item);
             sendAbilityMessage(context, player, "success", ChatColor.GREEN + "복사에 성공했습니다. 확률 " + successPercent + "%");
         } else {
             player.getInventory().removeItem(item.clone());

@@ -8,10 +8,11 @@ param(
         "1.19.4",
         "1.20.6",
         "1.21.11",
-        "26.2"
+        "26.3"
     ),
     [string] $PluginJar = "",
     [string] $ProbeJar = "",
+    [string] $ProbeSuccessMarker = "CORE REGRESSION PASS",
     [string] $WorkDir = ".paper-smoke",
     [string] $JavaExecutable = "java",
     [int] $TimeoutSeconds = 150,
@@ -89,7 +90,8 @@ function Get-SupportedPaperVersions {
         "1.21.11",
         "26.1.1",
         "26.1.2",
-        "26.2"
+        "26.2",
+        "26.3"
     )
 }
 
@@ -374,11 +376,11 @@ function Test-PaperVersion {
                 $failure = "Plugin load error detected."
                 break
             }
-            if ($ProbeJar -and $logText -match "CORE REGRESSION FAILED") {
-                $failure = "Game core regression failed."
+            if ($ProbeJar -and $logText -match "(?:CORE|ABILITY|COMMAND|RECOVERY) REGRESSION FAILED") {
+                $failure = "Regression fixture failed."
                 break
             }
-            if ($ProbeJar -and $logText -match "CORE REGRESSION PASS") { $probePassed = $true }
+            if ($ProbeJar -and $logText.Contains($ProbeSuccessMarker)) { $probePassed = $true }
             if ($process.HasExited) {
                 $failure = "Server process exited before the plugin finished loading."
                 break
@@ -396,7 +398,7 @@ function Test-PaperVersion {
         }
 
         Write-Host "PASS Paper $MinecraftVersion loaded NewGodWar successfully."
-        if ($ProbeJar) { Write-Host "PASS game core regression fixture." }
+        if ($ProbeJar) { Write-Host "PASS regression fixture: $ProbeSuccessMarker" }
     } finally {
         Stop-ServerProcess -Process $process
     }

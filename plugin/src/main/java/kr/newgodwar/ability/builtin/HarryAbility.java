@@ -56,7 +56,7 @@ final class HarryAbility extends BaseAbility {
         meta.addPage("스투페파이/Stupefy\n익스펙토 패트로눔/Expecto Patronum");
         meta.addPage("엑스펠리아무스/Expelliarmus\n아바다 케다브라/Avada Kedavra");
         book.setItemMeta(meta);
-        player.getInventory().addItem(book);
+        give(player, book);
     }
 
     private void castSpell(AbilityPlayerContext context, String spell, boolean harry) {

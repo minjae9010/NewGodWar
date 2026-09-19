@@ -30,8 +30,7 @@ final class ShinSaimdangAbility extends BaseAbility {
         if (!useNormal(context, player)) {
             return;
         }
-        player.getInventory().addItem(new ItemStack(Material.RED_ROSE, 3));
-        player.getInventory().addItem(new ItemStack(Material.INK_SACK, 4));
+        give(player, new ItemStack(Material.RED_ROSE, 3), new ItemStack(Material.INK_SACK, 4));
         effect(player, PotionEffectType.REGENERATION, 8, 0);
         player.sendMessage(ChatColor.LIGHT_PURPLE + "초충도의 생기가 피어납니다.");
     }

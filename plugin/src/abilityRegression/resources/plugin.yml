@@ -1,0 +1,5 @@
+name: AbilityRegressionProbe
+main: kr.newgodwar.regression.AbilityRegressionProbe
+version: 1.0
+depend: [NewGodWar]
+description: Ability regression checks for disposable test servers only

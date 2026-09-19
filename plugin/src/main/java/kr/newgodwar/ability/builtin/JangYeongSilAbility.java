@@ -5,7 +5,6 @@ import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffectType;
 
 import java.util.List;
@@ -37,7 +36,7 @@ final class JangYeongSilAbility extends BaseAbility {
         effect(player, "HASTE", "FAST_DIGGING", 12, 1);
         if (pickaxeParts >= PICKAXE_PARTS_REQUIRED) {
             pickaxeParts = 0;
-            player.getInventory().addItem(new ItemStack(Material.IRON_PICKAXE, 1));
+            give(player, Material.IRON_PICKAXE, 1);
             player.sendMessage(ChatColor.AQUA + "장영실의 부품이 완성되어 철 곡괭이를 제작했습니다.");
             return;
         }

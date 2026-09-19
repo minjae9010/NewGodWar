@@ -85,6 +85,7 @@ public final class NewGodWarPlugin extends JavaPlugin {
         getCommand("x").setTabCompleter(godWarCommand);
         getCommand("a").setExecutor(godWarCommand);
         getCommand("a").setTabCompleter(godWarCommand);
+        godWarCommand.registerShortcuts();
         getCommand("gamble").setExecutor(gamblingGui);
         getCommand("teamchat").setExecutor(new TeamChatCommand(this, gameManager));
 
@@ -101,7 +102,10 @@ public final class NewGodWarPlugin extends JavaPlugin {
         updater.start();
         addonLoader = new AddonLoader(this);
         // Other ordinary Bukkit plugins finish enabling before addon dependencies are resolved.
-        Bukkit.getScheduler().runTask(this, () -> addonLoader.load());
+        Bukkit.getScheduler().runTask(this, () -> {
+            addonLoader.load();
+            gameManager.initializeRecovery();
+        });
 
         if (!versionSupport.paperServer()) {
             getLogger().warning("NewGodWar detected a non-Paper server: " + versionSupport.summary());

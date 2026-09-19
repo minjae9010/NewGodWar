@@ -1,0 +1,5 @@
+name: CommandRegressionProbe
+main: kr.newgodwar.regression.CommandRegressionProbe
+version: 1.0
+depend: [NewGodWar]
+description: Command regression checks for disposable test servers only

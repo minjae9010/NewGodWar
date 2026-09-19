@@ -78,7 +78,7 @@ final class SiksinAbility extends BaseAbility {
             player.sendMessage(ChatColor.YELLOW + "음식 생성에 실패해 기본 빵이 만들어졌습니다.");
             return;
         }
-        player.getInventory().addItem(createFood(player, teamFood, randomBuff()));
+        give(player, createFood(player, teamFood, randomBuff()));
     }
 
     private ItemStack createFood(Player owner, boolean teamFood, BuffKind buff) {

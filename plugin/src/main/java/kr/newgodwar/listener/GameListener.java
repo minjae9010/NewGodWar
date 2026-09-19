@@ -3,6 +3,7 @@ package kr.newgodwar.listener;
 import kr.newgodwar.NewGodWarPlugin;
 import kr.newgodwar.ability.AbilityManager;
 import kr.newgodwar.game.GameManager;
+import kr.newgodwar.game.GameState;
 import kr.newgodwar.game.GodTeam;
 import kr.newgodwar.nms.NmsAdapter;
 import kr.newgodwar.util.BukkitCompat;
@@ -61,10 +62,10 @@ public final class GameListener implements Listener {
 
     @EventHandler
     public void onJoin(PlayerJoinEvent event) {
-        if (gameManager.hasCustomMode()) return;
+        if (gameManager.hasCustomMode() || gameManager.isRecovering() || gameManager.isShuttingDown()) return;
         Player player = event.getPlayer();
         plugin.updater().notifyAdminIfOutdated(player);
-        if (gameManager.isRunning() && gameManager.teamOf(player) != null) {
+        if ((gameManager.isRunning() || gameManager.state() == GameState.READY) && gameManager.teamOf(player) != null) {
             if (gameManager.handleEliminatedJoin(player)) {
                 gameManager.refreshPlayerDisplay(player);
                 return;
@@ -80,12 +81,13 @@ public final class GameListener implements Listener {
 
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
-        if (gameManager.hasCustomMode()) return;
-        if (!gameManager.isRunning()) {
+        if (gameManager.hasCustomMode() || gameManager.isRecovering() || gameManager.isShuttingDown()) return;
+        if (!gameManager.isRunning() && gameManager.state() != GameState.READY) {
             gameManager.leave(event.getPlayer());
             return;
         }
         gameManager.forgetPlayer(event.getPlayer());
+        gameManager.requestCheckpoint();
     }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
@@ -461,9 +463,6 @@ public final class GameListener implements Listener {
         final Player player = event.getPlayer();
         final String message = event.getMessage();
         final boolean running = gameManager.isRunning();
-        if (!running && !gameManager.isTeamChatMode(player)) {
-            return;
-        }
         if (gameManager.isTeamChatMode(player)) {
             event.setCancelled(true);
             Bukkit.getScheduler().runTask(plugin, () -> {
@@ -474,7 +473,10 @@ public final class GameListener implements Listener {
             });
             return;
         }
-        Bukkit.getScheduler().runTask(plugin, () -> abilityManager.handleChatMessage(player, message));
+        event.setFormat(gameManager.publicChatFormat(player, event.getFormat()));
+        if (running) {
+            Bukkit.getScheduler().runTask(plugin, () -> abilityManager.handleChatMessage(player, message));
+        }
     }
 
     @EventHandler(ignoreCancelled = true)

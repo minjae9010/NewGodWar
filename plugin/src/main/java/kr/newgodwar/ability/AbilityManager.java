@@ -68,6 +68,38 @@ public final class AbilityManager {
         return registry;
     }
 
+    public void saveSession(org.bukkit.configuration.ConfigurationSection data) {
+        long now = System.currentTimeMillis();
+        for (Map.Entry<UUID, AbilitySession> entry : assignments.entrySet()) {
+            org.bukkit.configuration.ConfigurationSection saved = data.createSection(entry.getKey().toString());
+            saved.set("id", entry.getValue().definition().id());
+            Long until = suppressedUntil.get(entry.getKey());
+            saved.set("suppressed-millis", until == null ? 0L : Math.max(0L, until - now));
+            entry.getValue().ability().saveSession(saved.createSection("data"));
+        }
+    }
+
+    /** Reconstruct offline sessions without rerolls, inventory grants or onPrepare callbacks. */
+    public void loadSession(org.bukkit.configuration.ConfigurationSection data) {
+        Map<UUID, AbilitySession> restored = new java.util.HashMap<UUID, AbilitySession>();
+        Map<UUID, Long> suppressed = new java.util.HashMap<UUID, Long>();
+        if (data != null) {
+            for (String id : data.getKeys(false)) {
+                UUID uuid = UUID.fromString(id);
+                org.bukkit.configuration.ConfigurationSection saved = data.getConfigurationSection(id);
+                AbilityDefinition definition = registry.get(saved.getString("id"));
+                if (definition == null) throw new IllegalStateException("Missing saved ability: " + saved.getString("id"));
+                AbilitySession session = new AbilitySession(definition, definition.create());
+                if (saved.isConfigurationSection("data")) session.ability().loadSession(saved.getConfigurationSection("data"));
+                restored.put(uuid, session);
+                long remaining = saved.getLong("suppressed-millis");
+                if (remaining > 0L) suppressed.put(uuid, System.currentTimeMillis() + remaining);
+            }
+        }
+        assignments.putAll(restored);
+        suppressedUntil.putAll(suppressed);
+    }
+
     /** Removes online and offline sessions owned by an unloaded addon. */
     public void removeDefinitions(Set<String> ids) {
         for (Map.Entry<UUID, AbilitySession> entry : assignments.entrySet()) {
@@ -156,6 +188,7 @@ public final class AbilityManager {
             sendTargetGuide(player);
         }
         if (plugin.game() != null) {
+            plugin.game().requestCheckpoint();
             plugin.game().refreshPlayerDisplay(player);
         }
     }
@@ -168,6 +201,7 @@ public final class AbilityManager {
         deactivateSession(player, previous);
         suppressedUntil.remove(player.getUniqueId());
         if (plugin.game() != null) {
+            plugin.game().requestCheckpoint();
             plugin.game().refreshPlayerDisplay(player);
         }
         return true;

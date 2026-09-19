@@ -1,0 +1,4 @@
+name: RecoveryRegressionProbe
+version: 1.0
+main: kr.newgodwar.regression.RecoveryRegressionProbe
+depend: [NewGodWar]

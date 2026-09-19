@@ -88,6 +88,26 @@ public final class GameRuleController {
         previousValues.clear();
     }
 
+    public void saveSession(ConfigurationSection data) {
+        int index = 0;
+        for (Map.Entry<String, Map<String, String>> entry : previousValues.entrySet()) {
+            ConfigurationSection world = data.createSection(String.valueOf(index++));
+            world.set("name", entry.getKey());
+            world.createSection("rules", entry.getValue());
+        }
+    }
+
+    public void loadSession(ConfigurationSection data) {
+        if (data == null) return;
+        for (String key : data.getKeys(false)) {
+            ConfigurationSection world = data.getConfigurationSection(key);
+            ConfigurationSection rules = world.getConfigurationSection("rules");
+            Map<String, String> values = new HashMap<String, String>();
+            if (rules != null) for (String rule : rules.getKeys(false)) values.put(rule, rules.getString(rule));
+            previousValues.put(world.getString("name"), values);
+        }
+    }
+
     private String resolveRuleName(World world, String rule) {
         if (rule == null) {
             return null;

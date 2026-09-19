@@ -29,19 +29,7 @@ import java.util.List;
 final class TeleporterAbility extends BaseAbility {
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
-        if (useNormal(context, player)) {
-            teleportToTargetBlock(player);
-        }
-    }
-
-    private void teleportToTargetBlock(Player player) {
-        Block block = targetBlock(player, 25);
-        Location location = block.getLocation().add(0.5D, 1.0D, 0.5D);
-        if (location.getBlock().getType() == Material.AIR && location.clone().add(0, 1, 0).getBlock().getType() == Material.AIR) {
-            location.setPitch(player.getLocation().getPitch());
-            location.setYaw(player.getLocation().getYaw());
-            player.teleport(location);
-        }
+        teleportNormalToSight(context, player, 25);
     }
 
     @Override
@@ -53,8 +41,11 @@ final class TeleporterAbility extends BaseAbility {
         if (useAdvanced(context, player)) {
             Location first = player.getLocation();
             Location second = target.getLocation();
-            player.teleport(second);
-            target.teleport(first);
+            if (player.teleport(second)) feedback.pulse(context, second, 1.5D);
+            if (target.teleport(first)) {
+                feedback.pulse(context, first, 1.5D);
+                feedback.affected(context, target, "아군과 위치 교환", false);
+            }
         }
     }
 }

@@ -20,8 +20,64 @@ commands:
     usage: /x <player>
   a:
     aliases: [ability, 능력]
-    description: 자신의 현재 능력을 확인합니다.
-    usage: /a
+    description: 능력 확인 및 능력 관리 명령어입니다.
+    usage: /a [player|help|catalog|set|random|reset|cooldown]
+  ghelp:
+    description: 신들의 전쟁 명령어 도움말과 검색입니다.
+    usage: /ghelp [분류|검색어|페이지] [페이지]
+  gstatus:
+    description: 게임 상태를 확인합니다.
+    usage: /gstatus
+  gconfirm:
+    description: 현재 능력을 확정합니다.
+    usage: /gconfirm
+  greroll:
+    description: 현재 능력을 다시 뽑습니다.
+    usage: /greroll
+  gstart:
+    description: 게임을 시작합니다.
+    usage: /gstart
+    permission: newgodwar.admin
+  gstop:
+    description: 게임을 종료합니다.
+    usage: /gstop
+    permission: newgodwar.admin
+  gskip:
+    description: 능력 선택 대기를 종료하고 시작 카운트다운을 지정합니다.
+    usage: /gskip [초]
+    permission: newgodwar.admin
+  gautoteam:
+    description: 온라인 플레이어를 자동 팀 배정합니다.
+    usage: /gautoteam
+    permission: newgodwar.admin
+  gjoin:
+    description: 플레이어를 팀에 배정합니다.
+    usage: /gjoin <team> <player>
+    permission: newgodwar.admin
+  gplayers:
+    description: 참가자의 팀과 능력 현황을 확인합니다.
+    usage: /gplayers [검색어|팀]
+    permission: newgodwar.admin
+  gmap:
+    description: 게임 맵을 선택합니다.
+    usage: /gmap [world|clear|help]
+    permission: newgodwar.admin
+  gworld:
+    description: 게임 월드를 관리합니다.
+    usage: /gworld help
+    permission: newgodwar.admin
+  gcd:
+    description: 본인, 지정 플레이어 또는 전체의 능력 쿨타임을 초기화합니다.
+    usage: /gcd [player|self|all]
+    permission: newgodwar.admin
+  gmenu:
+    description: 원하는 관리자 설정 화면을 바로 엽니다.
+    usage: /gmenu [화면] [team]
+    permission: newgodwar.admin
+  gkit:
+    description: 기본 지급 아이템 창고를 열거나 관리합니다.
+    usage: /gkit [gui|list|add|set|remove|clear|reset]
+    permission: newgodwar.admin
   gamble:
     aliases: [도박]
     description: 신들의 전쟁 도박 GUI를 엽니다.

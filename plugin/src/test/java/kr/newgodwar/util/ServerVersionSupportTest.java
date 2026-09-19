@@ -25,4 +25,10 @@ public final class ServerVersionSupportTest {
     public void includesMinecraft26_2AsPaperDownloadTarget() {
         assertTrue(ServerVersionSupport.paperDownloadVersions().contains("26.2"));
     }
+
+    @Test
+    public void includesMinecraft26_3AsPaperDownloadTarget() {
+        assertTrue(ServerVersionSupport.paperDownloadVersions().contains("26.3"));
+        assertFalse(ServerVersionSupport.paperDownloadVersions().contains("26.3-rc1"));
+    }
 }

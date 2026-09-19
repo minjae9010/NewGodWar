@@ -63,7 +63,10 @@ final class CounterAbility extends BaseAbility {
         if (!useNormal(context, player)) {
             return;
         }
-        context.plugin().abilities().suppressAbility(target, NORMAL_SUPPRESS_SECONDS);
+        if (context.plugin().abilities().suppressAbility(target, NORMAL_SUPPRESS_SECONDS)) {
+            feedback.link(context, player.getEyeLocation(), target.getEyeLocation());
+            feedback.affected(context, target, "능력 봉인 · 12초", true);
+        }
         player.sendMessage(ChatColor.DARK_PURPLE + target.getName() + "의 능력을 봉인했습니다.");
     }
 
@@ -78,7 +81,9 @@ final class CounterAbility extends BaseAbility {
             return;
         }
         for (Player target : targets) {
-            context.plugin().abilities().suppressAbility(target, ADVANCED_SUPPRESS_SECONDS);
+            if (context.plugin().abilities().suppressAbility(target, ADVANCED_SUPPRESS_SECONDS)) {
+                feedback.affected(context, target, "능력 봉인 · 6초", true);
+            }
         }
         effect(player, "HASTE", "FAST_DIGGING", 10, 1);
         player.sendMessage(ChatColor.DARK_PURPLE + "주변 적 " + targets.size() + "명의 능력을 봉인했습니다.");

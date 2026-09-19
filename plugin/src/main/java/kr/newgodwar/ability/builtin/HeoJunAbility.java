@@ -31,6 +31,7 @@ final class HeoJunAbility extends BaseAbility {
         }
         heal(player);
         cleanse(player);
+        feedback.affected(context, player, "동의보감 · 완전 회복 / 해로운 효과 해제", false);
         player.sendMessage(ChatColor.GREEN + "동의보감의 처방으로 몸을 회복했습니다.");
     }
 
@@ -47,6 +48,7 @@ final class HeoJunAbility extends BaseAbility {
             effect(target, "ABSORPTION", "ABSORPTION", 12, 1);
             effect(target, PotionEffectType.REGENERATION, 12, 1);
             effect(target, "RESISTANCE", "DAMAGE_RESISTANCE", 10, 0);
+            feedback.affected(context, target, "대처방 · 완전 회복 / 정화 / 보호", false);
         }
         player.sendMessage(ChatColor.GREEN + "동의보감의 대처방이 아군을 살렸습니다.");
     }

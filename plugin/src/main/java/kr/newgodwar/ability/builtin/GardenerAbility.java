@@ -27,8 +27,7 @@ import java.util.List;
 final class GardenerAbility extends BaseAbility {
     @Override
     public void onPrepare(AbilityPlayerContext context) {
-        give(context.player(), material("OAK_SAPLING", "SAPLING"), 5);
-        context.player().getInventory().addItem(dye("LIME_DYE", (short) 10));
+        give(context.player(), new ItemStack(material("OAK_SAPLING", "SAPLING"), 5), dye("LIME_DYE", (short) 10));
     }
 
     @Override

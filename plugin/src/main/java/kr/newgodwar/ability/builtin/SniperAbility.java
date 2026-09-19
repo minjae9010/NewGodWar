@@ -44,6 +44,7 @@ final class SniperAbility extends BaseAbility {
         final Player player = context.player();
         if (isLeft(event.getAction()) && holding(player, Material.BOW) && player.isSneaking() && !ready) {
             ready = true;
+            feedback.activated(context, player, false);
             player.sendMessage("스나이핑 모드를 준비합니다.");
             later(context, 4, "저격 준비", "저격 모드 활성화", () -> {
                 if (ready) {

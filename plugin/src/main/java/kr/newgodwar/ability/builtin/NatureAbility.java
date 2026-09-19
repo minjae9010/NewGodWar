@@ -35,7 +35,7 @@ final class NatureAbility extends BaseAbility {
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
         if (useNormal(context, player)) {
-            player.getInventory().addItem(randomPlantItem());
+            give(player, randomPlantItem());
         }
     }
 

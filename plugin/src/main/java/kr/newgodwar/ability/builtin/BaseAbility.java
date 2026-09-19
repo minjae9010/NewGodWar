@@ -2,6 +2,7 @@ package kr.newgodwar.ability.builtin;
 
 import kr.newgodwar.ability.api.AbilityPlayerContext;
 import kr.newgodwar.ability.api.GodAbility;
+import kr.newgodwar.ability.feedback.AbilityFeedback;
 import kr.newgodwar.game.GodTeam;
 import kr.newgodwar.util.BukkitCompat;
 import org.bukkit.Bukkit;
@@ -38,7 +39,30 @@ public abstract class BaseAbility implements GodAbility {
     private final Map<Integer, Long> cooldownAnnouncements = new LinkedHashMap<Integer, Long>();
     private final Map<String, Long> timerAnnouncements = new LinkedHashMap<String, Long>();
     private final Map<Integer, Runnable> scheduledTasks = new LinkedHashMap<Integer, Runnable>();
+    private final Map<Integer, Boolean> cooldownKinds = new LinkedHashMap<Integer, Boolean>();
+    protected final AbilityFeedback feedback = new AbilityFeedback();
     protected String targetName;
+
+    @Override
+    public void saveSession(org.bukkit.configuration.ConfigurationSection data) {
+        data.set("target", targetName);
+        long now = System.currentTimeMillis();
+        for (Map.Entry<Integer, Long> entry : cooldowns.entrySet()) {
+            data.set("cooldowns." + entry.getKey(), Math.max(0L, entry.getValue() - now));
+        }
+    }
+
+    @Override
+    public void loadSession(org.bukkit.configuration.ConfigurationSection data) {
+        targetName = data.getString("target");
+        org.bukkit.configuration.ConfigurationSection saved = data.getConfigurationSection("cooldowns");
+        if (saved != null) {
+            long now = System.currentTimeMillis();
+            for (String slot : saved.getKeys(false)) {
+                cooldowns.put(Integer.parseInt(slot), now + Math.max(0L, saved.getLong(slot)));
+            }
+        }
+    }
 
     @Override
     public void cancelScheduledTasks() {
@@ -56,6 +80,7 @@ public abstract class BaseAbility implements GodAbility {
         }
         timers.clear();
         timerAnnouncements.clear();
+        feedback.clear();
     }
 
     @Override
@@ -92,15 +117,25 @@ public abstract class BaseAbility implements GodAbility {
             sender.sendMessage(ChatColor.RED + "이 능력은 타깃 지정이 필요하지 않습니다.");
             return;
         }
-        if (context.player().getName().equalsIgnoreCase(targetName)) {
+        String name = targetName == null ? "" : targetName.trim();
+        if (context.player().getName().equalsIgnoreCase(name)) {
             sender.sendMessage("자기 자신을 타깃으로 등록 할 수 없습니다.");
             return;
         }
-        this.targetName = targetName;
-        sender.sendMessage("타깃을 등록했습니다.   " + ChatColor.GREEN + targetName);
+        Player target = name.isEmpty() ? null : Bukkit.getPlayerExact(name);
+        if (target == null || !target.isOnline()) {
+            sender.sendMessage(ChatColor.RED + "접속 중인 플레이어의 정확한 이름을 입력하세요.");
+            return;
+        }
+        this.targetName = target.getName();
+        sender.sendMessage("타깃을 등록했습니다.   " + ChatColor.GREEN + this.targetName);
     }
 
     protected boolean use(AbilityPlayerContext context, Player player, int slot, Material material, int amount, int cooldownSeconds) {
+        return use(context, player, slot, material, amount, cooldownSeconds, slot == 2);
+    }
+
+    private boolean use(AbilityPlayerContext context, Player player, int slot, Material material, int amount, int cooldownSeconds, boolean advanced) {
         int realCost = material == COBBLESTONE ? cost(context, amount) : amount;
         if (!readyCooldown(context, player, slot, cooldownSeconds)) {
             refreshDisplay(context);
@@ -114,7 +149,8 @@ public abstract class BaseAbility implements GodAbility {
             player.getInventory().removeItem(new ItemStack(material, realCost));
         }
         setCooldown(context, slot, cooldownSeconds);
-        sendAbilityMessage(context, player, "success", ChatColor.GREEN + "능력을 사용했습니다.");
+        if (cooldownKinds.containsKey(slot)) cooldownKinds.put(slot, advanced);
+        feedback.activated(context, player, advanced);
         return true;
     }
 
@@ -123,7 +159,7 @@ public abstract class BaseAbility implements GodAbility {
     }
 
     protected boolean useNormal(AbilityPlayerContext context, Player player, int slot) {
-        return use(context, player, slot, COBBLESTONE, context.ability().normalStoneCost(), context.ability().normalCooldownSeconds());
+        return use(context, player, slot, COBBLESTONE, context.ability().normalStoneCost(), context.ability().normalCooldownSeconds(), false);
     }
 
     protected boolean useAdvanced(AbilityPlayerContext context, Player player) {
@@ -131,7 +167,7 @@ public abstract class BaseAbility implements GodAbility {
     }
 
     protected boolean useAdvanced(AbilityPlayerContext context, Player player, int slot) {
-        return use(context, player, slot, COBBLESTONE, context.ability().advancedStoneCost(), context.ability().advancedCooldownSeconds());
+        return use(context, player, slot, COBBLESTONE, context.ability().advancedStoneCost(), context.ability().advancedCooldownSeconds(), true);
     }
 
     protected boolean readyNormal(AbilityPlayerContext context, Player player, int slot) {
@@ -150,8 +186,11 @@ public abstract class BaseAbility implements GodAbility {
     }
 
     protected void setCooldown(AbilityPlayerContext context, int slot, int cooldownSeconds) {
-        cooldowns.put(slot, System.currentTimeMillis() + context.plugin().abilities().scaleCooldownMillis(cooldownSeconds * 1000L));
+        long duration = context.plugin().abilities().scaleCooldownMillis(cooldownSeconds * 1000L);
+        cooldowns.put(slot, System.currentTimeMillis() + duration);
         cooldownAnnouncements.remove(slot);
+        if (duration > 0) cooldownKinds.put(slot, slot == 2);
+        else cooldownKinds.remove(slot);
         refreshDisplay(context);
     }
 
@@ -183,6 +222,7 @@ public abstract class BaseAbility implements GodAbility {
     public void clearCooldowns() {
         cooldowns.clear();
         cooldownAnnouncements.clear();
+        cooldownKinds.clear();
     }
 
     protected boolean readyCooldown(AbilityPlayerContext context, Player player, int slot, int cooldownSeconds) {
@@ -209,6 +249,10 @@ public abstract class BaseAbility implements GodAbility {
     }
 
     protected void sendAbilityMessage(AbilityPlayerContext context, Player player, String type, String message) {
+        if ("failure".equals(type)) {
+            if (!feedback.allow("failure", 700L)) return;
+            feedback.failure(context, player, message);
+        }
         if (!context.plugin().getConfig().getBoolean("abilities.messages.enabled", true)) {
             return;
         }
@@ -255,7 +299,22 @@ public abstract class BaseAbility implements GodAbility {
     }
 
     protected void give(Player player, Material material, int amount) {
-        player.getInventory().addItem(new ItemStack(material, amount));
+        give(player, new ItemStack(material, amount));
+    }
+
+    protected void give(Player player, ItemStack... items) {
+        ItemStack[] copies = new ItemStack[items.length];
+        for (int i = 0; i < items.length; i++) {
+            copies[i] = items[i].clone();
+        }
+        Map<Integer, ItemStack> leftovers = player.getInventory().addItem(copies);
+        if (leftovers.isEmpty()) {
+            return;
+        }
+        player.sendMessage(ChatColor.YELLOW + "인벤토리가 꽉 찼습니다. 들어가지 못한 아이템을 발밑에 떨어뜨립니다.");
+        for (ItemStack leftover : leftovers.values()) {
+            dropNaturally(player, leftover);
+        }
     }
 
     protected Material material(String modernName, String legacyName) {
@@ -376,6 +435,8 @@ public abstract class BaseAbility implements GodAbility {
     }
 
     protected void strikeLightning(final AbilityPlayerContext context, final Player source, final Location location) {
+        feedback.link(context, source.getEyeLocation(), location.clone().add(0, 1, 0));
+        feedback.pulse(context, location, 1.5D);
         final LightningStrike[] strike = new LightningStrike[1];
         context.plugin().abilities().runAttributedDamage(source, () -> strike[0] = location.getWorld().strikeLightning(location));
         if (strike[0] != null) {
@@ -411,6 +472,25 @@ public abstract class BaseAbility implements GodAbility {
             return block.getLocation();
         }
         return fallbackTargetLocation(player, range);
+    }
+
+    protected boolean teleportNormalToSight(AbilityPlayerContext context, Player player, int range) {
+        Location destination = targetBlock(player, range).getLocation().add(0.5D, 1.0D, 0.5D);
+        if (!isAir(destination.getBlock()) || !isAir(destination.clone().add(0, 1, 0).getBlock())) {
+            sendAbilityMessage(context, player, "failure", ChatColor.RED + "이동할 공간이 부족합니다. 안전한 위치를 바라보세요.");
+            return false;
+        }
+        if (!useNormal(context, player)) return false;
+        Location origin = player.getLocation();
+        destination.setPitch(origin.getPitch());
+        destination.setYaw(origin.getYaw());
+        if (!player.teleport(destination)) {
+            sendAbilityMessage(context, player, "failure", ChatColor.RED + "이 위치로 순간이동할 수 없습니다.");
+            return false;
+        }
+        feedback.link(context, origin.clone().add(0, 1, 0), destination.clone().add(0, 1, 0));
+        feedback.pulse(context, destination, 1.4D);
+        return true;
     }
 
     private Location fallbackTargetLocation(Player player, int range) {
@@ -515,7 +595,7 @@ public abstract class BaseAbility implements GodAbility {
     }
 
     protected Player targetPlayer() {
-        return targetName == null ? null : Bukkit.getPlayer(targetName);
+        return targetName == null ? null : Bukkit.getPlayerExact(targetName);
     }
 
     protected Player targetPlayerInSight(AbilityPlayerContext context, Player player, int range, boolean sameTeam) {
@@ -575,10 +655,19 @@ public abstract class BaseAbility implements GodAbility {
             return null;
         }
         if (!canTarget(context, player, target, sameTeam)) {
-            player.sendMessage(ChatColor.RED + "타깃이 해당 구역에 없습니다.");
+            if (!sameTeam && context.plugin().game().isPlayerCombatProtectedByKilltime()) {
+                sendKilltimeTargetMessage(context, player);
+            } else {
+                player.sendMessage(ChatColor.RED + "게임에 참가 중인 " + (sameTeam ? "아군" : "적") + "만 대상으로 지정할 수 있습니다.");
+            }
             return null;
         }
         return target;
+    }
+
+    protected void sendKilltimeTargetMessage(AbilityPlayerContext context, Player player) {
+        sendAbilityMessage(context, player, "failure", ChatColor.RED + "킬타임 동안 적을 대상으로 능력을 사용할 수 없습니다. 남은 시간: "
+            + context.plugin().game().killtimeRemainingSeconds() + "초");
     }
 
     private boolean lookingAt(Player player, Player target, int range) {
@@ -630,6 +719,7 @@ public abstract class BaseAbility implements GodAbility {
             timerAnnouncements.remove(name);
             refreshDisplay(context);
             runnable.run();
+            feedback.timer(context, text + " 완료");
             refreshDisplay(context);
         }, seconds * 20L, runOnCancel ? runnable : null);
     }
@@ -653,6 +743,11 @@ public abstract class BaseAbility implements GodAbility {
                 cooldownLabel(entry.getKey()) + " 쿨타임");
         }
         for (Integer slot : expired) {
+            // Zero/conditional cooldowns are not a new 'ready' event.
+            Boolean advanced = cooldownKinds.remove(slot);
+            if (advanced != null) {
+                feedback.ready(context, advanced.booleanValue());
+            }
             cooldowns.remove(slot);
             cooldownAnnouncements.remove(slot);
         }
@@ -690,6 +785,8 @@ public abstract class BaseAbility implements GodAbility {
     }
 
     private String cooldownLabel(int slot) {
+        Boolean advanced = cooldownKinds.get(slot);
+        if (advanced != null) return advanced.booleanValue() ? "고급 능력" : "일반 능력";
         if (slot == 1) {
             return "일반 능력";
         }
@@ -724,6 +821,7 @@ public abstract class BaseAbility implements GodAbility {
         Vector up = new Vector(0, 0.5D, 0);
         for (Player target : targets) {
             target.setVelocity(up);
+            feedback.affected(context, target, "밀쳐내기", true);
         }
         Vector horizontal = player.getEyeLocation().getDirection().setY(0.0D);
         if (horizontal.lengthSquared() == 0.0D) {

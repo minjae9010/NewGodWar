@@ -123,6 +123,11 @@
 
 | 키 | 기본값 | 설명 |
 | --- | --- | --- |
+| `abilities.effects.enabled` | `true` | 능력 시각·소리 연출 전체 사용 여부 |
+| `abilities.effects.particles` | `true` | 속성별 발동 파티클, 대상 효과, 연결 궤적과 범위 연출 |
+| `abilities.effects.sounds` | `true` | 발동, 실패, 재사용 가능 효과음 |
+| `abilities.effects.action-bar` | `true` | 발동 내용, 피격·지원 효과, 종료와 재사용 가능 안내 |
+| `abilities.effects.titles` | `true` | 고급 능력 발동 시 짧은 중앙 타이틀 |
 | `abilities.messages.enabled` | `true` | 능력 메시지 전체 사용 여부 |
 | `abilities.messages.success` | `true` | 능력 성공 메시지 |
 | `abilities.messages.failure` | `true` | 능력 실패 메시지 |
@@ -134,6 +139,10 @@
 | `abilities.darkness.incoming-damage-multiplier` | `0.25` | 다크니스가 받는 피해 배율 |
 
 능력별 추가 설정은 `abilities.<ability-id>.<key>` 형태로 확장할 수 있습니다.
+
+내장 능력은 일반/고급 발동 시 능력명과 사용한 효과를 안내하고, 번개·화염·물·얼음·바람·치유 등 속성에 맞는 파티클과 소리를 재생합니다. 주요 치유·속박·봉인 능력은 대상에게도 적용 내용을 표시합니다. 사제의 축복은 실제로 뽑힌 버프를 표시하며, 무적은 유지 중 보호 고리, 메구밍은 폭발 위치의 예고 원을 표시합니다. 원형 파티클은 시각 연출이며 정확한 피격 판정 경계를 뜻하지 않습니다.
+
+주변 연출은 같은 월드의 32블록 안에서만 전송합니다. 은신 계열의 발동과 이미 투명한 사용자의 연출은 본인에게만 보이고 들립니다. 실패 연타와 반복 대상 알림에는 표시 간격을 두며, 고급 타이틀만 끄려면 `abilities.effects.titles: false`로 설정합니다. 기존 설정 파일에 위 항목이 없어도 기본으로 활성화됩니다. `abilities.messages.*`는 채팅 안내를 별도로 제어합니다.
 
 ## gambling
 

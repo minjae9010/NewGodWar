@@ -50,6 +50,7 @@ final class ZeusAbility extends BaseAbility {
         if (cause == EntityDamageEvent.DamageCause.LIGHTNING || cause == EntityDamageEvent.DamageCause.ENTITY_EXPLOSION) {
             event.setCancelled(true);
             context.player().setFireTicks(0);
+            feedback.passive(context, "번개 / 폭발 피해 면역");
         }
     }
 }

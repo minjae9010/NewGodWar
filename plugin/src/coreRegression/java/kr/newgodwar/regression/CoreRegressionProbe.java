@@ -1,6 +1,8 @@
 package kr.newgodwar.regression;
 
 import kr.newgodwar.NewGodWarPlugin;
+import kr.newgodwar.ability.api.AbilityDefinition;
+import kr.newgodwar.ability.api.GodAbility;
 import kr.newgodwar.game.*;
 import kr.newgodwar.listener.GameListener;
 import kr.newgodwar.nms.NmsAdapter;
@@ -37,6 +39,8 @@ public final class CoreRegressionProbe extends JavaPlugin {
                 rejectsDuplicateTemples();
                 batchesExplosionsBeforeVictory();
                 cancelsUnderpopulatedStarts();
+                TeamChatRegression.run(core);
+                restoresGameWorldSnapshot();
                 getLogger().info("CORE REGRESSION PASS");
             } catch (Throwable ex) {
                 getLogger().log(java.util.logging.Level.SEVERE, "CORE REGRESSION FAILED", ex);
@@ -79,6 +83,7 @@ public final class CoreRegressionProbe extends JavaPlugin {
                 case "getUniqueId": return playerId;
                 case "getName": return "CoreRegressionPlayer";
                 case "getInventory": return bag;
+                case "getActivePotionEffects": return Collections.emptyList();
                 case "getGameMode": return GameMode.SURVIVAL;
                 case "getWorld": return Bukkit.getWorlds().get(0);
                 case "getLocation": return Bukkit.getWorlds().get(0).getSpawnLocation();
@@ -186,6 +191,60 @@ public final class CoreRegressionProbe extends JavaPlugin {
         invoke(game, "finishStart", new Class<?>[0]);
         require(game.state() == GameState.ENDED, "A stale ready callback restarted the game");
         getLogger().info("PASS start revalidation: insufficient participants, timer cleanup and stale callbacks");
+    }
+
+    private void restoresGameWorldSnapshot() throws Exception {
+        String worldName = System.getProperty("newgodwar.regression.world", "reset-regression");
+        World world = Bukkit.createWorld(WorldBackupManager.creator(worldName, "void"));
+        require(world != null, "Could not create reset test world");
+        world.getBlockAt(0, 100, 0).setType(Material.GOLD_BLOCK);
+        world.getBlockAt(1, 100, 0).setType(Material.AIR);
+        core.getConfig().set("world.reset-game-world-on-stop", true);
+        core.getConfig().set("game.min-players", 0);
+        game.setLobby(Bukkit.getWorlds().get(0).getSpawnLocation());
+        Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "gw map " + worldName);
+        int x = 10;
+        for (GodTeam team : GodTeam.values()) {
+            game.setSpawn(team, new Location(world, x, 101, 0));
+            Block temple = world.getBlockAt(x++, 100, 0);
+            temple.setType(Material.DIAMOND_BLOCK);
+            game.setTemple(team, temple);
+        }
+        for (int round = 0; round < 2; round++) {
+            Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "gw start");
+            require(game.state() == GameState.READY, "Command did not start the game");
+            invoke(game, "finishStart", new Class<?>[0]);
+            require(game.state() == GameState.RUNNING, "Game did not finish starting");
+            world = Bukkit.getWorld(worldName);
+            require(world.getBlockAt(1, 100, 0).getType() == Material.AIR,
+                "Next game started with the previous game's chest");
+            world.getBlockAt(0, 100, 0).setType(Material.AIR);
+            world.getBlockAt(1, 100, 0).setType(Material.CHEST);
+            world.save();
+            Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "gw stop");
+            World restored = Bukkit.getWorld(worldName);
+            require(restored != null, "Reset did not reload the game world");
+            require(get(game, "activeGameWorldSnapshotName") == null, "Reset left a pending snapshot");
+            require(restored.getBlockAt(0, 100, 0).getType() == Material.GOLD_BLOCK,
+                "Reset did not restore the original block");
+            require(restored.getBlockAt(1, 100, 0).getType() == Material.AIR,
+                "Reset kept a chest placed and saved during the game");
+        }
+        getLogger().info("PASS world reset: start, place and save chest, stop, restart for two games");
+        game.startTest(player, new AbilityDefinition("reset-probe", "Reset probe", "Reset probe", "test", true,
+            () -> new GodAbility() { }));
+        World testWorld = Bukkit.getWorld(worldName);
+        testWorld.getBlockAt(1, 100, 0).setType(Material.CHEST);
+        testWorld.save();
+        Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "gw stop");
+        require(Bukkit.getWorld(worldName).getBlockAt(1, 100, 0).getType() == Material.AIR,
+            "Test mode left its chest behind after stop, contaminating the next game's snapshot");
+        Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "gw start");
+        require(game.state() == GameState.READY, "Could not start a regular game after test mode");
+        require(Bukkit.getWorld(worldName).getBlockAt(1, 100, 0).getType() == Material.AIR,
+            "Regular game inherited test mode's chest");
+        Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "gw stop");
+        getLogger().info("PASS test world reset: test, place chest, stop, regular game with original blocks");
     }
 
     private static Object defaultValue(Class<?> type) {

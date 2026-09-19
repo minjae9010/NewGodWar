@@ -16,6 +16,8 @@ import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.World;
 import org.bukkit.block.Block;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BarStyle;
 import org.bukkit.boss.BossBar;
@@ -61,6 +63,7 @@ public final class GameManager {
     private final Map<UUID, Integer> pendingSelection = new HashMap<UUID, Integer>();
     private final Map<UUID, Integer> kills = new HashMap<UUID, Integer>();
     private final Map<UUID, Scoreboard> playerScoreboards = new HashMap<UUID, Scoreboard>();
+    private volatile Map<UUID, String> publicChatPrefixes = Collections.emptyMap();
     private final Map<String, WorldSnapshot> worldSnapshots = new HashMap<String, WorldSnapshot>();
     private final Set<String> announcedPickaxeUnlocks = new HashSet<String>();
     private static final String CORE_EXPLOSION_UNLOCK_SECONDS_PATH = "core.explosion-unlock-seconds";
@@ -94,12 +97,21 @@ public final class GameManager {
     private String activeGameWorldName;
     private String activeGameWorldSnapshotName;
     private String activeGameWorldType;
+    private final GameSessionStore sessionStore;
+    private boolean recoveryInitialized;
+    private boolean recoveryBlocked;
+    private boolean shuttingDown;
+    private boolean waitingForRecoveredPlayers;
+    private boolean stopInProgress;
+    private int checkpointTask = -1;
+    private boolean checkpointQueued;
 
     public GameManager(NewGodWarPlugin plugin, AbilityManager abilityManager, NmsAdapter nmsAdapter) {
         this.plugin = plugin;
         this.abilityManager = abilityManager;
         this.nmsAdapter = nmsAdapter;
         this.gameRuleController = new GameRuleController(plugin);
+        this.sessionStore = new GameSessionStore(plugin.getDataFolder());
         GodTeam.reload(plugin.getConfig());
         loadTemples();
         loadSpawns();
@@ -108,7 +120,215 @@ public final class GameManager {
     }
 
     public void shutdown() {
-        stop(false, false);
+        if (shuttingDown) return;
+        shuttingDown = true;
+        if (checkpointTask != -1) Bukkit.getScheduler().cancelTask(checkpointTask);
+        if (activeMode != null) {
+            // Custom modes own their lifecycle and do not expose a resume contract.
+            stopCustomMode();
+            return;
+        }
+        if (!recoveryInitialized || recoveryBlocked) return;
+        saveCheckpoint();
+        Bukkit.getScheduler().cancelTasks(plugin);
+        cancelGameTimerTask();
+        abilityManager.clear();
+        clearPlayerScoreboards();
+        // Save the current map and vanilla player data, never restore the pre-game map here.
+        saveCurrentWorlds();
+    }
+
+    public boolean isShuttingDown() { return shuttingDown; }
+
+    public boolean isRecovering() { return !recoveryInitialized || recoveryBlocked; }
+
+    /** Called after addons have registered their abilities. */
+    public void initializeRecovery() {
+        try {
+            YamlConfiguration data = sessionStore.load();
+            if (data != null) restoreSession(data);
+            recoveryInitialized = true;
+            if (state == GameState.READY) {
+                waitingForRecoveredPlayers = true;
+                readyTask = Bukkit.getScheduler().scheduleSyncRepeatingTask(plugin, () -> tickReady(), 20L, 20L);
+            } else if (state == GameState.RUNNING) {
+                gameRuleController.applyConfiguredRules();
+                if (!worldSnapshots.isEmpty()) applyWorldStartSettings(false);
+                startGameTimerTask();
+                startPickaxeUnlockNoticeTask(true);
+                startWaterHealTask();
+                startGameTipTask();
+                for (Player player : BukkitCompat.onlinePlayers()) abilityManager.reapply(player);
+            } else if (activeGameWorldSnapshotName != null || (state == GameState.ENDED && !teams.isEmpty())) {
+                // A stop/reset interrupted by a crash must finish before a new snapshot is allowed.
+                stop(false);
+            }
+            refreshAllPlayerDisplays();
+            long interval = Math.max(1, plugin.getConfig().getInt("game.recovery-save-interval-seconds", 10)) * 20L;
+            checkpointTask = Bukkit.getScheduler().scheduleSyncRepeatingTask(plugin, () -> {
+                if (activeMode == null && (state == GameState.READY || state == GameState.RUNNING)) {
+                    saveCurrentWorlds();
+                    saveCheckpoint();
+                }
+            }, interval, interval);
+            if (data != null) plugin.getLogger().info("Recovered game session: " + state);
+        } catch (Exception ex) {
+            recoveryBlocked = true;
+            plugin.getLogger().log(java.util.logging.Level.SEVERE,
+                "Game recovery failed. Keeping game-session.yml and world snapshots unchanged; fix the saved data or missing worlds/abilities before restarting.", ex);
+        }
+    }
+
+    private void requireRecoveryComplete() {
+        if (isRecovering()) throw new IllegalStateException("게임 복구가 완료되지 않았습니다. 서버 로그와 game-session.yml을 확인해주세요.");
+    }
+
+    /** Coalesce changes made in the same server tick into one committed checkpoint. */
+    public void requestCheckpoint() {
+        if (!recoveryInitialized || recoveryBlocked || shuttingDown || stopInProgress || checkpointQueued || activeMode != null) return;
+        checkpointQueued = true;
+        Bukkit.getScheduler().runTask(plugin, () -> {
+            checkpointQueued = false;
+            if (!shuttingDown) saveCheckpoint();
+        });
+    }
+
+    private void saveCurrentWorlds() {
+        try {
+            Bukkit.savePlayers();
+            for (World world : Bukkit.getWorlds()) plugin.worldBackups().saveWorld(world);
+            plugin.worldBackups().flushPendingWorldWrites();
+        } catch (IOException | RuntimeException ex) {
+            plugin.getLogger().log(java.util.logging.Level.SEVERE, "Could not save game world/player checkpoint", ex);
+        }
+    }
+
+    private boolean saveCheckpoint() {
+        if (!recoveryInitialized || recoveryBlocked || activeMode != null) return false;
+        try {
+            sessionStore.save(captureSession());
+            return true;
+        } catch (Exception ex) {
+            plugin.getLogger().log(java.util.logging.Level.SEVERE, "Could not save game session; retaining the previous checkpoint", ex);
+            return false;
+        }
+    }
+
+    private YamlConfiguration captureSession() {
+        YamlConfiguration data = new YamlConfiguration();
+        data.set("state", state.name());
+        data.set("elapsed-millis", state == GameState.RUNNING ? Math.max(0L, System.currentTimeMillis() - runningStartedAtMillis) : 0L);
+        data.set("ready-seconds", readySecondsRemaining);
+        data.set("ready-reminder", readyReminder);
+        data.set("selection-ended", abilitySelectionWaitEnded);
+        data.set("killtime-announced", killtimeEndAnnounced);
+        data.set("explosion-announced", coreExplosionUnlockAnnounced);
+        data.set("pickaxe-announcements", new ArrayList<String>(announcedPickaxeUnlocks));
+        data.set("next-tip", nextGameTipIndex);
+        data.set("world.name", activeGameWorldName);
+        data.set("world.snapshot", activeGameWorldSnapshotName);
+        data.set("world.type", activeGameWorldType);
+        data.set("observers", uuidStrings(observers));
+        data.set("prepared-inventories", uuidStrings(preparedPlayerInventories));
+        synchronized (teamChatModePlayers) { data.set("team-chat", uuidStrings(teamChatModePlayers)); }
+        List<String> eliminated = new ArrayList<String>();
+        for (GodTeam team : eliminatedTeams) eliminated.add(team.id());
+        data.set("eliminated", eliminated);
+        for (Map.Entry<UUID, GodTeam> entry : teams.entrySet()) data.set("teams." + entry.getKey(), entry.getValue().id());
+        for (Map.Entry<UUID, Integer> entry : kills.entrySet()) data.set("kills." + entry.getKey(), entry.getValue());
+        for (Map.Entry<UUID, Integer> entry : pendingSelection.entrySet()) data.set("selections." + entry.getKey(), entry.getValue());
+        for (Map.Entry<GodTeam, TempleLocation> entry : temples.entrySet()) data.set("temples." + entry.getKey().id(), entry.getValue().serialize());
+        for (Map.Entry<GodTeam, GameLocation> entry : spawns.entrySet()) data.set("spawns." + entry.getKey().id(), entry.getValue().serialize());
+        abilityManager.saveSession(data.createSection("abilities"));
+        gameRuleController.saveSession(data.createSection("previous-rules"));
+        int index = 0;
+        for (Map.Entry<String, WorldSnapshot> entry : worldSnapshots.entrySet()) {
+            ConfigurationSection saved = data.createSection("previous-worlds." + index++);
+            saved.set("name", entry.getKey());
+            entry.getValue().save(saved);
+        }
+        return data;
+    }
+
+    private void restoreSession(YamlConfiguration data) throws IOException {
+        GameState restoredState = GameState.valueOf(data.getString("state"));
+        activeGameWorldName = data.getString("world.name");
+        activeGameWorldSnapshotName = data.getString("world.snapshot");
+        activeGameWorldType = data.getString("world.type", "normal");
+        if ((activeGameWorldName == null) != (activeGameWorldSnapshotName == null)) throw new IOException("Incomplete world snapshot reference");
+        if (activeGameWorldName != null) {
+            plugin.worldBackups().validateWorldSnapshot(activeGameWorldSnapshotName);
+            if (restoredState == GameState.READY || restoredState == GameState.RUNNING) {
+                if (Bukkit.getWorld(activeGameWorldName) == null) {
+                    if (!plugin.worldBackups().hasWorldFolder(activeGameWorldName)
+                        || Bukkit.createWorld(WorldBackupManager.creator(activeGameWorldName, activeGameWorldType)) == null) {
+                        throw new IOException("Saved game world is missing: " + activeGameWorldName);
+                    }
+                }
+            }
+        }
+        ConfigurationSection savedTeams = data.getConfigurationSection("teams");
+        if (savedTeams != null) for (String uuid : savedTeams.getKeys(false)) teams.put(UUID.fromString(uuid), requireSavedTeam(savedTeams.getString(uuid)));
+        for (String id : data.getStringList("eliminated")) eliminatedTeams.add(requireSavedTeam(id));
+        loadUuids(data, "observers", observers);
+        loadUuids(data, "prepared-inventories", preparedPlayerInventories);
+        loadUuids(data, "team-chat", teamChatModePlayers);
+        loadCounts(data.getConfigurationSection("kills"), kills);
+        loadCounts(data.getConfigurationSection("selections"), pendingSelection);
+        ConfigurationSection savedTemples = data.getConfigurationSection("temples");
+        if (savedTemples != null && (restoredState == GameState.READY || restoredState == GameState.RUNNING)) {
+            temples.clear();
+            for (String id : savedTemples.getKeys(false)) {
+                TempleLocation location = TempleLocation.deserialize(savedTemples.getString(id));
+                if (location == null) throw new IOException("Invalid saved temple: " + id);
+                temples.put(requireSavedTeam(id), location);
+            }
+        }
+        ConfigurationSection savedSpawns = data.getConfigurationSection("spawns");
+        if (savedSpawns != null && (restoredState == GameState.READY || restoredState == GameState.RUNNING)) {
+            spawns.clear();
+            for (String id : savedSpawns.getKeys(false)) {
+                GameLocation location = GameLocation.deserialize(savedSpawns.getString(id));
+                if (location == null) throw new IOException("Invalid saved spawn: " + id);
+                spawns.put(requireSavedTeam(id), location);
+            }
+        }
+        abilityManager.loadSession(data.getConfigurationSection("abilities"));
+        gameRuleController.loadSession(data.getConfigurationSection("previous-rules"));
+        ConfigurationSection savedWorlds = data.getConfigurationSection("previous-worlds");
+        if (savedWorlds != null) for (String key : savedWorlds.getKeys(false)) {
+            ConfigurationSection saved = savedWorlds.getConfigurationSection(key);
+            worldSnapshots.put(saved.getString("name"), new WorldSnapshot(saved));
+        }
+        readySecondsRemaining = Math.max(0, data.getInt("ready-seconds"));
+        readyReminder = Math.max(0, data.getInt("ready-reminder"));
+        abilitySelectionWaitEnded = data.getBoolean("selection-ended");
+        killtimeEndAnnounced = data.getBoolean("killtime-announced");
+        coreExplosionUnlockAnnounced = data.getBoolean("explosion-announced");
+        announcedPickaxeUnlocks.addAll(data.getStringList("pickaxe-announcements"));
+        nextGameTipIndex = data.getInt("next-tip");
+        runningStartedAtMillis = restoredState == GameState.RUNNING ? System.currentTimeMillis() - Math.max(0L, data.getLong("elapsed-millis")) : 0L;
+        state = restoredState;
+    }
+
+    private GodTeam requireSavedTeam(String id) {
+        GodTeam team = GodTeam.parse(id);
+        if (team == null) throw new IllegalStateException("Missing saved team: " + id);
+        return team;
+    }
+
+    private static List<String> uuidStrings(Set<UUID> values) {
+        List<String> result = new ArrayList<String>();
+        for (UUID uuid : values) result.add(uuid.toString());
+        return result;
+    }
+
+    private static void loadUuids(YamlConfiguration data, String path, Set<UUID> target) {
+        for (String value : data.getStringList(path)) target.add(UUID.fromString(value));
+    }
+
+    private static void loadCounts(ConfigurationSection data, Map<UUID, Integer> target) {
+        if (data != null) for (String uuid : data.getKeys(false)) target.put(UUID.fromString(uuid), data.getInt(uuid));
     }
 
     public GameState state() {
@@ -241,7 +461,7 @@ public final class GameManager {
     }
 
     public boolean canUseAbility(Player player) {
-        if (player == null || isObserver(player)) {
+        if (isRecovering() || shuttingDown || player == null || isObserver(player)) {
             return false;
         }
         GodTeam team = teamOf(player);
@@ -276,6 +496,7 @@ public final class GameManager {
             throw new IllegalStateException("비활성화된 팀에는 배정할 수 없습니다.");
         }
         teams.put(player.getUniqueId(), team);
+        requestCheckpoint();
         refreshAllPlayerDisplays();
         nmsAdapter.sendActionBar(player, teamColoredName(team) + " 팀에 배정되었습니다.");
     }
@@ -288,6 +509,7 @@ public final class GameManager {
             throw new IllegalStateException("탈락한 팀으로는 변경할 수 없습니다.");
         }
         teams.put(player.getUniqueId(), team);
+        requestCheckpoint();
         if (state == GameState.RUNNING) {
             observers.remove(player.getUniqueId());
             BukkitCompat.setSurvival(player);
@@ -300,6 +522,7 @@ public final class GameManager {
     }
 
     public void leave(Player player) {
+        requestCheckpoint();
         boolean removedPendingSelection = pendingSelection.remove(player.getUniqueId()) != null;
         teams.remove(player.getUniqueId());
         teamChatModePlayers.remove(player.getUniqueId());
@@ -477,6 +700,7 @@ public final class GameManager {
     }
 
     public void start() {
+        requireRecoveryComplete();
         if (stoppingCustomMode) throw new IllegalStateException("게임 모드 종료 처리 중입니다.");
         if (state == GameState.READY || state == GameState.RUNNING) {
             throw new IllegalStateException("게임이 이미 시작 준비 중이거나 진행 중입니다.");
@@ -538,6 +762,7 @@ public final class GameManager {
     }
 
     public AbilityDefinition startTest(Player player, AbilityDefinition preferredAbility) {
+        requireRecoveryComplete();
         if (player == null) {
             throw new IllegalStateException("테스트할 플레이어를 찾을 수 없습니다.");
         }
@@ -545,6 +770,7 @@ public final class GameManager {
             throw new IllegalStateException("게임 준비 또는 진행 중에는 테스트 모드를 시작할 수 없습니다. 먼저 /gw stop을 실행해주세요.");
         }
         ensureGameWorldResetComplete();
+        prepareGameWorldSnapshot();
         lastGameWasCustom = false;
 
         GameState previousState = state;
@@ -586,6 +812,7 @@ public final class GameManager {
     }
 
     private AbilityDefinition joinMidGame(Player player, GodTeam requestedTeam, boolean requireEnabled) {
+        requireRecoveryComplete();
         if (state != GameState.RUNNING) {
             throw new IllegalStateException("게임 진행 중에만 중간 참여를 사용할 수 있습니다.");
         }
@@ -661,6 +888,7 @@ public final class GameManager {
     }
 
     private void stop(boolean announce, boolean resetGameWorld) {
+        requireRecoveryComplete();
         if (activeMode != null) {
             stopCustomMode();
             return;
@@ -668,8 +896,16 @@ public final class GameManager {
         if (lastGameWasCustom && state == GameState.ENDED) return;
 
         List<Player> endingPlayers = endingPlayers();
+        String finishedSnapshot = activeGameWorldSnapshotName;
         GameState previousState = state;
         state = GameState.ENDED;
+        // Commit the end before touching inventories or the world. A crash now must
+        // retry cleanup, never resurrect the running match or overwrite its snapshot.
+        if (!saveCheckpoint()) {
+            state = previousState;
+            throw new IllegalStateException("종료 상태를 저장하지 못했습니다. 서버 로그와 디스크 공간을 확인해주세요.");
+        }
+        stopInProgress = true;
         runningStartedAtMillis = 0L;
         killtimeEndAnnounced = false;
         if (readyTask != -1) {
@@ -707,8 +943,17 @@ public final class GameManager {
             resetConfiguredGameWorld();
         }
         clearGameParticipation();
+        waitingForRecoveredPlayers = false;
+        stopInProgress = false;
         refreshAllPlayerDisplays();
         notifyStateChange(previousState);
+        if (finishedSnapshot != null && activeGameWorldSnapshotName == null && saveCheckpoint()) {
+            try {
+                plugin.worldBackups().deleteWorldSnapshot(finishedSnapshot);
+            } catch (IOException ex) {
+                plugin.getLogger().warning("Could not remove completed game snapshot: " + ex.getMessage());
+            }
+        }
     }
 
     public void recordKill(Player killer) {
@@ -718,6 +963,7 @@ public final class GameManager {
         UUID uuid = killer.getUniqueId();
         Integer current = kills.get(uuid);
         kills.put(uuid, current == null ? 1 : current + 1);
+        requestCheckpoint();
         nmsAdapter.sendActionBar(killer, ChatColor.GOLD + "킬 수: " + killsOf(killer));
         refreshPlayerDisplay(killer);
     }
@@ -747,6 +993,7 @@ public final class GameManager {
         }
         refreshAllPlayerDisplays();
         checkWinner();
+        requestCheckpoint();
     }
 
     public boolean handleEliminatedJoin(Player player) {
@@ -813,6 +1060,7 @@ public final class GameManager {
     }
 
     public boolean toggleObserver(Player player) {
+        requestCheckpoint();
         UUID uuid = player.getUniqueId();
         boolean enabled;
         if (observers.contains(uuid)) {
@@ -831,10 +1079,13 @@ public final class GameManager {
     }
 
     public boolean confirmAbility(Player player) {
-        return player != null && pendingSelection.remove(player.getUniqueId()) != null;
+        boolean changed = player != null && pendingSelection.remove(player.getUniqueId()) != null;
+        if (changed) requestCheckpoint();
+        return changed;
     }
 
     public AbilityDefinition rerollAbility(Player player) {
+        requestCheckpoint();
         Integer remaining = pendingSelection.get(player.getUniqueId());
         if (remaining == null || remaining.intValue() <= 0) {
             return null;
@@ -860,6 +1111,7 @@ public final class GameManager {
     }
 
     public int skipAbilitySelection(int countdownSeconds) {
+        waitingForRecoveredPlayers = false;
         int count = pendingSelection.size();
         pendingSelection.clear();
         if (state == GameState.READY) {
@@ -869,6 +1121,7 @@ public final class GameManager {
                 finishStart();
             }
         }
+        requestCheckpoint();
         return count;
     }
 
@@ -1045,13 +1298,14 @@ public final class GameManager {
             throw new IllegalStateException("로비 월드는 게임 월드 자동 초기화 대상으로 사용할 수 없습니다.");
         }
         String activeWorldName = world.getName();
-        String snapshotName = "active-game-world";
+        String snapshotName = "game-" + UUID.randomUUID();
         String worldType = managedWorldType(activeWorldName);
         try {
             plugin.worldBackups().saveWorldSnapshot(world, snapshotName);
             activeGameWorldName = activeWorldName;
             activeGameWorldSnapshotName = snapshotName;
             activeGameWorldType = worldType;
+            if (!saveCheckpoint()) throw new IOException("게임 월드 스냅샷 정보를 저장하지 못했습니다.");
             plugin.getLogger().info("Saved game world snapshot for '" + activeWorldName + "'.");
         } catch (IOException ex) {
             clearActiveGameWorldSnapshot();
@@ -1071,6 +1325,7 @@ public final class GameManager {
         String worldName = activeGameWorldName;
         boolean resetCompleted = false;
         try {
+            plugin.worldBackups().flushPendingWorldWrites();
             if (!unloadActiveGameWorld(worldName)) {
                 return;
             }
@@ -1206,12 +1461,15 @@ public final class GameManager {
 
     private void clearGameParticipation() {
         teams.clear();
+        publicChatPrefixes = Collections.emptyMap();
         observers.clear();
         eliminatedTeams.clear();
         kills.clear();
         pendingSelection.clear();
         teamChatModePlayers.clear();
-        playerScoreboards.clear();
+        // Offline players can still hold their last scoreboard. Clear its team
+        // entries and sidebar before discarding it, just as for online players.
+        clearPlayerScoreboards();
         preparedPlayerInventories.clear();
         ScoreboardManager manager = Bukkit.getScoreboardManager();
         if (manager != null) {
@@ -1223,17 +1481,19 @@ public final class GameManager {
     }
 
     private void setupScoreboard() {
+        refreshPublicChatPrefixes();
         ScoreboardManager manager = Bukkit.getScoreboardManager();
         if (manager == null) {
             return;
         }
-        playerScoreboards.clear();
+        clearPlayerScoreboards();
         for (Player player : BukkitCompat.onlinePlayers()) {
             refreshPlayerDisplay(player);
         }
     }
 
     public void refreshAllPlayerDisplays() {
+        refreshPublicChatPrefixes();
         for (Player player : BukkitCompat.onlinePlayers()) {
             refreshPlayerDisplay(player);
         }
@@ -1279,12 +1539,50 @@ public final class GameManager {
             return;
         }
         abilityManager.deactivate(player);
-        playerScoreboards.remove(player.getUniqueId());
+        // Keep the last board until rejoin or game stop so an offline player's
+        // team display is included in the end-of-game cleanup.
         if (gameTimerBar != null) {
             gameTimerBar.removePlayer(player);
         }
         resetPlayerListName(player);
-        refreshAllPlayerDisplays();
+        // During PlayerQuitEvent Bukkit may still list the departing player as
+        // online. Do not replace the board we retained for that player.
+        for (Player online : BukkitCompat.onlinePlayers()) {
+            if (!online.getUniqueId().equals(player.getUniqueId())) {
+                refreshPlayerDisplay(online);
+            }
+        }
+    }
+
+    private void clearPlayerScoreboards() {
+        for (Scoreboard board : playerScoreboards.values()) {
+            for (Team team : board.getTeams()) {
+                if (team.getName().startsWith("gw_")) {
+                    team.unregister();
+                }
+            }
+            Objective sidebar = board.getObjective(SIDEBAR_OBJECTIVE_NAME);
+            if (sidebar != null) {
+                sidebar.unregister();
+            }
+        }
+        playerScoreboards.clear();
+    }
+
+    private void refreshPublicChatPrefixes() {
+        Map<UUID, String> prefixes = new HashMap<UUID, String>();
+        for (Map.Entry<UUID, GodTeam> entry : teams.entrySet()) {
+            GodTeam team = entry.getValue();
+            prefixes.put(entry.getKey(), teamColor(team) + "[" + teamDisplayName(team) + "] " + ChatColor.RESET);
+        }
+        publicChatPrefixes = Collections.unmodifiableMap(prefixes);
+    }
+
+    public String publicChatFormat(Player player, String format) {
+        // Chat events can run asynchronously; only read an immutable snapshot.
+        String prefix = publicChatPrefixes.get(player.getUniqueId());
+        // The event format uses String.format, so team names must be literal.
+        return prefix == null ? format : prefix.replace("%", "%%") + format;
     }
 
     private void registerTeams(Scoreboard board) {
@@ -1628,6 +1926,12 @@ public final class GameManager {
             }
             return;
         }
+        if (waitingForRecoveredPlayers) {
+            for (UUID uuid : teams.keySet()) {
+                if (!observers.contains(uuid) && Bukkit.getPlayer(uuid) == null) return;
+            }
+            waitingForRecoveredPlayers = false;
+        }
         pruneInactivePendingSelections();
         completeAbilitySelectionIfReady();
         if (!pendingSelection.isEmpty()) {
@@ -1721,6 +2025,7 @@ public final class GameManager {
     }
 
     private void notifyStateChange(GameState previousState) {
+        saveCheckpoint();
         if (previousState != state) {
             Bukkit.getPluginManager().callEvent(new GameStateChangeEvent(this, previousState, state));
         }
@@ -1960,6 +2265,10 @@ public final class GameManager {
     }
 
     private void applyWorldStartSettings() {
+        applyWorldStartSettings(true);
+    }
+
+    private void applyWorldStartSettings(boolean resetTime) {
         for (World world : Bukkit.getWorlds()) {
             if (!worldSnapshots.containsKey(world.getName())) {
                 worldSnapshots.put(world.getName(), new WorldSnapshot(world));
@@ -1968,7 +2277,7 @@ public final class GameManager {
             world.setAutoSave(plugin.getConfig().getBoolean("world.autosave", true));
             world.setSpawnFlags(plugin.getConfig().getBoolean("world.spawn-monsters", false), plugin.getConfig().getBoolean("world.spawn-animals", false));
             world.setDifficulty(difficulty());
-            setWorldTime(world, plugin.getConfig().getLong("world.start-time", 6000L));
+            if (resetTime) setWorldTime(world, plugin.getConfig().getLong("world.start-time", 6000L));
         }
     }
 
@@ -2173,9 +2482,15 @@ public final class GameManager {
     }
 
     private void startPickaxeUnlockNoticeTask() {
-        cancelPickaxeUnlockNoticeTask();
-        announcedPickaxeUnlocks.clear();
-        coreExplosionUnlockAnnounced = false;
+        startPickaxeUnlockNoticeTask(false);
+    }
+
+    private void startPickaxeUnlockNoticeTask(boolean recovering) {
+        if (pickaxeUnlockNoticeTask != -1) Bukkit.getScheduler().cancelTask(pickaxeUnlockNoticeTask);
+        if (!recovering) {
+            announcedPickaxeUnlocks.clear();
+            coreExplosionUnlockAnnounced = false;
+        }
         tickPickaxeUnlockNotices();
         if (state == GameState.RUNNING) {
             pickaxeUnlockNoticeTask = Bukkit.getScheduler().scheduleSyncRepeatingTask(plugin, () -> tickPickaxeUnlockNotices(), 20L, 20L);
@@ -2341,6 +2656,22 @@ public final class GameManager {
             this.allowAnimals = world.getAllowAnimals();
             this.autoSave = world.isAutoSave();
             this.difficulty = world.getDifficulty();
+        }
+
+        private WorldSnapshot(ConfigurationSection data) {
+            pvp = data.getBoolean("pvp");
+            allowMonsters = data.getBoolean("monsters");
+            allowAnimals = data.getBoolean("animals");
+            autoSave = data.getBoolean("autosave");
+            difficulty = Difficulty.valueOf(data.getString("difficulty"));
+        }
+
+        private void save(ConfigurationSection data) {
+            data.set("pvp", pvp);
+            data.set("monsters", allowMonsters);
+            data.set("animals", allowAnimals);
+            data.set("autosave", autoSave);
+            data.set("difficulty", difficulty.name());
         }
 
         private void restore(World world) {

@@ -30,19 +30,8 @@ import java.util.List;
 final class IrisAbility extends BaseAbility {
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
-        if (useNormal(context, player)) {
-            teleportToTargetBlock(player);
+        if (teleportNormalToSight(context, player, 25)) {
             effect(player, PotionEffectType.SPEED, 7, 0);
-        }
-    }
-
-    private void teleportToTargetBlock(Player player) {
-        Block block = targetBlock(player, 25);
-        Location location = block.getLocation().add(0.5D, 1.0D, 0.5D);
-        if (location.getBlock().getType() == Material.AIR && location.clone().add(0, 1, 0).getBlock().getType() == Material.AIR) {
-            location.setPitch(player.getLocation().getPitch());
-            location.setYaw(player.getLocation().getYaw());
-            player.teleport(location);
         }
     }
 
@@ -54,6 +43,7 @@ final class IrisAbility extends BaseAbility {
             for (Player target : targets) {
                 effect(target, PotionEffectType.SPEED, 8, 0);
                 effect(target, PotionEffectType.REGENERATION, 7, 0);
+                feedback.affected(context, target, "무지개 축복 · 신속 8초 / 재생 7초", false);
             }
         }
     }

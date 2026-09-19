@@ -10,6 +10,7 @@ import kr.newgodwar.game.VoidWorldGenerator;
 import kr.newgodwar.game.WorldBackupManager;
 import kr.newgodwar.gui.AbilityGui;
 import kr.newgodwar.gui.SettingsGui;
+import kr.newgodwar.gui.SettingsPage;
 import kr.newgodwar.gui.StarterItemsGui;
 import kr.newgodwar.util.BukkitCompat;
 import kr.newgodwar.util.GameTips;
@@ -45,13 +46,7 @@ import java.io.IOException;
 
 public final class GodWarCommand implements CommandExecutor, TabCompleter {
 
-    private static final List<String> SUBCOMMANDS = Arrays.asList(
-        "help", "autoteam", "join", "changeteam", "leave", "settemple", "setspawn", "setlobby", "start", "stop", "status",
-        "tips", "ability", "abilities", "participants", "players", "rerolls", "skip", "skipseconds", "pickaxe", "blacklist", "gamerule", "target", "spectate", "unspectate", "observer",
-        "reload", "update", "gui", "settings", "test", "midjoin", "info", "yes", "no", "clear", "gamble", "gamblereward", "defaultitems", "urf", "world", "map"
-    );
     private static final String PRIMARY_COMMAND_LABEL = "gw";
-    private static final int HELP_LINES_PER_PAGE = 7;
 
     private final NewGodWarPlugin plugin;
     private final GameManager gameManager;
@@ -78,9 +73,13 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             return true;
         }
         if (command.getName().equalsIgnoreCase("a")) {
-            abilityShortcut(sender);
-            return true;
+            if (args.length == 0) {
+                abilityShortcut(sender);
+                return true;
+            }
+            args = prependSubcommand("ability", args);
         }
+        args = CommandCatalog.expandShortcut(command.getName(), args);
 
         if (args.length == 0) {
             help(sender, label, args);
@@ -88,11 +87,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         }
 
         boolean themachyLabel = isThemachyRoot(command, label);
-        if (themachyLabel && args[0].equalsIgnoreCase("help")) {
-            help(sender, label, args);
-            return true;
-        }
-        if (!themachyLabel && args[0].equalsIgnoreCase("help")) {
+        if (normalizeSubcommand(args[0]).equals("help")) {
             help(sender, label, args);
             return true;
         }
@@ -104,12 +99,28 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             join(sender, prependSubcommand("join", args));
             return true;
         }
+        CommandTree.Result route = CommandTree.resolve(args);
+        if (route.help != null) {
+            CommandHelp.group(sender, route.help, route.path, groupHelpArguments(args));
+            return true;
+        }
+        args = route.args;
+        if (route.abilityView) {
+            ability(sender, args);
+            return true;
+        }
         if (isAbilityGroupRoot(themachyLabel, args[0])) {
             abilityGroup(sender, args, label, themachyLabel);
             return true;
         }
 
         String sub = normalizeSubcommand(args[0]);
+        if (CommandCatalog.find(sub) == null) {
+            plugin.messages().send(sender, "&c알 수 없는 명령어입니다. /gw help <검색어> 로 찾아보세요.");
+            List<String> suggestions = CommandCatalog.suggest(sub, sender.hasPermission("newgodwar.admin"));
+            if (!suggestions.isEmpty()) plugin.messages().send(sender, "&7추천 명령어: &f/gw " + join(suggestions));
+            return true;
+        }
         if (requiresAdmin(sub) && !sender.hasPermission("newgodwar.admin")) {
             plugin.messages().send(sender, "&c권한이 없습니다.");
             return true;
@@ -256,6 +267,18 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             setAbility(sender, args);
             return true;
         }
+        if (sub.equals("randomability")) {
+            randomAbility(sender, args);
+            return true;
+        }
+        if (sub.equals("removeability")) {
+            removeAbility(sender, args);
+            return true;
+        }
+        if (sub.equals("resetabilities")) {
+            resetAbilities(sender, args);
+            return true;
+        }
         if (sub.equals("spectate")) {
             spectate(sender, args, true);
             return true;
@@ -283,7 +306,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             return true;
         }
         if (sub.equals("gui") || sub.equals("settings")) {
-            openSettings(sender);
+            openSettings(sender, args);
             return true;
         }
 
@@ -291,120 +314,32 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         return true;
     }
 
+    public void registerShortcuts() {
+        for (String name : CommandCatalog.shortcutCommands()) {
+            org.bukkit.command.PluginCommand shortcut = plugin.getCommand(name);
+            if (shortcut == null) throw new IllegalStateException("Missing command in plugin.yml: " + name);
+            shortcut.setExecutor(this);
+            shortcut.setTabCompleter(this);
+        }
+    }
+
     private void help(CommandSender sender, String label, String[] args) {
-        if (args.length >= 2 && isWorldHelpToken(args[1])) {
-            worldHelp(sender, PRIMARY_COMMAND_LABEL);
-            return;
-        }
-        if (args.length >= 2 && isMapHelpToken(args[1])) {
-            mapHelp(sender, PRIMARY_COMMAND_LABEL);
-            return;
-        }
-        int requestedPage = parseHelpPage(args);
-        List<HelpEntry> entries = helpEntries(sender.hasPermission("newgodwar.admin"));
-        int maxPage = Math.max(1, ((entries.size() - 1) / HELP_LINES_PER_PAGE) + 1);
-        int page = Math.max(1, Math.min(maxPage, requestedPage));
-        int start = (page - 1) * HELP_LINES_PER_PAGE;
-        int end = Math.min(entries.size(), start + HELP_LINES_PER_PAGE);
-
-        sender.sendMessage("");
-        line(sender);
-        sender.sendMessage(ChatColor.GOLD + "" + ChatColor.BOLD + " NewGodWar"
-            + ChatColor.DARK_GRAY + " | " + ChatColor.YELLOW + "신들의 전쟁 운영 메뉴"
-            + ChatColor.DARK_GRAY + " | " + ChatColor.GRAY + page + "/" + maxPage);
-        sender.sendMessage(ChatColor.GRAY + "  능력 확인: " + ChatColor.AQUA + "/a"
-            + ChatColor.DARK_GRAY + " | " + ChatColor.GRAY + "설정: " + ChatColor.AQUA + "/" + PRIMARY_COMMAND_LABEL + " gui"
-            + ChatColor.DARK_GRAY + " | " + ChatColor.GRAY + "다음: " + ChatColor.AQUA + "/" + PRIMARY_COMMAND_LABEL + " help " + nextPage(page, maxPage));
-        line(sender);
-        String section = "";
-        for (int i = start; i < end; i++) {
-            HelpEntry entry = entries.get(i);
-            if (!entry.section.equals(section)) {
-                section = entry.section;
-                section(sender, section);
-            }
-            command(sender, PRIMARY_COMMAND_LABEL, entry.usage, entry.description);
-        }
-        line(sender);
-        sender.sendMessage(ChatColor.GRAY + "  페이지 이동: " + ChatColor.AQUA + "/" + PRIMARY_COMMAND_LABEL + " help <1-" + maxPage + ">");
-        line(sender);
+        CommandHelp.show(sender, Arrays.copyOfRange(args, Math.min(1, args.length), args.length));
     }
 
-    private int parseHelpPage(String[] args) {
-        if (args.length < 2) {
-            return 1;
+    private String[] groupHelpArguments(String[] args) {
+        for (int i = 1; i < args.length; i++) {
+            if (isHelpToken(args[i])) return Arrays.copyOfRange(args, i + 1, args.length);
         }
-        try {
-            return Integer.parseInt(args[1]);
-        } catch (NumberFormatException ignored) {
-            String section = args[1].toLowerCase();
-            if (section.equals("game") || section.equals("게임")) return 1;
-            if (section.equals("team") || section.equals("팀")) return 2;
-            if (section.equals("ability") || section.equals("능력")) return 3;
-            if (section.equals("admin") || section.equals("관리")) return 4;
-            if (isWorldHelpToken(section)) return 2;
-            if (isMapHelpToken(section)) return 2;
-            return 1;
-        }
+        return new String[0];
     }
 
-    private int nextPage(int page, int maxPage) {
-        return page >= maxPage ? 1 : page + 1;
+    private boolean isHelpToken(String token) {
+        return token.equalsIgnoreCase("help") || token.equalsIgnoreCase("h") || token.equals("?") || token.equals("도움말");
     }
 
-    private List<HelpEntry> helpEntries(boolean admin) {
-        List<HelpEntry> entries = new ArrayList<HelpEntry>();
-        entries.add(new HelpEntry("게임 진행", "status", "현재 상태 보기"));
-        entries.add(new HelpEntry("게임 진행", "tips", "서버 플레이 팁 보기"));
-        entries.add(new HelpEntry("팀", "info [team]", "팀원 목록 확인"));
-        entries.add(new HelpEntry("능력", "yes|no", "능력 재추첨 확정 / 다시 뽑기"));
-        entries.add(new HelpEntry("능력", "ability [player]", "본인/같은 팀 능력 보기"));
-        entries.add(new HelpEntry("능력", "a [player]", "본인/같은 팀 능력 보기"));
-        entries.add(new HelpEntry("능력", "a catalog [검색어]", "능력 도감 검색"));
-        entries.add(new HelpEntry("능력", "target <player>", "타깃형 능력 대상 지정"));
-        entries.add(new HelpEntry("능력", "gamble", "도박 GUI 열기"));
-        if (admin) {
-            entries.add(new HelpEntry("운영 진행", "gui", "관리자 설정 GUI 열기"));
-            entries.add(new HelpEntry("운영 진행", "start", "게임 시작 및 능력 배정"));
-            entries.add(new HelpEntry("운영 진행", "test [ability]", "혼자 능력 테스트 시작"));
-            entries.add(new HelpEntry("운영 진행", "stop", "게임 종료"));
-            entries.add(new HelpEntry("운영 팀", "autoteam", "온라인 플레이어 자동 팀 배정"));
-            entries.add(new HelpEntry("운영 팀", "join <team> <player>", "플레이어 팀 수동 배정"));
-            entries.add(new HelpEntry("운영 팀", "changeteam <player> <team>", "진행 중 능력 유지 팀 변경"));
-            entries.add(new HelpEntry("운영 팀", "midjoin <player> [team|auto]", "진행 중 플레이어 중간 참여"));
-            entries.add(new HelpEntry("운영 팀", "leave <player>", "플레이어 팀 배정 해제"));
-            entries.add(new HelpEntry("운영 팀", "setspawn <team>", "현재 위치를 팀 스폰으로 등록"));
-            entries.add(new HelpEntry("운영 팀", "setlobby", "현재 위치를 접속/게임 종료 로비로 등록"));
-            entries.add(new HelpEntry("운영 팀", "settemple <team>", "바라보는 다이아 블록을 심장으로 등록"));
-            entries.add(new HelpEntry("운영 팀", "map [world|clear]", "게임에 사용할 맵 선택 / 해제"));
-            entries.add(new HelpEntry("운영 팀", "world help", "월드 명령 상세 도움말"));
-            entries.add(new HelpEntry("운영 팀", "world gui", "월드 전용 설정 GUI 열기"));
-            entries.add(new HelpEntry("운영 팀", "world <list|game|create|load|copy|tp|lobby|unload|delete|backup>", "게임 월드 지정, 생성, 복사, 이동, 백업, 삭제 관리"));
-            entries.add(new HelpEntry("운영 설정", "a set <player> <ability>", "능력 수동 지정"));
-            entries.add(new HelpEntry("운영 설정", "a <ability|number> <player>", "호환 순서로 능력 수동 지정"));
-            entries.add(new HelpEntry("운영 설정", "a list [검색어]", "플레이어별 배정 능력 확인"));
-            entries.add(new HelpEntry("운영 설정", "a random [player]", "랜덤 능력 배정"));
-            entries.add(new HelpEntry("운영 설정", "a remove <player>", "플레이어 능력 삭제"));
-            entries.add(new HelpEntry("운영 설정", "a reset [player]", "능력 초기화"));
-            entries.add(new HelpEntry("운영 설정", "a skip [초]", "능력 확정 대기 종료 및 시작 카운트다운 조정"));
-            entries.add(new HelpEntry("운영 설정", "a cutin <player> [team|auto]", "진행 중 중간 참여"));
-            entries.add(new HelpEntry("운영 설정", "participants [검색어|팀]", "참가자 팀/능력 현황 확인"));
-            entries.add(new HelpEntry("운영 설정", "skip [초]", "능력 확정 대기 종료 및 시작 카운트다운 조정"));
-            entries.add(new HelpEntry("운영 설정", "rerolls <횟수>", "능력 재추첨 가능 횟수 설정"));
-            entries.add(new HelpEntry("운영 설정", "skipseconds <초>", "관리자 skip 기본 카운트다운 설정"));
-            entries.add(new HelpEntry("운영 설정", "pickaxe <종류|all> <open|off|분>", "곡괭이 코어 파괴 시간 조정"));
-            entries.add(new HelpEntry("운영 설정", "urf <on|off|toggle|80%>", "우르프 모드 및 쿨타임 감소율 설정"));
-            entries.add(new HelpEntry("운영 설정", "gamblereward <normal> <번호|add> hand|message|<material> [값]", "도박 당첨 아이템/멘트 변경"));
-            entries.add(new HelpEntry("운영 설정", "defaultitems", "게임 시작 기본 지급 아이템 창고 열기"));
-            entries.add(new HelpEntry("운영 설정", "blacklist <list|add|remove|toggle> [ability]", "랜덤 제외 능력 관리"));
-            entries.add(new HelpEntry("운영 설정", "gamerule <apply|restore>", "게임룰 수동 적용 / 복구"));
-            entries.add(new HelpEntry("운영 설정", "update [check|download]", "최신 버전 확인 / 업데이트 jar 다운로드"));
-            entries.add(new HelpEntry("운영 설정", "reload", "config.yml 다시 불러오기"));
-            entries.add(new HelpEntry("운영 설정", "spectate|unspectate <player>", "관전 모드 전환"));
-        }
-        entries.add(new HelpEntry("단축 명령어", "/a", "내 능력 GUI 열기"));
-        entries.add(new HelpEntry("단축 명령어", "/x <player>", "타깃형 능력 대상 빠른 지정"));
-        return entries;
+    private void groupHelp(CommandSender sender, CommandTree.Group group, String path) {
+        CommandHelp.group(sender, group, path, new String[0]);
     }
 
     private void status(CommandSender sender) {
@@ -816,10 +751,6 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
     }
 
     private void ability(CommandSender sender, String[] args) {
-        if (args.length >= 2 && args[1].equalsIgnoreCase("list")) {
-            listAbilities(sender, joinArguments(args, 2));
-            return;
-        }
         Player target = args.length >= 2 ? Bukkit.getPlayer(args[1]) : asPlayer(sender);
         if (target == null) {
             plugin.messages().send(sender, "&c대상 플레이어를 찾을 수 없습니다.");
@@ -939,24 +870,28 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
     }
 
     private void clearCooldowns(CommandSender sender, String[] args) {
-        Player target = args.length >= 2 ? Bukkit.getPlayer(args[1]) : asPlayer(sender);
-        if (target == null) {
-            if (sender.hasPermission("newgodwar.admin")) {
-                abilityManager.clearAllCooldowns();
-                gameManager.refreshAllPlayerDisplays();
-                plugin.messages().send(sender, "&a모든 능력 쿨타임을 초기화했습니다.");
-                return;
-            }
-            plugin.messages().send(sender, "&c대상 플레이어를 찾을 수 없습니다.");
+        if (args.length > 2) {
+            plugin.messages().send(sender, "&e/gw ability cooldown reset [player|self|all]");
             return;
         }
-        if (!target.equals(sender) && !sender.hasPermission("newgodwar.admin")) {
-            plugin.messages().send(sender, "&c다른 플레이어의 쿨타임은 관리자만 초기화할 수 있습니다.");
+        String targetName = args.length == 2 ? args[1] : "self";
+        if (targetName.equalsIgnoreCase("all") || targetName.equals("전체") || targetName.equals("*")) {
+            abilityManager.clearAllCooldowns();
+            gameManager.refreshAllPlayerDisplays();
+            plugin.messages().send(sender, "&a모든 능력 쿨타임을 초기화했습니다.");
+            return;
+        }
+        boolean self = targetName.equalsIgnoreCase("self") || targetName.equals("본인");
+        Player target = self ? asPlayer(sender) : Bukkit.getPlayerExact(targetName);
+        if (target == null) {
+            plugin.messages().send(sender, self
+                ? "&e콘솔에서는 대상을 지정하세요: /gw ability cooldown reset <player|all>"
+                : "&c대상 플레이어를 찾을 수 없습니다: " + targetName);
             return;
         }
         abilityManager.clearCooldowns(target);
         gameManager.refreshPlayerDisplay(target);
-        plugin.messages().send(sender, "&a쿨타임을 초기화했습니다.");
+        plugin.messages().send(sender, "&a" + target.getName() + " 님의 능력 쿨타임을 초기화했습니다.");
     }
 
     private void listAssignedAbilities(CommandSender sender, String query) {
@@ -1207,31 +1142,8 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
     }
 
     private void sendAbilityGroupHelp(CommandSender sender, String usagePrefix, boolean themachyRoot, boolean admin) {
-        sender.sendMessage("");
-        line(sender);
-        sender.sendMessage(ChatColor.GOLD + "" + ChatColor.BOLD + " NewGodWar"
-            + ChatColor.DARK_GRAY + " | " + ChatColor.YELLOW + "능력 명령어"
-            + ChatColor.DARK_GRAY + " | " + ChatColor.GRAY + usagePrefix);
-        line(sender);
-        section(sender, "능력 조회");
-        command(sender, "", usagePrefix, "내 능력 확인");
-        command(sender, "", usagePrefix + " <player>", "플레이어 능력 확인");
-        command(sender, "", usagePrefix + " catalog [검색어]", "능력 도감 검색");
-        if (admin) {
-            command(sender, "", usagePrefix + " list [검색어]", "플레이어별 배정 능력 확인");
-            section(sender, "능력 운영");
-            command(sender, "", usagePrefix + " set <player> <ability>", "능력 수동 지정");
-            command(sender, "", usagePrefix + " <ability|number> <player>", "호환 순서로 능력 수동 지정");
-            command(sender, "", usagePrefix + " random [player]", "랜덤 능력 배정");
-            command(sender, "", usagePrefix + " remove <player>", "플레이어 능력 삭제");
-            command(sender, "", usagePrefix + " reset [player]", "능력 초기화");
-            command(sender, "", usagePrefix + " skip [초]", "능력 확정 대기 종료");
-            command(sender, "", usagePrefix + " cutin <player> [team|auto]", "진행 중 중간 참여");
-        }
-        if (!themachyRoot) {
-            sender.sendMessage(ChatColor.DARK_GRAY + "  /gw ability = /gw a");
-        }
-        line(sender);
+        CommandTree.Result route = CommandTree.resolve(new String[] {"ability", "help"});
+        groupHelp(sender, route.help, route.path);
     }
 
     private void blacklist(CommandSender sender, String[] args) {
@@ -1303,7 +1215,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         }
         String action = args[1].toLowerCase(Locale.ROOT);
         if (action.equals("help") || action.equals("도움말") || action.equals("?")) {
-            worldHelp(sender, label);
+            CommandHelp.show(sender, prependSubcommand("world", args, 2));
             return;
         }
         if (action.equals("gui") || action.equals("settings") || action.equals("설정")) {
@@ -1390,7 +1302,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             return;
         }
         if (args[1].equalsIgnoreCase("help") || args[1].equalsIgnoreCase("도움말") || args[1].equals("?")) {
-            mapHelp(sender, label);
+            CommandHelp.show(sender, prependSubcommand("map", args, 2));
             return;
         }
         if (args[1].equalsIgnoreCase("clear") || args[1].equalsIgnoreCase("none") || args[1].equalsIgnoreCase("해제")) {
@@ -1404,24 +1316,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         selectMap(sender, args[1], true);
     }
 
-    private void mapHelp(CommandSender sender, String label) {
-        sender.sendMessage("");
-        line(sender);
-        sender.sendMessage(ChatColor.GOLD + "" + ChatColor.BOLD + " NewGodWar 맵 선택"
-            + ChatColor.DARK_GRAY + " | " + ChatColor.YELLOW + "/" + label + " map");
-        sender.sendMessage(ChatColor.GRAY + "  현재 선택: " + selectedMapStatus());
-        line(sender);
-        command(sender, label, "map", "선택 가능한 맵 목록과 현재 선택 확인");
-        command(sender, label, "map <world>", "해당 월드를 이번 게임 맵으로 선택");
-        command(sender, label, "map clear", "맵 선택 해제");
-        command(sender, label, "world load <world>", "로드되지 않은 월드를 수동 로드");
-        line(sender);
-        sender.sendMessage(ChatColor.GRAY + "  맵별 팀 스폰/심장은 선택된 맵 기준으로 저장됩니다.");
-        sender.sendMessage(ChatColor.GRAY + "  맵을 새로 선택한 뒤 " + ChatColor.AQUA + "/" + label
-            + " setspawn" + ChatColor.GRAY + ", " + ChatColor.AQUA + "/" + label
-            + " settemple" + ChatColor.GRAY + " 을 맵마다 설정하세요.");
-        line(sender);
-    }
+
 
     private void listMaps(CommandSender sender, String label) {
         String selected = selectedMapName();
@@ -1448,61 +1343,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             + (active ? ChatColor.DARK_GRAY + " | " + ChatColor.GREEN + "선택됨" : "");
     }
 
-    private boolean isWorldHelpToken(String token) {
-        return token != null
-            && (token.equalsIgnoreCase("world")
-            || token.equalsIgnoreCase("worlds")
-            || token.equalsIgnoreCase("월드"));
-    }
 
-    private boolean isMapHelpToken(String token) {
-        return token != null
-            && (token.equalsIgnoreCase("map")
-            || token.equalsIgnoreCase("maps")
-            || token.equalsIgnoreCase("맵")
-            || token.equalsIgnoreCase("지도"));
-    }
-
-    private void worldHelp(CommandSender sender, String label) {
-        String configured = plugin.getConfig().getString("world.game-world", "");
-        boolean hasGameWorld = configured != null && configured.trim().length() > 0;
-        sender.sendMessage("");
-        line(sender);
-        sender.sendMessage(ChatColor.GOLD + "" + ChatColor.BOLD + " NewGodWar 월드 관리"
-            + ChatColor.DARK_GRAY + " | " + ChatColor.YELLOW + "/" + label + " world help");
-        sender.sendMessage(ChatColor.GRAY + "  게임 월드: "
-            + (hasGameWorld ? ChatColor.AQUA + configured : ChatColor.RED + "미지정")
-            + ChatColor.DARK_GRAY + " | " + ChatColor.GRAY + "자동 초기화 "
-            + state(plugin.getConfig().getBoolean("world.reset-game-world-on-stop", true))
-            + ChatColor.DARK_GRAY + " | " + ChatColor.GRAY + "GUI "
-            + ChatColor.AQUA + "/" + label + " gui");
-        line(sender);
-        section(sender, "확인 / 지정");
-        command(sender, label, "world list", "로드된 월드와 로드 가능한 월드 폴더 확인");
-        command(sender, label, "map <world|clear>", "게임에 사용할 맵 선택 또는 해제");
-        command(sender, label, "world game <world|clear>", "종료 시 초기화할 게임 월드 지정 또는 해제");
-        command(sender, label, "world gui", "월드 전용 설정 GUI 열기");
-        command(sender, label, "world lobby [player]", "저장된 로비 위치로 이동");
-        section(sender, "생성 / 로드");
-        command(sender, label, "world create <world> [normal|flat|void]", "새 월드 생성 후 자동 로드");
-        command(sender, label, "world load <world> [normal|flat|void]", "서버 폴더의 월드를 로드하고 자동 로드 목록에 등록");
-        command(sender, label, "world copy <sourceWorld> <newWorld> [normal|flat|void]", "기존 월드를 복사해서 새 월드로 로드");
-        section(sender, "이동 / 정리");
-        command(sender, label, "world tp <world> [player]", "플레이어를 해당 월드 스폰으로 이동");
-        command(sender, label, "world unload <world> [save]", "플레이어가 없는 월드를 언로드");
-        command(sender, label, "world delete <world> confirm", "플레이어가 없는 월드를 언로드하고 폴더 삭제");
-        section(sender, "백업");
-        command(sender, label, "world backup create [이름]", "모든 로드 월드를 백업");
-        command(sender, label, "world backup list", "저장된 월드 백업 목록 확인");
-        command(sender, label, "world backup load <백업이름> [로드월드이름]", "백업을 기존 월드가 아닌 새 월드로 복사해 로드");
-        line(sender);
-        sender.sendMessage(ChatColor.GRAY + "  설정 GUI: " + ChatColor.AQUA + "/" + label + " gui"
-            + ChatColor.DARK_GRAY + " > " + ChatColor.YELLOW + "월드"
-            + ChatColor.GRAY + " 에서 난이도, 시작 시간, 스폰, 게임 월드 초기화를 조정합니다.");
-        sender.sendMessage(ChatColor.RED + "  주의: " + ChatColor.GRAY
-            + "삭제/언로드 전 플레이어를 로비나 다른 월드로 이동시키고, 중요한 월드는 먼저 백업하세요.");
-        line(sender);
-    }
 
     private void openWorldSettings(CommandSender sender) {
         Player player = asPlayer(sender);
@@ -2087,13 +1928,31 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         plugin.messages().send(sender, enabled ? "&a옵저버 모드가 켜졌습니다." : "&a옵저버 모드가 해제되었습니다.");
     }
 
-    private void openSettings(CommandSender sender) {
-        Player player = asPlayer(sender);
-        if (player == null) {
-            plugin.messages().send(sender, "&c플레이어만 GUI를 열 수 있습니다.");
+    private void openSettings(CommandSender sender, String[] args) {
+        if (args.length >= 2 && isHelpToken(args[1])) {
+            CommandHelp.gui(sender, Arrays.copyOfRange(args, 2, args.length));
             return;
         }
-        settingsGui.open(player);
+        SettingsPage page = args.length >= 2 ? SettingsPage.parse(args[1]) : SettingsPage.MAIN;
+        if (page == null) {
+            plugin.messages().send(sender, "&c설정 화면을 찾을 수 없습니다: " + args[1] + " &7(/gw gui help)");
+            return;
+        }
+        if (args.length > 3 || (args.length == 3 && page != SettingsPage.TEAM)) {
+            plugin.messages().send(sender, "&e/gw gui <화면> &7또는 &e/gw gui team [team]");
+            return;
+        }
+        GodTeam team = args.length == 3 ? GodTeam.parse(args[2]) : null;
+        if (args.length == 3 && team == null) {
+            plugin.messages().send(sender, "&c팀을 찾을 수 없습니다: " + args[2] + " &7가능한 팀: " + teamUsage());
+            return;
+        }
+        Player player = asPlayer(sender);
+        if (player == null) {
+            plugin.messages().send(sender, "&c설정 화면은 플레이어만 열 수 있습니다. &7/gw gui help 로 화면 목록을 확인하세요.");
+            return;
+        }
+        settingsGui.openPage(player, page, team);
     }
 
     private void openDefaultItems(CommandSender sender) {
@@ -2503,15 +2362,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
     }
 
     private boolean requiresAdmin(String sub) {
-        return !sub.equals("ability")
-            && !sub.equals("abilities")
-            && !sub.equals("target")
-            && !sub.equals("status")
-            && !sub.equals("tips")
-            && !sub.equals("info")
-            && !sub.equals("yes")
-            && !sub.equals("no")
-            && !sub.equals("gamble");
+        return CommandCatalog.requiresAdmin(sub);
     }
 
     private boolean isThemachyRoot(Command command, String label) {
@@ -2522,7 +2373,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         if (sub == null) {
             return false;
         }
-        return sub.equalsIgnoreCase("ability") || sub.equalsIgnoreCase("a");
+        return normalizeSubcommand(sub).equals("ability");
     }
 
     private boolean requiresAbilityGroupAdmin(String action, boolean themachyRoot) {
@@ -2542,28 +2393,63 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
-        if (command.getName().equalsIgnoreCase("x") && args.length == 1) {
-            List<String> values = new ArrayList<String>();
-            for (Player player : BukkitCompat.onlinePlayers()) {
-                values.add(player.getName());
-            }
-            return startsWith(values, args[0]);
+        if (command.getName().equalsIgnoreCase("x")) {
+            return args.length == 1 ? startsWith(onlinePlayerNames(), args[0]) : Collections.<String>emptyList();
         }
         if (command.getName().equalsIgnoreCase("a")) {
-            return Collections.emptyList();
+            args = prependSubcommand("ability", args);
         }
+        args = CommandCatalog.expandShortcut(command.getName(), args);
+        if (args.length == 0) return Collections.emptyList();
         if (args.length == 1) {
             List<String> values = firstLevelSuggestions(sender, command, alias);
             return startsWith(values, args[0]);
+        }
+        boolean admin = sender.hasPermission("newgodwar.admin");
+        CommandTree.Result helpRoute = CommandTree.resolve(args);
+        if (helpRoute.help != null && args.length >= 3 && isHelpToken(args[args.length - 2])) {
+            return startsWith(CommandHelp.groupPages(helpRoute.help, helpRoute.path, admin), args[args.length - 1]);
+        }
+        List<String> grouped = CommandTree.complete(args, admin);
+        // Legacy ability-first assignment and /t <team> <player> keep their argument completion.
+        if (args.length == 2 && isAbilityGroupRoot(false, args[0])) {
+            if (grouped == null) grouped = new ArrayList<String>();
+            grouped.addAll(abilityTargetNames(sender));
+            if (admin) grouped.addAll(abilityIdSuggestions());
+        }
+        if (args.length == 2 && isThemachyRoot(command, alias) && GodTeam.parse(args[0]) != null) {
+            return admin ? startsWith(onlinePlayerNames(), args[1]) : Collections.<String>emptyList();
+        }
+        if (grouped != null) {
+            return startsWith(grouped, args[args.length - 1]);
+        }
+        CommandTree.Result route = CommandTree.resolve(args);
+        if (route.help != null) return Collections.emptyList();
+        args = route.args;
+        if (route.abilityView) {
+            return args.length == 2 ? startsWith(abilityTargetNames(sender), args[1]) : Collections.<String>emptyList();
         }
         String sub = normalizeSubcommand(args[0]);
         if (isAbilityGroupRoot(isThemachyRoot(command, alias), args[0])) {
             return abilityGroupTabComplete(sender, command, alias, args);
         }
-        if (args.length == 2 && sub.equals("help")) {
-            return startsWith(Arrays.asList("1", "2", "3", "game", "team", "ability", "world", "map", "월드", "맵"), args[1]);
+        if (sub.equals("help")) {
+            return startsWith(CommandHelp.complete(Arrays.copyOfRange(args, 1, args.length), admin), args[args.length - 1]);
         }
         if (requiresAdmin(sub) && !sender.hasPermission("newgodwar.admin")) {
+            return Collections.emptyList();
+        }
+        if (args.length == 3 && (sub.equals("world") || sub.equals("map")) && isHelpToken(args[1])) {
+            return startsWith(CommandHelp.complete(new String[] {sub, args[2]}, admin), args[2]);
+        }
+        if (sub.equals("settings")) {
+            if (args.length == 2) {
+                List<String> pages = new ArrayList<String>(SettingsPage.suggestions());
+                pages.add("help");
+                return startsWith(pages, args[1]);
+            }
+            if (args.length == 3 && SettingsPage.parse(args[1]) == SettingsPage.TEAM) return startsWith(teamSuggestions(false), args[2]);
+            if (args.length == 3 && isHelpToken(args[1])) return startsWith(CommandHelp.complete(new String[] {"gui", args[2]}, admin), args[2]);
             return Collections.emptyList();
         }
         if (args.length == 2 && sub.equals("update")) {
@@ -2741,7 +2627,16 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         if (args.length == 2 && sub.equals("test")) {
             return startsWith(abilityIdSuggestions(), args[1]);
         }
-        if (args.length == 2 && (sub.equals("leave") || sub.equals("clear")
+        if (args.length == 2 && sub.equals("clear")) {
+            List<String> values = new ArrayList<String>(Arrays.asList("self", "all", "본인", "전체"));
+            values.addAll(onlinePlayerNames());
+            return startsWith(values, args[1]);
+        }
+        if (args.length == 2 && sub.equals("observer")) {
+            return startsWith(Arrays.asList("list"), args[1]);
+        }
+        if (args.length == 2 && (sub.equals("leave") || sub.equals("randomability")
+            || sub.equals("removeability") || sub.equals("resetabilities")
             || sub.equals("spectate") || sub.equals("unspectate"))) {
             return startsWith(onlinePlayerNames(), args[1]);
         }
@@ -2756,16 +2651,9 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
 
     private List<String> firstLevelSuggestions(CommandSender sender, Command command, String alias) {
         boolean admin = sender.hasPermission("newgodwar.admin");
-        List<String> values = new ArrayList<String>();
-        if (admin) {
-            values.addAll(SUBCOMMANDS);
-            values.addAll(Arrays.asList("a", "black", "cutin", "d", "dia", "info", "lobby", "observer", "s", "set", "spawn", "teamchange", "switchteam", "팀변경", "곡괭이", "yes", "no", "clear", "con", "starteritems", "기본템", "월드"));
-            if (isThemachyRoot(command, alias)) {
-                values.addAll(teamSuggestions(false));
-            }
-            return values;
-        }
-        values.addAll(Arrays.asList("help", "status", "tips", "info", "yes", "no", "gamble", "ability", "a", "abilities", "target", "con"));
+        List<String> values = new ArrayList<String>(CommandTree.roots(admin));
+        values.addAll(CommandCatalog.names(admin));
+        if (admin && isThemachyRoot(command, alias)) values.addAll(teamSuggestions(false));
         return values;
     }
 
@@ -2829,9 +2717,9 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
 
     private List<String> startsWith(List<String> values, String prefix) {
         List<String> result = new ArrayList<String>();
-        String lower = prefix == null ? "" : prefix.toLowerCase();
+        String lower = prefix == null ? "" : prefix.toLowerCase(Locale.ROOT);
         for (String value : values) {
-            if (value.toLowerCase().startsWith(lower)) {
+            if (value.toLowerCase(Locale.ROOT).startsWith(lower) && !result.contains(value)) {
                 result.add(value);
             }
         }
@@ -3388,101 +3276,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
     }
 
     private String normalizeSubcommand(String sub) {
-        String lower = sub == null ? "" : sub.toLowerCase();
-        if (lower.equals("assignments") || lower.equals("assigned")) {
-            return "assignedabilities";
-        }
-        if (lower.equals("gamblerewards") || lower.equals("gamblerwd") || lower.equals("도박상품")) {
-            return "gamblereward";
-        }
-        if (lower.equals("defaultitem") || lower.equals("defaultitems")
-            || lower.equals("starteritem") || lower.equals("starteritems")
-            || lower.equals("skyblockitem") || lower.equals("skyblockitems")
-            || lower.equals("기본템") || lower.equals("시작템")) {
-            return "defaultitems";
-        }
-        if (lower.equals("participant") || lower.equals("participants")
-            || lower.equals("players") || lower.equals("users")
-            || lower.equals("list") || lower.equals("참가자") || lower.equals("유저")) {
-            return "participants";
-        }
-        if (lower.equals("reroll") || lower.equals("rerolls") || lower.equals("reassign")
-            || lower.equals("재추첨") || lower.equals("재지정")) {
-            return "rerolls";
-        }
-        if (lower.equals("skipsecond") || lower.equals("skipseconds")
-            || lower.equals("skiptime") || lower.equals("스킵초") || lower.equals("스킵시간")) {
-            return "skipseconds";
-        }
-        if (lower.equals("skip") || lower.equals("스킵")) {
-            return "skip";
-        }
-        if (lower.equals("pickaxe") || lower.equals("pickaxes") || lower.equals("곡괭이") || lower.equals("곡괭")) {
-            return "pickaxe";
-        }
-        if (lower.equals("cutin")) {
-            return "midjoin";
-        }
-        if (lower.equals("changeteam") || lower.equals("teamchange") || lower.equals("switchteam")
-            || lower.equals("팀변경") || lower.equals("팀바꾸기")) {
-            return "changeteam";
-        }
-        if (lower.equals("plist") || lower.equals("players") || lower.equals("users")
-            || lower.equals("참가자") || lower.equals("유저")) {
-            return "participants";
-        }
-        if (lower.equals("black")) {
-            return "blacklist";
-        }
-        if (lower.equals("dia") || lower.equals("d")) {
-            return "settemple";
-        }
-        if (lower.equals("spawn") || lower.equals("s")) {
-            return "setspawn";
-        }
-        if (lower.equals("lobby") || lower.equals("setlobby") || lower.equals("로비")) {
-            return "setlobby";
-        }
-        if (lower.equals("info") || lower.equals("i")) {
-            return "info";
-        }
-        if (lower.equals("tip") || lower.equals("tips") || lower.equals("팁")) {
-            return "tips";
-        }
-        if (lower.equals("update") || lower.equals("updates") || lower.equals("업데이트")) {
-            return "update";
-        }
-        if (lower.equals("world") || lower.equals("worlds") || lower.equals("월드")) {
-            return "world";
-        }
-        if (lower.equals("map") || lower.equals("maps") || lower.equals("맵") || lower.equals("지도")) {
-            return "map";
-        }
-        if (lower.equals("clear") || lower.equals("c")) {
-            return "clear";
-        }
-        if (lower.equals("con")) {
-            return "gamble";
-        }
-        if (lower.equals("set")) {
-            return "settings";
-        }
-        if (lower.equals("team") || lower.equals("t")) {
-            return "join";
-        }
-        return lower;
-    }
-
-    private static final class HelpEntry {
-        private final String section;
-        private final String usage;
-        private final String description;
-
-        private HelpEntry(String section, String usage, String description) {
-            this.section = section;
-            this.usage = usage;
-            this.description = description;
-        }
+        return CommandCatalog.normalize(sub);
     }
 
     private static final class AssignedAbilityView {

@@ -38,6 +38,7 @@ final class ChronosAbility extends BaseAbility {
         if (useNormal(context, player)) {
             for (Player target : targets) {
                 effect(target, "SLOWNESS", "SLOW", 8, 2);
+                feedback.affected(context, target, "시간 감속 · 8초", true);
             }
         }
     }
@@ -55,6 +56,7 @@ final class ChronosAbility extends BaseAbility {
                 effect(target, "MINING_FATIGUE", "SLOW_DIGGING", 7, 4);
                 effect(target, PotionEffectType.WEAKNESS, 7, 1);
                 target.setVelocity(new Vector(0, 0, 0));
+                feedback.affected(context, target, "시간 정지 · 강한 감속 / 약화 7초", true);
             }
         }
     }
@@ -63,6 +65,8 @@ final class ChronosAbility extends BaseAbility {
     public void onDamageByEntity(AbilityPlayerContext context, EntityDamageByEntityEvent event, Player opponent, boolean attacker) {
         if (!attacker && rollChance(1, 4)) {
             effect(opponent, "SLOWNESS", "SLOW", 7, 1);
+            feedback.passive(context, "시간 반격 발동");
+            feedback.affected(context, opponent, "시간 반격 · 감속 7초", true);
         }
     }
 }

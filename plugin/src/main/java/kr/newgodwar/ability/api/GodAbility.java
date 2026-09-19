@@ -24,6 +24,13 @@ import java.util.List;
 
 public interface GodAbility {
 
+    /** Persistent ability data; ongoing scheduled effects are intentionally not replayed. */
+    default void saveSession(org.bukkit.configuration.ConfigurationSection data) {
+    }
+
+    default void loadSession(org.bukkit.configuration.ConfigurationSection data) {
+    }
+
     default void onAssign(AbilityPlayerContext context) {
     }
 

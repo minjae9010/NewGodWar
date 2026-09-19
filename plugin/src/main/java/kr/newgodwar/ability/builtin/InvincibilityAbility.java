@@ -30,6 +30,12 @@ final class InvincibilityAbility extends BaseAbility {
     private boolean invincible;
 
     @Override
+    public void onCountdownTick(AbilityPlayerContext context) {
+        super.onCountdownTick(context);
+        if (invincible) feedback.pulse(context, context.player().getLocation(), 1.1D);
+    }
+
+    @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
         if (useNormal(context, player)) {
             invincible = true;
@@ -49,6 +55,7 @@ final class InvincibilityAbility extends BaseAbility {
         if (invincible) {
             event.setCancelled(true);
             context.player().setFireTicks(0);
+            feedback.passive(context, "무적 · 피해 차단");
         }
     }
 }

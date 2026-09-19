@@ -31,6 +31,7 @@ final class AsclepiusAbility extends BaseAbility {
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
         if (useNormal(context, player)) {
             heal(player);
+            feedback.affected(context, player, "완전 회복", false);
         }
     }
 
@@ -44,6 +45,7 @@ final class AsclepiusAbility extends BaseAbility {
         if (useAdvanced(context, player)) {
             for (Player target : targets) {
                 heal(target);
+                feedback.affected(context, target, "완전 회복", false);
             }
         }
     }

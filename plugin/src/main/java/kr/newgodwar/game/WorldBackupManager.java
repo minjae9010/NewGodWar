@@ -24,11 +24,13 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.UUID;
 
 public final class WorldBackupManager {
 
     private static final String BACKUP_DIRECTORY = "world-backups";
     private static final String SNAPSHOT_DIRECTORY = "world-snapshots";
+    private static final String SNAPSHOT_COMPLETE = ".ngw-snapshot-complete";
 
     private final NewGodWarPlugin plugin;
 
@@ -64,8 +66,9 @@ public final class WorldBackupManager {
 
         Bukkit.savePlayers();
         for (World world : worlds) {
-            world.save();
+            saveWorld(world);
         }
+        flushPendingWorldWrites();
 
         File worldsRoot = new File(destination, "worlds");
         if (!worldsRoot.mkdirs() && !worldsRoot.isDirectory()) {
@@ -172,7 +175,8 @@ public final class WorldBackupManager {
 
         World loadedSource = Bukkit.getWorld(sourceName);
         if (loadedSource != null) {
-            loadedSource.save();
+            saveWorld(loadedSource);
+            flushPendingWorldWrites();
         }
         copyDirectory(source.toPath(), target.toPath(), true);
         prepareCopiedWorldFolder(target);
@@ -182,7 +186,7 @@ public final class WorldBackupManager {
             deleteDirectory(target);
             throw new IOException("복사한 월드를 로드하지 못했습니다: " + targetName);
         }
-        copied.save();
+        saveWorld(copied);
         return copied;
     }
 
@@ -194,12 +198,60 @@ public final class WorldBackupManager {
         if (name == null) {
             throw new IOException("스냅샷 이름은 영문, 숫자, 점, 밑줄, 하이픈만 사용할 수 있습니다.");
         }
-        world.save();
+        saveWorld(world);
+        flushPendingWorldWrites();
         File destination = new File(snapshotRoot(), name);
         if (destination.exists()) {
-            deleteDirectory(destination);
+            throw new IOException("기존 월드 스냅샷은 덮어쓸 수 없습니다: " + name);
         }
-        copyDirectory(world.getWorldFolder().toPath(), destination.toPath(), true);
+        File staging = new File(snapshotRoot(), name + ".tmp-" + UUID.randomUUID());
+        try {
+            copyDirectory(world.getWorldFolder().toPath(), staging.toPath(), true);
+            // Newer Paper dimension folders have no level.dat of their own.
+            Files.write(new File(staging, SNAPSHOT_COMPLETE).toPath(), new byte[] { 1 });
+            Files.move(staging.toPath(), destination.toPath(), StandardCopyOption.ATOMIC_MOVE);
+        } finally {
+            if (staging.exists()) deleteDirectory(staging);
+        }
+    }
+
+    public void validateWorldSnapshot(String snapshotName) throws IOException {
+        String name = sanitizeBackupName(snapshotName);
+        if (name == null || !new File(new File(snapshotRoot(), name), SNAPSHOT_COMPLETE).isFile()) {
+            throw new IOException("유효한 월드 스냅샷을 찾을 수 없습니다: " + snapshotName);
+        }
+    }
+
+    public void deleteWorldSnapshot(String snapshotName) throws IOException {
+        String name = sanitizeBackupName(snapshotName);
+        if (name == null) throw new IOException("Invalid snapshot name");
+        File snapshot = new File(snapshotRoot(), name);
+        if (snapshot.exists()) deleteDirectory(snapshot);
+    }
+
+    /** Modern Paper's no-argument save queues metadata writes; snapshots need a completed save. */
+    public void saveWorld(World world) throws IOException {
+        try {
+            World.class.getMethod("save", boolean.class).invoke(world, true);
+        } catch (NoSuchMethodException ex) {
+            world.save();
+        } catch (ReflectiveOperationException ex) {
+            throw new IOException("Could not flush world save: " + world.getName(), ex);
+        }
+    }
+
+    /** Paper 1.12's World.save only queues region writes; copying immediately loses blocks. */
+    public void flushPendingWorldWrites() throws IOException {
+        String serverPackage = Bukkit.getServer().getClass().getPackage().getName();
+        if (!serverPackage.endsWith(".v1_12_R1")) return;
+        try {
+            Class<?> ioThread = Class.forName("net.minecraft.server.v1_12_R1.FileIOThread");
+            Object instance = ioThread.getMethod("a").invoke(null);
+            ioThread.getMethod("b").invoke(instance);
+        } catch (ReflectiveOperationException ex) {
+            if (ex.getCause() instanceof InterruptedException) Thread.currentThread().interrupt();
+            throw new IOException("Could not flush pending legacy world writes", ex);
+        }
     }
 
     public void restoreWorldSnapshot(String worldName, String snapshotName) throws IOException {
@@ -208,16 +260,41 @@ public final class WorldBackupManager {
         if (safeWorldName == null || safeSnapshotName == null) {
             throw new IOException("월드 이름 또는 스냅샷 이름이 올바르지 않습니다.");
         }
+        if (Bukkit.getWorld(safeWorldName) != null) throw new IOException("로드된 월드는 복원할 수 없습니다: " + safeWorldName);
+        validateWorldSnapshot(safeSnapshotName);
         File source = new File(snapshotRoot(), safeSnapshotName);
-        if (!source.isDirectory()) {
-            throw new IOException("월드 스냅샷을 찾을 수 없습니다: " + safeSnapshotName);
-        }
-        for (File existing : existingWorldFolders(safeWorldName)) {
-            deleteDirectory(existing);
-        }
         File target = targetWorldFolder(safeWorldName);
-        copyDirectory(source.toPath(), target.toPath(), false);
-        prepareCopiedWorldFolder(target);
+        File staging = new File(target.getParentFile(), target.getName() + ".ngw-restore-" + UUID.randomUUID());
+        java.util.Map<File, File> replaced = new java.util.LinkedHashMap<File, File>();
+        boolean installed = false;
+        try {
+            // Finish all copying before moving any existing world out of the way.
+            copyDirectory(source.toPath(), staging.toPath(), false);
+            // This is the SAME world, so preserve uid.dat and Paper identity metadata.
+            deleteIfExists(new File(staging, "session.lock"));
+            deleteIfExists(new File(staging, SNAPSHOT_COMPLETE));
+            for (File existing : existingWorldFolders(safeWorldName)) {
+                File previous = new File(existing.getParentFile(), existing.getName() + ".ngw-previous-" + UUID.randomUUID());
+                Files.move(existing.toPath(), previous.toPath(), StandardCopyOption.ATOMIC_MOVE);
+                replaced.put(existing, previous);
+            }
+            Files.move(staging.toPath(), target.toPath(), StandardCopyOption.ATOMIC_MOVE);
+            installed = true;
+        } finally {
+            if (!installed) {
+                for (java.util.Map.Entry<File, File> entry : replaced.entrySet()) {
+                    if (!entry.getKey().exists()) Files.move(entry.getValue().toPath(), entry.getKey().toPath(), StandardCopyOption.ATOMIC_MOVE);
+                }
+            }
+            if (staging.exists()) deleteDirectory(staging);
+        }
+        for (File previous : replaced.values()) {
+            try {
+                deleteDirectory(previous);
+            } catch (IOException ex) {
+                plugin.getLogger().warning("Restored world, but could not remove old world folder: " + previous);
+            }
+        }
     }
 
     public void sendBackupList(CommandSender sender) {

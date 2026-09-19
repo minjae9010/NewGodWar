@@ -48,6 +48,14 @@
 - 일부 능력은 채팅, 팻말, 활, 낚시, 피격, 이동 같은 별도 조건으로 발동됩니다.
 - `/a`로 현재 능력 설명과 쿨타임을 확인합니다.
 
+### 부두술사 팻말에 이름을 적어도 연결되지 않음
+
+- 자작나무를 포함한 팻말의 첫 줄에 접속 중인 적의 정확한 플레이어 이름을 적습니다. 이름 앞뒤 공백은 무시합니다.
+- 대상은 같은 월드에서 게임에 참가 중인 적이어야 합니다. 자신, 아군, 관전자, 탈락자는 연결할 수 없습니다.
+- `game.killtime-mode: player-combat`의 킬타임에는 연결할 수 없습니다. `/gw test`에도 킬타임 설정이 적용됩니다.
+- 실패 시 대상 이름, 킬타임, 조약돌 부족 등 이유를 안내합니다. `abilities.messages.enabled`와 `abilities.messages.failure`를 끄면 실패 안내도 표시되지 않습니다.
+- 연결 성공 후 7초 동안 팻말을 좌클릭합니다. 타격으로 팻말이 파괴되지 않으며 종료 시 자동 제거됩니다.
+
 ## 심장이 파괴되지 않음
 
 설정에 따라 정상 동작일 수 있습니다.
@@ -94,3 +102,12 @@
 ```
 
 테스트 서버 파일은 `.paper-smoke/` 아래에 생성됩니다.
+
+부두술사의 팻말 종류별 연결·타격 및 공통 타깃 검증:
+
+```powershell
+.\gradlew.bat build
+.\scripts\Test-PaperMatrix.ps1 -SkipBuild -Versions 26.1.2 -ProbeJar .\plugin\build\ability-regression\AbilityRegressionProbe.jar -ProbeSuccessMarker "ABILITY REGRESSION PASS"
+```
+
+회귀 테스트 플러그인은 임시 테스트 서버 전용입니다.

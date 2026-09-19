@@ -28,49 +28,28 @@ Wiki 배포 전 저장소 Settings > Features에서 Wiki 기능을 켜야 합니
 
 ## 명령어
 
-- `/gw help` 도움말
-- `/gw` 기본 안내 명령어. Themachy 스타일 `/t`는 호환용으로 유지됩니다.
-- `/a` 자신의 현재 능력 빠른 확인
-- `/gw a set <player> <ability>` 능력 수동 지정
-- `/gw a <ability> <player>` 호환 순서로 능력 수동 지정
-- `/gw a list [검색어]` 플레이어별 배정 능력 확인
-- `/gw a skip [초]` 능력 확정 대기 스킵
-- `/gw a random|reset|remove` 능력 배정 보조 명령
-- `/gw a cutin` 진행 중 중간 참여 보조 명령
-- `/gw yes` 또는 `/gw no` 능력 재추첨 확정 / 다시 뽑기
-- `/gw autoteam` 온라인 플레이어 자동 팀 배정
-- `/gw join <red|blue|green> <player>` 관리자가 플레이어 팀 수동 배정
-- `/gw changeteam <player> <red|blue|green>` 또는 `/gw changeteam <red|blue|green> <player>` 관리자가 진행 중인 플레이어의 능력을 유지한 채 팀 변경
-- `/gw midjoin <player> [red|blue|green|auto]` 관리자가 진행 중인 게임에 중간 참여 지정. 탈락 팀 플레이어도 살아있는 팀으로 재참여할 수 있습니다.
-- `/gw leave <player>` 관리자가 플레이어 팀 제거
-- `/gw setspawn <red|blue|green>` 현재 위치를 팀 스폰으로 등록
-- `/gw setlobby` 현재 위치를 접속/게임 종료 로비로 등록
-- `/gw settemple <red|blue|green>` 바라보는 다이아 블록을 팀 심장으로 등록
-- `/gw world list|game|create|load|copy|tp|lobby|unload|delete|backup` 게임 월드 지정, 월드 생성, 로드, 복사, 이동, 로비 이동, 언로드, 삭제, 백업 관리
-- `/gw info [team]` 팀원 목록 확인
-- `/gw observer [list]` 옵저버 전환 또는 목록 확인
-- `/gw clear [player]` 능력 쿨타임 초기화
-- `/도박` 또는 `/gw gamble` 카지노 GUI 열기
-- `/gw start` 게임 시작 및 능력 배정
-- `/gw test [ability]` 혼자 능력 테스트 시작
-- `/gw stop` 게임 종료
-- `/gw status` 현재 게임 상태
-- `/gw pickaxe [status]` 현재 진행 시간과 곡괭이 해제 상태 확인
-- `/gw pickaxe <wooden|stone|iron|diamond|all> <open|off|분>` 곡괭이 코어 파괴 허용 시간 조정. 금 곡괭이는 제외
-- `/gw update [check|download]` 최신 릴리즈 확인 및 다음 재시작에 적용할 업데이트 jar 다운로드
-- `/gw tips` 서버 플레이 팁 확인
-- `/gw gui` 또는 `/gw settings` 관리자용 상자 GUI 설정 열기
-- `/gw gamblereward <normal> <번호|add> hand|message|<material> [값]` 도박 당첨 아이템 변경/추가 및 멘트 수정
-- `/gw defaultitems` 게임 시작 기본 지급 아이템 가상 창고 열기
-- `/gw ability [player]` 본인 또는 같은 팀의 현재 능력만 확인
-- `/gw abilities` 등록된 능력 도감 GUI 열기
-- `/gw blacklist <list|add|remove|toggle> [ability]` 랜덤 배정에서 제외할 능력 관리
-- `/gw gamerule <apply|restore>` 설정된 게임룰 수동 적용 또는 복구
-- `/gw target <player>` 또는 `/x <player>` 타깃형 능력 대상 지정
-- `/gw a set <player> <ability>` 능력 수동 지정
-- `/gw spectate <player>` 관전 모드
-- `/gw unspectate <player>` 관전 해제
-- `/teamchat <message>` 팀 채팅, `/tc` 팀 채팅 모드 전환
+`/gw <분류> <동작> [대상/값]` 구조이며, 각 단계에서 Tab 자동완성과 권한에 맞는 도움말을 제공합니다. `/gw help`는 클릭 가능한 기능별 목차를, 상세 도움말은 페이지당 5개 항목과 이전·다음 이동을 제공합니다. 기존 `/gw start`, `/gw clear`, `/t` 등의 명령도 계속 사용할 수 있습니다.
+
+| 기능 | 단계형 명령 예시 | 간편 명령 |
+| --- | --- | --- |
+| 도움말 / 검색 | `/gw help`, `/gw help 쿨타임`, `/gw help 간편` | `/ghelp` |
+| 시작 / 종료 | `/gw game start`, `/gw game stop` | `/gstart`, `/gstop` |
+| 상태 / 선택 스킵 | `/gw game status`, `/gw game skip 5` | `/gstatus`, `/gskip 5` |
+| 팀 배정 | `/gw team auto`, `/gw team join red Steve` | `/gautoteam`, `/gjoin red Steve` |
+| 능력 확인 / 지정 | `/gw ability show`, `/gw ability set Steve zeus` | `/a`, `/a set Steve zeus` |
+| 능력 확정 / 다시 뽑기 | `/gw ability confirm`, `/gw ability reroll` | `/gconfirm`, `/greroll` |
+| 쿨타임 초기화 | `/gw ability cooldown reset Steve`, `/gw ability cooldown reset all` | `/gcd Steve`, `/gcd all` |
+| 설정 / 기본 아이템 | `/gw settings open`, `/gw settings items` | `/gmenu`, `/gkit` |
+| 맵 / 월드 | `/gw map`, `/gw world help` | `/gmap`, `/gworld help` |
+| 위치 등록 | `/gw setup spawn red`, `/gw setup temple red`, `/gw setup lobby` | `/gw s red`, `/gw d red`, `/gw sl` |
+
+한글 명령 예: `/gw 게임 시작`, `/gw 팀 자동`, `/gw 능력 쿨타임 초기화 전체`. 팀 채팅 `/tc`, 대상 지정 `/x`, 도박 `/도박`도 지원합니다.
+
+설정 화면은 `/gw gui game`, `/gw gui team red`, `/gw gui protection`, `/gw gui display`처럼 바로 열 수 있습니다. `/gmenu <화면>`과 `/gw settings open <화면>`도 지원하며 `/gw gui help`에서 전체 화면을 찾을 수 있습니다.
+
+쿨타임 초기화는 관리자 전용이며 본인·특정 플레이어·전체를 구분합니다. 콘솔은 `/gcd <player|all>`처럼 대상을 지정해야 합니다. 잘못된 플레이어 이름이 전체 초기화로 처리되지 않습니다.
+
+전체 동작, 별칭과 호환 명령은 [명령어 문서](docs/wiki/commands.md)를 확인하세요.
 
 ## 내장 능력
 
@@ -120,7 +99,7 @@ Wiki 배포 전 저장소 Settings > Features에서 Wiki 기능을 켜야 합니
 
 | 마인크래프트 버전 | 권장 플러그인 버전 |
 | --- | --- |
-| MC 26.1.1 ~ 26.2 | 최신 버전 |
+| MC 26.1.1 ~ 26.3 | 최신 버전 |
 | MC 1.21.x | 최신 버전 |
 | MC 1.20.x | 최신 버전 |
 | MC 1.19.x | 최신 버전 |
@@ -146,7 +125,7 @@ Windows PowerShell에서는 다음처럼 실행할 수 있습니다.
 .\gradlew.bat clean build
 ```
 
-빌드 결과물은 `build/libs/NewGodWar-0.3.1.jar`에 복사되며, 모듈 산출물은 `plugin/build/libs/NewGodWar-0.3.1.jar`에서도 확인할 수 있습니다.
+빌드 결과물은 `build/libs/NewGodWar-0.3.2.jar`에 복사되며, 모듈 산출물은 `plugin/build/libs/NewGodWar-0.3.2.jar`에서도 확인할 수 있습니다.
 
 ## 라이선스
 
@@ -160,7 +139,17 @@ Copyright (c) 2026 minjae9010
 `build`는 배포 플러그인과 별도로 `plugin/build/core-regression/CoreRegressionProbe.jar`를 생성합니다. 이 파일은 테스트 전용이며 운영 서버에 설치하면 안 됩니다.
 
 ```powershell
-./scripts/Test-PaperMatrix.ps1 -SkipBuild -LatestVersion -PluginJar build/libs/NewGodWar-0.3.1.jar -ProbeJar plugin/build/core-regression/CoreRegressionProbe.jar -WorkDir .paper-smoke/core-regression
+./scripts/Test-PaperMatrix.ps1 -SkipBuild -LatestVersion -PluginJar build/libs/NewGodWar-0.3.2.jar -ProbeJar plugin/build/core-regression/CoreRegressionProbe.jar -WorkDir .paper-smoke/core-regression
 ```
 
-격리된 Paper 서버에서 비참가자·관전자 등의 심장 파괴 차단, 정상 파괴, 중복 위치, 동시 폭발의 일괄 탈락, 종료 후 이벤트 차단, 준비 인원 재검사와 타이머 정리를 검사합니다. 릴리즈는 이 검사를 통과해야 게시됩니다.
+격리된 Paper 서버에서 비참가자·관전자 등의 심장 파괴 차단, 정상 파괴, 중복 위치, 동시 폭발의 일괄 탈락, 종료 후 이벤트 차단, 준비 인원 재검사와 타이머 정리를 검사합니다. 일반 게임과 능력 테스트에서 설치·저장한 상자가 종료 후 제거되고 다음 게임에 남지 않는지도 검사합니다. 릴리즈는 이 검사를 통과해야 게시됩니다.
+
+## 명령어 회귀 테스트
+
+`build`는 `plugin/build/command-regression/CommandRegressionProbe.jar`도 생성합니다. 테스트 전용으로 격리된 Paper 서버에서만 사용합니다.
+
+```powershell
+./scripts/Test-PaperMatrix.ps1 -SkipBuild -LatestVersion -PluginJar build/libs/NewGodWar-0.3.2.jar -ProbeJar plugin/build/command-regression/CommandRegressionProbe.jar -ProbeSuccessMarker "COMMAND REGRESSION PASS" -WorkDir .paper-smoke/command-regression
+```
+
+단계형·한글·간편 명령의 권한, 자동완성, 실제 등록 상태와 쿨타임 초기화 범위를 확인합니다. 없는 대상·콘솔 대상 생략·추가 인수·능력 조회가 전체 초기화로 이어지지 않는지도 검사합니다.

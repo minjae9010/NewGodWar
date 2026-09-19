@@ -31,6 +31,10 @@ final class BomberAbility extends BaseAbility {
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
         bombLocation = targetLocation(player, 5).add(0, 1, 0);
+        if (feedback.allow("bomb-placement", 700L)) {
+            feedback.activated(context, player, false);
+            feedback.pulse(context, bombLocation, 0.7D);
+        }
         player.sendMessage("해당 블럭에 폭탄이 설치되었습니다.");
     }
 

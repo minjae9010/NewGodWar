@@ -45,10 +45,13 @@ final class FrostAbility extends BaseAbility {
         }
         if (useAdvanced(context, player)) {
             iceSphere(context, target.getLocation(), 5, 8);
+            feedback.affected(context, target, "얼음 감옥 · 8초", true);
         }
     }
 
     private void iceSphere(final AbilityPlayerContext context, Location center, int radius, int seconds) {
+        feedback.link(context, context.player().getEyeLocation(), center.clone().add(0, 1, 0));
+        feedback.pulse(context, center, radius);
         final Map<Location, Material> oldBlocks = new LinkedHashMap<Location, Material>();
         for (Location location : sphere(center, radius)) {
             Block block = location.getBlock();

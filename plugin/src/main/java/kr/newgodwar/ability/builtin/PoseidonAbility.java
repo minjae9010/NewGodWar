@@ -71,6 +71,7 @@ final class PoseidonAbility extends BaseAbility {
             createTemporarySea(context, player.getLocation(), 2, 6, "해일 소멸", "해일 소멸");
             push(context, player, targets, 2.6D, 6L);
             for (Player target : targets) {
+                feedback.pulse(context, target.getLocation(), 2.0D);
                 damage(context, target, TIDAL_DAMAGE, player);
                 createTemporarySea(context, target.getLocation(), 1, 6, "해일 소멸", "해일 소멸");
                 effect(target, "SLOWNESS", "SLOW", 10, 2);
@@ -116,6 +117,7 @@ final class PoseidonAbility extends BaseAbility {
     }
 
     private void createTemporarySea(final AbilityPlayerContext context, Location center, int radius, int seconds, String timerName, String triggerText) {
+        feedback.pulse(context, center, radius + 0.5D);
         final Map<Location, Material> oldBlocks = new LinkedHashMap<Location, Material>();
         int bx = center.getBlockX();
         int by = center.getBlockY();

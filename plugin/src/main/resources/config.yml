@@ -1,4 +1,6 @@
 game:
+  # Built-in game checkpoint interval; also saves on game changes and server shutdown.
+  recovery-save-interval-seconds: 10
   # default: built-in core war; addon mode id: complete replacement (e.g. example_timed)
   mode: default
   min-players: 2
@@ -94,6 +96,12 @@ core:
     diamond-seconds: 1500
 
 abilities:
+  effects:
+    enabled: true
+    particles: true
+    sounds: true
+    action-bar: true
+    titles: true
   messages:
     enabled: true
     success: true

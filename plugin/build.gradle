@@ -11,7 +11,7 @@ dependencies {
     testImplementation "com.destroystokyo.paper:paper-api:1.12.2-R0.1-SNAPSHOT"
 }
 
-def testServerVersion = providers.gradleProperty("newGodWarMinecraftVersion").orElse("26.2")
+def testServerVersion = providers.gradleProperty("newGodWarMinecraftVersion").orElse("26.3")
 def testServerJavaVersion = providers.gradleProperty("newGodWarServerJavaVersion")
     .map { Integer.parseInt(it) }
     .orElse(25)
@@ -112,10 +112,43 @@ tasks.named("build") {
 
 // Isolated Paper integration fixture, never bundled in the production plugin.
 sourceSets {
+    recoveryRegression {
+        compileClasspath += sourceSets.main.output + configurations.testRuntimeClasspath
+        runtimeClasspath += output + compileClasspath
+    }
+    commandRegression {
+        compileClasspath += sourceSets.main.output + configurations.testRuntimeClasspath
+        runtimeClasspath += output + compileClasspath
+    }
+    abilityRegression {
+        compileClasspath += sourceSets.main.output + configurations.testRuntimeClasspath
+        runtimeClasspath += output + compileClasspath
+    }
     coreRegression {
         compileClasspath += sourceSets.main.output + configurations.testRuntimeClasspath
         runtimeClasspath += output + compileClasspath
     }
+}
+
+tasks.register("abilityRegressionJar", Jar) {
+    dependsOn tasks.named("abilityRegressionClasses")
+    archiveFileName = "AbilityRegressionProbe.jar"
+    destinationDirectory = layout.buildDirectory.dir("ability-regression")
+    from sourceSets.abilityRegression.output
+}
+
+tasks.register("recoveryRegressionJar", Jar) {
+    dependsOn tasks.named("recoveryRegressionClasses")
+    archiveFileName = "RecoveryRegressionProbe.jar"
+    destinationDirectory = layout.buildDirectory.dir("recovery-regression")
+    from sourceSets.recoveryRegression.output
+}
+
+tasks.register("commandRegressionJar", Jar) {
+    dependsOn tasks.named("commandRegressionClasses")
+    archiveFileName = "CommandRegressionProbe.jar"
+    destinationDirectory = layout.buildDirectory.dir("command-regression")
+    from sourceSets.commandRegression.output
 }
 
 tasks.register("coreRegressionJar", Jar) {
@@ -126,5 +159,5 @@ tasks.register("coreRegressionJar", Jar) {
 }
 
 tasks.named("build") {
-    dependsOn("coreRegressionJar")
+    dependsOn("coreRegressionJar", "abilityRegressionJar", "commandRegressionJar", "recoveryRegressionJar")
 }

@@ -34,8 +34,13 @@ final class MeguminAbility extends BaseAbility {
         }
         oneTimeUsed = true;
         final Location location = targetLocation(player, 25);
+        feedback.link(context, player.getEyeLocation(), location.clone().add(0, 1, 0));
+        feedback.pulse(context, location, 2.0D);
+        scheduleLater(context, () -> feedback.pulse(context, location, 3.0D), 20L);
+        scheduleLater(context, () -> feedback.pulse(context, location, 4.0D), 40L);
         player.sendMessage(ChatColor.RED + "익스플로전!");
         later(context, 3, "폭렬 발동", "폭렬 마법 발동", () -> {
+            feedback.pulse(context, location, 5.0D);
             createExplosion(context, player, location, 5.0F, false, true);
             player.setHealth(0.0D);
         });
