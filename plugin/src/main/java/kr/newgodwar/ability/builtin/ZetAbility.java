@@ -28,7 +28,7 @@ final class ZetAbility extends BaseAbility {
     @Override
     public void onGenericDamage(AbilityPlayerContext context, EntityDamageEvent event) {
         if (fire(event.getCause()) && !context.player().hasPotionEffect(PotionEffectType.SPEED) && RANDOM.nextBoolean()) {
-            effect(context.player(), PotionEffectType.SPEED, 8, 1);
+            effect(context, context.player(), PotionEffectType.SPEED, 8, 1);
         }
     }
 }

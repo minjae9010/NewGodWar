@@ -99,6 +99,12 @@ abilities:
   effects:
     enabled: true
     particles: true
+    # 지원되는 Display API에서는 실체 오브젝트, 미지원/예산 초과 시 파티클로 자동 전환
+    objects: true
+    # 능력 세션별 오브젝트 조각 수 (전체 서버 상한 256, 설정 상한 96)
+    object-limit: 48
+    # 투사체 궤적과 비행 잔상 (기술의 전용 연출은 particles 설정으로 제어)
+    animations: true
     sounds: true
     action-bar: true
     titles: true

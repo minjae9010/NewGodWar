@@ -39,7 +39,7 @@ final class AproditeAbility extends BaseAbility {
         }
         if (useNormal(context, player)) {
             for (Player target : targets) {
-                target.teleport(player);
+                if (target.teleport(player)) feedback.affected(context, target, "매혹 · 끌어오기", true);
             }
         }
     }

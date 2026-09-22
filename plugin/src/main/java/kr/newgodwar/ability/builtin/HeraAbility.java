@@ -50,9 +50,10 @@ final class HeraAbility extends TransientAbility {
         Player target = partner;
         endBond();
         restoreHealth(player, 4); restoreHealth(target, 4);
-        effect(player, "ABSORPTION", "ABSORPTION", 4, 0);
-        effect(target, "ABSORPTION", "ABSORPTION", 4, 0);
-        feedback.oath(context, player, target);
+        effect(context, player, "ABSORPTION", "ABSORPTION", 4, 0);
+        effect(context, target, "ABSORPTION", "ABSORPTION", 4, 0);
+        feedback.cue(context, player, kr.newgodwar.ability.feedback.EffectCue.HEAL);
+        feedback.cue(context, target, kr.newgodwar.ability.feedback.EffectCue.HEAL);
         feedback.affected(context, target, "서약 완성 · 회복과 흡수", false);
     }
 

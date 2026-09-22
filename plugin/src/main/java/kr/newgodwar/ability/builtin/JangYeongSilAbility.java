@@ -33,7 +33,7 @@ final class JangYeongSilAbility extends BaseAbility {
             return;
         }
         pickaxeParts++;
-        effect(player, "HASTE", "FAST_DIGGING", 12, 1);
+        effect(context, player, "HASTE", "FAST_DIGGING", 12, 1);
         if (pickaxeParts >= PICKAXE_PARTS_REQUIRED) {
             pickaxeParts = 0;
             give(player, Material.IRON_PICKAXE, 1);
@@ -52,9 +52,9 @@ final class JangYeongSilAbility extends BaseAbility {
             return;
         }
         for (Player target : targets) {
-            effect(target, "HASTE", "FAST_DIGGING", 12, 1);
-            effect(target, PotionEffectType.SPEED, 10, 0);
-            effect(target, "RESISTANCE", "DAMAGE_RESISTANCE", 8, 0);
+            effect(context, target, "HASTE", "FAST_DIGGING", 12, 1);
+            effect(context, target, PotionEffectType.SPEED, 10, 0);
+            effect(context, target, "RESISTANCE", "DAMAGE_RESISTANCE", 8, 0);
         }
         player.sendMessage(ChatColor.AQUA + "장영실의 장치가 아군의 전투 준비를 돕습니다.");
     }
@@ -63,7 +63,7 @@ final class JangYeongSilAbility extends BaseAbility {
     public void onDamageByEntity(AbilityPlayerContext context, org.bukkit.event.entity.EntityDamageByEntityEvent event, Player opponent, boolean attacker) {
         if (attacker && isPickaxe(context.player().getItemInHand().getType()) && oneIn(4)) {
             event.setDamage(event.getDamage() + 2.0D);
-            effect(opponent, "SLOWNESS", "SLOW", 6, 0);
+            effect(context, opponent, "SLOWNESS", "SLOW", 6, 0);
         }
     }
 }

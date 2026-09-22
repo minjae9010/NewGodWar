@@ -26,8 +26,10 @@ import java.util.List;
 )
 final class BulterAbility extends BaseAbility {
     @Override
-    public void onBlockExplode(BlockExplodeEvent event) {
+    public void onBlockExplode(AbilityPlayerContext context, BlockExplodeEvent event) {
+        if (event.isCancelled()) return;
         event.setCancelled(true);
+        feedback.impact(context, event.getBlock().getLocation());
         Bukkit.broadcastMessage(ChatColor.GREEN + "집사에 의해 폭발이 진정되었습니다.");
     }
 }

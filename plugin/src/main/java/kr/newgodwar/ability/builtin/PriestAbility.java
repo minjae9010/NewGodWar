@@ -52,27 +52,27 @@ final class PriestAbility extends BaseAbility {
     private void bless(AbilityPlayerContext context, Player player) {
         List<String> blessings = new ArrayList<String>();
         if (RANDOM.nextBoolean()) {
-            effect(player, "RESISTANCE", "DAMAGE_RESISTANCE", 30, 0);
+            effect(context, player, "RESISTANCE", "DAMAGE_RESISTANCE", 30, 0);
             blessings.add("저항");
         }
         if (RANDOM.nextBoolean()) {
-            effect(player, "STRENGTH", "INCREASE_DAMAGE", 30, 0);
+            effect(context, player, "STRENGTH", "INCREASE_DAMAGE", 30, 0);
             blessings.add("공격력 증가");
         }
         if (RANDOM.nextBoolean()) {
-            effect(player, PotionEffectType.REGENERATION, 30, 0);
+            effect(context, player, PotionEffectType.REGENERATION, 30, 0);
             blessings.add("재생");
         }
         if (RANDOM.nextBoolean()) {
-            effect(player, PotionEffectType.SPEED, 30, 0);
+            effect(context, player, PotionEffectType.SPEED, 30, 0);
             blessings.add("신속");
         }
         if (RANDOM.nextBoolean()) {
-            effect(player, "HASTE", "FAST_DIGGING", 30, 0);
+            effect(context, player, "HASTE", "FAST_DIGGING", 30, 0);
             blessings.add("성급함");
         }
         if (blessings.isEmpty()) {
-            effect(player, PotionEffectType.REGENERATION, 30, 0);
+            effect(context, player, PotionEffectType.REGENERATION, 30, 0);
             blessings.add("재생");
         }
         feedback.affected(context, player, "축복 · " + String.join(" / ", blessings) + " 30초", false);

@@ -40,6 +40,7 @@ final class CreeperAbility extends BaseAbility {
     public void onGenericDamage(AbilityPlayerContext context, EntityDamageEvent event) {
         if (event.getCause() == EntityDamageEvent.DamageCause.LIGHTNING) {
             plasma = true;
+            feedback.passive(context, "충전 완료 · 다음 자폭 강화");
         }
     }
 

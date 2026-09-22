@@ -36,7 +36,7 @@ final class CounterAbility extends BaseAbility {
 
     @Override
     public void onAssign(AbilityPlayerContext context) {
-        effect(context.player(), "HASTE", "FAST_DIGGING", 24 * 60 * 60, 0);
+        effect(context, context.player(), "HASTE", "FAST_DIGGING", 24 * 60 * 60, 0);
     }
 
     @Override
@@ -51,7 +51,7 @@ final class CounterAbility extends BaseAbility {
 
     @Override
     public void onTick(AbilityPlayerContext context) {
-        effect(context.player(), "HASTE", "FAST_DIGGING", 6, 0);
+        effect(context, context.player(), "HASTE", "FAST_DIGGING", 6, 0);
     }
 
     @Override
@@ -64,7 +64,6 @@ final class CounterAbility extends BaseAbility {
             return;
         }
         if (context.plugin().abilities().suppressAbility(target, NORMAL_SUPPRESS_SECONDS)) {
-            feedback.link(context, player.getEyeLocation(), target.getEyeLocation());
             feedback.affected(context, target, "능력 봉인 · 12초", true);
         }
         player.sendMessage(ChatColor.DARK_PURPLE + target.getName() + "의 능력을 봉인했습니다.");
@@ -85,7 +84,7 @@ final class CounterAbility extends BaseAbility {
                 feedback.affected(context, target, "능력 봉인 · 6초", true);
             }
         }
-        effect(player, "HASTE", "FAST_DIGGING", 10, 1);
+        effect(context, player, "HASTE", "FAST_DIGGING", 10, 1);
         player.sendMessage(ChatColor.DARK_PURPLE + "주변 적 " + targets.size() + "명의 능력을 봉인했습니다.");
     }
 

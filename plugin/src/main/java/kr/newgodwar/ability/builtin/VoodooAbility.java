@@ -44,6 +44,7 @@ final class VoodooAbility extends BaseAbility {
             Player target = linkedTarget == null ? null : Bukkit.getPlayer(linkedTarget);
             if (target != null && target.getWorld().equals(context.player().getWorld())
                 && canAffectEnemy(context, context.player(), target) && readyPulse(context)) {
+                feedback.impact(context, target);
                 damage(context, target, damagePerPulse(context), context.player());
             }
             return;

@@ -25,4 +25,8 @@ import java.util.List;
     grade = AbilityGrade.S
 )
 final class ScroogeAbility extends BaseAbility {
+    @Override
+    public void onAssign(AbilityPlayerContext context) {
+        feedback.passive(context, "팀 조약돌 비용 50% 절감");
+    }
 }

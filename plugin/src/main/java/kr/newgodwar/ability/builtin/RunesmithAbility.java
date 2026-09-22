@@ -92,7 +92,7 @@ final class RunesmithAbility extends TransientAbility {
             Player target = hit.getKey();
             damage(context, target, hit.getValue(), context.player());
             if (!target.isDead() && canAffectEnemy(context, context.player(), target) && chilled.contains(target)) {
-                effect(target, "SLOWNESS", "SLOW", 3, 1);
+                effect(context, target, "SLOWNESS", "SLOW", 3, 1);
             }
         }
     }

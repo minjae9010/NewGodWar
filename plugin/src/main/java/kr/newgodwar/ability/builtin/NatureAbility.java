@@ -49,8 +49,8 @@ final class NatureAbility extends BaseAbility {
             targets.add(player);
         }
         for (Player target : targets) {
-            effect(target, PotionEffectType.REGENERATION, 15, 1);
-            effect(target, "ABSORPTION", "ABSORPTION", 12, 0);
+            effect(context, target, PotionEffectType.REGENERATION, 15, 1);
+            effect(context, target, "ABSORPTION", "ABSORPTION", 12, 0);
         }
     }
 
@@ -59,8 +59,8 @@ final class NatureAbility extends BaseAbility {
         Player player = context.player();
         growNearbyPlants(player);
         if (hasPlantNearby(player.getLocation(), BUFF_RADIUS)) {
-            effect(player, PotionEffectType.REGENERATION, 6, 0);
-            effect(player, "HASTE", "FAST_DIGGING", 6, 0);
+            effect(context, player, PotionEffectType.REGENERATION, 6, 0);
+            effect(context, player, "HASTE", "FAST_DIGGING", 6, 0);
         }
     }
 
@@ -68,8 +68,8 @@ final class NatureAbility extends BaseAbility {
     public void onBlockBreak(AbilityPlayerContext context, BlockBreakEvent event) {
         if (isPlant(event.getBlock())) {
             Player player = context.player();
-            effect(player, PotionEffectType.WEAKNESS, 9, 0);
-            effect(player, "SLOWNESS", "SLOW", 9, 0);
+            effect(context, player, PotionEffectType.WEAKNESS, 9, 0);
+            effect(context, player, "SLOWNESS", "SLOW", 9, 0);
             player.sendMessage(ChatColor.DARK_GREEN + "식물을 훼손해 자연의 반발을 받았습니다.");
         }
     }

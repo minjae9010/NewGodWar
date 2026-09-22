@@ -17,11 +17,11 @@ final class CommandCatalog {
     private static final List<Entry> ENTRIES = new ArrayList<Entry>();
 
     static {
-        add("help", "general", false, "[분류|검색어|페이지] [페이지]", "분류별 도움말 / 명령어 검색", "ghelp", "h", "?", "도움말", "도움");
+        add("help", "general", false, "[분류|검색어|페이지] [페이지]", "기본 명령어 / 분류별 도움말 / 검색", "ghelp", "h", "?", "도움말", "도움");
         add("status", "game", false, "", "현재 게임 상태 확인", "gstatus", "st", "상태");
         add("tips", "general", false, "", "서버 플레이 팁 보기", null, "tip", "팁");
         add("info", "team", false, "[team]", "본인 또는 지정한 팀의 팀원 확인", null, "i", "팀정보");
-        add("ability", "ability", false, "[player]", "내 능력 / 같은 팀 능력 확인 (/a help로 관리 도움말)", null, "a", "능력");
+        add("ability", "ability", false, "[player]", "내 능력 / 같은 팀 능력 확인", null, "a", "능력");
         add("abilities", "ability", false, "[검색어]", "등록된 능력 도감 검색", null, "book", "도감");
         add("yes", "ability", false, "", "현재 능력 확정", "gconfirm", "y", "confirm", "확정");
         add("no", "ability", false, "", "내 능력 다시 뽑기", "greroll", "n", "rr", "다시뽑기");
@@ -30,6 +30,7 @@ final class CommandCatalog {
         add("start", "game", true, "", "게임 시작 및 능력 배정", "gstart", "go", "시작");
         add("stop", "game", true, "", "게임 종료", "gstop", "end", "종료");
         add("test", "game", true, "[ability]", "혼자 능력 테스트 시작", null, "테스트");
+        add("dummy", "game", true, "[spawn|remove]", "플레이어형 타깃 더미 소환 / 제거", null, "더미");
         add("skip", "game", true, "[초]", "능력 확정 대기 종료 및 시작 카운트다운 조정", "gskip", "스킵");
         add("autoteam", "team", true, "", "온라인 플레이어 자동 팀 배정", "gautoteam", "at", "자동팀");
         add("join", "team", true, "<team> <player>", "플레이어 팀 수동 배정", "gjoin", "j", "team", "t", "배정");
@@ -57,7 +58,7 @@ final class CommandCatalog {
         add("spectate", "team", true, "<player>", "플레이어 관전 모드 전환", null, "spec", "관전");
         add("unspectate", "team", true, "<player>", "플레이어 관전 해제", null, "unspec", "관전해제");
         add("observer", "team", true, "[list]", "내 옵저버 모드 전환 / 옵저버 목록 확인", null, "obs", "옵저버");
-        add("settings", "settings", true, "[화면] [team]", "설정 화면 바로 열기 (/gw gui help로 화면 목록)", "gmenu", "gui", "set", "menu", "setting", "설정", "메뉴");
+        add("settings", "settings", true, "[화면] [team]", "설정 화면 열기", "gmenu", "gui", "set", "menu", "setting", "설정", "메뉴");
         add("defaultitems", "settings", true, "[gui|list|add|set|remove|clear|reset]", "게임 시작 기본 지급 아이템 창고 / 목록 관리", "gkit", "kit", "items", "defaultitem", "starteritem", "starteritems", "skyblockitem", "skyblockitems", "기본템", "시작템");
         add("gamblereward", "settings", true, "<normal> <번호|add> <hand|message|material> [값]", "도박 보상 아이템 / 멘트 수정", null, "gamblerewards", "gamblerwd", "도박상품");
         add("reload", "admin", true, "", "설정 파일 다시 불러오기", null, "rl", "리로드");
@@ -102,6 +103,15 @@ final class CommandCatalog {
         return result;
     }
 
+    static List<String> primarySuggestions(boolean admin) {
+        List<String> values = new ArrayList<String>(Arrays.asList(
+            "help", "a", "yes", "no", "abilities", "target", "info", "status", "tips", "gamble",
+            "game", "team", "ability"));
+        if (admin) values.addAll(Arrays.asList("gui", "autoteam", "start", "skip", "stop", "participants", "dummy",
+            "settings", "map", "setup", "world", "server"));
+        return values;
+    }
+
     static Set<String> shortcutCommands() {
         return Collections.unmodifiableSet(SHORTCUTS.keySet());
     }
@@ -132,7 +142,7 @@ final class CommandCatalog {
     }
 
     static List<String> helpTopics(boolean admin) {
-        List<String> topics = new ArrayList<String>(Arrays.asList("all", "shortcuts", "general", "game", "team", "ability", "간편", "기본", "게임", "팀", "능력"));
+        List<String> topics = new ArrayList<String>(Arrays.asList("player", "all", "shortcuts", "general", "game", "team", "ability", "유저", "간편", "기본", "게임", "팀", "능력"));
         if (admin) topics.addAll(Arrays.asList("world", "map", "settings", "admin", "setup", "server", "cooldown", "월드", "맵", "설정", "관리", "위치설정", "서버", "쿨타임"));
         return topics;
     }

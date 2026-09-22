@@ -14,10 +14,13 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LightningStrike;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Projectile;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.ProjectileLaunchEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.BlockIterator;
@@ -25,9 +28,11 @@ import org.bukkit.util.Vector;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 
 public abstract class BaseAbility implements GodAbility {
     protected static final Material COBBLESTONE = Material.COBBLESTONE;
@@ -40,12 +45,14 @@ public abstract class BaseAbility implements GodAbility {
     private final Map<String, Long> timerAnnouncements = new LinkedHashMap<String, Long>();
     private final Map<Integer, Runnable> scheduledTasks = new LinkedHashMap<Integer, Runnable>();
     private final Map<Integer, Boolean> cooldownKinds = new LinkedHashMap<Integer, Boolean>();
+    private final Set<Integer> consumedSkills = new LinkedHashSet<Integer>();
     protected final AbilityFeedback feedback = new AbilityFeedback();
     protected String targetName;
 
     @Override
     public void saveSession(org.bukkit.configuration.ConfigurationSection data) {
         data.set("target", targetName);
+        data.set("consumed-skills", new ArrayList<Integer>(consumedSkills));
         long now = System.currentTimeMillis();
         for (Map.Entry<Integer, Long> entry : cooldowns.entrySet()) {
             data.set("cooldowns." + entry.getKey(), Math.max(0L, entry.getValue() - now));
@@ -55,6 +62,8 @@ public abstract class BaseAbility implements GodAbility {
     @Override
     public void loadSession(org.bukkit.configuration.ConfigurationSection data) {
         targetName = data.getString("target");
+        consumedSkills.clear();
+        consumedSkills.addAll(data.getIntegerList("consumed-skills"));
         org.bukkit.configuration.ConfigurationSection saved = data.getConfigurationSection("cooldowns");
         if (saved != null) {
             long now = System.currentTimeMillis();
@@ -101,6 +110,32 @@ public abstract class BaseAbility implements GodAbility {
     }
 
     protected void onStaffRight(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
+    }
+
+    @Override
+    public void onProjectileLaunch(AbilityPlayerContext context, ProjectileLaunchEvent event) {
+        String id = context.ability().id();
+        if (event.isCancelled() || !("archer".equals(id) || "acidarcher".equals(id) || "artemis".equals(id)
+            || "sniper".equals(id) || "snow".equals(id)) || !feedback.hasParticles(context)
+            || !feedback.allow("projectile-trail", 300L)) return;
+        final Projectile projectile = event.getEntity();
+        for (int frame = 1; frame <= 6; frame++) {
+            scheduleLater(context, () -> {
+                if (projectile.isValid() && !projectile.isDead() && !projectile.isOnGround()
+                    && context.player().isOnline() && !context.player().isDead()
+                    && context.player().getWorld().equals(projectile.getWorld()))
+                    feedback.trail(context, projectile.getLocation());
+            }, frame * 2L);
+        }
+    }
+
+    @Override
+    public void onMove(AbilityPlayerContext context, PlayerMoveEvent event) {
+        String id = context.ability().id();
+        if (("jujak".equals(id) || "hermes".equals(id)) && context.player().isFlying()
+            && !event.isCancelled() && event.getTo() != null && event.getFrom().getWorld().equals(event.getTo().getWorld())
+            && event.getFrom().distanceSquared(event.getTo()) > 0.01D && feedback.allow("flight-trail", 250L))
+            feedback.trail(context, event.getFrom().clone().add(0, 0.8D, 0));
     }
 
     protected boolean isLeft(Action action) {
@@ -225,7 +260,29 @@ public abstract class BaseAbility implements GodAbility {
         cooldownKinds.clear();
     }
 
+    @Override
+    public boolean isSkillConsumed(int slot) {
+        return consumedSkills.contains(slot);
+    }
+
+    /** Call only after a single-use skill has successfully activated. */
+    protected void consumeSkill(AbilityPlayerContext context, int slot) {
+        if (!consumedSkills.add(slot)) return;
+        String label = cooldownLabel(slot);
+        cooldowns.remove(slot);
+        cooldownAnnouncements.remove(slot);
+        cooldownKinds.remove(slot);
+        sendAbilityMessage(context, context.player(), "success", ChatColor.GRAY + label
+            + " 사용 완료 · 이 게임에서는 다시 사용할 수 없습니다.");
+        refreshDisplay(context);
+    }
+
     protected boolean readyCooldown(AbilityPlayerContext context, Player player, int slot, int cooldownSeconds) {
+        if (isSkillConsumed(slot)) {
+            sendAbilityMessage(context, player, "failure", ChatColor.RED
+                + "이미 사용한 일회용 능력입니다. 이 게임에서는 다시 사용할 수 없습니다.");
+            return false;
+        }
         Long until = cooldowns.get(slot);
         long now = System.currentTimeMillis();
         if (until != null && until > now) {
@@ -348,6 +405,18 @@ public abstract class BaseAbility implements GodAbility {
         BukkitCompat.addPotionEffect(player, type, seconds * 20, amplifier, true, false);
     }
 
+    protected void effect(AbilityPlayerContext context, Player player, PotionEffectType type, int seconds, int amplifier) {
+        org.bukkit.potion.PotionEffect previous = player.getPotionEffect(type);
+        effect(player, type, seconds, amplifier);
+        if (seconds < 3600 && (previous == null || previous.getAmplifier() != amplifier))
+            feedback.status(context, player, type.getName());
+    }
+
+    protected void effect(AbilityPlayerContext context, Player player, String modernName, String legacyName, int seconds, int amplifier) {
+        PotionEffectType type = effectType(modernName, legacyName);
+        if (type != null) effect(context, player, type, seconds, amplifier);
+    }
+
     protected void effect(Player player, String modernName, String legacyName, int seconds, int amplifier) {
         PotionEffectType type = effectType(modernName, legacyName);
         if (type != null) {
@@ -421,7 +490,9 @@ public abstract class BaseAbility implements GodAbility {
                 || !source.getWorld().equals(target.getWorld()))) {
             return;
         }
+        double health = target.getHealth();
         target.damage(amount, source);
+        if (target.getHealth() < health) feedback.impact(context, target);
     }
 
     protected void lethalDamage(AbilityPlayerContext context, Player target, Player source) {
@@ -435,8 +506,6 @@ public abstract class BaseAbility implements GodAbility {
     }
 
     protected void strikeLightning(final AbilityPlayerContext context, final Player source, final Location location) {
-        feedback.link(context, source.getEyeLocation(), location.clone().add(0, 1, 0));
-        feedback.pulse(context, location, 1.5D);
         final LightningStrike[] strike = new LightningStrike[1];
         context.plugin().abilities().runAttributedDamage(source, () -> strike[0] = location.getWorld().strikeLightning(location));
         if (strike[0] != null) {
@@ -447,6 +516,8 @@ public abstract class BaseAbility implements GodAbility {
     protected boolean setWorldTime(AbilityPlayerContext context, Player player, long time) {
         try {
             player.getWorld().setTime(time);
+            feedback.cue(context, player, time < 12000 ? kr.newgodwar.ability.feedback.EffectCue.SUN
+                : kr.newgodwar.ability.feedback.EffectCue.MOON);
             return true;
         } catch (IllegalArgumentException ex) {
             sendAbilityMessage(context, player, "failure", ChatColor.RED + "이 월드는 시간을 변경할 수 없습니다.");
@@ -488,8 +559,8 @@ public abstract class BaseAbility implements GodAbility {
             sendAbilityMessage(context, player, "failure", ChatColor.RED + "이 위치로 순간이동할 수 없습니다.");
             return false;
         }
-        feedback.link(context, origin.clone().add(0, 1, 0), destination.clone().add(0, 1, 0));
-        feedback.pulse(context, destination, 1.4D);
+        feedback.departure(context, origin);
+        feedback.cue(context, player, kr.newgodwar.ability.feedback.EffectCue.PORTAL);
         return true;
     }
 
@@ -549,7 +620,7 @@ public abstract class BaseAbility implements GodAbility {
         if (team == null) {
             return players;
         }
-        for (Player target : BukkitCompat.onlinePlayers()) {
+        for (Player target : context.targetPlayers()) {
             if (!includeSelf && target.equals(player)) {
                 continue;
             }
@@ -562,7 +633,7 @@ public abstract class BaseAbility implements GodAbility {
 
     protected List<Player> enemyPlayers(AbilityPlayerContext context, Player player) {
         List<Player> players = new ArrayList<Player>();
-        for (Player target : BukkitCompat.onlinePlayers()) {
+        for (Player target : context.targetPlayers()) {
             if (!target.equals(player) && canTarget(context, player, target, false)) {
                 players.add(target);
             }
@@ -601,7 +672,7 @@ public abstract class BaseAbility implements GodAbility {
     protected Player targetPlayerInSight(AbilityPlayerContext context, Player player, int range, boolean sameTeam) {
         Player target = null;
         double nearestDistance = Double.MAX_VALUE;
-        for (Player candidate : BukkitCompat.onlinePlayers()) {
+        for (Player candidate : context.targetPlayers()) {
             if (candidate.equals(player) || candidate.getWorld() != player.getWorld()) {
                 continue;
             }
@@ -726,6 +797,7 @@ public abstract class BaseAbility implements GodAbility {
 
     @Override
     public void onCountdownTick(AbilityPlayerContext context) {
+        feedback.flight(context);
         announceCooldowns(context);
         announceTimers(context);
     }
@@ -829,8 +901,10 @@ public abstract class BaseAbility implements GodAbility {
         }
         final Vector vector = horizontal.normalize().multiply(power * 1.4D);
         scheduleLater(context, () -> {
+            if (!player.isOnline() || !context.plugin().game().canUseAbility(player)) return;
             for (Player target : targets) {
-                target.setVelocity(vector);
+                if (target.isOnline() && !target.isDead() && player.getWorld().equals(target.getWorld())
+                    && canAffectEnemy(context, player, target)) target.setVelocity(vector);
             }
         }, delayTicks);
     }

@@ -34,27 +34,27 @@ final class WitchAbility extends BaseAbility {
             return;
         }
         if (useNormal(context, player)) {
-            curse(targets);
+            curse(context, targets);
         }
     }
 
     @Override
     public void onDamageByEntity(AbilityPlayerContext context, EntityDamageByEntityEvent event, Player opponent, boolean attacker) {
         if (!attacker && oneIn(14)) {
-            curse(opponent);
+            curse(context, opponent);
         }
     }
 
-    private void curse(List<Player> players) {
+    private void curse(AbilityPlayerContext context, List<Player> players) {
         for (Player player : players) {
-            curse(player);
+            curse(context, player);
         }
     }
 
-    private void curse(Player player) {
-        effect(player, PotionEffectType.HUNGER, 12, 0);
-        effect(player, PotionEffectType.POISON, 12, 0);
-        effect(player, "SLOWNESS", "SLOW", 12, 0);
-        effect(player, "MINING_FATIGUE", "SLOW_DIGGING", 12, 0);
+    private void curse(AbilityPlayerContext context, Player player) {
+        effect(context, player, PotionEffectType.HUNGER, 12, 0);
+        effect(context, player, PotionEffectType.POISON, 12, 0);
+        effect(context, player, "SLOWNESS", "SLOW", 12, 0);
+        effect(context, player, "MINING_FATIGUE", "SLOW_DIGGING", 12, 0);
     }
 }

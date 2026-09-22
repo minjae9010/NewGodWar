@@ -61,6 +61,7 @@ final class ApollonAbility extends BaseAbility {
                 for (Player target : enemyPlayers(context, caster)) {
                     if (target.getWorld().equals(caster.getWorld()) && target.getLocation().getBlock().getLightLevel() == 15) {
                         target.setFireTicks(100);
+                        feedback.cue(context, target, kr.newgodwar.ability.feedback.EffectCue.FIRE);
                     }
                 }
             } else {

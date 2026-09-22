@@ -3,6 +3,7 @@ package kr.newgodwar.command;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.junit.Test;
 import kr.newgodwar.gui.SettingsPage;
@@ -28,6 +29,8 @@ public final class CommandRoutingTest {
     @Test public void structuredAndKoreanRoutesReachExistingHandlers() {
         route("start", "game", "start");
         route("start", "게임", "시작");
+        route("dummy remove", "game", "dummy", "remove");
+        route("dummy 소환", "게임", "더미", "소환");
         route("join red Steve", "team", "join", "red", "Steve");
         route("join red Steve", "team", "red", "Steve");
         route("changeteam Steve blue", "팀", "변경", "Steve", "blue");
@@ -126,6 +129,17 @@ public final class CommandRoutingTest {
         assertFalse(complete(false, "").contains("gcd"));
         assertFalse(complete(false, "").contains("cd"));
         assertTrue(complete(true, "설").contains("설정"));
+        assertTrue(complete(false, "").containsAll(Arrays.asList("a", "yes", "no", "info", "status")));
+        assertFalse(complete(false, "").contains("start"));
+        assertTrue(complete(true, "").containsAll(Arrays.asList("start", "stop", "gui", "participants")));
+        assertFalse(complete(true, "").contains("rl"));
+        assertTrue(complete(true, "r").contains("rl"));
+        assertTrue(complete(false, "help", "").contains("player"));
+        assertTrue(complete(true, "").contains("dummy"));
+        assertFalse(complete(false, "").contains("dummy"));
+        assertTrue(complete(true, "game", "dummy", "").containsAll(Arrays.asList("spawn", "remove")));
+        assertTrue(complete(false, "dummy", "").isEmpty());
+        assertTrue(CommandCatalog.requiresAdmin("더미"));
     }
 
     @Test public void helpAndGroupHelpWorkForConsoleWithoutGameDependencies() {
@@ -176,19 +190,43 @@ public final class CommandRoutingTest {
         assertEquals(Arrays.asList("1", "2"), complete(true, "gui", "help", ""));
     }
 
-    @Test public void helpUsesAnOverviewAndBoundedPagesWithMultiwordSearch() {
+    @Test public void overviewShowsUsableCommandsAndSeparatesRolesAcrossEntryPoints() {
         List<String> messages = new ArrayList<String>();
-        CommandHelp.show(sender(true, messages), new String[0]);
-        assertTrue(messages.toString().contains("/gw help gui"));
-        assertFalse(messages.toString().contains("/gw game start"));
-        messages.clear();
-        CommandHelp.show(sender(false, messages), new String[0]);
-        assertFalse(messages.toString().contains("/gw help gui"));
-        messages.clear();
+        for (String[] args : Arrays.asList(new String[0], new String[] {"help"}, new String[] {"도움말"})) {
+            messages.clear();
+            executor.onCommand(sender(true, messages), root, "gw", args);
+            String adminHelp = messages.toString();
+            assertTrue(adminHelp.contains("기본 플레이"));
+            assertTrue(adminHelp.contains("관리자 전용 · 게임 운영"));
+            assertTrue(adminHelp.contains("/gw start — 게임 시작"));
+            assertTrue(adminHelp.contains("/gw gui [화면] — 설정 화면"));
+            assertTrue(adminHelp.contains("/gw yes — 현재 능력 확정"));
+            assertTrue(adminHelp.contains("/gw help player"));
+            assertTrue(adminHelp.contains("/gw dummy [spawn|remove]"));
+            assertTrue(messages.size() <= 22);
+            messages.clear();
+            executor.onCommand(sender(false, messages), root, "gw", args);
+            String playerHelp = messages.toString();
+            assertTrue(playerHelp.contains("유저 명령어"));
+            assertTrue(playerHelp.contains("/a [플레이어] — 내 능력"));
+            assertTrue(playerHelp.contains("/gw no — 내 능력 다시 뽑기"));
+            assertTrue(playerHelp.contains("/tc [메시지] — 팀 채팅"));
+            assertTrue(playerHelp.contains("/gw status — 현재 게임 상태"));
+            assertFalse(playerHelp.contains("/gw start"));
+            assertFalse(playerHelp.contains("/gw help gui"));
+            assertFalse(playerHelp.contains("관리"));
+            assertFalse(playerHelp.contains("팀 배정"));
+            assertFalse(playerHelp.contains("dummy"));
+        }
+    }
+
+    @Test public void helpUsesBoundedPagesWithMultiwordSearchAndRoleSections() {
+        List<String> messages = new ArrayList<String>();
         CommandHelp.show(sender(true, messages), new String[] {"ability", "2"});
         assertTrue(messages.toString().contains("2/3"));
         assertTrue(messages.toString().contains("ability set"));
         assertFalse(messages.toString().contains("ability show"));
+        assertTrue(messages.toString().contains("관리자 전용"));
         assertEquals(5, messages.stream().filter(line -> line.startsWith(" /gw")).count());
         messages.clear();
         CommandHelp.show(sender(true, messages), new String[] {"world", "backup"});
@@ -198,6 +236,48 @@ public final class CommandRoutingTest {
         assertTrue(messages.toString().contains("ability cooldown reset"));
         assertNull(CommandHelp.Query.parse(new String[] {"game", "0"}));
         assertNull(CommandHelp.Query.parse(new String[] {"game", "99999999999999999999"}));
+        messages.clear();
+        CommandHelp.show(sender(true, messages), new String[] {"player", "2"});
+        assertTrue(messages.toString().contains("/tc [메시지]"));
+        assertTrue(messages.toString().contains("/gw status"));
+        assertFalse(messages.toString().contains("관리자 전용"));
+        messages.clear();
+        CommandHelp.show(sender(true, messages), new String[] {"game"});
+        assertTrue(messages.toString().contains("유저 명령"));
+        assertTrue(messages.toString().contains("관리자 전용"));
+    }
+
+    @Test public void unknownCommandHintsGiveUsablePermissionFilteredSuggestions() {
+        List<String> messages = new ArrayList<String>();
+        executor.onCommand(sender(true, messages), root, "gw", new String[] {"strat"});
+        assertTrue(messages.toString().contains("/gw status — 현재 게임 상태"));
+        assertTrue(messages.toString().contains("/gw gui [화면]"));
+        messages.clear();
+        executor.onCommand(sender(true, messages), root, "gw", new String[] {"star"});
+        assertTrue(messages.toString().contains("/gw start — 게임 시작"));
+        messages.clear();
+        executor.onCommand(sender(false, messages), root, "gw", new String[] {"star"});
+        assertFalse(messages.toString().contains("/gw start"));
+        assertFalse(messages.toString().contains("/gw gui"));
+        assertTrue(messages.toString().contains("/a [플레이어]"));
+    }
+
+    @Test public void overviewComponentsSuggestActionsAndRunOnlyHelpNavigation() {
+        List<String> messages = new ArrayList<String>();
+        List<ClickEvent> clicks = new ArrayList<ClickEvent>();
+        CommandHelp.show(sender(true, messages, clicks), new String[0]);
+        assertTrue(clicks.stream().anyMatch(click -> click.getValue().equals("/gw start ")
+            && click.getAction() == ClickEvent.Action.SUGGEST_COMMAND));
+        assertTrue(clicks.stream().anyMatch(click -> click.getValue().equals("/gw help gui")
+            && click.getAction() == ClickEvent.Action.RUN_COMMAND));
+        assertFalse(messages.toString().contains("/gw help gui"));
+        for (ClickEvent click : clicks) {
+            if (click.getAction() == ClickEvent.Action.RUN_COMMAND) assertTrue(click.getValue().startsWith("/gw help "));
+        }
+        messages.clear();
+        clicks.clear();
+        CommandHelp.show(sender(false, messages, clicks), new String[0]);
+        assertFalse(clicks.stream().anyMatch(click -> click.getValue().contains("gui") || click.getValue().contains("start")));
     }
 
     @Test public void helpCommandLinksSuggestInputAndOnlyNavigationLinksRun() {
@@ -218,8 +298,20 @@ public final class CommandRoutingTest {
     }
 
     private CommandSender sender(boolean admin, List<String> messages) {
-        return (CommandSender) Proxy.newProxyInstance(CommandSender.class.getClassLoader(), new Class<?>[] {CommandSender.class}, (proxy, method, args) -> {
+        return sender(admin, messages, null);
+    }
+
+    private CommandSender sender(boolean admin, List<String> messages, List<ClickEvent> clicks) {
+        Class<?> type = clicks == null ? CommandSender.class : Player.class;
+        return (CommandSender) Proxy.newProxyInstance(type.getClassLoader(), new Class<?>[] {type}, (proxy, method, args) -> {
             if (method.getName().equals("hasPermission")) return admin;
+            if (method.getName().equals("spigot")) return new Player.Spigot() {
+                @Override public void sendMessage(BaseComponent... components) {
+                    messages.add(ChatColor.stripColor(BaseComponent.toLegacyText(components)));
+                    for (BaseComponent component : components) captureClicks(component, clicks);
+                }
+                @Override public void sendMessage(BaseComponent component) { sendMessage(new BaseComponent[] {component}); }
+            };
             if (method.getName().equals("sendMessage")) {
                 if (args[0] instanceof String[]) for (String message : (String[]) args[0]) messages.add(ChatColor.stripColor(message));
                 else messages.add(ChatColor.stripColor((String) args[0]));
@@ -227,5 +319,10 @@ public final class CommandRoutingTest {
             }
             throw new AssertionError(method.getName());
         });
+    }
+
+    private void captureClicks(BaseComponent component, List<ClickEvent> clicks) {
+        if (component.getClickEvent() != null) clicks.add(component.getClickEvent());
+        if (component.getExtra() != null) for (BaseComponent child : component.getExtra()) captureClicks(child, clicks);
     }
 }

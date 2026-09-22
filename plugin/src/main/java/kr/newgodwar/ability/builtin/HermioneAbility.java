@@ -47,8 +47,7 @@ final class HermioneAbility extends TransientAbility {
         if ("윙가르디움레비오사".equals(spell) || "wingardiumleviosa".equals(spell)) {
             Player target = targetPlayerInSight(context, player, 16, false);
             if (target == null || !useNormal(context, player)) return;
-            effect(target, "LEVITATION", "LEVITATION", 2, 0);
-            feedback.link(context, player.getEyeLocation(), target.getEyeLocation());
+            effect(context, target, "LEVITATION", "LEVITATION", 2, 0);
             feedback.spiral(context, target.getLocation(), 0.8D);
             feedback.affected(context, target, "부양 주문 · 2초", true);
         } else if ("레파로".equals(spell) || "reparo".equals(spell)) {
@@ -61,10 +60,9 @@ final class HermioneAbility extends TransientAbility {
             if (!useNormal(context, player)) return;
             for (Player ally : recipients) {
                 repairGear(ally);
-                feedback.link(context, player.getEyeLocation(), ally.getEyeLocation());
+                feedback.cue(context, ally, kr.newgodwar.ability.feedback.EffectCue.FORGE);
                 feedback.affected(context, ally, "레파로 · 장비 내구도 40 수리", false);
             }
-            feedback.sigil(context, player.getLocation(), 6);
         } else if ("피니테".equals(spell) || "finite".equals(spell)) {
             if (!useNormal(context, player)) return;
             for (Player ally : allies(context, player.getLocation(), 6)) {
@@ -72,9 +70,9 @@ final class HermioneAbility extends TransientAbility {
                 ally.removePotionEffect(PotionEffectType.WITHER);
                 ally.removePotionEffect(PotionEffectType.BLINDNESS);
                 removeEffect(ally, "SLOWNESS", "SLOW");
+                feedback.cue(context, ally, kr.newgodwar.ability.feedback.EffectCue.CLEANSE);
                 feedback.affected(context, ally, "피니테 · 상태 이상 해제", false);
             }
-            feedback.sigil(context, player.getLocation(), 6);
         } else if ("프로테고".equals(spell) || "protego".equals(spell)) {
             if (shieldActive) {
                 sendAbilityMessage(context, player, "failure", ChatColor.YELLOW + "이미 보호 마법진이 유지 중입니다.");

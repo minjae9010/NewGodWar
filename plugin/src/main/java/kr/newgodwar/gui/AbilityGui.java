@@ -266,13 +266,11 @@ public final class AbilityGui implements Listener {
             inventory.setItem(22, noAbilityItem(shown));
         } else {
             if (hasSkill(current.normalSkill())) {
-                inventory.setItem(20, skillItem("LIGHT_BLUE_STAINED_GLASS", (short) 3, ChatColor.AQUA + "일반 능력",
-                    current.normalSkill(), current.normalStoneCost(), current.normalCooldown(), cooldownLine(shown, current, 1)));
+                inventory.setItem(20, currentSkillItem(shown, current, 1));
             }
             inventory.setItem(22, currentAbilityItem(shown, current));
             if (hasSkill(current.advancedSkill())) {
-                inventory.setItem(24, skillItem("RED_STAINED_GLASS", (short) 14, ChatColor.RED + "고급 능력",
-                    current.advancedSkill(), current.advancedStoneCost(), current.advancedCooldown(), cooldownLine(shown, current, 2)));
+                inventory.setItem(24, currentSkillItem(shown, current, 2));
             }
             inventory.setItem(30, item("EMERALD", "EMERALD", 1, (short) 0,
                 ChatColor.GREEN + "" + ChatColor.BOLD + "패시브",
@@ -361,6 +359,19 @@ public final class AbilityGui implements Listener {
             ChatColor.RED + "" + ChatColor.BOLD + "능력이 없습니다",
             ChatColor.WHITE + target.getName() + ChatColor.GRAY + " 님에게 아직 능력이 배정되지 않았습니다.",
             ChatColor.DARK_GRAY + "게임 시작 후 자동으로 배정됩니다.");
+    }
+
+    private ItemStack currentSkillItem(Player player, AbilityDefinition ability, int slot) {
+        boolean normal = slot == 1;
+        boolean consumed = abilityManager.isSkillConsumed(player, slot);
+        String material = consumed ? "GRAY_STAINED_GLASS" : normal ? "LIGHT_BLUE_STAINED_GLASS" : "RED_STAINED_GLASS";
+        short damage = (short) (consumed ? 7 : normal ? 3 : 14);
+        ChatColor color = consumed ? ChatColor.GRAY : normal ? ChatColor.AQUA : ChatColor.RED;
+        String name = color + (normal ? "일반 능력" : "고급 능력") + (consumed ? " · 사용 완료" : "");
+        return skillItem(material, damage, name,
+            normal ? ability.normalSkill() : ability.advancedSkill(),
+            normal ? ability.normalStoneCost() : ability.advancedStoneCost(),
+            normal ? ability.normalCooldown() : ability.advancedCooldown(), cooldownLine(player, ability, slot));
     }
 
     private ItemStack skillItem(String material, short damage, String name, String skill, int cost, String cooldown, String state) {
@@ -485,6 +496,8 @@ public final class AbilityGui implements Listener {
     }
 
     private String cooldownLine(Player player, AbilityDefinition ability, int slot) {
+        if (abilityManager.isSkillConsumed(player, slot)) return ChatColor.RED + "사용 완료 · 재사용 불가"
+            + "\n" + ChatColor.GRAY + "이 게임에서 이미 사용한 일회용 능력입니다.";
         if (abilityManager.isAbilitySuppressed(player)) return ChatColor.RED + "현재 능력이 봉인되어 있습니다.";
         if (!plugin.game().canUseAbility(player)) return ChatColor.RED + "현재 참가 상태에서는 능력을 사용할 수 없습니다.";
         int baseCost = slot == 1 ? ability.normalStoneCost() : ability.advancedStoneCost();

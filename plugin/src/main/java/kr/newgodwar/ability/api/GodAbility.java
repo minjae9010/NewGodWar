@@ -79,6 +79,11 @@ public interface GodAbility {
     default void onBlockExplode(BlockExplodeEvent event) {
     }
 
+    /** Context-aware overload; existing addons overriding the legacy callback still work. */
+    default void onBlockExplode(AbilityPlayerContext context, BlockExplodeEvent event) {
+        onBlockExplode(event);
+    }
+
     default void onSignChange(AbilityPlayerContext context, SignChangeEvent event) {
     }
 
@@ -119,6 +124,11 @@ public interface GodAbility {
 
     default long cooldownRemainingMillis(int slot) {
         return 0L;
+    }
+
+    /** A single-use skill already spent in this session; cooldown resets do not restore it. */
+    default boolean isSkillConsumed(int slot) {
+        return false;
     }
 
     default void clearCooldowns() {

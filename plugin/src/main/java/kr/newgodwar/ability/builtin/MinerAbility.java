@@ -27,7 +27,7 @@ import java.util.List;
 final class MinerAbility extends BaseAbility {
     @Override
     public void onAssign(AbilityPlayerContext context) {
-        effect(context.player(), "HASTE", "FAST_DIGGING", 24 * 60 * 60, 0);
+        effect(context, context.player(), "HASTE", "FAST_DIGGING", 24 * 60 * 60, 0);
     }
 
     @Override
@@ -42,19 +42,21 @@ final class MinerAbility extends BaseAbility {
 
     @Override
     public void onTick(AbilityPlayerContext context) {
-        effect(context.player(), "HASTE", "FAST_DIGGING", 6, 0);
+        effect(context, context.player(), "HASTE", "FAST_DIGGING", 6, 0);
     }
 
     @Override
     public void onDamageByEntity(AbilityPlayerContext context, EntityDamageByEntityEvent event, Player opponent, boolean attacker) {
         if (attacker && isPickaxe(context.player().getItemInHand().getType())) {
             event.setDamage(4.0D);
+            feedback.impact(context, opponent);
         }
     }
 
     @Override
     public void onBlockBreak(AbilityPlayerContext context, BlockBreakEvent event) {
         if (event.getBlock().getType() == Material.COBBLESTONE && oneIn(33)) {
+            feedback.impact(context, event.getBlock().getLocation().add(0.5D, 0, 0.5D));
             event.getBlock().getWorld().dropItemNaturally(event.getBlock().getLocation(), new ItemStack(Material.COBBLESTONE, 9));
         }
     }

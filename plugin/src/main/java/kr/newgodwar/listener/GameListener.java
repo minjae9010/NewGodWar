@@ -489,6 +489,7 @@ public final class GameListener implements Listener {
 
     @EventHandler
     public void onDeath(PlayerDeathEvent event) {
+        if (plugin.trainingDummies() != null && plugin.trainingDummies().isDummy(event.getEntity())) return;
         if (gameManager.hasCustomMode()) return;
         if (gameManager.isRunning()) {
             forceInventoryDrop(event);

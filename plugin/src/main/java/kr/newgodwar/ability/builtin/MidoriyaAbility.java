@@ -32,6 +32,7 @@ final class MidoriyaAbility extends BaseAbility {
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
         if (hasNormalCost(context, player) && readyNormal(context, player, 1)) {
             ready = true;
+            feedback.cue(context, player, kr.newgodwar.ability.feedback.EffectCue.CHARGE);
             player.sendMessage(ChatColor.YELLOW + "원" + ChatColor.GREEN + " 포 " + ChatColor.AQUA + "올" + ChatColor.WHITE + "이 준비되었습니다!");
         }
     }
@@ -42,10 +43,10 @@ final class MidoriyaAbility extends BaseAbility {
         if (attacker && ready && player.getItemInHand().getType() == Material.AIR && useNormal(context, player)) {
             ready = false;
             event.setDamage(200.0D);
-            effect(player, "NAUSEA", "CONFUSION", 12, 0);
-            effect(player, PotionEffectType.HUNGER, 12, 0);
-            effect(player, PotionEffectType.WEAKNESS, 12, 0);
-            effect(player, "SLOWNESS", "SLOW", 12, 0);
+            effect(context, player, "NAUSEA", "CONFUSION", 12, 0);
+            effect(context, player, PotionEffectType.HUNGER, 12, 0);
+            effect(context, player, PotionEffectType.WEAKNESS, 12, 0);
+            effect(context, player, "SLOWNESS", "SLOW", 12, 0);
         }
     }
 }

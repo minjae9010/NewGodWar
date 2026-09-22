@@ -41,9 +41,9 @@ final class TeleporterAbility extends BaseAbility {
         if (useAdvanced(context, player)) {
             Location first = player.getLocation();
             Location second = target.getLocation();
-            if (player.teleport(second)) feedback.pulse(context, second, 1.5D);
+            if (player.teleport(second)) feedback.cue(context, player, kr.newgodwar.ability.feedback.EffectCue.PORTAL);
             if (target.teleport(first)) {
-                feedback.pulse(context, first, 1.5D);
+                feedback.cue(context, target, kr.newgodwar.ability.feedback.EffectCue.PORTAL);
                 feedback.affected(context, target, "아군과 위치 교환", false);
             }
         }

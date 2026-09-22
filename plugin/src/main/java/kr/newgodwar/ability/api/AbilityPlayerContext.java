@@ -2,6 +2,9 @@ package kr.newgodwar.ability.api;
 
 import kr.newgodwar.NewGodWarPlugin;
 import org.bukkit.entity.Player;
+import kr.newgodwar.util.BukkitCompat;
+import java.util.ArrayList;
+import java.util.List;
 
 public final class AbilityPlayerContext {
 
@@ -29,5 +32,11 @@ public final class AbilityPlayerContext {
 
     public String configPath(String key) {
         return "abilities." + ability.id() + "." + key;
+    }
+
+    public List<Player> targetPlayers() {
+        List<Player> players = new ArrayList<Player>(BukkitCompat.onlinePlayers());
+        if (plugin.trainingDummies() != null) players.addAll(plugin.trainingDummies().players());
+        return players;
     }
 }

@@ -27,6 +27,19 @@ import java.util.List;
 )
 final class SniperAbility extends BaseAbility {
     private boolean ready;
+    private boolean preparing;
+
+    @Override
+    public void cancelScheduledTasks() {
+        super.cancelScheduledTasks();
+        ready = false;
+        preparing = false;
+    }
+
+    @Override
+    public void onDeath(AbilityPlayerContext context, PlayerDeathEvent event) {
+        if (event.getEntity().equals(context.player())) cancelScheduledTasks();
+    }
 
     @Override
     public void onPrepare(AbilityPlayerContext context) {
@@ -42,12 +55,15 @@ final class SniperAbility extends BaseAbility {
     @Override
     public void onInteract(final AbilityPlayerContext context, PlayerInteractEvent event) {
         final Player player = context.player();
-        if (isLeft(event.getAction()) && holding(player, Material.BOW) && player.isSneaking() && !ready) {
-            ready = true;
+        if (isLeft(event.getAction()) && holding(player, Material.BOW) && player.isSneaking() && !ready && !preparing) {
+            preparing = true;
             feedback.activated(context, player, false);
             player.sendMessage("스나이핑 모드를 준비합니다.");
             later(context, 4, "저격 준비", "저격 모드 활성화", () -> {
-                if (ready) {
+                if (preparing) {
+                    preparing = false;
+                    ready = true;
+                    feedback.passive(context, "저격 준비 완료");
                     player.sendMessage("스나이핑 모드가 활성화되었습니다.");
                 }
             });
@@ -56,9 +72,16 @@ final class SniperAbility extends BaseAbility {
 
     @Override
     public void onProjectileLaunch(AbilityPlayerContext context, ProjectileLaunchEvent event) {
+        if (event.isCancelled()) return;
+        super.onProjectileLaunch(context, event);
         if (ready && event.getEntity() instanceof Arrow && useAdvanced(context, context.player(), 0)) {
             ready = false;
             event.getEntity().setVelocity(context.player().getEyeLocation().getDirection().multiply(20));
         }
+    }
+
+    @Override
+    public void onProjectileHit(AbilityPlayerContext context, EntityDamageByEntityEvent event, Player victim) {
+        if (!event.isCancelled()) feedback.impact(context, victim);
     }
 }

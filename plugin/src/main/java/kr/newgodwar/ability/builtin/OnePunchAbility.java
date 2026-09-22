@@ -40,16 +40,16 @@ final class OnePunchAbility extends BaseAbility {
     @Override
     protected void onStaffRight(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
         if (useAdvanced(context, player)) {
-            dash(player);
-            effect(player, "STRENGTH", "INCREASE_DAMAGE", 8, 0);
+            dash(context, player);
+            effect(context, player, "STRENGTH", "INCREASE_DAMAGE", 8, 0);
         }
     }
 
-    private void dash(Player player) {
+    private void dash(AbilityPlayerContext context, Player player) {
         Vector vector = player.getEyeLocation().getDirection();
         vector.setY(0.5D);
         player.setVelocity(vector);
-        player.getWorld().playEffect(player.getLocation(), Effect.ENDER_SIGNAL, 1);
+        feedback.cue(context, player, kr.newgodwar.ability.feedback.EffectCue.WIND);
     }
 
     @Override
@@ -63,7 +63,7 @@ final class OnePunchAbility extends BaseAbility {
             punchReady = false;
             event.setDamage(event.getDamage() + 14.0D);
             opponent.setVelocity(vector.normalize().multiply(1.9D));
-            effect(player, PotionEffectType.WEAKNESS, 8, 0);
+            effect(context, player, PotionEffectType.WEAKNESS, 8, 0);
             player.sendMessage(ChatColor.RED + "원펀치!");
             feedback.passive(context, "원펀치 적중!");
             feedback.affected(context, opponent, "원펀치 · 강화 타격 / 밀쳐내기", true);

@@ -464,6 +464,7 @@ public final class GameManager {
         if (isRecovering() || shuttingDown || player == null || isObserver(player)) {
             return false;
         }
+        if (plugin.trainingDummies() != null && plugin.trainingDummies().isDummy(player)) return !player.isDead();
         GodTeam team = teamOf(player);
         return team != null && !eliminatedTeams.contains(team)
             && player.getGameMode() != org.bukkit.GameMode.SPECTATOR;
@@ -624,6 +625,10 @@ public final class GameManager {
     }
 
     public boolean canDamage(Player attacker, Player victim) {
+        if (plugin.trainingDummies() != null) {
+            if (plugin.trainingDummies().isDummy(attacker)) return false;
+            if (plugin.trainingDummies().isDummy(victim)) return true;
+        }
         if (activeMode != null) return activeMode.canDamage(attacker, victim);
         if (isPlayerCombatProtectedByKilltime()) {
             return false;
@@ -906,6 +911,7 @@ public final class GameManager {
             throw new IllegalStateException("종료 상태를 저장하지 못했습니다. 서버 로그와 디스크 공간을 확인해주세요.");
         }
         stopInProgress = true;
+        if (plugin.trainingDummies() != null) plugin.trainingDummies().clear();
         runningStartedAtMillis = 0L;
         killtimeEndAnnounced = false;
         if (readyTask != -1) {
@@ -1744,6 +1750,9 @@ public final class GameManager {
     }
 
     private String cooldownStatus(Player player, AbilityDefinition ability, int slot) {
+        if (abilityManager.isSkillConsumed(player, slot)) return ChatColor.GRAY + "사용 완료 · 재사용 불가";
+        if (abilityManager.isAbilitySuppressed(player)) return ChatColor.RED + "봉인됨";
+        if (!canUseAbility(player)) return ChatColor.GRAY + "사용 불가";
         long millis = abilityManager.cooldownRemainingMillis(player, slot);
         if (millis <= 0L && ability != null) {
             long shared = abilityManager.cooldownRemainingMillis(player, 0);

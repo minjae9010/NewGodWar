@@ -31,7 +31,7 @@ final class IrisAbility extends BaseAbility {
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
         if (teleportNormalToSight(context, player, 25)) {
-            effect(player, PotionEffectType.SPEED, 7, 0);
+            effect(context, player, PotionEffectType.SPEED, 7, 0);
         }
     }
 
@@ -41,8 +41,8 @@ final class IrisAbility extends BaseAbility {
         targets.add(player);
         if (useAdvanced(context, player)) {
             for (Player target : targets) {
-                effect(target, PotionEffectType.SPEED, 8, 0);
-                effect(target, PotionEffectType.REGENERATION, 7, 0);
+                effect(context, target, PotionEffectType.SPEED, 8, 0);
+                effect(context, target, PotionEffectType.REGENERATION, 7, 0);
                 feedback.affected(context, target, "무지개 축복 · 신속 8초 / 재생 7초", false);
             }
         }

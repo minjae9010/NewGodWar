@@ -264,6 +264,11 @@ public final class AbilityManager {
         return session == null ? 0L : session.ability().cooldownRemainingMillis(slot);
     }
 
+    public boolean isSkillConsumed(Player player, int slot) {
+        AbilitySession session = session(player);
+        return session != null && session.ability().isSkillConsumed(slot);
+    }
+
     public List<String> activeTimerLines(Player player) {
         AbilitySession session = activeSession(player);
         return session == null ? Collections.<String>emptyList() : session.ability().activeTimerLines();
@@ -638,7 +643,7 @@ public final class AbilityManager {
             }
             AbilitySession session = activeSession(player);
             if (session != null) {
-                session.ability().onBlockExplode(event);
+                session.ability().onBlockExplode(playerContext(player, session.definition()), event);
             }
         }
     }

@@ -33,6 +33,7 @@ final class GirlAbility extends BaseAbility {
                 target.teleport(player);
                 target.setFoodLevel(0);
                 effectTicks(target, "SLOWNESS", "SLOW", 60, 200);
+                feedback.affected(context, target, "허기 소진 · 속박", true);
             }
         }
     }

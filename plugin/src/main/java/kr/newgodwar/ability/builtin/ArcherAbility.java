@@ -44,5 +44,6 @@ final class ArcherAbility extends BaseAbility {
     @Override
     public void onProjectileHit(AbilityPlayerContext context, EntityDamageByEntityEvent event, Player victim) {
         event.setDamage(event.getDamage() * 1.3D);
+        feedback.impact(context, victim);
     }
 }

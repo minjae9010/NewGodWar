@@ -38,8 +38,8 @@ final class AeolusAbility extends BaseAbility {
         List<Player> targets = nearbyPlayers(context, player, 20, true);
         targets.add(player);
         for (Player target : targets) {
-            effect(target, PotionEffectType.SPEED, 15, 0);
-            effect(target, PotionEffectType.REGENERATION, 15, 0);
+            effect(context, target, PotionEffectType.SPEED, 15, 0);
+            effect(context, target, PotionEffectType.REGENERATION, 15, 0);
             feedback.affected(context, target, "순풍 · 신속 / 재생 15초", false);
         }
     }
@@ -52,11 +52,10 @@ final class AeolusAbility extends BaseAbility {
             return;
         }
         if (useAdvanced(context, player)) {
-            feedback.pulse(context, player.getLocation(), 5.0D);
             push(context, player, targets, 2.4D, 20L);
             for (Player target : targets) {
-                effect(target, PotionEffectType.WEAKNESS, 8, 0);
-                effect(target, "SLOWNESS", "SLOW", 8, 0);
+                effect(context, target, PotionEffectType.WEAKNESS, 8, 0);
+                effect(context, target, "SLOWNESS", "SLOW", 8, 0);
             }
         }
     }

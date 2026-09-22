@@ -39,7 +39,7 @@ final class HephaestusAbility extends TransientAbility {
         int strength = heat;
         heat = 0;
         cancelScheduledTask(heatTask); heatTask = -1;
-        effect(player, "ABSORPTION", "ABSORPTION", 6, strength - 1);
+        effect(context, player, "ABSORPTION", "ABSORPTION", 6, strength - 1);
         feedback.forge(context, player.getLocation(), true);
     }
 
@@ -50,7 +50,7 @@ final class HephaestusAbility extends TransientAbility {
         if (!isSword(context.player().getItemInHand().getType()) && !weapon.endsWith("_AXE")) return;
         heat--;
         event.setDamage(event.getDamage() + 2);
-        feedback.forge(context, opponent.getLocation(), false);
+        feedback.cue(context, opponent, kr.newgodwar.ability.feedback.EffectCue.FIRE);
         if (heat == 0) { cancelScheduledTask(heatTask); heatTask = -1; }
     }
 

@@ -46,7 +46,7 @@ final class ArtemisAbility extends TransientAbility {
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
         if (!useNormal(context, player)) return;
         give(player, Material.ARROW, 6);
-        effect(player, "SPEED", "SPEED", 5, 0);
+        effect(context, player, "SPEED", "SPEED", 5, 0);
     }
 
     @Override
@@ -54,7 +54,6 @@ final class ArtemisAbility extends TransientAbility {
         Player target = targetPlayerInSight(context, player, 30, false);
         if (target == null || !useAdvanced(context, player)) return;
         mark(context, target, 2);
-        feedback.link(context, player.getEyeLocation(), target.getEyeLocation());
         feedback.affected(context, target, "사냥 표식 2/3 · 화살을 피하세요!", true);
     }
 
@@ -66,7 +65,7 @@ final class ArtemisAbility extends TransientAbility {
         if (next >= 3) {
             clearTransientState();
             event.setDamage(event.getDamage() + 4);
-            effect(victim, "SLOWNESS", "SLOW", 3, 1);
+            effect(context, victim, "SLOWNESS", "SLOW", 3, 1);
             feedback.huntMark(context, victim, 3);
             feedback.affected(context, victim, "사냥 완성 · 추가 피해 / 감속 3초", true);
         } else {

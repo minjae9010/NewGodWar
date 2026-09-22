@@ -29,6 +29,8 @@ public final class SampleAbility implements GodAbility {
 
 `@AbilityInfo`는 도감에 표시할 설명과 기본 수치를 정의합니다. 일반/고급 설명을 적는 것만으로 스킬이 구현되지는 않습니다. 블레이즈 막대 좌클릭/우클릭 능력은 공개된 `kr.newgodwar.ability.builtin.BaseAbility`를 상속하고 `onStaffLeft`/`onStaffRight`를 구현할 수 있습니다. `useNormal`, `useAdvanced`는 비용과 쿨타임을 처리하고, `scheduleLater`, `scheduleRepeating`은 능력 해제 시 취소되는 작업을 등록합니다.
 
+일회용 능력은 발동에 성공한 뒤 `consumeSkill(context, 1)`(일반) 또는 `consumeSkill(context, 2)`(고급)를 호출하세요. 이후 공통 사용 검사에서 재사용을 차단하고, 정보창은 회색 아이콘과 `사용 완료 · 재사용 불가`, 스코어보드는 같은 상태 문구를 표시합니다. 소모 상태는 세션에 저장되며 쿨타임 초기화로 해제되지 않습니다. `saveSession`/`loadSession`을 재정의한다면 `super`도 호출하세요. `GodAbility`를 직접 구현하는 애드온은 `isSkillConsumed(int slot)`과 재사용 차단·저장/복구를 함께 구현해야 합니다.
+
 ## 외부 애드온 등록
 
 `plugin.yml`에 `depend: [NewGodWar]`를 넣고 애드온의 `onEnable()`에서 등록합니다.

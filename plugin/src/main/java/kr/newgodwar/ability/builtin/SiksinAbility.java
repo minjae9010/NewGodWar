@@ -59,16 +59,16 @@ final class SiksinAbility extends BaseAbility {
             if (!owner.equals(eater) && !sameTeam(context, owner, eater)) {
                 return;
             }
-            applyBuff(eater, data.buff);
+            applyBuff(context, eater, data.buff);
             if (!owner.equals(eater)) {
-                applyBuff(owner, data.buff);
+                applyBuff(context, owner, data.buff);
                 owner.sendMessage(ChatColor.GOLD + eater.getName() + " 님이 식신의 음식을 먹어 같은 버프를 얻었습니다.");
             }
             return;
         }
 
         if (owner.equals(eater)) {
-            applyBuff(owner, data.buff);
+            applyBuff(context, owner, data.buff);
         }
     }
 
@@ -149,15 +149,15 @@ final class SiksinAbility extends BaseAbility {
         return buffs[RANDOM.nextInt(buffs.length)];
     }
 
-    private void applyBuff(Player player, BuffKind buff) {
+    private void applyBuff(AbilityPlayerContext context, Player player, BuffKind buff) {
         if ("STRENGTH".equals(buff.id)) {
-            effect(player, "STRENGTH", "INCREASE_DAMAGE", buff.seconds, buff.amplifier);
+            effect(context, player, "STRENGTH", "INCREASE_DAMAGE", buff.seconds, buff.amplifier);
         } else if ("RESISTANCE".equals(buff.id)) {
-            effect(player, "RESISTANCE", "DAMAGE_RESISTANCE", buff.seconds, buff.amplifier);
+            effect(context, player, "RESISTANCE", "DAMAGE_RESISTANCE", buff.seconds, buff.amplifier);
         } else if ("HASTE".equals(buff.id)) {
-            effect(player, "HASTE", "FAST_DIGGING", buff.seconds, buff.amplifier);
+            effect(context, player, "HASTE", "FAST_DIGGING", buff.seconds, buff.amplifier);
         } else {
-            effect(player, buff.type, buff.seconds, buff.amplifier);
+            effect(context, player, buff.type, buff.seconds, buff.amplifier);
         }
     }
 

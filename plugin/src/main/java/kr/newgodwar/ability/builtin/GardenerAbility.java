@@ -33,6 +33,7 @@ final class GardenerAbility extends BaseAbility {
     @Override
     public void onBlockBreak(AbilityPlayerContext context, BlockBreakEvent event) {
         if (isLog(event.getBlock())) {
+            feedback.impact(context, event.getBlock().getLocation().add(0.5D, 0, 0.5D));
             event.getBlock().getWorld().dropItemNaturally(event.getBlock().getLocation(), new ItemStack(material("POPPY", "RED_ROSE"), 1));
             event.getBlock().getWorld().dropItemNaturally(event.getBlock().getLocation(), new ItemStack(Material.COBBLESTONE, 1));
         }

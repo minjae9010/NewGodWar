@@ -10,3 +10,5 @@
 - [능력 구현](https://github.com/minjae9010/NewGodWar/wiki/ability-development)
 - [애드온 설치·개발](https://github.com/minjae9010/NewGodWar/wiki/addon-development)
 - [문제 해결](https://github.com/minjae9010/NewGodWar/wiki/troubleshooting)
+
+- [능력 이펙트 안내](https://github.com/minjae9010/NewGodWar/wiki/ability-effects)

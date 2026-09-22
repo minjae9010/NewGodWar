@@ -42,7 +42,7 @@ public final class CommandRegressionProbe extends JavaPlugin {
                 verifiesPermissionBoundaries();
                 verifiesHelpAndCompletion();
                 verifiesSettingsDestinations();
-                getLogger().info("COMMAND REGRESSION PASS");
+                TrainingDummyChecks.run(this, core);
             } catch (Throwable error) {
                 getLogger().log(java.util.logging.Level.SEVERE, "COMMAND REGRESSION FAILED", error);
             } finally {
@@ -88,11 +88,13 @@ public final class CommandRegressionProbe extends JavaPlugin {
 
     private void verifiesPermissionBoundaries() {
         int before = firstAbility.resets;
-        for (String command : new String[] {"gw clear all", "gw cd all", "gw ability cooldown reset all", "gw 능력 쿨타임 초기화 전체", "a cd reset all", "gcd all"}) {
+        for (String command : new String[] {"gw clear all", "gw cd all", "gw ability cooldown reset all", "gw 능력 쿨타임 초기화 전체", "a cd reset all", "gcd all",
+            "gw dummy", "gw game dummy", "gw 더미"}) {
             messages.clear();
             dispatch(sender(false, false), command);
             check(firstAbility.resets == before, "permission bypass: " + command);
             check(messages.toString().contains("권한"), "missing permission response: " + command);
+            check(core.trainingDummies().players().isEmpty(), "unprivileged command spawned dummy: " + command);
         }
         getLogger().info("PASS administrator permission across structured, Korean and shortcut commands");
     }

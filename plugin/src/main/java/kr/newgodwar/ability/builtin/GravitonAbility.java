@@ -30,12 +30,11 @@ final class GravitonAbility extends TransientAbility {
         Location center = targetLocation(player, 16).add(0.5D, 1.0D, 0.5D);
         if (!useNormal(context, player)) return;
         wellActive = true;
-        feedback.link(context, player.getEyeLocation(), center);
         for (int i = 0; i < 8; i++) {
+            final int phase = i;
             scheduleLater(context, () -> {
                 if (!active(context) || !player.getWorld().equals(center.getWorld())) return;
-                feedback.pulse(context, center, 5);
-                feedback.spiral(context, center, 1.2D);
+                feedback.gravityWell(context, center, 5, phase);
                 for (Player target : enemies(context, center, 5)) {
                     Vector pull = center.toVector().subtract(target.getLocation().toVector());
                     if (pull.lengthSquared() < 0.25D) continue;
@@ -53,11 +52,10 @@ final class GravitonAbility extends TransientAbility {
         if (!useAdvanced(context, player)) return;
         repulsionPending = true;
         Location center = player.getLocation();
-        feedback.sigil(context, center, 6);
+        feedback.pulse(context, center, 6);
         scheduleLater(context, () -> {
             repulsionPending = false;
             if (!active(context) || !player.getWorld().equals(center.getWorld())) return;
-            feedback.spiral(context, center, 4);
             feedback.pulse(context, center, 6);
             for (Player target : enemies(context, center, 6)) {
                 damage(context, target, 5, player);

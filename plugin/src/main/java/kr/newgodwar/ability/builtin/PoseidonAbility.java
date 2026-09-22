@@ -37,7 +37,7 @@ final class PoseidonAbility extends BaseAbility {
 
     @Override
     public void onAssign(AbilityPlayerContext context) {
-        effect(context.player(), PotionEffectType.WATER_BREATHING, 24 * 60 * 60, 0);
+        effect(context, context.player(), PotionEffectType.WATER_BREATHING, 24 * 60 * 60, 0);
     }
 
     @Override
@@ -55,8 +55,8 @@ final class PoseidonAbility extends BaseAbility {
         }
         if (useNormal(context, player)) {
             createTemporarySea(context, center, SEA_RADIUS, SEA_DURATION_SECONDS, "해역 소멸", "해역 소멸");
-            effect(player, PotionEffectType.SPEED, 8, 1);
-            effect(player, PotionEffectType.REGENERATION, 7, 0);
+            effect(context, player, PotionEffectType.SPEED, 8, 1);
+            effect(context, player, PotionEffectType.REGENERATION, 7, 0);
         }
     }
 
@@ -71,12 +71,11 @@ final class PoseidonAbility extends BaseAbility {
             createTemporarySea(context, player.getLocation(), 2, 6, "해일 소멸", "해일 소멸");
             push(context, player, targets, 2.6D, 6L);
             for (Player target : targets) {
-                feedback.pulse(context, target.getLocation(), 2.0D);
                 damage(context, target, TIDAL_DAMAGE, player);
                 createTemporarySea(context, target.getLocation(), 1, 6, "해일 소멸", "해일 소멸");
-                effect(target, "SLOWNESS", "SLOW", 10, 2);
-                effect(target, PotionEffectType.WEAKNESS, 10, 0);
-                effect(target, PotionEffectType.CONFUSION, 8, 0);
+                effect(context, target, "SLOWNESS", "SLOW", 10, 2);
+                effect(context, target, PotionEffectType.WEAKNESS, 10, 0);
+                effect(context, target, PotionEffectType.CONFUSION, 8, 0);
             }
         }
     }
@@ -84,11 +83,11 @@ final class PoseidonAbility extends BaseAbility {
     @Override
     public void onTick(AbilityPlayerContext context) {
         Player player = context.player();
-        effect(player, PotionEffectType.WATER_BREATHING, 6, 0);
+        effect(context, player, PotionEffectType.WATER_BREATHING, 6, 0);
         if (touchingWater(player)) {
-            effect(player, PotionEffectType.SPEED, 6, 1);
-            effect(player, PotionEffectType.REGENERATION, 6, 0);
-            effect(player, "RESISTANCE", "DAMAGE_RESISTANCE", 6, 0);
+            effect(context, player, PotionEffectType.SPEED, 6, 1);
+            effect(context, player, PotionEffectType.REGENERATION, 6, 0);
+            effect(context, player, "RESISTANCE", "DAMAGE_RESISTANCE", 6, 0);
         }
     }
 
@@ -97,7 +96,7 @@ final class PoseidonAbility extends BaseAbility {
         if (attacker && (touchingWater(context.player()) || touchingWater(opponent))) {
             event.setDamage(event.getDamage() * 1.25D);
             if (oneIn(4)) {
-                effect(opponent, "SLOWNESS", "SLOW", 6, 0);
+                effect(context, opponent, "SLOWNESS", "SLOW", 6, 0);
             }
         }
     }
@@ -117,7 +116,6 @@ final class PoseidonAbility extends BaseAbility {
     }
 
     private void createTemporarySea(final AbilityPlayerContext context, Location center, int radius, int seconds, String timerName, String triggerText) {
-        feedback.pulse(context, center, radius + 0.5D);
         final Map<Location, Material> oldBlocks = new LinkedHashMap<Location, Material>();
         int bx = center.getBlockX();
         int by = center.getBlockY();

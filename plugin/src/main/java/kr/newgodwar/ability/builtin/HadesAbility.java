@@ -45,6 +45,7 @@ final class HadesAbility extends BaseAbility {
     }
 
     private void abyss(AbilityPlayerContext context, Player player, int radius, boolean includeSelf) {
+        feedback.pulse(context, player.getLocation(), radius);
         Location destination = player.getLocation().clone();
         destination.setY(-2.0D);
         for (Entity entity : player.getNearbyEntities(radius, radius, radius)) {

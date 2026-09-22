@@ -58,6 +58,7 @@ public final class AbilityRegressionProbe extends JavaPlugin {
                 game = core.game();
                 core.getConfig().set("world.reset-game-world-on-stop", false);
                 new ItemGrantRegressionChecks().run(core);
+                new ObjectEffectRegressionChecks(core).run();
                 new FeedbackRegressionChecks(core).run();
                 runChecks();
                 new AbilityVarietyChecks(core).run();
@@ -72,6 +73,8 @@ public final class AbilityRegressionProbe extends JavaPlugin {
 
     @SuppressWarnings("unchecked")
     private void runChecks() throws Exception {
+        Object effects = core.getConfig().get("abilities.effects.enabled");
+        core.getConfig().set("abilities.effects.enabled", false);
         Server original = Bukkit.getServer();
         realServer = original;
         Field serverField = field(Bukkit.class, "server");
@@ -203,6 +206,7 @@ public final class AbilityRegressionProbe extends JavaPlugin {
                 teams.remove(caster.getUniqueId());
                 teams.remove(enemy.getUniqueId());
                 core.getConfig().set("game.killtime-seconds", 0);
+                core.getConfig().set("abilities.effects.enabled", effects);
             }
         }
     }

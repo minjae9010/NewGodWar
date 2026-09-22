@@ -31,6 +31,14 @@ final class TajjaAbility extends BaseAbility {
 
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
+        boolean hasSword = false;
+        for (ItemStack item : player.getInventory().getContents()) {
+            if (item != null && isSword(item.getType())) { hasSword = true; break; }
+        }
+        if (!hasSword) {
+            sendAbilityMessage(context, player, "failure", "소비할 검이 인벤토리에 없습니다.");
+            return;
+        }
         if (useNormal(context, player)) {
             stealSword(player);
         }
@@ -40,6 +48,7 @@ final class TajjaAbility extends BaseAbility {
     public void onDamageByEntity(AbilityPlayerContext context, EntityDamageByEntityEvent event, Player opponent, boolean attacker) {
         if (attacker && context.player().getItemInHand().getType() == Material.AIR && tajjaDamage > 0) {
             event.setDamage(tajjaDamage);
+            feedback.impact(context, opponent);
             tajjaUses--;
             if (tajjaUses <= 0) {
                 tajjaDamage = 0;
@@ -52,7 +61,9 @@ final class TajjaAbility extends BaseAbility {
             if (item != null && isSword(item.getType())) {
                 tajjaDamage = swordDamage(item.getType());
                 tajjaUses = 10;
-                player.getInventory().removeItem(new ItemStack(item.getType(), 1));
+                ItemStack consumed = item.clone();
+                consumed.setAmount(1);
+                player.getInventory().removeItem(consumed);
                 player.sendMessage("손은 눈보다 빠르다.");
                 return;
             }

@@ -62,7 +62,7 @@ final class ThorAbility extends TransientAbility {
                     && target.getEyeLocation().distanceSquared(impact) <= 2.25D) {
                     feedback.thunderbolt(context, impact);
                     hammerHit(context, target, 5);
-                    if (validEnemy(context, target, 24)) effect(target, "SLOWNESS", "SLOW", 2, 0);
+                    if (validEnemy(context, target, 24)) effect(context, target, "SLOWNESS", "SLOW", 2, 0);
                 }
                 if (frame == 12) gainCharge(context);
             }, i * 2L);
@@ -88,8 +88,6 @@ final class ThorAbility extends TransientAbility {
         int spent = charges;
         charges = 0;
         Location center = player.getLocation();
-        feedback.spiral(context, center, 1.0D + spent);
-        feedback.pulse(context, center, 5);
         for (Player target : targets) {
             feedback.thunderbolt(context, target.getLocation());
             hammerHit(context, target, 3 + spent * 2);

@@ -27,7 +27,7 @@ final class AthenaAbility extends TransientAbility {
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
         if (guarding || riposte || !useNormal(context, player)) return;
         guarding = true;
-        feedback.shield(context, player.getLocation(), 1);
+        feedback.cue(context, player, kr.newgodwar.ability.feedback.EffectCue.GUARD);
         combatTask = scheduleLater(context, () -> { guarding = false; combatTask = -1; }, 80);
     }
 
@@ -40,7 +40,7 @@ final class AthenaAbility extends TransientAbility {
             event.setDamage(event.getDamage() * 0.4D);
             cancelScheduledTask(combatTask);
             combatTask = scheduleLater(context, () -> { riposte = false; combatTask = -1; }, 120);
-            feedback.shield(context, context.player().getLocation(), 1.2D);
+            feedback.cue(context, context.player(), kr.newgodwar.ability.feedback.EffectCue.GUARD);
             feedback.passive(context, "아이기스 방어 성공 · 다음 공격으로 반격");
         } else if (riposte && directAttack(context, event, opponent, attacker)) {
             riposte = false; cancelScheduledTask(combatTask); combatTask = -1;

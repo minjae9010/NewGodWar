@@ -36,6 +36,7 @@ final class FisherAbility extends BaseAbility {
             if (event.getCaught() != null) {
                 event.getCaught().remove();
             }
+            feedback.passive(context, "바다의 선물");
             int roll = RANDOM.nextInt(100);
             if (roll < 5) {
                 give(context.player(), Material.DIAMOND, 1);

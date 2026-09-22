@@ -37,9 +37,9 @@ final class SejongAbility extends BaseAbility {
             return;
         }
         for (Player target : targets) {
-            effect(target, PotionEffectType.REGENERATION, 10, 1);
-            effect(target, "RESISTANCE", "DAMAGE_RESISTANCE", 10, 0);
-            effect(target, "HASTE", "FAST_DIGGING", 14, 1);
+            effect(context, target, PotionEffectType.REGENERATION, 10, 1);
+            effect(context, target, "RESISTANCE", "DAMAGE_RESISTANCE", 10, 0);
+            effect(context, target, "HASTE", "FAST_DIGGING", 14, 1);
             target.setLevel(target.getLevel() + 2);
         }
         player.sendMessage(ChatColor.AQUA + "집현전의 지혜가 아군에게 퍼졌습니다.");
@@ -57,9 +57,9 @@ final class SejongAbility extends BaseAbility {
         if (context.plugin().abilities().session(target) != null) {
             context.plugin().abilities().suppressAbility(target, 10);
         }
-        effect(target, PotionEffectType.BLINDNESS, 8, 0);
-        effect(target, PotionEffectType.WEAKNESS, 12, 0);
-        effect(target, "SLOWNESS", "SLOW", 12, 2);
+        effect(context, target, PotionEffectType.BLINDNESS, 8, 0);
+        effect(context, target, PotionEffectType.WEAKNESS, 12, 0);
+        effect(context, target, "SLOWNESS", "SLOW", 12, 2);
         target.sendMessage(ChatColor.DARK_PURPLE + "훈민정음의 칙령이 능력을 봉합니다.");
     }
 
@@ -67,6 +67,7 @@ final class SejongAbility extends BaseAbility {
     public void onDamageByEntity(AbilityPlayerContext context, EntityDamageByEntityEvent event, Player opponent, boolean attacker) {
         if (attacker && holding(context.player(), Material.BOOK)) {
             event.setDamage(event.getDamage() * 1.35D);
+            feedback.cue(context, opponent, kr.newgodwar.ability.feedback.EffectCue.HIT);
         }
     }
 }

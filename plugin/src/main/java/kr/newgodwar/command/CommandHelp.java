@@ -11,7 +11,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 
-/** All command references use one bounded layout and one navigation model. */
+/** Role-specific quick help and paginated command references. */
 final class CommandHelp {
     private static final int PAGE_SIZE = 5;
 
@@ -29,7 +29,7 @@ final class CommandHelp {
         List<Row> rows = rows(topic, admin);
         if (rows.isEmpty()) {
             sender.sendMessage("§e사용할 수 있는 명령 중 검색 결과가 없습니다: §f" + topic);
-            HelpChat.send(sender, "§7 /gw help §8· 목차로 돌아가기", "/gw help", "도움말 목차", true);
+            HelpChat.send(sender, "§e[기본 명령 보기] §7/gw", "/gw", "자주 쓰는 명령어로 돌아가기", true);
             return;
         }
         render(sender, title(topic), rows, query.page, "/gw help " + topic);
@@ -79,31 +79,91 @@ final class CommandHelp {
     }
 
     private static void overview(CommandSender sender, boolean admin) {
-        HelpChat.header(sender, "명령어 안내", 1, 1, -1);
-        category(sender, "게임", "상태 · 시작 · 종료", "game");
-        category(sender, "팀", "팀원 · 배정 · 참가자", "team");
-        category(sender, "능력", "확인 · 도감 · 추첨" + (admin ? " · 쿨타임" : ""), "ability");
+        HelpChat.header(sender, admin ? "관리자 명령어" : "유저 명령어", 1, 1, -1);
+        List<Row> playerRows = playerRows();
         if (admin) {
-            category(sender, "설정", "설정 값 변경 · 기본 아이템", "settings");
-            category(sender, "설정 화면", "원하는 GUI로 바로 이동", "gui");
-            category(sender, "맵 / 월드", "맵 선택 · 생성 · 백업", "world");
-            category(sender, "위치 등록", "팀 스폰 · 심장 · 로비", "setup");
-            category(sender, "서버", "설정 다시 읽기 · 업데이트", "server");
+            HelpChat.section(sender, "기본 플레이", false);
+            for (int index : new int[] {0, 1, 2, 5}) quick(sender, playerRows.get(index));
+            HelpChat.section(sender, "관리자 전용 · 게임 운영", true);
+            quick(sender, quickRow("settings", "/gw gui", "[화면]"));
+            quick(sender, quickRow("autoteam", "/gw autoteam", ""));
+            quick(sender, quickRow("start", "/gw start", ""));
+            quick(sender, quickRow("skip", "/gw skip", "[초]", "능력 선택 마감 / 카운트다운 조정"));
+            quick(sender, quickRow("stop", "/gw stop", ""));
+            quick(sender, quickRow("participants", "/gw participants", "", "참가자 팀·능력·킬 확인"));
+            quick(sender, quickRow("dummy", "/gw dummy", "[spawn|remove]", "타깃 테스트 더미 소환 / 제거"));
+        } else {
+            HelpChat.section(sender, "내 능력 · 선택 / 사용", false);
+            for (Row row : playerRows.subList(0, 5)) quick(sender, row);
+            HelpChat.section(sender, "팀 · 게임 정보", false);
+            for (Row row : playerRows.subList(5, playerRows.size())) quick(sender, row);
         }
-        category(sender, "간편 명령", "/a · /tc · 짧은 별칭", "shortcuts");
-        sender.sendMessage("§7 검색: §f/gw help <검색어> §8| §7전체: §f/gw help all");
+        sender.sendMessage("§8 ───── 더 보기 ─────");
+        if (admin) {
+            HelpChat.topics(sender, "유저 명령", "player", "게임", "game", "팀", "team", "능력", "ability");
+            HelpChat.topics(sender, "설정", "settings", "설정 화면", "gui", "맵", "map", "위치 등록", "setup", "월드", "world", "서버", "server");
+        } else {
+            HelpChat.topics(sender, "능력", "ability", "팀", "team", "게임", "game");
+        }
+        HelpChat.topics(sender, "전체", "all", "간편 명령", "shortcuts");
+        sender.sendMessage("§7 검색: §f/gw help <검색어> §8· <필수> [선택]");
         sender.sendMessage(sender instanceof Player
-            ? "§8 분류 클릭: 이동 · 명령 클릭: 입력창에 넣기 · <필수> [선택]"
-            : "§8 /gw help <분류>로 상세 보기 · <필수> [선택]");
+            ? "§7 명령 클릭: 입력창에 넣기 §8· §7분류 클릭: 상세 도움말"
+            : "§7 /gw 또는 /gw help로 기본 명령 다시 보기");
     }
 
-    private static void category(CommandSender sender, String name, String summary, String topic) {
-        HelpChat.send(sender, "§e ▸ " + name + " §8· §7" + summary + " §8(/gw help " + topic + ")",
-            "/gw help " + topic, "§f" + name + " 도움말 열기", true);
+    static void unknown(CommandSender sender, String token) {
+        boolean admin = sender.hasPermission("newgodwar.admin");
+        sender.sendMessage("§c알 수 없는 명령어입니다: §f/gw " + token);
+        List<String> suggestions = CommandCatalog.suggest(token, admin);
+        if (suggestions.isEmpty()) {
+            HelpChat.section(sender, "자주 쓰는 명령어", false);
+            quick(sender, quickRow("ability", "/a", "[플레이어]"));
+            quick(sender, quickRow("status", "/gw status", ""));
+            if (admin) quick(sender, quickRow("settings", "/gw gui", "[화면]"));
+        } else {
+            HelpChat.section(sender, "입력하려던 명령어", false);
+            for (String name : suggestions) {
+                CommandCatalog.Entry entry = CommandCatalog.find(name);
+                quick(sender, quickRow(name, "/gw " + name, entry.arguments));
+            }
+        }
+        HelpChat.send(sender, "§e[기본 명령 전체 보기] §7/gw", "/gw", "권한에 맞는 기본 명령어 보기", true);
+    }
+
+    private static List<Row> playerRows() {
+        List<Row> rows = new ArrayList<Row>();
+        rows.add(quickRow("ability", "/a", "[플레이어]"));
+        rows.add(quickRow("yes", "/gw yes", ""));
+        rows.add(quickRow("no", "/gw no", ""));
+        rows.add(quickRow("abilities", "/gw abilities", "[검색어]"));
+        rows.add(quickRow("target", "/x", "<플레이어>"));
+        rows.add(new Row("/tc [메시지]", "팀 채팅 · 생략하면 모드 전환", "/tc", false, "/teamchat, /팀채팅"));
+        rows.add(quickRow("info", "/gw info", "[팀]"));
+        rows.add(quickRow("status", "/gw status", ""));
+        rows.add(quickRow("tips", "/gw tips", ""));
+        rows.add(quickRow("gamble", "/gw gamble", ""));
+        return rows;
+    }
+
+    private static Row quickRow(String name, String input, String arguments) {
+        return quickRow(name, input, arguments, null);
+    }
+
+    private static Row quickRow(String name, String input, String arguments, String summary) {
+        CommandCatalog.Entry entry = CommandCatalog.find(name);
+        return new Row(input + (arguments.isEmpty() ? "" : " " + arguments), summary == null ? entry.description : summary, input, entry.admin,
+            entry.description + "\n/gw " + CommandTree.preferredPath(entry.name) + (entry.arguments.isEmpty() ? "" : " " + entry.arguments));
+    }
+
+    private static void quick(CommandSender sender, Row row) {
+        HelpChat.send(sender, (row.admin ? "§6 " : "§b ") + row.usage + " §8— §f" + row.description,
+            row.input + " ", "§f" + row.description + "\n§7" + row.detail, false);
     }
 
     private static List<Row> rows(String topic, boolean admin) {
         String lower = topic.toLowerCase(Locale.ROOT);
+        if (lower.equals("player") || lower.equals("유저")) return playerRows();
         if (lower.equals("gui") || lower.equals("화면") || lower.equals("메뉴")) return admin ? guiRows() : new ArrayList<Row>();
         if (lower.equals("world") || lower.equals("월드") || lower.equals("worlds")) return admin ? worldRows() : new ArrayList<Row>();
         if (lower.equals("map") || lower.equals("맵") || lower.equals("maps") || lower.equals("지도")) return admin ? mapRows() : new ArrayList<Row>();
@@ -209,8 +269,11 @@ final class CommandHelp {
             : "§8 <필수> [선택] · 간편 명령: /gw help shortcuts");
         for (int index = (page - 1) * PAGE_SIZE; index < Math.min(rows.size(), page * PAGE_SIZE); index++) {
             Row row = rows.get(index);
-            HelpChat.send(sender, "§b " + row.usage + (row.admin ? " §8[관리]" : ""), row.input + " ", "§f" + row.description + "\n§7" + row.detail, false);
-            sender.sendMessage("§7   " + row.description);
+            if (index == (page - 1) * PAGE_SIZE || row.admin != rows.get(index - 1).admin) {
+                HelpChat.section(sender, row.admin ? "관리자 전용" : "유저 명령", row.admin);
+            }
+            HelpChat.send(sender, (row.admin ? "§6 " : "§b ") + row.usage, row.input + " ", "§f" + row.description + "\n§7" + row.detail, false);
+            sender.sendMessage("§f   " + row.description);
         }
         HelpChat.footer(sender, prefix, page, pages);
     }
@@ -220,6 +283,7 @@ final class CommandHelp {
     private static String title(String topic) {
         topic = topic.toLowerCase(Locale.ROOT);
         if (topic.equals("all") || topic.equals("전체")) return "전체 명령어";
+        if (topic.equals("player") || topic.equals("유저")) return "유저 기본 명령어";
         if (CommandCatalog.isShortcuts(topic)) return "간편 명령어";
         if (topic.equals("gui") || topic.equals("화면")) return "설정 화면 바로가기";
         if (topic.equals("world") || topic.equals("월드") || topic.equals("worlds")) return "월드 관리";

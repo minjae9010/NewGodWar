@@ -28,7 +28,7 @@ final class ErisAbility extends BaseAbility {
     @Override
     public void onDamageByEntity(AbilityPlayerContext context, EntityDamageByEntityEvent event, Player opponent, boolean attacker) {
         if (!attacker && oneIn(8)) {
-            opponent.teleport(context.player().getLocation().add(5, 0, 5));
+            if (opponent.teleport(context.player().getLocation().add(5, 0, 5))) feedback.impact(context, opponent);
         }
     }
 }

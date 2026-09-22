@@ -33,5 +33,6 @@ final class DarknessAbility extends BaseAbility {
         }
         double multiplier = Math.max(0.0D, context.plugin().getConfig().getDouble(context.configPath("incoming-damage-multiplier"), 0.25D));
         event.setDamage(event.getDamage() * multiplier);
+        feedback.passive(context, "피해 경감");
     }
 }

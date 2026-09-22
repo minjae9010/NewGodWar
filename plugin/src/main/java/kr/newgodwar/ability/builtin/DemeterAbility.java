@@ -28,7 +28,6 @@ final class DemeterAbility extends TransientAbility {
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
         if (useNormal(context, player)) {
             give(player, Material.BREAD, 10);
-            feedback.harvest(context, player.getLocation(), 2);
         }
     }
 

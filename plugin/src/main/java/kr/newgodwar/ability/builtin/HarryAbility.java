@@ -83,19 +83,21 @@ final class HarryAbility extends BaseAbility {
             if (useAdvanced(context, player)) {
                 for (Player target : targets) {
                     if (RANDOM.nextBoolean()) {
-                        effect(target, "SLOWNESS", "SLOW", 10, harry ? 1 : 2);
+                        effect(context, target, "SLOWNESS", "SLOW", 10, harry ? 1 : 2);
                     }
                 }
             }
         } else if (spell.equals("익스펙토 패트로눔") || spell.equalsIgnoreCase("Expecto Patronum")) {
             if (useAdvanced(context, player) && rollChance(harry ? 3 : 2, 4)) {
                 invincible = true;
+                feedback.cue(context, player, kr.newgodwar.ability.feedback.EffectCue.GUARD);
                 laterCleanup(context, 5, "보호 주문 종료", "보호 주문 종료", () -> invincible = false);
             }
         } else if (spell.equals("엑스펠리아무스") || spell.equalsIgnoreCase("Expelliarmus")) {
             Player target = targetPlayerInSight(context, player, 20, false);
             if (target != null && useAdvanced(context, player) && rollPercent(harry ? 25 : 20)) {
                 dropHeldAndArmor(target);
+                feedback.cue(context, target, kr.newgodwar.ability.feedback.EffectCue.ITEM);
             }
         } else if (spell.equals("아바다 케다브라") || spell.equalsIgnoreCase("Avada Kedavra")) {
             Player target = targetPlayerInSight(context, player, 20, false);

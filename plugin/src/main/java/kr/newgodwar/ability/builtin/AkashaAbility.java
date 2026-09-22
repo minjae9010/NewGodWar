@@ -38,8 +38,8 @@ final class AkashaAbility extends BaseAbility {
         List<Player> targets = nearbyPlayers(context, player, 20, true);
         targets.add(player);
         for (Player target : targets) {
-            effect(target, PotionEffectType.SPEED, 15, 0);
-            effect(target, PotionEffectType.REGENERATION, 15, 0);
+            effect(context, target, PotionEffectType.SPEED, 15, 0);
+            effect(context, target, PotionEffectType.REGENERATION, 15, 0);
         }
     }
 
@@ -52,7 +52,7 @@ final class AkashaAbility extends BaseAbility {
         }
         if (useAdvanced(context, player)) {
             for (Player target : targets) {
-                effect(target, "NAUSEA", "CONFUSION", 8, 0);
+                effect(context, target, "NAUSEA", "CONFUSION", 8, 0);
                 damage(context, target, 4.0D, player);
             }
         }

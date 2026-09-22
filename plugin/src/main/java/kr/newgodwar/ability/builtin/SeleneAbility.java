@@ -30,7 +30,7 @@ import java.util.List;
 final class SeleneAbility extends BaseAbility {
     @Override
     public void onAssign(AbilityPlayerContext context) {
-        effect(context.player(), PotionEffectType.NIGHT_VISION, 24 * 60 * 60, 0);
+        effect(context, context.player(), PotionEffectType.NIGHT_VISION, 24 * 60 * 60, 0);
     }
 
     @Override
@@ -41,7 +41,7 @@ final class SeleneAbility extends BaseAbility {
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
         if (useNormal(context, player) && setWorldTime(context, player, 18000)) {
-            effect(player, PotionEffectType.INVISIBILITY, 8, 0);
+            effect(context, player, PotionEffectType.INVISIBILITY, 8, 0);
         }
     }
 
@@ -52,8 +52,8 @@ final class SeleneAbility extends BaseAbility {
             return;
         }
         if (useAdvanced(context, player)) {
-            effect(target, PotionEffectType.BLINDNESS, 7, 0);
-            effect(target, "SLOWNESS", "SLOW", 8, 1);
+            effect(context, target, PotionEffectType.BLINDNESS, 7, 0);
+            effect(context, target, "SLOWNESS", "SLOW", 8, 1);
         }
     }
 

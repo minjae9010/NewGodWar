@@ -17,7 +17,7 @@ import java.util.List;
     id = "megumin",
     name = "메구밍",
     description = "게임 중 한 번 모든 것을 걸고 강력한 지연 폭발을 일으킵니다.",
-    normalSkill = "블레이즈 막대기 좌클릭: 25블록 안의 바라보는 위치에 3초 후 폭발을 일으키고 사망합니다.",
+    normalSkill = "블레이즈 막대기 좌클릭 (게임당 1회): 25블록 안의 바라보는 위치에 3초 후 폭발을 일으키고 사망합니다.",
     normalStoneCost = 32,
     advancedSkill = "없음",
     advancedStoneCost = 0,
@@ -25,22 +25,18 @@ import java.util.List;
     grade = AbilityGrade.C
 )
 final class MeguminAbility extends BaseAbility {
-    private boolean oneTimeUsed;
-
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, final Player player, PlayerInteractEvent event) {
-        if (oneTimeUsed || !useNormal(context, player)) {
+        if (!useNormal(context, player)) {
             return;
         }
-        oneTimeUsed = true;
+        consumeSkill(context, 1);
         final Location location = targetLocation(player, 25);
-        feedback.link(context, player.getEyeLocation(), location.clone().add(0, 1, 0));
         feedback.pulse(context, location, 2.0D);
         scheduleLater(context, () -> feedback.pulse(context, location, 3.0D), 20L);
         scheduleLater(context, () -> feedback.pulse(context, location, 4.0D), 40L);
         player.sendMessage(ChatColor.RED + "익스플로전!");
         later(context, 3, "폭렬 발동", "폭렬 마법 발동", () -> {
-            feedback.pulse(context, location, 5.0D);
             createExplosion(context, player, location, 5.0F, false, true);
             player.setHealth(0.0D);
         });

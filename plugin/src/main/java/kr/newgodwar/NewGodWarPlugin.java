@@ -8,6 +8,7 @@ import kr.newgodwar.command.GodWarCommand;
 import kr.newgodwar.command.TeamChatCommand;
 import kr.newgodwar.game.BlazeRodRecipes;
 import kr.newgodwar.game.GameManager;
+import kr.newgodwar.game.TrainingDummyManager;
 import kr.newgodwar.game.WorldBackupManager;
 import kr.newgodwar.gui.AbilityGui;
 import kr.newgodwar.gui.GamblingGui;
@@ -47,6 +48,7 @@ public final class NewGodWarPlugin extends JavaPlugin {
     private AbilityGui abilityGui;
     private GamblingGui gamblingGui;
     private WorldBackupManager worldBackupManager;
+    private TrainingDummyManager trainingDummies;
 
     @Override
     public void onEnable() {
@@ -69,6 +71,7 @@ public final class NewGodWarPlugin extends JavaPlugin {
         this.worldBackupManager = new WorldBackupManager(this);
         loadManagedWorlds();
         this.gameManager = new GameManager(this, abilityManager, nmsAdapter);
+        this.trainingDummies = new TrainingDummyManager(this);
 
         this.starterItemsGui = new StarterItemsGui(this);
         this.settingsGui = new SettingsGui(this, gameManager, starterItemsGui);
@@ -89,6 +92,7 @@ public final class NewGodWarPlugin extends JavaPlugin {
         getCommand("teamchat").setExecutor(new TeamChatCommand(this, gameManager));
 
         Bukkit.getPluginManager().registerEvents(new GameListener(this, gameManager, abilityManager, nmsAdapter), this);
+        Bukkit.getPluginManager().registerEvents(trainingDummies, this);
         Bukkit.getPluginManager().registerEvents(settingsGui, this);
         Bukkit.getPluginManager().registerEvents(starterItemsGui, this);
         Bukkit.getPluginManager().registerEvents(abilityGui, this);
@@ -119,6 +123,8 @@ public final class NewGodWarPlugin extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        kr.newgodwar.ability.feedback.ObjectEffects.clearAll();
+        if (trainingDummies != null) trainingDummies.clear();
         if (updater != null) {
             updater.shutdown();
         }
@@ -155,6 +161,8 @@ public final class NewGodWarPlugin extends JavaPlugin {
     public GameManager game() {
         return gameManager;
     }
+
+    public TrainingDummyManager trainingDummies() { return trainingDummies; }
 
     public ServerVersionSupport versionSupport() {
         return versionSupport;

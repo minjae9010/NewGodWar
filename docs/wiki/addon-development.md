@@ -13,14 +13,14 @@
 
 ## 실행 가능한 예제
 
-저장소의 `examples/addon`은 능력과 게임 기능을 모두 포함합니다. 아래 JAR 경로는 `0.3.3` 기준입니다. 다른 버전을 빌드하면 저장소 루트 `build.gradle`의 `version`에 맞춰 경로를 바꾸세요.
+저장소의 `examples/addon`은 능력과 게임 기능을 모두 포함합니다. 아래 JAR 경로는 `0.3.4` 기준입니다. 다른 버전을 빌드하면 저장소 루트 `build.gradle`의 `version`에 맞춰 경로를 바꾸세요.
 
 ```powershell
 .\gradlew.bat build :example-addon:build
 ```
 
-- 본체: `build/libs/NewGodWar-0.3.3.jar`
-- 예제: `examples/addon/build/libs/NewGodWar-ExampleAddon-0.3.3.jar`
+- 본체: `build/libs/NewGodWar-0.3.4.jar`
+- 예제: `examples/addon/build/libs/NewGodWar-ExampleAddon-0.3.4.jar`
 - 능력: 바람 주자. 블레이즈 막대 좌클릭으로 조약돌 4개를 소모해 5초간 신속 II, 쿨타임 15초.
 - 게임 기능: 실제 게임 시작 또는 테스트 시작 후 참가자에게 안내 메시지 표시.
 - 교체 모드: `game.mode: example_timed`로 설정하면 `/gw start`가 코어·팀 준비 없이 60초 자유 게임을 시작합니다. `/gw stop`으로 조기 종료할 수도 있습니다. 이 예제는 승리 점수나 능력 자동 배정이 없는 최소 구현입니다.
@@ -38,7 +38,7 @@ repositories {
     maven { url = uri('https://repo.papermc.io/repository/maven-public/') }
 }
 dependencies {
-    compileOnly files('libs/NewGodWar-0.3.3.jar')
+    compileOnly files('libs/NewGodWar-0.3.4.jar')
     compileOnly 'com.destroystokyo.paper:paper-api:1.12.2-R0.1-SNAPSHOT'
 }
 java {

@@ -64,7 +64,7 @@ final class EchoAbility extends TransientAbility {
         Location center = recorded.clone();
         recorded = null;
         recordedUntil = 0;
-        feedback.sigil(context, center, 3);
+        feedback.pulse(context, center, 3);
         for (int i = 0; i < 3; i++) {
             scheduleLater(context, () -> {
                 if (!active(context) || !player.getWorld().equals(center.getWorld())) return;

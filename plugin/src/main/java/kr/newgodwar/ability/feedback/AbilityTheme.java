@@ -41,41 +41,13 @@ public enum AbilityTheme {
     public Sound sound() { return sound; }
 
     public static AbilityTheme of(String id) {
-        if (id == null) return ARCANE;
-        switch (id) {
-            case "graviton": return GRAVITY;
-            case "echo": return ECHO;
-            case "runesmith": case "odin": return RUNE;
-            case "artemis": return HUNT;
-            case "chronos": return TIME;
-            case "queenbee": return SWARM;
-            case "zeus": case "thor": return LIGHTNING;
-            case "apollon": case "amaterasu": case "ra":
-            case "jujak": case "thisisfine": case "bomber": case "creeper": case "megumin": case "zet": return FIRE;
-            case "poseidon": case "fisher": case "yisunsin": return WATER;
-            case "frost": case "snow": return FROST;
-            case "aeolus": case "hermes": case "naro": case "nike": case "quetzalcoatl": return WIND;
-            case "gaia": case "demeter": case "nature": case "persephone": case "gardener":
-            case "shinsaimdang": case "siksin": return NATURE;
-            case "asclepius": case "heojun": case "priest": case "aprodite": case "girl": return HEALING;
-            case "hades": case "anubis": case "witch": case "voodoo": case "blinder":
-            case "clocking": case "hecate": case "loki": case "sus": case "honggildong":
-            case "selene": case "morpious": case "assasin": return SHADOW;
-            case "hera": case "athena": case "invincibility": case "darkness": case "reflection":
-            case "stance": case "bulter": case "yugwansun": return GUARD;
-            case "ares": case "archer": case "acidarcher": case "sniper":
-            case "onepunch": case "midoriya": case "gigachad": case "anjunggeun": return COMBAT;
-            case "blacksmith": case "jangyeongsil": case "hephaestus": case "nasdaq":
-            case "miner": case "goldspoon": case "scrooge": case "tajja": return CRAFT;
-            case "rickroll": case "pan": return MUSIC;
-            default: return ARCANE;
-        }
+        return AbilityStyle.of(id).theme();
     }
 
     public static boolean privateCast(String id) {
         return "clocking".equals(id) || "hecate".equals(id) || "loki".equals(id)
             || "sus".equals(id) || "honggildong".equals(id) || "selene".equals(id)
-            || "assasin".equals(id) || "tajja".equals(id);
+            || "assasin".equals(id) || "tajja".equals(id) || "bomber".equals(id);
     }
 
     static <T extends Enum<T>> T resolve(Class<T> type, String... names) {

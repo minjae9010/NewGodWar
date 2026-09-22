@@ -20,6 +20,7 @@ final class CommandTree {
         game.action("stop", "게임 종료", "stop", "종료");
         game.action("test", "[ability] 혼자 능력 테스트", "test", "테스트");
         game.action("skip", "[초] 능력 선택 대기 종료", "skip", "스킵");
+        game.action("dummy", "[spawn|remove] 타깃 테스트 더미", "dummy", "더미");
 
         Group team = root("team", "팀 / 참가자", null, "teams", "팀");
         team.action("info", "[team] 팀원 확인", "info", "정보");

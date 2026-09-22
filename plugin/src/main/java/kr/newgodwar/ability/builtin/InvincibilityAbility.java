@@ -32,13 +32,14 @@ final class InvincibilityAbility extends BaseAbility {
     @Override
     public void onCountdownTick(AbilityPlayerContext context) {
         super.onCountdownTick(context);
-        if (invincible) feedback.pulse(context, context.player().getLocation(), 1.1D);
+        if (invincible) feedback.cue(context, context.player(), kr.newgodwar.ability.feedback.EffectCue.GUARD);
     }
 
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
         if (useNormal(context, player)) {
             invincible = true;
+            feedback.cue(context, player, kr.newgodwar.ability.feedback.EffectCue.GUARD);
             laterCleanup(context, 7, "무적 종료", "무적 종료", () -> invincible = false);
         }
     }
@@ -46,7 +47,7 @@ final class InvincibilityAbility extends BaseAbility {
     @Override
     protected void onStaffRight(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
         if (useAdvanced(context, player)) {
-            effect(player, PotionEffectType.REGENERATION, 25, 0);
+            effect(context, player, PotionEffectType.REGENERATION, 25, 0);
         }
     }
 

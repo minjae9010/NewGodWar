@@ -38,12 +38,12 @@ final class MorpiousAbility extends BaseAbility {
             return;
         }
         if (useNormal(context, player)) {
-            sleepTarget(target);
+            sleepTarget(context, target);
         }
     }
 
-    private void sleepTarget(Player target) {
-        effect(target, PotionEffectType.BLINDNESS, 30, 0);
-        effect(target, "SLOWNESS", "SLOW", 30, 3);
+    private void sleepTarget(AbilityPlayerContext context, Player target) {
+        effect(context, target, PotionEffectType.BLINDNESS, 30, 0);
+        effect(context, target, "SLOWNESS", "SLOW", 30, 3);
     }
 }

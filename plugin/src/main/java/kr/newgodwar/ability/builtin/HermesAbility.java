@@ -28,7 +28,7 @@ import java.util.List;
 final class HermesAbility extends BaseAbility {
     @Override
     public void onAssign(AbilityPlayerContext context) {
-        effect(context.player(), PotionEffectType.SPEED, 24 * 60 * 60, 0);
+        effect(context, context.player(), PotionEffectType.SPEED, 24 * 60 * 60, 0);
     }
 
     @Override

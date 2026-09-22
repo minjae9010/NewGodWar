@@ -64,8 +64,8 @@ final class NikeAbility extends TransientAbility {
         laurels = 0;
         for (Player target : alliesInRange(context, player.getLocation(), 8)) {
             restoreHealth(target, 2 + victory);
-            effect(target, "SPEED", "SPEED", 4 + victory * 2, 0);
-            feedback.wings(context, target.getLocation(), victory);
+            effect(context, target, "SPEED", "SPEED", 4 + victory * 2, 0);
+            feedback.cue(context, target, kr.newgodwar.ability.feedback.EffectCue.HEAL);
         }
     }
 

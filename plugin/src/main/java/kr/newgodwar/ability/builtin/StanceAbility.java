@@ -34,6 +34,7 @@ final class StanceAbility extends BaseAbility {
         }
         double damage = event.getDamage();
         event.setCancelled(true);
+        feedback.passive(context, "부동의 자세");
         context.plugin().abilities().rememberDamageSource(context.player(), opponent);
         applyingStanceDamage = true;
         try {

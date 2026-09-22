@@ -33,5 +33,6 @@ final class AnorexiaAbility extends BaseAbility {
     @Override
     public void onFoodLevelChange(AbilityPlayerContext context, FoodLevelChangeEvent event) {
         event.setFoodLevel(10);
+        feedback.passive(context, "허기 균형 · 10/20");
     }
 }

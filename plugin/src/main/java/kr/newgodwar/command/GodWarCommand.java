@@ -116,9 +116,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
 
         String sub = normalizeSubcommand(args[0]);
         if (CommandCatalog.find(sub) == null) {
-            plugin.messages().send(sender, "&c알 수 없는 명령어입니다. /gw help <검색어> 로 찾아보세요.");
-            List<String> suggestions = CommandCatalog.suggest(sub, sender.hasPermission("newgodwar.admin"));
-            if (!suggestions.isEmpty()) plugin.messages().send(sender, "&7추천 명령어: &f/gw " + join(suggestions));
+            CommandHelp.unknown(sender, sub);
             return true;
         }
         if (requiresAdmin(sub) && !sender.hasPermission("newgodwar.admin")) {
@@ -165,6 +163,10 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         }
         if (sub.equals("test")) {
             test(sender, args);
+            return true;
+        }
+        if (sub.equals("dummy")) {
+            dummy(sender, args);
             return true;
         }
         if (sub.equals("stop")) {
@@ -724,6 +726,35 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             gameManager.start();
         } catch (IllegalStateException ex) {
             plugin.messages().send(sender, "&c" + ex.getMessage());
+        }
+    }
+
+    private void dummy(CommandSender sender, String[] args) {
+        if (!(sender instanceof Player)) {
+            sender.sendMessage("§c플레이어만 더미를 소환하거나 제거할 수 있습니다.");
+            return;
+        }
+        String action = args.length == 1 ? "spawn" : args[1].toLowerCase(Locale.ROOT);
+        if (args.length > 2 || !(action.equals("spawn") || action.equals("소환") || action.equals("remove") || action.equals("제거"))) {
+            sender.sendMessage("§e/gw dummy §7— 내 앞에 타깃 더미 소환 (기존 더미 교체)");
+            sender.sendMessage("§e/gw dummy remove §7— 내가 소환한 더미 제거");
+            return;
+        }
+        Player player = (Player) sender;
+        if (action.equals("remove") || action.equals("제거")) {
+            sender.sendMessage(plugin.trainingDummies().remove(player.getUniqueId()) ? "§a내 테스트 더미를 제거했습니다." : "§e소환한 테스트 더미가 없습니다.");
+            return;
+        }
+        try {
+            Player target = plugin.trainingDummies().spawn(player);
+            sender.sendMessage("§a플레이어형 테스트 더미를 소환했습니다. §f" + target.getName());
+            HelpChat.send(sender, "§b/x " + target.getName() + " §7— 더미를 능력 타깃으로 지정", "/x " + target.getName(), "클릭하면 타깃 지정 명령을 입력합니다.", false);
+            sender.sendMessage("§7능력 테스트: /gw test <능력> · 제거: /gw dummy remove");
+        } catch (IllegalStateException ex) {
+            sender.sendMessage("§c" + ex.getMessage());
+        } catch (ReflectiveOperationException | RuntimeException ex) {
+            plugin.getLogger().log(java.util.logging.Level.WARNING, "Could not spawn a training dummy", ex);
+            sender.sendMessage("§c이 서버에서 플레이어형 더미를 생성하지 못했습니다. 서버 로그를 확인해주세요.");
         }
     }
 
@@ -2394,7 +2425,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (command.getName().equalsIgnoreCase("x")) {
-            return args.length == 1 ? startsWith(onlinePlayerNames(), args[0]) : Collections.<String>emptyList();
+            return args.length == 1 ? startsWith(targetPlayerNames(), args[0]) : Collections.<String>emptyList();
         }
         if (command.getName().equalsIgnoreCase("a")) {
             args = prependSubcommand("ability", args);
@@ -2402,7 +2433,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         args = CommandCatalog.expandShortcut(command.getName(), args);
         if (args.length == 0) return Collections.emptyList();
         if (args.length == 1) {
-            List<String> values = firstLevelSuggestions(sender, command, alias);
+            List<String> values = firstLevelSuggestions(sender, command, alias, args[0].isEmpty());
             return startsWith(values, args[0]);
         }
         boolean admin = sender.hasPermission("newgodwar.admin");
@@ -2438,6 +2469,9 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         }
         if (requiresAdmin(sub) && !sender.hasPermission("newgodwar.admin")) {
             return Collections.emptyList();
+        }
+        if (sub.equals("dummy")) {
+            return args.length == 2 ? startsWith(Arrays.asList("spawn", "remove", "소환", "제거"), args[1]) : Collections.<String>emptyList();
         }
         if (args.length == 3 && (sub.equals("world") || sub.equals("map")) && isHelpToken(args[1])) {
             return startsWith(CommandHelp.complete(new String[] {sub, args[2]}, admin), args[2]);
@@ -2495,7 +2529,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             return startsWith(participantSuggestions(), args[1]);
         }
         if (args.length == 2 && sub.equals("target")) {
-            return startsWith(onlinePlayerNames(), args[1]);
+            return startsWith(targetPlayerNames(), args[1]);
         }
         if (args.length == 2 && sub.equals("blacklist")) {
             return startsWith(Arrays.asList("list", "add", "remove", "toggle"), args[1]);
@@ -2649,10 +2683,10 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
         return Collections.emptyList();
     }
 
-    private List<String> firstLevelSuggestions(CommandSender sender, Command command, String alias) {
+    private List<String> firstLevelSuggestions(CommandSender sender, Command command, String alias, boolean basicOnly) {
         boolean admin = sender.hasPermission("newgodwar.admin");
-        List<String> values = new ArrayList<String>(CommandTree.roots(admin));
-        values.addAll(CommandCatalog.names(admin));
+        List<String> values = basicOnly ? CommandCatalog.primarySuggestions(admin) : new ArrayList<String>(CommandTree.roots(admin));
+        if (!basicOnly) values.addAll(CommandCatalog.names(admin));
         if (admin && isThemachyRoot(command, alias)) values.addAll(teamSuggestions(false));
         return values;
     }
@@ -2724,6 +2758,14 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             }
         }
         return result;
+    }
+
+    private List<String> targetPlayerNames() {
+        List<String> names = onlinePlayerNames();
+        if (plugin != null && plugin.trainingDummies() != null) {
+            for (Player dummy : plugin.trainingDummies().players()) names.add(dummy.getName());
+        }
+        return names;
     }
 
     private List<String> onlinePlayerNames() {

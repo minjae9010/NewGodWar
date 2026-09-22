@@ -4,9 +4,11 @@ import kr.newgodwar.NewGodWarPlugin;
 import kr.newgodwar.ability.AbilitySession;
 import kr.newgodwar.ability.api.*;
 import kr.newgodwar.game.*;
+import kr.newgodwar.gui.AbilityGui;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.*;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.*;
@@ -66,11 +68,13 @@ final class AbilityVarietyChecks {
             attackEvent(caster.player, enemy.player, 4));
         new Task(() -> { }, 0, 0);
         new PlayerMoveEvent(caster.player, caster.location, caster.location);
+        new org.bukkit.event.player.PlayerRespawnEvent(caster.player, caster.location, false);
+        Class.forName("kr.newgodwar.gui.GuiText", true, core.getClass().getClassLoader());
         new AbilityKillContext(core, caster.player, enemy.player, core.abilities().registry().get("nike"), deathEvent(enemy.player));
         Class.forName("kr.newgodwar.ability.builtin.RunesmithAbility$Rune", true, core.getClass().getClassLoader());
         Arrow arrow = proxy(Arrow.class, (p, m, a) -> defaultValue(m.getReturnType()));
         for (String id : Arrays.asList("thor", "artemis", "hermione", "graviton", "echo", "runesmith",
-            "chronos", "odin", "hephaestus", "athena", "hera", "anubis", "queenbee", "nike", "demeter", "pan")) {
+            "chronos", "odin", "hephaestus", "athena", "hera", "anubis", "queenbee", "nike", "demeter", "pan", "megumin")) {
             require(core.abilities().registry().get(id) != null, "Missing registered ability " + id);
             core.abilities().registry().get(id).create();
         }
@@ -111,6 +115,8 @@ final class AbilityVarietyChecks {
             checkDemeter();
             checkPan();
             checkNamedKitCleanup();
+            checkReviewedAbilities();
+            checkSingleUseSkill();
             core.getLogger().info("PASS ability variety: sixteen kits, rewind safety, parry/riposte, oath, judgment, swarms, laurels, harvest, interrupted music, team/killtime protection, cosmetics and cleanup");
         } finally {
             if (ability != null) ability.cancelScheduledTasks();
@@ -487,8 +493,9 @@ final class AbilityVarietyChecks {
         for (Actor actor : actors) {
             actor.location = new Location(world, 0, 160, 0); actor.damage = 0; actor.velocities = 0;
             actor.online = true; actor.stones = 200; actor.sneaking = false; actor.health = 20;
-            actor.effects.clear(); actor.particles = 0; actor.held = new ItemStack(Material.BLAZE_ROD);
+            actor.effects.clear(); actor.messages.clear(); actor.particles = 0; actor.held = new ItemStack(Material.BLAZE_ROD);
             actor.armor = new ItemStack[4]; actor.lastVelocity = new org.bukkit.util.Vector();
+            actor.contents = new ItemStack[0]; actor.lastRemoved = null;
             actor.lineOfSight = true; actor.teleportAllowed = true; actor.immune = false; actor.food = 10; actor.granted = 0;
             teams.remove(actor.id);
         }
@@ -503,6 +510,108 @@ final class AbilityVarietyChecks {
         AbilityDefinition definition = core.abilities().registry().get(id);
         ability = definition.create(); context = new AbilityPlayerContext(core, caster.player, definition);
         assignments.put(caster.id, new AbilitySession(definition, ability));
+    }
+
+    private void checkReviewedAbilities() throws Exception {
+        reset("tajja"); left();
+        require(caster.stones == 200 && ability.cooldownRemainingMillis(1) == 0,
+            "Tajja charged without a sword");
+        ItemStack sword = new ItemStack(Material.IRON_SWORD);
+        org.bukkit.inventory.meta.ItemMeta meta = sword.getItemMeta();
+        meta.setDisplayName("Regression custom sword"); sword.setItemMeta(meta);
+        caster.contents = new ItemStack[] {sword}; left();
+        require(caster.stones == 190 && caster.lastRemoved != null && caster.lastRemoved.isSimilar(sword),
+            "Tajja failed to consume the exact sword with metadata");
+
+        reset("assasin"); teams.remove(enemy.id); teams.remove(far.id); right();
+        require(caster.stones == 200 && ability.cooldownRemainingMillis(2) == 0,
+            "Assassin charged with no eligible target");
+
+        reset("sniper"); caster.held = new ItemStack(Material.BOW); caster.sneaking = true;
+        ability.onInteract(context, new PlayerInteractEvent(caster.player, Action.LEFT_CLICK_AIR, caster.held, null, BlockFace.SELF));
+        final double[] speed = {0};
+        Arrow projectile = proxy(Arrow.class, (p, m, a) -> {
+            if (m.getName().equals("setVelocity")) { speed[0] = ((org.bukkit.util.Vector) a[0]).length(); return null; }
+            return defaultValue(m.getReturnType());
+        });
+        ability.onProjectileLaunch(context, new ProjectileLaunchEvent(projectile));
+        require(caster.stones == 200 && speed[0] == 0, "Sniper fired before the four-second preparation");
+        advance(80);
+        ProjectileLaunchEvent cancelled = new ProjectileLaunchEvent(projectile); cancelled.setCancelled(true);
+        ability.onProjectileLaunch(context, cancelled);
+        require(caster.stones == 200 && speed[0] == 0, "Cancelled shot consumed sniper readiness");
+        ability.onProjectileLaunch(context, new ProjectileLaunchEvent(projectile));
+        require(speed[0] == 20 && caster.stones == 200 - context.ability().advancedStoneCost(),
+            "Prepared sniper did not fire or charged the wrong cost");
+        ability.cancelScheduledTasks();
+        require(tasks.isEmpty() && !field(ability.getClass(), "ready").getBoolean(ability)
+            && !field(ability.getClass(), "preparing").getBoolean(ability), "Sniper preparation survived removal");
+        core.getLogger().info("PASS reviewed abilities: no-target/no-sword costs, exact sword consumption, sniper preparation/cancel/removal");
+    }
+
+    private void checkSingleUseSkill() throws Exception {
+        reset("megumin"); caster.stones = 31; left();
+        require(!ability.isSkillConsumed(1) && caster.stones == 31 && tasks.isEmpty(),
+            "Failed single-use activation consumed its charge");
+
+        reset("megumin");
+        Method status = GameManager.class.getDeclaredMethod("cooldownStatus", Player.class, AbilityDefinition.class, int.class);
+        status.setAccessible(true);
+        Method icon = AbilityGui.class.getDeclaredMethod("currentSkillItem", Player.class, AbilityDefinition.class, int.class);
+        icon.setAccessible(true);
+        AbilityGui gui = new AbilityGui(core, core.abilities());
+        ItemStack readyIcon = (ItemStack) icon.invoke(gui, caster.player, context.ability(), 1);
+        require(readyIcon.getItemMeta().getLore().toString().contains("준비 완료")
+            && !readyIcon.getItemMeta().getDisplayName().contains("사용 완료"), "Unused single-use skill was disabled");
+        left();
+        require(ability.isSkillConsumed(1) && core.abilities().isSkillConsumed(caster.player, 1)
+            && !ability.isSkillConsumed(2) && caster.stones == 168 && !ability.activeTimerLines().isEmpty(),
+            "Successful single-use activation lost its state, cost, or delayed effect");
+        require(caster.messages.toString().contains("사용 완료"), "Single-use consumption was not announced");
+        ItemStack usedIcon = (ItemStack) icon.invoke(gui, caster.player, context.ability(), 1);
+        String lore = ChatColor.stripColor(usedIcon.getItemMeta().getLore().toString());
+        String sidebar = ChatColor.stripColor((String) status.invoke(core.game(), caster.player, context.ability(), 1));
+        require(usedIcon.getItemMeta().getDisplayName().contains("사용 완료") && lore.contains("재사용 불가")
+            && !lore.contains("준비 완료") && !lore.contains("부족") && sidebar.contains("재사용 불가"),
+            "Consumed skill still appeared ready or resource-limited in the GUI/sidebar");
+        // Read native materials: the legacy API bridge maps both colors back to STAINED_GLASS.
+        Method nativeType = ItemStack.class.getMethod("getType");
+        require(nativeType.invoke(usedIcon) != nativeType.invoke(readyIcon) || usedIcon.getDurability() != readyIcon.getDurability(),
+            "Consumed skill did not switch to its disabled icon: " + readyIcon + " -> " + usedIcon);
+        int pending = tasks.size();
+        caster.messages.clear(); left(); left();
+        require(caster.stones == 168 && tasks.size() == pending && caster.messages.size() == 1
+            && caster.messages.get(0).contains("이미 사용한 일회용"), "Repeat clicks charged, recast, or failed silently/spammed");
+        caster.messages.clear(); ability.onCountdownTick(context);
+        require(!caster.messages.toString().contains("다시 사용 가능"), "Consumed skill announced cooldown readiness");
+        advance(60);
+        require(caster.health == 0 && tasks.isEmpty(), "Consuming the skill cancelled its intended explosion/death");
+        caster.health = 20;
+        core.abilities().handleRespawn(caster.player,
+            new org.bukkit.event.player.PlayerRespawnEvent(caster.player, caster.location, false));
+        core.abilities().clearCooldowns(caster.player);
+        core.abilities().clearAllCooldowns();
+        core.getConfig().set("game.urf.enabled", true);
+        left();
+        require(caster.stones == 168 && tasks.isEmpty() && ability.isSkillConsumed(1),
+            "Respawn, cooldown reset, or URF restored a single-use charge");
+
+        YamlConfiguration saved = new YamlConfiguration();
+        core.abilities().saveSession(saved);
+        YamlConfiguration decoded = new YamlConfiguration(); decoded.loadFromString(saved.saveToString());
+        ability.cancelScheduledTasks();
+        core.abilities().loadSession(decoded);
+        ability = assignments.get(caster.id).ability();
+        caster.messages.clear(); left();
+        require(ability.isSkillConsumed(1) && caster.stones == 168 && tasks.isEmpty()
+            && caster.messages.toString().contains("이미 사용한 일회용"), "Restored session allowed single-use replay");
+        teams.remove(caster.id);
+        require(core.abilities().isSkillConsumed(caster.player, 1)
+            && ((String) status.invoke(core.game(), caster.player, context.ability(), 1)).contains("사용 완료"),
+            "Inactive participant lost the consumed-skill display");
+        reset("megumin"); left();
+        require(ability.isSkillConsumed(1) && caster.stones == 168, "A fresh ability session did not reset its charge");
+        core.getLogger().info("PASS single-use skill: failed/successful casts, disabled GUI/sidebar, repeat feedback, delayed effect, respawn, cooldown resets, URF and session recovery");
     }
 
     private void left() { click(Action.LEFT_CLICK_AIR); }
@@ -553,6 +662,7 @@ final class AbilityVarietyChecks {
                 case "getType": return Enum.valueOf(Material.class,
                     (safeFloor && at.getBlockY() == 159) || (anchorObstructed && at.getBlockX() == 1 && at.getBlockY() == 160) ? "STONE" : "AIR");
                 case "getWorld": return world;
+                case "isEmpty": return at.getBlockY() >= 160;
                 case "getLocation": return at.clone();
                 case "getX": return at.getBlockX();
                 case "getY": return at.getBlockY();
@@ -570,9 +680,12 @@ final class AbilityVarietyChecks {
         final String name;
         final Player player;
         final Map<PotionEffectType, PotionEffect> effects = new HashMap<PotionEffectType, PotionEffect>();
+        final List<String> messages = new ArrayList<String>();
         Location location = new Location(world, 0, 160, 0);
         ItemStack held = new ItemStack(Material.BLAZE_ROD);
         ItemStack[] armor = new ItemStack[4];
+        ItemStack[] contents = new ItemStack[0];
+        ItemStack lastRemoved;
         org.bukkit.util.Vector lastVelocity = new org.bukkit.util.Vector();
         boolean online = true, sneaking, lineOfSight = true, teleportAllowed = true, immune;
         int stones = 200, velocities, particles, food = 10, granted;
@@ -582,6 +695,8 @@ final class AbilityVarietyChecks {
             this.name = name;
             PlayerInventory inventory = proxy(PlayerInventory.class, (p, m, a) -> {
                 if (m.getName().equals("getArmorContents")) return armor.clone();
+                if (m.getName().equals("getContents")) return contents.clone();
+                if (m.getName().equals("getStorageContents")) return new ItemStack[] {new ItemStack(Material.COBBLESTONE, stones)};
                 if (m.getName().equals("setArmorContents")) { armor = ((ItemStack[]) a[0]).clone(); return null; }
                 if (m.getName().equals("addItem")) {
                     for (ItemStack item : (ItemStack[]) a[0]) granted += item.getAmount();
@@ -589,7 +704,10 @@ final class AbilityVarietyChecks {
                 }
                 if (m.getName().equals("contains")) return stones >= ((Number) a[1]).intValue();
                 if (m.getName().equals("removeItem")) {
-                    for (ItemStack item : (ItemStack[]) a[0]) stones -= item.getAmount();
+                    for (ItemStack item : (ItemStack[]) a[0]) {
+                        if (item.getType() == Material.COBBLESTONE) stones -= item.getAmount();
+                        else lastRemoved = item.clone();
+                    }
                     return new HashMap<Integer, ItemStack>();
                 }
                 return defaultValue(m.getReturnType());
@@ -598,11 +716,22 @@ final class AbilityVarietyChecks {
                 switch (m.getName()) {
                     case "getUniqueId": return id;
                     case "getName": return name;
+                    case "sendMessage":
+                        if (a[0] instanceof String[]) messages.addAll(Arrays.asList((String[]) a[0]));
+                        else messages.add((String) a[0]);
+                        return null;
                     case "getWorld": return location.getWorld();
                     case "getLocation": return location.clone();
                     case "getEyeLocation": return location.clone().add(0, 1.6D, 0);
                     case "getEyeHeight": return 1.6D;
                     case "getInventory": return inventory;
+                    case "getNearbyEntities":
+                        List<Entity> nearby = new ArrayList<Entity>();
+                        for (Actor actor : actors) if (actor != this && actor.online && location.getWorld().equals(actor.location.getWorld())
+                            && Math.abs(location.getX() - actor.location.getX()) <= ((Number) a[0]).doubleValue()
+                            && Math.abs(location.getY() - actor.location.getY()) <= ((Number) a[1]).doubleValue()
+                            && Math.abs(location.getZ() - actor.location.getZ()) <= ((Number) a[2]).doubleValue()) nearby.add(actor.player);
+                        return nearby;
                     case "getItemInHand": return held;
                     case "setItemInHand": held = (ItemStack) a[0]; return null;
                     case "getGameMode": return GameMode.SURVIVAL;

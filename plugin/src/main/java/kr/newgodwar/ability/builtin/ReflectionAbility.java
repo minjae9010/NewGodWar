@@ -32,7 +32,8 @@ final class ReflectionAbility extends BaseAbility {
         if (!attacker && !reflecting && event.getFinalDamage() > 0.0D && oneIn(3)) {
             reflecting = true;
             try {
-                opponent.damage(event.getFinalDamage(), context.player());
+                damage(context, opponent, event.getFinalDamage(), context.player());
+                feedback.passive(context, "반격의 거울");
             } finally {
                 reflecting = false;
             }

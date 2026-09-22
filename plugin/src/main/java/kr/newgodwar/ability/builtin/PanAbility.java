@@ -45,13 +45,13 @@ final class PanAbility extends TransientAbility {
         feedback.melody(context, stage, radius, note, joyful);
         if (joyful) {
             for (Player target : alliesInRange(context, stage, radius)) {
-                effect(target, "SPEED", "SPEED", 4, 0);
-                effect(target, "JUMP_BOOST", "JUMP", 4, 0);
+                effect(context, target, "SPEED", "SPEED", 4, 0);
+                effect(context, target, "JUMP_BOOST", "JUMP", 4, 0);
                 if (note == 2) restoreHealth(target, 2);
             }
         } else {
             for (Player target : enemies(context, stage, radius)) {
-                effect(target, "SLOWNESS", "SLOW", 2, 1);
+                effect(context, target, "SLOWNESS", "SLOW", 2, 1);
                 if (note == 2) repel(target, stage, 0.85D);
             }
         }

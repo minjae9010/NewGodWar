@@ -29,8 +29,10 @@ final class PokegoAbility extends BaseAbility {
 
     @Override
     public void onMove(AbilityPlayerContext context, PlayerMoveEvent event) {
-        if (event.getFrom().distanceSquared(event.getTo()) > 0.01D) {
+        if (event.getTo() != null && event.getFrom().getWorld().equals(event.getTo().getWorld())
+            && event.getFrom().distanceSquared(event.getTo()) > 0.01D) {
             steps++;
+            if (steps % 100 == 0) feedback.passive(context, "탐험 " + steps + "/1000");
             if (steps >= 1000) {
                 steps = 0;
                 context.plugin().abilities().assignRandom(context.player());
