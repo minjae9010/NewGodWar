@@ -1,6 +1,10 @@
 package kr.newgodwar.ability.builtin;
 
 import kr.newgodwar.ability.api.*;
+import kr.newgodwar.ability.feedback.AbilityStyle;
+import kr.newgodwar.ability.feedback.AbilityTheme;
+import kr.newgodwar.ability.feedback.EffectCue;
+
 import org.bukkit.*;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
@@ -22,6 +26,14 @@ import org.bukkit.util.Vector;
     grade = AbilityGrade.A
 )
 final class OnePunchAbility extends BaseAbility {
+    private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.COMBAT)
+        .normal(EffectCue.CHARGE)
+        .hit(EffectCue.HIT)
+        .build();
+
+    @Override
+    public AbilityStyle style() { return STYLE; }
+
     private boolean punchReady;
 
     @Override

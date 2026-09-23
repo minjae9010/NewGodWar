@@ -1,6 +1,12 @@
 package kr.newgodwar.ability.builtin;
 
+import kr.newgodwar.util.InventoryItems;
+
 import kr.newgodwar.ability.api.*;
+import kr.newgodwar.ability.feedback.AbilityStyle;
+import kr.newgodwar.ability.feedback.AbilityTheme;
+import kr.newgodwar.ability.feedback.EffectCue;
+
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -23,6 +29,14 @@ import org.bukkit.potion.PotionEffectType;
     grade = AbilityGrade.B
 )
 final class HongGildongAbility extends BaseAbility {
+    private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.SHADOW)
+        .hit(EffectCue.STEALTH)
+        .privateCast()
+        .build();
+
+    @Override
+    public AbilityStyle style() { return STYLE; }
+
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
         if (!useNormal(context, player)) {
@@ -41,9 +55,8 @@ final class HongGildongAbility extends BaseAbility {
         if (!useAdvanced(context, player)) {
             return;
         }
-        int stolen = Math.min(24, count(target, COBBLESTONE));
-        if (stolen > 0) {
-            target.getInventory().removeItem(new ItemStack(COBBLESTONE, stolen));
+        int stolen = Math.min(24, InventoryItems.count(target.getInventory(), COBBLESTONE));
+        if (stolen > 0 && InventoryItems.take(target.getInventory(), COBBLESTONE, stolen)) {
             give(player, COBBLESTONE, stolen);
         }
         effect(context, player, PotionEffectType.INVISIBILITY, 7, 0);
@@ -58,13 +71,4 @@ final class HongGildongAbility extends BaseAbility {
         }
     }
 
-    private int count(Player player, Material material) {
-        int amount = 0;
-        for (ItemStack item : player.getInventory().getContents()) {
-            if (item != null && item.getType() == material) {
-                amount += item.getAmount();
-            }
-        }
-        return amount;
-    }
 }

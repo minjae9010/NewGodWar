@@ -1,7 +1,11 @@
 package kr.newgodwar.ability.builtin;
 
 import kr.newgodwar.ability.api.*;
+import kr.newgodwar.ability.feedback.AbilityStyle;
+import kr.newgodwar.ability.feedback.AbilityTheme;
+import kr.newgodwar.ability.feedback.EffectCue;
 import kr.newgodwar.game.GodTeam;
+
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.entity.*;
@@ -28,6 +32,14 @@ import java.util.List;
     grade = AbilityGrade.B
 )
 final class SeleneAbility extends BaseAbility {
+    private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.SHADOW)
+        .hit(EffectCue.STEALTH)
+        .privateCast()
+        .build();
+
+    @Override
+    public AbilityStyle style() { return STYLE; }
+
     @Override
     public void onAssign(AbilityPlayerContext context) {
         effect(context, context.player(), PotionEffectType.NIGHT_VISION, 24 * 60 * 60, 0);

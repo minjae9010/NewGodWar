@@ -1,6 +1,10 @@
 package kr.newgodwar.ability.builtin;
 
 import kr.newgodwar.ability.api.*;
+import kr.newgodwar.ability.feedback.AbilityStyle;
+import kr.newgodwar.ability.feedback.AbilityTheme;
+import kr.newgodwar.ability.feedback.EffectCue;
+
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -22,6 +26,14 @@ import org.bukkit.potion.PotionEffectType;
     grade = AbilityGrade.A
 )
 final class AhnJungGeunAbility extends BaseAbility {
+    private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.COMBAT)
+        .hit(EffectCue.HIT)
+        .passive(EffectCue.CHARGE)
+        .build();
+
+    @Override
+    public AbilityStyle style() { return STYLE; }
+
     @Override
     public void onPrepare(AbilityPlayerContext context) {
         give(context.player(), Material.IRON_SWORD, 1);

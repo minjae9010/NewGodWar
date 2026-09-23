@@ -1,9 +1,14 @@
 package kr.newgodwar.ability.builtin;
 
 import kr.newgodwar.ability.api.*;
+import kr.newgodwar.ability.feedback.AbilityStyle;
+import kr.newgodwar.ability.feedback.AbilityTheme;
+
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerInteractEvent;
+
+import java.util.List;
 
 @AbilityInfo(
     id = "queenbee", name = "여왕벌",
@@ -16,6 +21,13 @@ import org.bukkit.event.player.PlayerInteractEvent;
     grade = AbilityGrade.A
 )
 final class QueenBeeAbility extends TransientAbility {
+    private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.SWARM)
+        .dedicated()
+        .build();
+
+    @Override
+    public AbilityStyle style() { return STYLE; }
+
     private boolean swarming, hive;
     private int swarmTask = -1;
 
@@ -44,7 +56,7 @@ final class QueenBeeAbility extends TransientAbility {
         Location center = player.getLocation();
         for (int i = 0; i < 4; i++) scheduleLater(context, () -> {
             if (!active(context) || !player.getWorld().equals(center.getWorld())) return;
-            feedback.honeycomb(context, center);
+            honeycomb(context, center);
             for (Player target : alliesInRange(context, center, 4)) {
                 restoreHealth(target, 1);
                 target.setFoodLevel(Math.min(20, target.getFoodLevel() + 2));
@@ -55,4 +67,15 @@ final class QueenBeeAbility extends TransientAbility {
 
     @Override
     protected void clearTransientState() { swarming = false; hive = false; swarmTask = -1; }
+
+    private void honeycomb(AbilityPlayerContext context, Location center) {
+        if (center == null || center.getWorld() == null) return;
+        List<Player> audience = feedback.effectViewers(context, center);
+        for (int i = 0; i < 6; i++) {
+            double a = i * Math.PI / 3, b = (i + 1) * Math.PI / 3;
+            feedback.segment(context, center.clone().add(Math.cos(a) * 4, 0.2D, Math.sin(a) * 4),
+                center.clone().add(Math.cos(b) * 4, 0.2D, Math.sin(b) * 4), AbilityTheme.SWARM, audience);
+        }
+        feedback.particle(context, center.clone().add(0, 0.5D, 0), AbilityTheme.HEALING.particle(), audience, 5, 0.4D);
+    }
 }

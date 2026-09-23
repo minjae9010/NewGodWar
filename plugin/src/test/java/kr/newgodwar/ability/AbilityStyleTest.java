@@ -4,16 +4,22 @@ import kr.newgodwar.ability.builtin.DefaultAbilityRegistrar;
 import kr.newgodwar.ability.feedback.AbilityStyle;
 import kr.newgodwar.ability.feedback.EffectCue;
 import org.junit.Test;
-import java.util.HashSet;
+import kr.newgodwar.ability.api.GodAbility;
+import kr.newgodwar.ability.feedback.AbilityTheme;
+import kr.newgodwar.ability.feedback.SharedModels;
 import static org.junit.Assert.*;
 
 public final class AbilityStyleTest {
-    @Test public void everyRegisteredBuiltinHasAnExplicitStyle() {
+    @Test public void everyRegisteredBuiltinHasAnExplicitStyle() throws Exception {
         AbilityRegistry registry = new AbilityRegistry();
         new DefaultAbilityRegistrar().registerAbilities(registry);
-        assertEquals(new HashSet<String>(registry.ids()), AbilityStyle.ids());
-        assertEquals(EffectCue.NONE, AbilityStyle.of("external_addon").cast(false));
-        assertNotNull(AbilityStyle.of(null).theme());
+        for (String id : registry.ids()) {
+            GodAbility ability = registry.get(id).create();
+            assertEquals(id, ability.getClass(), ability.getClass().getMethod("style").getDeclaringClass());
+            assertNotSame(id, AbilityStyle.DEFAULT, ability.style());
+        }
+        assertEquals(EffectCue.NONE, new GodAbility() { }.style().cast(false));
+        assertNotNull(new GodAbility() { }.style().theme());
     }
 
     @Test public void cuesStayCloseToTheBodyAndDoNotStackNativeSprites() {
@@ -35,22 +41,52 @@ public final class AbilityStyleTest {
 
     @Test public void actionMeaningOverridesGenericDecoration() {
         for (String id : new String[] {"zeus", "thor", "echo", "hermione", "frost", "graviton", "pan"}) {
-            AbilityStyle style = AbilityStyle.of(id);
+            AbilityStyle style = style(id);
             assertTrue(id, style.dedicated());
             assertEquals(id, EffectCue.NONE, style.cast(false));
             assertEquals(id, EffectCue.NONE, style.cast(true));
             assertEquals(id, EffectCue.NONE, style.hit());
             assertEquals(id, EffectCue.NONE, style.status("SLOWNESS"));
         }
-        assertEquals(EffectCue.ROOT, AbilityStyle.of("gaia").status("SLOWNESS"));
-        assertEquals(EffectCue.SLEEP, AbilityStyle.of("morpious").status("BLINDNESS"));
-        assertEquals(EffectCue.BLIND, AbilityStyle.of("blinder").status("BLINDNESS"));
-        assertEquals(EffectCue.STEALTH, AbilityStyle.of("clocking").status("INVISIBILITY"));
-        assertEquals(EffectCue.SEAL, AbilityStyle.of("sejong").status("BLINDNESS"));
-        assertEquals(EffectCue.POISON, AbilityStyle.of("acidarcher").status("POISON"));
-        assertEquals(EffectCue.HEAL, AbilityStyle.of("asclepius").benefit());
-        assertEquals(EffectCue.FORGE, AbilityStyle.of("blacksmith").cast(false));
-        assertEquals(EffectCue.NONE, AbilityStyle.of("nasdaq").cast(false));
-        assertEquals(EffectCue.NONE, AbilityStyle.of("snow").cast(true));
+        assertEquals(EffectCue.ROOT, style("gaia").status("SLOWNESS"));
+        assertEquals(EffectCue.SLEEP, style("morpious").status("BLINDNESS"));
+        assertEquals(EffectCue.BLIND, style("blinder").status("BLINDNESS"));
+        assertEquals(EffectCue.STEALTH, style("clocking").status("INVISIBILITY"));
+        assertEquals(EffectCue.SEAL, style("sejong").status("BLINDNESS"));
+        assertEquals(EffectCue.POISON, style("acidarcher").status("POISON"));
+        assertEquals(EffectCue.HEAL, style("asclepius").benefit());
+        assertEquals(EffectCue.FORGE, style("blacksmith").cast(false));
+        assertEquals(EffectCue.NONE, style("nasdaq").cast(false));
+        assertEquals(EffectCue.NONE, style("snow").cast(true));
+    }
+    @Test public void abilityPolicyOwnsPrivacyTrailsAndFlight() {
+        for (String id : new String[] {"clocking", "hecate", "loki", "sus", "honggildong", "selene", "assasin", "tajja", "bomber"})
+            assertTrue(id, style(id).privateCast());
+        assertFalse(style("thor").privateCast());
+        assertEquals(AbilityTheme.SHADOW, style("acidarcher").trailTheme());
+        assertEquals(AbilityTheme.LIGHTNING, style("artemis").trailTheme());
+        assertSame(SharedModels.WINGS, style("hermes").flightModel());
+        assertSame(SharedModels.FIRE_WINGS, style("jujak").flightModel());
+        assertNull(style("nike").flightModel());
+    }
+
+    @Test public void addonCanDeclareAnIndependentStyleWithoutRegisteringAnId() {
+        final AbilityStyle custom = AbilityStyle.builder(AbilityTheme.WATER)
+            .normal(EffectCue.WATER).advanced(EffectCue.WINGS).hit(EffectCue.SLOW)
+            .privateCast().trail(AbilityTheme.FROST).flight(SharedModels.WINGS).build();
+        GodAbility addon = new GodAbility() {
+            @Override public AbilityStyle style() { return custom; }
+        };
+        assertSame(custom, addon.style());
+        assertEquals(EffectCue.WATER, addon.style().cast(false));
+        assertEquals(EffectCue.WINGS, addon.style().cast(true));
+        assertTrue(addon.style().privateCast());
+        assertEquals(EffectCue.HIT, new GodAbility() { }.style().hit());
+    }
+
+    private AbilityStyle style(String id) {
+        AbilityRegistry registry = new AbilityRegistry();
+        new DefaultAbilityRegistrar().registerAbilities(registry);
+        return registry.get(id).create().style();
     }
 }

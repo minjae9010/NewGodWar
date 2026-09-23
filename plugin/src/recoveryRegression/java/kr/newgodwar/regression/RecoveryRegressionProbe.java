@@ -19,6 +19,7 @@ import java.util.*;
 public final class RecoveryRegressionProbe extends JavaPlugin {
     private static final UUID PLAYER = UUID.fromString("b0a42e68-7de5-4656-a003-50b8ae5bb880");
     private static final UUID OBSERVER = UUID.fromString("4409048e-c998-4f37-b9fa-2f8b463e227c");
+    private static final UUID DEPARTED = UUID.fromString("281c04b8-2917-4767-9ff9-9c0cc5caed5a");
     private NewGodWarPlugin core;
     private GameManager game;
     private File phaseFile;
@@ -45,6 +46,8 @@ public final class RecoveryRegressionProbe extends JavaPlugin {
             core.saveConfig();
             invoke(game, "prepareGameWorldSnapshot");
             seedPlayers();
+            setOf(game, "observers").add(DEPARTED);
+            setOf(game, "preparedPlayerInventories").add(DEPARTED);
             set(game, "state", GameState.RUNNING);
             set(game, "runningStartedAtMillis", System.currentTimeMillis() - 123000L);
             invoke(game, "applyWorldStartSettings");
@@ -70,6 +73,8 @@ public final class RecoveryRegressionProbe extends JavaPlugin {
             require(Bukkit.getWorld("recovery-arena").getBlockAt(1, 80, 1).getType() == Material.STONE,
                 "Stop lost the original pre-game map: " + Bukkit.getWorld("recovery-arena").getBlockAt(1, 80, 1).getType());
             require(game.teamAssignments().isEmpty() && core.abilities().assignedAbilities().isEmpty(), "Explicit stop did not clear the match");
+            require(new GameSessionStore(core.getDataFolder()).load().getBoolean("pending-player-cleanup." + DEPARTED + ".clear-inventory"),
+                "Stop lost offline player's pending inventory cleanup");
             invoke(game, "prepareGameWorldSnapshot");
             seedPlayers();
             set(game, "state", GameState.READY);
@@ -79,6 +84,7 @@ public final class RecoveryRegressionProbe extends JavaPlugin {
             require((Boolean) invoke(game, "saveCheckpoint"), "READY checkpoint failed");
             advance(4, "RECOVERY PHASE 3 READY");
         } else if (phase == 4) {
+            verifyOfflineCleanupAfterRestart();
             require(game.state() == GameState.READY, "Recovered READY was cancelled while players were offline");
             require(map(game, "pendingSelection").get(PLAYER).equals(2), "Reroll rights lost on restart");
             require(((Integer) get(game, "readySecondsRemaining")) == 4, "Countdown advanced without recovered players");
@@ -91,6 +97,8 @@ public final class RecoveryRegressionProbe extends JavaPlugin {
             require(Bukkit.getWorld("recovery-arena").getBlockAt(1, 80, 1).getType() == Material.STONE, "Interrupted reset lost original map");
             require(game.teamAssignments().isEmpty(), "Ended session resurrected participants");
             require(get(game, "activeGameWorldSnapshotName") == null, "Reset remained pending");
+            require(!new GameSessionStore(core.getDataFolder()).load().contains("pending-player-cleanup." + DEPARTED),
+                "Crash resurrected already completed player cleanup");
             advance(6, "RECOVERY PHASE 5 READY");
         } else {
             require(game.isRecovering(), "Corrupt checkpoint was silently ignored");
@@ -111,6 +119,36 @@ public final class RecoveryRegressionProbe extends JavaPlugin {
         abilities.set(PLAYER + ".id", "archer");
         abilities.set(PLAYER + ".data.cooldowns.1", 900000L);
         core.abilities().loadSession(abilities);
+    }
+
+    private void verifyOfflineCleanupAfterRestart() throws Exception {
+        require(new GameSessionStore(core.getDataFolder()).load().getBoolean("pending-player-cleanup." + DEPARTED + ".clear-inventory"),
+            "Pending player cleanup was lost across a real process restart");
+        boolean[] cleared = {false}, saved = {false};
+        org.bukkit.GameMode[] mode = {org.bukkit.GameMode.SPECTATOR};
+        org.bukkit.inventory.PlayerInventory inventory = (org.bukkit.inventory.PlayerInventory) java.lang.reflect.Proxy.newProxyInstance(
+            getClassLoader(), new Class<?>[] {org.bukkit.inventory.PlayerInventory.class}, (proxy, method, args) -> {
+                if (method.getName().equals("clear")) cleared[0] = true;
+                return null;
+            });
+        org.bukkit.entity.Player returning = (org.bukkit.entity.Player) java.lang.reflect.Proxy.newProxyInstance(
+            getClassLoader(), new Class<?>[] {org.bukkit.entity.Player.class}, (proxy, method, args) -> {
+                switch (method.getName()) {
+                    case "getUniqueId": return DEPARTED;
+                    case "getInventory": return inventory;
+                    case "getActivePotionEffects": return Collections.emptyList();
+                    case "getGameMode": return mode[0];
+                    case "setGameMode": mode[0] = (org.bukkit.GameMode) args[0]; return null;
+                    case "saveData": saved[0] = true; return null;
+                    default: return null;
+                }
+            });
+        require(game.completePendingPlayerCleanup(returning) && cleared[0] && saved[0] && mode[0] == org.bukkit.GameMode.SURVIVAL,
+            "Restarted cleanup failed to clear inventory, restore survival and save player data");
+        require(!game.completePendingPlayerCleanup(returning), "Completed cleanup ran twice");
+        require(!new GameSessionStore(core.getDataFolder()).load().contains("pending-player-cleanup." + DEPARTED),
+            "Cleanup completion was not durably acknowledged");
+        getLogger().info("PASS offline player cleanup survived restart and completed once");
     }
 
     private void verifyRunning(int kills, Material block) throws Exception {

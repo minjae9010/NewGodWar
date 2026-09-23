@@ -3,6 +3,9 @@ package example.godwar;
 import kr.newgodwar.ability.api.AbilityInfo;
 import kr.newgodwar.ability.api.AbilityPlayerContext;
 import kr.newgodwar.ability.builtin.BaseAbility;
+import kr.newgodwar.ability.feedback.AbilityStyle;
+import kr.newgodwar.ability.feedback.AbilityTheme;
+import kr.newgodwar.ability.feedback.EffectCue;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.potion.PotionEffectType;
@@ -17,6 +20,13 @@ import org.bukkit.potion.PotionEffectType;
     author = "ExampleAddon"
 )
 public final class WindRunnerAbility extends BaseAbility {
+    private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.WIND)
+        .normal(EffectCue.WIND)
+        .build();
+
+    @Override
+    public AbilityStyle style() { return STYLE; }
+
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
         if (useNormal(context, player)) {

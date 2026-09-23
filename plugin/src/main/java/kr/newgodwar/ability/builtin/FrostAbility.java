@@ -1,7 +1,10 @@
 package kr.newgodwar.ability.builtin;
 
 import kr.newgodwar.ability.api.*;
+import kr.newgodwar.ability.feedback.AbilityStyle;
+import kr.newgodwar.ability.feedback.AbilityTheme;
 import kr.newgodwar.game.GodTeam;
+
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.entity.*;
@@ -30,6 +33,13 @@ import java.util.Map;
     grade = AbilityGrade.A
 )
 final class FrostAbility extends BaseAbility {
+    private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.FROST)
+        .dedicated()
+        .build();
+
+    @Override
+    public AbilityStyle style() { return STYLE; }
+
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
         if (useNormal(context, player)) {
@@ -50,7 +60,7 @@ final class FrostAbility extends BaseAbility {
     }
 
     private void iceSphere(final AbilityPlayerContext context, Location center, int radius, int seconds) {
-        feedback.frostCage(context, center, radius);
+        frostCage(context, center, radius);
         final Map<Location, Material> oldBlocks = new LinkedHashMap<Location, Material>();
         for (Location location : sphere(center, radius)) {
             Block block = location.getBlock();
@@ -85,5 +95,18 @@ final class FrostAbility extends BaseAbility {
             }
         }
         return locations;
+    }
+
+    /** Four sparse icy ribs follow the sphere's surface without filling it with particles. */
+    private void frostCage(AbilityPlayerContext context, Location center, double radius) {
+        if (center == null || center.getWorld() == null) return;
+        List<Player> audience = feedback.effectViewers(context, center);
+        double size = Math.max(0.5D, Math.min(6, radius));
+        for (int rib = 0; rib < 4; rib++) for (int i = 0; i <= 8; i++) {
+            double elevation = i * Math.PI / 8, angle = rib * Math.PI / 4;
+            feedback.particle(context, center.clone().add(Math.cos(angle) * Math.cos(elevation) * size,
+                Math.sin(elevation) * size, Math.sin(angle) * Math.cos(elevation) * size),
+                AbilityTheme.FROST.particle(), audience, 1, 0);
+        }
     }
 }

@@ -39,6 +39,7 @@ public final class CoreRegressionProbe extends JavaPlugin {
                 rejectsDuplicateTemples();
                 batchesExplosionsBeforeVictory();
                 cancelsUnderpopulatedStarts();
+                InventoryRegressionChecks.run(core);
                 TeamChatRegression.run(core);
                 restoresGameWorldSnapshot();
                 getLogger().info("CORE REGRESSION PASS");

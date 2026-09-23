@@ -1,11 +1,16 @@
 package kr.newgodwar.ability.builtin;
 
 import kr.newgodwar.ability.api.*;
+import kr.newgodwar.ability.feedback.AbilityStyle;
+import kr.newgodwar.ability.feedback.AbilityTheme;
+
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
+
+import java.util.List;
 
 @AbilityInfo(
     id = "pan", name = "판",
@@ -18,6 +23,13 @@ import org.bukkit.event.player.PlayerMoveEvent;
     grade = AbilityGrade.B
 )
 final class PanAbility extends TransientAbility {
+    private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.MUSIC)
+        .dedicated()
+        .build();
+
+    @Override
+    public AbilityStyle style() { return STYLE; }
+
     private Location stage;
     private int songTask = -1;
 
@@ -42,7 +54,7 @@ final class PanAbility extends TransientAbility {
 
     private void sing(AbilityPlayerContext context, boolean joyful, int note) {
         double radius = 3 + note * 2;
-        feedback.melody(context, stage, radius, note, joyful);
+        melody(context, stage, radius, note, joyful);
         if (joyful) {
             for (Player target : alliesInRange(context, stage, radius)) {
                 effect(context, target, "SPEED", "SPEED", 4, 0);
@@ -78,4 +90,16 @@ final class PanAbility extends TransientAbility {
 
     @Override
     protected void clearTransientState() { stage = null; songTask = -1; }
+
+    private void melody(AbilityPlayerContext context, Location center, double radius, int note, boolean joyful) {
+        if (center == null || center.getWorld() == null) return;
+        List<Player> audience = feedback.effectViewers(context, center);
+        double size = Math.max(0.5D, Math.min(8, radius));
+        for (int i = 0; i < 6; i++) {
+            double angle = i * Math.PI / 3 + note * 0.3D;
+            feedback.particle(context, center.clone().add(Math.cos(angle) * size, 1.5D + Math.sin(angle * 2) * 0.25D,
+                Math.sin(angle) * size), AbilityTheme.MUSIC.particle(), audience, 1, 0);
+        }
+        feedback.sound(context, center, audience, AbilityTheme.MUSIC.sound(), 0.6F, (joyful ? 1.0F : 0.5F) + note * 0.2F);
+    }
 }

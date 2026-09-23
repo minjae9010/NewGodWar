@@ -309,6 +309,8 @@ public final class AbilityRegressionProbe extends JavaPlugin {
     private Player player(String name, boolean owner) {
         UUID uuid = UUID.randomUUID();
         PlayerInventory inventory = proxy(PlayerInventory.class, (p, m, a) -> {
+            if (m.getName().equals("getStorageContents")) return new ItemStack[] {stones > 0 ? new ItemStack(Material.COBBLESTONE, stones) : null};
+            if (m.getName().equals("setItem")) { stones = a[1] == null ? 0 : ((ItemStack) a[1]).getAmount(); return null; }
             if (m.getName().equals("contains")) return stones >= ((Number) a[1]).intValue();
             if (m.getName().equals("removeItem")) {
                 for (ItemStack item : (ItemStack[]) a[0]) stones -= item.getAmount();

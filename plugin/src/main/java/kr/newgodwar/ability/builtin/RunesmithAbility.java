@@ -1,6 +1,10 @@
 package kr.newgodwar.ability.builtin;
 
 import kr.newgodwar.ability.api.*;
+import kr.newgodwar.ability.feedback.AbilityStyle;
+import kr.newgodwar.ability.feedback.AbilityTheme;
+import kr.newgodwar.ability.feedback.ObjectModel;
+
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
@@ -10,6 +14,8 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+
+import static kr.newgodwar.ability.feedback.ModelParts.*;
 
 @AbilityInfo(
     id = "runesmith", name = "룬 세공사",
@@ -22,6 +28,13 @@ import java.util.Map;
     grade = AbilityGrade.B
 )
 final class RunesmithAbility extends TransientAbility {
+    private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.RUNE)
+        .dedicated()
+        .build();
+
+    @Override
+    public AbilityStyle style() { return STYLE; }
+
     private final List<Rune> runes = new ArrayList<Rune>();
     private boolean frost;
     private boolean detonating;
@@ -69,7 +82,7 @@ final class RunesmithAbility extends TransientAbility {
         runes.removeAll(selected);
         for (Rune rune : selected) {
             cancelScheduledTask(rune.task);
-            feedback.rune(context, rune.center, 3, rune.frost);
+            rune(context, rune.center, 3, rune.frost);
         }
         scheduleLater(context, () -> detonate(context, selected), 10L);
     }
@@ -81,7 +94,7 @@ final class RunesmithAbility extends TransientAbility {
         List<Player> chilled = new ArrayList<Player>();
         for (Rune rune : selected) {
             if (!context.player().getWorld().equals(rune.center.getWorld())) continue;
-            feedback.runeBurst(context, rune.center, rune.frost);
+            runeBurst(context, rune.center, rune.frost);
             for (Player target : enemies(context, rune.center, 3)) {
                 double previous = damage.containsKey(target) ? damage.get(target) : 0;
                 damage.put(target, Math.min(8, previous + (rune.frost ? 2 : 4)));
@@ -98,7 +111,7 @@ final class RunesmithAbility extends TransientAbility {
     }
 
     private void draw(AbilityPlayerContext context, Rune rune) {
-        feedback.rune(context, rune.center, 0.8D, rune.frost);
+        rune(context, rune.center, 0.8D, rune.frost);
     }
 
     @Override
@@ -118,5 +131,57 @@ final class RunesmithAbility extends TransientAbility {
         private int age;
 
         private Rune(Location center, boolean frost) { this.center = center.clone(); this.frost = frost; }
+    }
+
+    static final ObjectModel FIRE_RUNE = runeModel(false);
+    static final ObjectModel FROST_RUNE = runeModel(true);
+
+    private static ObjectModel runeModel(boolean frost) {
+        return ObjectModel.animated((phase, detail) -> {
+            List<ObjectModel.Part> out = new ArrayList<ObjectModel.Part>();
+            double radius = Math.max(0.5, Math.min(3, detail));
+            int arms = frost ? 6 : 3;
+            String material = frost ? "SEA_LANTERN" : "GLOWSTONE";
+            for (int i = 0; i < arms; i++) {
+                double a = Math.PI * 2 * i / arms, b = Math.PI * 2 * (i + 1) / arms;
+                bar(out, material, Math.cos(a) * radius, Math.sin(a) * radius,
+                    Math.cos(b) * radius, Math.sin(b) * radius);
+                bar(out, material, 0, 0, Math.cos(a) * radius * 0.75, Math.sin(a) * radius * 0.75);
+            }
+            out.add(new ObjectModel.Part(frost ? "PRISMARINE_CRYSTALS" : "BLAZE_POWDER", true,
+                0, 0.35 + Math.sin(phase * 0.15) * 0.06, 0, 0.5, 0.5, 0.5, 0, phase * 0.03));
+            return out;
+        });
+    }
+
+    private void rune(AbilityPlayerContext context, Location center, double radius, boolean frost) {
+        if (center == null || center.getWorld() == null || !feedback.visuals(context)) return;
+        if (feedback.object(context, "rune:" + feedback.positionKey(center), frost ? FROST_RUNE : FIRE_RUNE, center, 22, radius)) return;
+        AbilityTheme theme = frost ? AbilityTheme.FROST : AbilityTheme.FIRE;
+        List<Player> audience = feedback.effectViewers(context, center);
+        double size = Math.max(0.5D, Math.min(3, radius));
+        feedback.ring(context, center, size, theme, audience);
+        int arms = frost ? 6 : 3;
+        for (int arm = 0; arm < arms; arm++) {
+            double angle = Math.PI * 2.0D * arm / arms;
+            for (int i = 1; i <= 5; i++) {
+                double length = size * i / 5.0D;
+                feedback.particle(context, center.clone().add(Math.cos(angle) * length, 0.2D, Math.sin(angle) * length),
+                    theme.particle(), audience, 1, 0);
+            }
+        }
+    }
+
+    private void runeBurst(AbilityPlayerContext context, Location center, boolean frost) {
+        if (center == null || center.getWorld() == null) return;
+        feedback.removeObject("rune:" + feedback.positionKey(center));
+        AbilityTheme theme = frost ? AbilityTheme.FROST : AbilityTheme.FIRE;
+        List<Player> audience = feedback.effectViewers(context, center);
+        for (int i = 0; i < 16; i++) {
+            double angle = i * Math.PI / 8;
+            feedback.particle(context, center.clone().add(Math.cos(angle) * 2.0D, 0.3D + (i % 3) * 0.3D,
+                Math.sin(angle) * 2.0D), theme.particle(), audience, 1, 0.05D);
+        }
+        if (feedback.allow("rune-sound", 150L)) feedback.sound(context, center, audience, theme.sound(), 0.6F, frost ? 1.4F : 0.8F);
     }
 }

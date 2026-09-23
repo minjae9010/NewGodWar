@@ -1,0 +1,10 @@
+name: LoadRegressionProbe
+main: kr.newgodwar.regression.LoadRegressionProbe
+version: 1
+depend: [NewGodWar]
+description: Isolated localhost load-test fixture. Never install on a live server.
+commands:
+  loadprobe:
+    description: Console-only load-test controls
+  loadping:
+    description: Test client round-trip marker

@@ -112,6 +112,10 @@ tasks.named("build") {
 
 // Isolated Paper integration fixture, never bundled in the production plugin.
 sourceSets {
+    loadRegression {
+        compileClasspath += sourceSets.main.output + configurations.testRuntimeClasspath
+        runtimeClasspath += output + compileClasspath
+    }
     recoveryRegression {
         compileClasspath += sourceSets.main.output + configurations.testRuntimeClasspath
         runtimeClasspath += output + compileClasspath
@@ -128,6 +132,13 @@ sourceSets {
         compileClasspath += sourceSets.main.output + configurations.testRuntimeClasspath
         runtimeClasspath += output + compileClasspath
     }
+}
+
+tasks.register("loadRegressionJar", Jar) {
+    dependsOn tasks.named("loadRegressionClasses")
+    archiveFileName = "LoadRegressionProbe.jar"
+    destinationDirectory = layout.buildDirectory.dir("load-regression")
+    from sourceSets.loadRegression.output
 }
 
 tasks.register("abilityRegressionJar", Jar) {

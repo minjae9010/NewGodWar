@@ -72,6 +72,8 @@
 
 게임 종료 시 참가자 팀 배정, 옵저버 상태, 팀 채팅 모드, 킬 기록도 함께 초기화됩니다.
 
+종료 당시 접속하지 않은 참가자는 다음 접속 때 인벤토리 정리와 생존 모드 복귀를 처리합니다. 정리 여부와 로비 위치는 게임 종료 시점의 설정을 따르며, 처리 대기 기록은 서버 재시작 후에도 유지됩니다. 인벤토리는 게임 시작 때 초기화 대상이었고 종료 시 `game.clear-inventory`와 `game.clear-inventory-on-stop`이 모두 켜져 있을 때만 정리합니다. 로비 이동을 꺼도 관전 모드는 해제합니다.
+
 로비 월드와 게임 월드를 분리해서 운영할 수 있습니다. 로비 월드에서 `/gw setlobby`를 실행하면 종료 후 참가자는 해당 월드로 돌아갑니다. 운영자는 `/gw world help`, `/gw world list`, `/gw world game <world|clear>`, `/gw world create <world> [normal|flat|void]`, `/gw world load <world>`, `/gw world copy <sourceWorld> <newWorld>`, `/gw world tp <world> [player]`, `/gw world lobby [player]`, `/gw world unload <world>`, `/gw world delete <world> confirm`으로 월드를 지정, 생성, 복사, 이동, 로드, 언로드, 삭제할 수 있습니다.
 
 ## updates

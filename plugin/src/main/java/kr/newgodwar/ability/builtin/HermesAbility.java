@@ -1,7 +1,12 @@
 package kr.newgodwar.ability.builtin;
 
 import kr.newgodwar.ability.api.*;
+import kr.newgodwar.ability.feedback.AbilityStyle;
+import kr.newgodwar.ability.feedback.AbilityTheme;
+import kr.newgodwar.ability.feedback.EffectCue;
+import kr.newgodwar.ability.feedback.SharedModels;
 import kr.newgodwar.game.GodTeam;
+
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.entity.*;
@@ -26,6 +31,14 @@ import java.util.List;
     grade = AbilityGrade.A
 )
 final class HermesAbility extends BaseAbility {
+    private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.WIND)
+        .normal(EffectCue.WINGS)
+        .flight(SharedModels.WINGS)
+        .build();
+
+    @Override
+    public AbilityStyle style() { return STYLE; }
+
     @Override
     public void onAssign(AbilityPlayerContext context) {
         effect(context, context.player(), PotionEffectType.SPEED, 24 * 60 * 60, 0);

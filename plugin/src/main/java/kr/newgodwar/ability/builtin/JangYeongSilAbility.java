@@ -1,6 +1,10 @@
 package kr.newgodwar.ability.builtin;
 
 import kr.newgodwar.ability.api.*;
+import kr.newgodwar.ability.feedback.AbilityStyle;
+import kr.newgodwar.ability.feedback.AbilityTheme;
+import kr.newgodwar.ability.feedback.EffectCue;
+
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -23,6 +27,15 @@ import java.util.List;
     grade = AbilityGrade.A
 )
 final class JangYeongSilAbility extends BaseAbility {
+    private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.CRAFT)
+        .normal(EffectCue.FORGE)
+        .hit(EffectCue.HIT)
+        .benefit(EffectCue.GUARD)
+        .build();
+
+    @Override
+    public AbilityStyle style() { return STYLE; }
+
     private static final int PICKAXE_PARTS_REQUIRED = 3;
 
     private int pickaxeParts;

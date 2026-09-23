@@ -5,6 +5,8 @@ import kr.newgodwar.ability.api.GodAbility;
 import kr.newgodwar.ability.feedback.AbilityFeedback;
 import kr.newgodwar.game.GodTeam;
 import kr.newgodwar.util.BukkitCompat;
+import kr.newgodwar.util.InventoryItems;
+
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -46,7 +48,7 @@ public abstract class BaseAbility implements GodAbility {
     private final Map<Integer, Runnable> scheduledTasks = new LinkedHashMap<Integer, Runnable>();
     private final Map<Integer, Boolean> cooldownKinds = new LinkedHashMap<Integer, Boolean>();
     private final Set<Integer> consumedSkills = new LinkedHashSet<Integer>();
-    protected final AbilityFeedback feedback = new AbilityFeedback();
+    protected final AbilityFeedback feedback = new AbilityFeedback(this);
     protected String targetName;
 
     @Override
@@ -180,9 +182,7 @@ public abstract class BaseAbility implements GodAbility {
             refreshDisplay(context);
             return false;
         }
-        if (realCost > 0) {
-            player.getInventory().removeItem(new ItemStack(material, realCost));
-        }
+        if (!InventoryItems.take(player.getInventory(), material, realCost)) return false;
         setCooldown(context, slot, cooldownSeconds);
         if (cooldownKinds.containsKey(slot)) cooldownKinds.put(slot, advanced);
         feedback.activated(context, player, advanced);
@@ -215,8 +215,8 @@ public abstract class BaseAbility implements GodAbility {
 
     protected void takeNormalCost(AbilityPlayerContext context, Player player) {
         int realCost = cost(context, context.ability().normalStoneCost());
-        if (realCost > 0) {
-            player.getInventory().removeItem(new ItemStack(COBBLESTONE, realCost));
+        if (!InventoryItems.take(player.getInventory(), COBBLESTONE, realCost)) {
+            throw new IllegalStateException("Ability resource cost was not available");
         }
     }
 
@@ -298,7 +298,7 @@ public abstract class BaseAbility implements GodAbility {
     }
 
     protected boolean has(AbilityPlayerContext context, Player player, Material material, int amount) {
-        if (amount <= 0 || player.getInventory().contains(material, amount)) {
+        if (amount <= 0 || InventoryItems.count(player.getInventory(), material) >= amount) {
             return true;
         }
         sendAbilityMessage(context, player, "failure", ChatColor.RED + materialDisplayName(material) + " " + amount + "개가 부족합니다.");
@@ -360,18 +360,7 @@ public abstract class BaseAbility implements GodAbility {
     }
 
     protected void give(Player player, ItemStack... items) {
-        ItemStack[] copies = new ItemStack[items.length];
-        for (int i = 0; i < items.length; i++) {
-            copies[i] = items[i].clone();
-        }
-        Map<Integer, ItemStack> leftovers = player.getInventory().addItem(copies);
-        if (leftovers.isEmpty()) {
-            return;
-        }
-        player.sendMessage(ChatColor.YELLOW + "인벤토리가 꽉 찼습니다. 들어가지 못한 아이템을 발밑에 떨어뜨립니다.");
-        for (ItemStack leftover : leftovers.values()) {
-            dropNaturally(player, leftover);
-        }
+        InventoryItems.give(player, items);
     }
 
     protected Material material(String modernName, String legacyName) {

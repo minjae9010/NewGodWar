@@ -696,7 +696,8 @@ final class AbilityVarietyChecks {
             PlayerInventory inventory = proxy(PlayerInventory.class, (p, m, a) -> {
                 if (m.getName().equals("getArmorContents")) return armor.clone();
                 if (m.getName().equals("getContents")) return contents.clone();
-                if (m.getName().equals("getStorageContents")) return new ItemStack[] {new ItemStack(Material.COBBLESTONE, stones)};
+                if (m.getName().equals("getStorageContents")) return new ItemStack[] {stones > 0 ? new ItemStack(Material.COBBLESTONE, stones) : null};
+                if (m.getName().equals("setItem")) { stones = a[1] == null ? 0 : ((ItemStack) a[1]).getAmount(); return null; }
                 if (m.getName().equals("setArmorContents")) { armor = ((ItemStack[]) a[0]).clone(); return null; }
                 if (m.getName().equals("addItem")) {
                     for (ItemStack item : (ItemStack[]) a[0]) granted += item.getAmount();

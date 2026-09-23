@@ -3,6 +3,10 @@ package kr.newgodwar.ability.builtin;
 import kr.newgodwar.ability.api.AbilityGrade;
 import kr.newgodwar.ability.api.AbilityInfo;
 import kr.newgodwar.ability.api.AbilityPlayerContext;
+import kr.newgodwar.ability.feedback.AbilityStyle;
+import kr.newgodwar.ability.feedback.AbilityTheme;
+import kr.newgodwar.ability.feedback.EffectCue;
+
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -30,6 +34,13 @@ import java.util.UUID;
     grade = AbilityGrade.B
 )
 final class VoodooAbility extends BaseAbility {
+    private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.SHADOW)
+        .hit(EffectCue.POISON)
+        .build();
+
+    @Override
+    public AbilityStyle style() { return STYLE; }
+
     private Block postSign;
     private UUID linkedTarget;
     private long lastPulseMillis;

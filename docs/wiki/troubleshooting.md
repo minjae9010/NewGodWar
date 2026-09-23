@@ -106,7 +106,7 @@ $serverJava = "C:\Java\jdk-25\bin\java.exe"
 이미 빌드된 jar 확인 (`-PluginJar`는 실제 빌드한 파일 경로로 지정):
 
 ```powershell
-.\scripts\Test-PaperMatrix.ps1 -SkipBuild -PluginJar .\build\libs\NewGodWar-0.3.4.jar -LatestVersion -JavaExecutable $serverJava
+.\scripts\Test-PaperMatrix.ps1 -SkipBuild -PluginJar .\build\libs\NewGodWar-0.3.5.jar -LatestVersion -JavaExecutable $serverJava
 ```
 
 테스트 서버 파일은 `.paper-smoke/` 아래에 생성됩니다.

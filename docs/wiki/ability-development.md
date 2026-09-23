@@ -31,6 +31,46 @@ public final class SampleAbility implements GodAbility {
 
 일회용 능력은 발동에 성공한 뒤 `consumeSkill(context, 1)`(일반) 또는 `consumeSkill(context, 2)`(고급)를 호출하세요. 이후 공통 사용 검사에서 재사용을 차단하고, 정보창은 회색 아이콘과 `사용 완료 · 재사용 불가`, 스코어보드는 같은 상태 문구를 표시합니다. 소모 상태는 세션에 저장되며 쿨타임 초기화로 해제되지 않습니다. `saveSession`/`loadSession`을 재정의한다면 `super`도 호출하세요. `GodAbility`를 직접 구현하는 애드온은 `isSkillConsumed(int slot)`과 재사용 차단·저장/복구를 함께 구현해야 합니다.
 
+## 능력별 이펙트와 Display 구현
+
+`GodAbility`는 `AbilityVisuals`를 상속합니다. 각 능력의 `style()`에서 테마와 일반·고급·적중·회복·패시브 연출을 정의합니다. 중앙 ID 목록에 스타일을 등록할 필요가 없습니다. `BaseAbility`의 `feedback`은 해당 능력 인스턴스에 연결되어 비용·쿨타임 처리 이후 이 설정을 사용합니다.
+
+```java
+private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.WIND)
+    .normal(EffectCue.WIND)
+    .advanced(EffectCue.WINGS)
+    .hit(EffectCue.HIT)
+    .benefit(EffectCue.HEAL)
+    .build();
+
+@Override
+public AbilityStyle style() { return STYLE; }
+```
+
+위 타입들은 `kr.newgodwar.ability.feedback` 패키지에 있습니다. 생략한 반응은 `NONE`입니다. `.privateCast()`는 은신 능력의 연출을 시전자에게만 보여 주고, `.trail(theme)`은 이동·투사체 궤적의 테마를 지정합니다. `.flight(model)`은 비행 중 따라다닐 모델을 지정합니다. `.dedicated()`는 전용 연출이 있는 능력의 자동 포션 반응을 끕니다. 직접 지정한 시전·적중 반응까지 끄지는 않으므로 필요한 항목만 설정하세요.
+
+Display 모양은 `ObjectModel` 인터페이스로 능력 파일 안에 선언합니다. `ObjectModel.animated`는 애니메이션 입력을 정규화하고, `ModelParts.box`, `bar`, `rotate`는 재사용할 수 있는 도형 도구입니다. 모델은 프레임마다 부품 수·순서·재료·item 여부가 같아야 합니다. 위치·크기·회전은 변경할 수 있습니다.
+
+```java
+private static final ObjectModel CRYSTAL = ObjectModel.animated((phase, detail) ->
+    java.util.Collections.singletonList(new ObjectModel.Part(
+        "SEA_LANTERN", false, 0, 1.2 + Math.sin(phase * 0.15) * 0.1, 0,
+        0.25, 0.25, 0.25, 0, phase * 0.05)));
+
+private void crystal(AbilityPlayerContext context, org.bukkit.Location center) {
+    if (!feedback.object(context, "crystal", CRYSTAL, center, 20, 1)) {
+        feedback.modelOutline(context, center, CRYSTAL, 0, 1,
+            feedback.effectViewers(context, center));
+    }
+}
+```
+
+`object`는 고정 위치, `followObject`는 위치와 관전자 목록을 매 프레임 계산하는 추적 모델에 사용합니다. 같은 키와 같은 모델 인스턴스를 다시 전달하면 기존 엔티티를 재사용합니다. 모델은 `static final`로 보관하고 매 호출마다 새 람다를 만들지 마세요. `object`/`followObject`의 반환값이 `false`일 때만 파티클 대체 연출을 실행하면 Display와 중복되지 않습니다. 관전자가 없는 경우에는 처리 완료로 간주하여 은신 위치를 대체 연출로 노출하지 않습니다.
+
+공통 도구는 `feedback.particle`, `sound`, `segment`, `ring`, `cue`, `modelOutline`로 제공합니다. 관전자 목록은 `effectViewers` 또는 `targetViewers`로 구하세요. 이 경로를 사용하면 설정, 거리, 은신 제한을 유지할 수 있습니다. 공유 가능한 창·방패·날개 모델은 `SharedModels`에 있고, 묠니르·팔랑크스·룬·심판 저울·중력핵의 모양과 전용 연출은 각각의 능력 파일에 있습니다.
+
+`BaseAbility`는 능력 해제 시 예약 작업과 소유한 Display를 정리합니다. `GodAbility`를 직접 구현할 때는 `new AbilityFeedback(this)`로 렌더러를 만들고, `cancelScheduledTasks()`에서 `feedback.clear()`를 호출하세요. 렌더러는 능력 세션마다 하나씩 보관합니다. 기존의 ID 조회 API인 `AbilityStyle.of(id)`, `AbilityTheme.of(id)`, `AbilityTheme.privateCast(id)`는 `ability.style()` 기반으로 바뀌었고, `ObjectModel`은 enum에서 인터페이스로 변경되었습니다. 이전 내부 API를 직접 사용한 애드온은 새 API로 수정해 다시 빌드해야 합니다.
+
 ## 외부 애드온 등록
 
 `plugin.yml`에 `depend: [NewGodWar]`를 넣고 애드온의 `onEnable()`에서 등록합니다.

@@ -1,6 +1,9 @@
 package kr.newgodwar.ability.builtin;
 
 import kr.newgodwar.ability.api.*;
+import kr.newgodwar.ability.feedback.AbilityStyle;
+import kr.newgodwar.ability.feedback.AbilityTheme;
+
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
@@ -21,6 +24,13 @@ import java.util.List;
     grade = AbilityGrade.A
 )
 final class EchoAbility extends TransientAbility {
+    private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.ECHO)
+        .dedicated()
+        .build();
+
+    @Override
+    public AbilityStyle style() { return STYLE; }
+
     private long armedUntil;
     private long recordedUntil;
     private Location recorded;
@@ -43,13 +53,13 @@ final class EchoAbility extends TransientAbility {
         armedUntil = 0;
         double amount = Math.min(4, event.getDamage() * 0.5D);
         Location strike = recorded.clone();
-        feedback.echoSlash(context, strike, 2);
+        echoSlash(context, strike, 2);
         feedback.affected(context, opponent, "메아리 예고 · 0.75초 안에 거리를 벌리세요!", true);
         scheduleLater(context, () -> {
             if (!validEnemy(context, opponent, 24) || opponent.getLocation().distanceSquared(strike) > 4
                 || event.isCancelled() || !context.player().hasLineOfSight(opponent)) return;
             echoDamage(context, opponent, amount);
-            feedback.echoSlash(context, strike, 2);
+            echoSlash(context, strike, 2);
         }, 15L);
     }
 
@@ -68,7 +78,7 @@ final class EchoAbility extends TransientAbility {
         for (int i = 0; i < 3; i++) {
             scheduleLater(context, () -> {
                 if (!active(context) || !player.getWorld().equals(center.getWorld())) return;
-                feedback.echoSlash(context, center, 3);
+                echoSlash(context, center, 3);
                 for (Player target : enemies(context, center, 3)) echoDamage(context, target, 2);
             }, 20L + i * 10L);
         }
@@ -91,4 +101,12 @@ final class EchoAbility extends TransientAbility {
 
     @Override
     protected void clearTransientState() { armedUntil = 0; recordedUntil = 0; recorded = null; }
+
+    private void echoSlash(AbilityPlayerContext context, Location center, double radius) {
+        if (center == null || center.getWorld() == null) return;
+        List<Player> audience = feedback.effectViewers(context, center);
+        // SWEEP_ATTACK already draws a full crescent; repeating it made a white disc.
+        feedback.particle(context, center.clone().add(0, 1, 0), AbilityTheme.ECHO.particle(), audience, 1, 0);
+        feedback.sound(context, center, audience, AbilityTheme.ECHO.sound(), 0.4F, 1.2F);
+    }
 }

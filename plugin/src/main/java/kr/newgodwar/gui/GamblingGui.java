@@ -1,6 +1,7 @@
 package kr.newgodwar.gui;
 
 import kr.newgodwar.NewGodWarPlugin;
+import kr.newgodwar.util.InventoryItems;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -105,12 +106,10 @@ public final class GamblingGui implements Listener, CommandExecutor {
 
     private void gamble(Player player) {
         int cost = gambleCost();
-        if (!player.getInventory().contains(Material.COBBLESTONE, cost)) {
+        if (!InventoryItems.take(player.getInventory(), Material.COBBLESTONE, cost)) {
             player.sendMessage(ChatColor.RED + "조약돌이 부족합니다. 필요한 수량을 확인해주세요.");
             return;
         }
-        player.getInventory().removeItem(new ItemStack(Material.COBBLESTONE, cost));
-
         Reward reward = chooseReward();
         reward.give(player);
     }
@@ -267,7 +266,7 @@ public final class GamblingGui implements Listener, CommandExecutor {
                 player.sendMessage(message);
             }
             if (item != null && item.getType() != Material.AIR && item.getAmount() > 0) {
-                player.getInventory().addItem(item.clone());
+                InventoryItems.give(player, item);
             }
         }
     }

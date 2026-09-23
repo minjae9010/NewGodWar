@@ -1,8 +1,12 @@
 package kr.newgodwar.ability.builtin;
 
 import kr.newgodwar.ability.api.*;
+import kr.newgodwar.ability.feedback.AbilityStyle;
+import kr.newgodwar.ability.feedback.AbilityTheme;
+
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerInteractEvent;
+
 import java.util.List;
 
 @AbilityInfo(
@@ -16,6 +20,13 @@ import java.util.List;
     grade = AbilityGrade.S
 )
 final class OdinAbility extends TransientAbility {
+    private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.RUNE)
+        .dedicated()
+        .build();
+
+    @Override
+    public AbilityStyle style() { return STYLE; }
+
     private Player prey;
     private int scoutTask = -1;
     private boolean spearPending;

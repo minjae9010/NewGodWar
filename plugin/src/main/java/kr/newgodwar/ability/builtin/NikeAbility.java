@@ -1,11 +1,17 @@
 package kr.newgodwar.ability.builtin;
 
 import kr.newgodwar.ability.api.*;
+import kr.newgodwar.ability.feedback.AbilityStyle;
+import kr.newgodwar.ability.feedback.AbilityTheme;
+import kr.newgodwar.ability.feedback.EffectCue;
 import kr.newgodwar.game.GodTeam;
+
+import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.util.Vector;
+
 import java.util.List;
 
 @AbilityInfo(
@@ -19,6 +25,13 @@ import java.util.List;
     grade = AbilityGrade.B
 )
 final class NikeAbility extends TransientAbility {
+    private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.WIND)
+        .dedicated()
+        .build();
+
+    @Override
+    public AbilityStyle style() { return STYLE; }
+
     private int laurels;
     private boolean wingGuard;
     private int wingTask = -1;
@@ -32,7 +45,7 @@ final class NikeAbility extends TransientAbility {
         wingGuard = true;
         cancelScheduledTask(wingTask);
         wingTask = scheduleLater(context, () -> { wingGuard = false; wingTask = -1; }, 120);
-        feedback.wings(context, player.getLocation(), laurels);
+        wings(context, player.getLocation(), laurels);
     }
 
     @Override
@@ -50,7 +63,7 @@ final class NikeAbility extends TransientAbility {
         if (!active(playerContext) || victimTeam == null || victimTeam == context.plugin().game().teamOf(context.killer())) return;
         laurels = Math.min(3, laurels + 1);
         feedback.passive(playerContext, "승리의 월계관 · " + laurels + "/3");
-        feedback.wings(playerContext, context.killer().getLocation(), laurels);
+        wings(playerContext, context.killer().getLocation(), laurels);
     }
 
     @Override
@@ -78,4 +91,12 @@ final class NikeAbility extends TransientAbility {
 
     @Override
     protected void clearTransientState() { laurels = 0; wingGuard = false; wingTask = -1; }
+
+    private void wings(AbilityPlayerContext context, Location center, int laurels) {
+        if (center == null || center.getWorld() == null) return;
+        List<Player> audience = feedback.effectViewers(context, center);
+        feedback.drawCue(context, center, EffectCue.WINGS, audience);
+        for (int i = 0; i < Math.min(3, laurels); i++)
+            feedback.particle(context, center.clone().add((i - 1) * 0.3D, 2.4D, 0), AbilityTheme.NATURE.particle(), audience, 2, 0);
+    }
 }

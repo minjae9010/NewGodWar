@@ -1,6 +1,10 @@
 package kr.newgodwar.ability.builtin;
 
 import kr.newgodwar.ability.api.*;
+import kr.newgodwar.ability.feedback.AbilityStyle;
+import kr.newgodwar.ability.feedback.AbilityTheme;
+import kr.newgodwar.ability.feedback.EffectCue;
+
 import org.bukkit.*;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerInteractEvent;
@@ -27,6 +31,14 @@ import java.util.UUID;
     grade = AbilityGrade.A
 )
 final class SiksinAbility extends BaseAbility {
+    private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.NATURE)
+        .normal(EffectCue.ITEM)
+        .advanced(EffectCue.ITEM)
+        .build();
+
+    @Override
+    public AbilityStyle style() { return STYLE; }
+
     private static final String MARKER = "NGW_SIKSIN_FOOD";
     private static final int SUCCESS_PERCENT = 75;
 

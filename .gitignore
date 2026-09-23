@@ -31,6 +31,8 @@ Desktop.ini
 *.swp
 *.swo
 *~
+__pycache__/
+*.pyc
 
 # Logs
 *.log

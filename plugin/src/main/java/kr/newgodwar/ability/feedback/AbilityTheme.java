@@ -40,17 +40,7 @@ public enum AbilityTheme {
     public Particle particle() { return particle; }
     public Sound sound() { return sound; }
 
-    public static AbilityTheme of(String id) {
-        return AbilityStyle.of(id).theme();
-    }
-
-    public static boolean privateCast(String id) {
-        return "clocking".equals(id) || "hecate".equals(id) || "loki".equals(id)
-            || "sus".equals(id) || "honggildong".equals(id) || "selene".equals(id)
-            || "assasin".equals(id) || "tajja".equals(id) || "bomber".equals(id);
-    }
-
-    static <T extends Enum<T>> T resolve(Class<T> type, String... names) {
+    public static <T extends Enum<T>> T resolve(Class<T> type, String... names) {
         for (String name : names) {
             try {
                 return Enum.valueOf(type, name);
@@ -61,7 +51,7 @@ public enum AbilityTheme {
         return null;
     }
 
-    static Sound sound(String... names) {
+    public static Sound sound(String... names) {
         for (String name : names) {
             try {
                 // Sound became an interface in modern Bukkit; do not use Enum.valueOf here.

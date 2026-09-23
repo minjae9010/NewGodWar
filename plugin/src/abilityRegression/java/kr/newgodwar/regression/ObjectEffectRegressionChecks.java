@@ -31,12 +31,13 @@ import java.util.UUID;
 /** Uses actual world display entities; only the viewing player/connection is a recorder. */
 final class ObjectEffectRegressionChecks {
     private final NewGodWarPlugin core;
+    private final VisualProbe visuals;
     private World world;
     private Location location;
     private boolean online = true, invisible, flying;
     private int particles, shown, hidden;
 
-    ObjectEffectRegressionChecks(NewGodWarPlugin core) { this.core = core; }
+    ObjectEffectRegressionChecks(NewGodWarPlugin core) { this.core = core; this.visuals = new VisualProbe(core); }
 
     void run() throws Exception {
         // Initialize modern compatibility while Bukkit still references the real CraftServer.
@@ -51,11 +52,11 @@ final class ObjectEffectRegressionChecks {
         Player player = viewer();
         AbilityPlayerContext context = new AbilityPlayerContext(core, player, core.abilities().registry().get("thor"));
         ObjectEffects renderer = new ObjectEffects();
-        AbilityFeedback feedback = new AbilityFeedback();
+        AbilityFeedback feedback = visuals.feedback("thor");
         try {
             for (String key : Arrays.asList("enabled", "particles", "objects")) core.getConfig().set("abilities.effects." + key, true);
             core.getConfig().set("abilities.effects.object-limit", 48);
-            feedback.hammer(context, location);
+            visuals.effect("hammer", context, location);
             if (!supported) {
                 require(displays().isEmpty() && particles > 0, "Legacy server did not select the detailed particle fallback");
                 core.getLogger().info("PASS object effects: unavailable Display API uses bounded particle models on this server");
@@ -64,7 +65,15 @@ final class ObjectEffectRegressionChecks {
             require(!displays().isEmpty() && particles == 0, "Modern hammer failed or stacked with its particle fallback");
             feedback.clear(); require(displays().isEmpty(), "Feedback.clear leaked its assembly");
 
-            for (ObjectModel model : ObjectModel.values()) {
+            ObjectModel custom = ObjectModel.animated((phase, detail) -> Collections.singletonList(
+                new ObjectModel.Part("GOLD_BLOCK", false, 0, Math.sin(phase) * 0.1, 0, 0.2, 0.2, 0.2, 0, 0)));
+            require(show(renderer, context, player, custom), "Unregistered custom model failed");
+            Set<UUID> customIds = ids(displays());
+            step(renderer);
+            require(displays().size() == 1 && customIds.equals(ids(displays())), "Custom model animation replaced entities");
+            renderer.clear();
+
+            for (ObjectModel model : visuals.models()) {
                 require(show(renderer, context, player, model), "Display model failed: " + model);
                 List<Entity> created = displays();
                 require(created.size() == model.parts(0, 1).size(), "Incomplete/duplicated model: " + model);
@@ -84,21 +93,22 @@ final class ObjectEffectRegressionChecks {
             require(shown > 0, "Private display visibility was never granted to the audience");
 
             core.getConfig().set("abilities.effects.object-limit", 0);
-            particles = 0; feedback.hammer(context, location);
+            particles = 0; visuals.effect("hammer", context, location);
             require(displays().isEmpty() && particles > 0, "Budget exhaustion did not fall back exclusively");
             core.getConfig().set("abilities.effects.object-limit", 48);
             core.getConfig().set("abilities.effects.objects", false);
-            particles = 0; feedback.hammer(context, location);
+            particles = 0; visuals.effect("hammer", context, location);
             require(displays().isEmpty() && particles > 0, "Forced particle mode ignored");
             core.getConfig().set("abilities.effects.objects", true);
 
-            require(show(renderer, context, player, ObjectModel.HAMMER), "Toggle fixture did not spawn");
+            require(show(renderer, context, player, visuals.model("thor", "HAMMER")), "Toggle fixture did not spawn");
             core.getConfig().set("abilities.effects.objects", false); step(renderer);
             require(displays().isEmpty(), "Disabling object effects left a live assembly");
             core.getConfig().set("abilities.effects.objects", true);
 
             // Airborne wings keep the same entities while moving and disappear on landing.
             AbilityPlayerContext flight = new AbilityPlayerContext(core, player, core.abilities().registry().get("hermes"));
+            feedback = visuals.feedback("hermes");
             flying = true; feedback.flight(flight);
             require(displays().size() == 10, "Flight did not create its feather wings");
             Set<UUID> wings = ids(displays());
@@ -112,25 +122,26 @@ final class ObjectEffectRegressionChecks {
 
             core.getConfig().set("abilities.effects.particles", false);
             particles = 0;
+            feedback = visuals.feedback("gaia");
             feedback.impact(new AbilityPlayerContext(core, player, core.abilities().registry().get("gaia")), location);
             require(particles == 0 && displays().isEmpty(), "RGB fallback ignored particles=false while objects were enabled");
             core.getConfig().set("abilities.effects.particles", true);
 
-            require(show(renderer, context, player, ObjectModel.HAMMER), "Expiry fixture did not spawn");
+            require(show(renderer, context, player, visuals.model("thor", "HAMMER")), "Expiry fixture did not spawn");
             for (int i = 0; i < 5; i++) step(renderer);
             require(displays().isEmpty(), "Expired scene leaked entities");
-            require(show(renderer, context, player, ObjectModel.HAMMER), "Disconnect fixture did not spawn");
+            require(show(renderer, context, player, visuals.model("thor", "HAMMER")), "Disconnect fixture did not spawn");
             online = false; step(renderer); require(displays().isEmpty(), "Offline owner left entities"); online = true;
-            require(show(renderer, context, player, ObjectModel.HAMMER), "World fixture did not spawn");
+            require(show(renderer, context, player, visuals.model("thor", "HAMMER")), "World fixture did not spawn");
             location.setWorld(null); step(renderer); require(displays().isEmpty(), "Lost anchor left entities"); location.setWorld(world);
 
-            feedback.scales(context, player, 3);
+            visuals.effect("scales", new AbilityPlayerContext(core, player, core.abilities().registry().get("anubis")), player, 3D);
             require(!displays().isEmpty(), "Target-following scales failed");
             // Making the target invisible restricts its scene to itself; removing visibility completely hides it.
             ObjectEffects privateRenderer = new ObjectEffects();
-            feedback.clear();
+            visuals.clear();
             final boolean[] visible = {true};
-            require(privateRenderer.show("private", context, ObjectModel.SCALES, () -> location.clone(),
+            require(privateRenderer.show("private", context, visuals.model("anubis", "SCALES"), () -> location.clone(),
                 () -> visible[0] ? Collections.singletonList(player) : Collections.emptyList(), 12, 3), "Visibility fixture failed");
             visible[0] = false; step(privateRenderer);
             require(hidden > 0, "Existing display stayed visible after its audience changed");
@@ -140,19 +151,19 @@ final class ObjectEffectRegressionChecks {
             Bukkit.getPluginManager().registerEvents(blocker, core);
             try {
                 ObjectEffects failed = new ObjectEffects();
-                require(!show(failed, context, player, ObjectModel.HAMMER), "Cancelled partial spawn was reported as success");
+                require(!show(failed, context, player, visuals.model("thor", "HAMMER")), "Cancelled partial spawn was reported as success");
                 require(displays().isEmpty(), "A partially created assembly leaked entities");
             } finally { HandlerList.unregisterAll(blocker); }
 
-            require(show(renderer, context, player, ObjectModel.PHALANX), "Shutdown fixture failed");
+            require(show(renderer, context, player, visuals.model("athena", "PHALANX")), "Shutdown fixture failed");
             ObjectEffects.clearAll(); require(displays().isEmpty(), "Global shutdown left cosmetics");
-            for (int i = 0; i < 7; i++) require(show(new ObjectEffects(), context, player, ObjectModel.PHALANX), "Global budget admitted too few displays");
-            require(!show(new ObjectEffects(), context, player, ObjectModel.PHALANX), "Global display limit was exceeded");
+            for (int i = 0; i < 7; i++) require(show(new ObjectEffects(), context, player, visuals.model("athena", "PHALANX")), "Global budget admitted too few displays");
+            require(!show(new ObjectEffects(), context, player, visuals.model("athena", "PHALANX")), "Global display limit was exceeded");
             require(displays().size() == 245, "Budget refusal left a partial formation");
             ObjectEffects.clearAll(); require(displays().isEmpty(), "Global budget entities were not reclaimed");
             core.getLogger().info("PASS object effects: all 10 models, actual Display entities, reuse, visibility, expiry, disconnect, partial-spawn rollback, budgets and exclusive fallback");
         } finally {
-            feedback.clear(); renderer.clear(); ObjectEffects.clearAll();
+            visuals.clear(); renderer.clear(); ObjectEffects.clearAll();
             for (Map.Entry<String, Object> entry : saved.entrySet()) core.getConfig().set("abilities.effects." + entry.getKey(), entry.getValue());
         }
     }

@@ -22,7 +22,7 @@ import org.bukkit.event.player.PlayerRespawnEvent;
 import java.util.Collections;
 import java.util.List;
 
-public interface GodAbility {
+public interface GodAbility extends AbilityVisuals {
 
     /** Persistent ability data; ongoing scheduled effects are intentionally not replayed. */
     default void saveSession(org.bukkit.configuration.ConfigurationSection data) {

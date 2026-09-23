@@ -1,10 +1,19 @@
 package kr.newgodwar.ability.builtin;
 
 import kr.newgodwar.ability.api.*;
+import kr.newgodwar.ability.feedback.AbilityStyle;
+import kr.newgodwar.ability.feedback.AbilityTheme;
+import kr.newgodwar.ability.feedback.ObjectModel;
+
+import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+
+import java.util.ArrayList;
 import java.util.List;
+
+import static kr.newgodwar.ability.feedback.ModelParts.*;
 
 @AbilityInfo(
     id = "anubis", name = "아누비스",
@@ -17,6 +26,13 @@ import java.util.List;
     grade = AbilityGrade.A
 )
 final class AnubisAbility extends TransientAbility {
+    private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.SHADOW)
+        .dedicated()
+        .build();
+
+    @Override
+    public AbilityStyle style() { return STYLE; }
+
     private Player judged;
     private double burden;
     private int scaleTask = -1;
@@ -31,7 +47,7 @@ final class AnubisAbility extends TransientAbility {
         final int[] remaining = {16};
         scaleTask = scheduleRepeating(context, () -> {
             if (!validEnemy(context, judged, 24) || remaining[0]-- <= 0) { endJudgment(); return; }
-            feedback.scales(context, judged, burden);
+            scales(context, judged, burden);
         }, 1, 10);
     }
 
@@ -50,7 +66,7 @@ final class AnubisAbility extends TransientAbility {
         if (!useAdvanced(context, player)) return;
         Player target = judged;
         double amount = 4 + burden;
-        feedback.scales(context, target, burden);
+        scales(context, target, burden);
         endJudgment();
         double before = target.getHealth();
         damage(context, target, amount, player);
@@ -68,4 +84,26 @@ final class AnubisAbility extends TransientAbility {
 
     @Override
     protected void clearTransientState() { judged = null; burden = 0; scaleTask = -1; }
+
+    static final ObjectModel SCALES = ObjectModel.animated((phase, detail) -> {
+        List<ObjectModel.Part> out = new ArrayList<ObjectModel.Part>();
+        double tilt = Math.min(4, detail) * 0.08;
+        box(out, "GOLD_BLOCK", 0, -0.12, 0, 0.055, 0.9, 0.055, 0, 0);
+        box(out, "GOLD_BLOCK", 0, 0.1, 0, 1.25, 0.055, 0.055, -tilt, 0);
+        for (int side : new int[] {-1, 1}) {
+            double y = 0.1 - side * Math.sin(tilt) * 0.6;
+            box(out, "IRON_BLOCK", side * 0.6, y - 0.2, 0, 0.025, 0.4, 0.025, 0, 0);
+            box(out, "GOLD_BLOCK", side * 0.6, y - 0.42, 0, 0.32, 0.06, 0.28, 0, 0);
+        }
+        return out;
+    });
+
+    private void scales(AbilityPlayerContext context, Player target, double burden) {
+        if (target == null || !target.isOnline()) return;
+        Location center = target.getLocation().add(0, 2.6D, 0);
+        if (feedback.followObject("scales:" + target.getUniqueId(), context, SCALES,
+            () -> target.isOnline() && !target.isDead() ? target.getLocation().add(0, 2.6D, 0) : null,
+            () -> feedback.targetViewers(context, target, target.getLocation()), 12, burden)) return;
+        feedback.modelOutline(context, center, SCALES, 0, burden, feedback.targetViewers(context, target, center));
+    }
 }

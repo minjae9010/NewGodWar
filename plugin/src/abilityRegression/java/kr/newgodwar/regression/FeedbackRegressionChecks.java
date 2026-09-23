@@ -2,6 +2,7 @@ package kr.newgodwar.regression;
 
 import kr.newgodwar.NewGodWarPlugin;
 import kr.newgodwar.ability.api.AbilityPlayerContext;
+import kr.newgodwar.ability.api.AbilityVisuals;
 import kr.newgodwar.ability.builtin.BaseAbility;
 import kr.newgodwar.ability.feedback.AbilityFeedback;
 import kr.newgodwar.ability.feedback.AbilityTheme;
@@ -20,6 +21,13 @@ import java.util.*;
 /** Executes feedback against the server's real particle/sound registries with recording viewers. */
 final class FeedbackRegressionChecks {
     private final NewGodWarPlugin core;
+    private final VisualProbe visuals;
+    // Construct before installing the recording Server proxy so Paper can convert this class normally.
+    private final AbilityVisuals customVisuals = new AbilityVisuals() {
+        private final AbilityStyle style = AbilityStyle.builder(AbilityTheme.WATER)
+            .normal(EffectCue.ITEM).privateCast().build();
+        @Override public AbilityStyle style() { return style; }
+    };
     private final Map<String, Integer> particles = new HashMap<String, Integer>();
     private final List<Location> points = new ArrayList<Location>();
     private final List<Particle> kinds = new ArrayList<Particle>();
@@ -39,11 +47,11 @@ final class FeedbackRegressionChecks {
     private float yaw;
     private org.bukkit.potion.PotionEffect existingPotion;
 
-    FeedbackRegressionChecks(NewGodWarPlugin core) { this.core = core; }
+    FeedbackRegressionChecks(NewGodWarPlugin core) { this.core = core; this.visuals = new VisualProbe(core); }
 
     void run() throws Exception {
         // Paper rewrites legacy plugin bytecode against CraftServer while loading each class.
-        AbilityStyle.ids();
+        visuals.models();
         for (EffectCue cue : EffectCue.values()) cue.draw((ink, x, y, z, rgb) -> { });
         Class.forName("kr.newgodwar.ability.feedback.AbilityFeedback$Reaction", true, core.getClass().getClassLoader());
         Class.forName("kr.newgodwar.ability.feedback.ColoredDust", true, core.getClass().getClassLoader());
@@ -127,17 +135,17 @@ final class FeedbackRegressionChecks {
             stones = 100;
             clearOutput();
             require(new ProbeAbility().cast(context("clocking"), false), "Stealth cast failed");
-            new AbilityFeedback().status(context("clocking"), caster, "INVISIBILITY");
+            new AbilityFeedback(visuals.ability("clocking")).status(context("clocking"), caster, "INVISIBILITY");
             flush();
             require(count(particles, "Caster") > 0 && count(particles, "Near") == 0 && count(sounds, "Near") == 0,
                 "Stealth activation revealed the caster before invisibility was applied");
             clearOutput(); invisible = true;
-            new AbilityFeedback().activated(context, caster, false);
+            new AbilityFeedback(visuals.ability("zeus")).activated(context, caster, false);
             require(count(particles, "Near") == 0 && count(sounds, "Near") == 0, "Invisible caster leaked cosmetic effects");
             invisible = false;
 
             clearOutput();
-            AbilityFeedback feedback = new AbilityFeedback();
+            AbilityFeedback feedback = new AbilityFeedback(visuals.ability("gaia"));
             feedback.affected(context("gaia"), viewers.get(1), "대지 속박 · 7초", true);
             feedback.affected(context("gaia"), viewers.get(1), "대지 속박 · 7초", true);
             flush();
@@ -199,6 +207,7 @@ final class FeedbackRegressionChecks {
             checkAllStylesAndReactions();
             core.getLogger().info("PASS feedback: server particle/sound aliases, cast/failure/ready, resource accounting, visibility, range, toggles, throttle and cleanup");
         } finally {
+            visuals.clear();
             serverField.set(null, original);
             nmsField.set(core, oldNms);
             for (Map.Entry<String, Object> entry : oldConfig.entrySet()) core.getConfig().set(entry.getKey(), entry.getValue());
@@ -207,25 +216,33 @@ final class FeedbackRegressionChecks {
 
     private void checkAllStylesAndReactions() {
         core.getConfig().set("abilities.effects.animations", true);
-        for (String id : AbilityStyle.ids()) {
+        // A renderer must use its supplied policy, even when the context has a built-in id.
+        clearOutput();
+        AbilityFeedback custom = new AbilityFeedback(customVisuals);
+        custom.activated(context("zeus"), caster, false);
+        flush();
+        require(count(particles, "Caster") > 0 && count(particles, "Near") == 0,
+            "Custom visual policy was replaced by context-id defaults");
+        custom.clear();
+        for (String id : core.abilities().registry().ids()) {
             for (boolean advanced : new boolean[] {false, true}) {
                 clearOutput();
-                AbilityFeedback feedback = new AbilityFeedback();
-                EffectCue cue = AbilityStyle.of(id).cast(advanced);
+                AbilityFeedback feedback = new AbilityFeedback(visuals.ability(id));
+                EffectCue cue = visuals.ability(id).style().cast(advanced);
                 feedback.activated(context(id), caster, advanced);
                 require(tasks.size() == (cue == EffectCue.NONE ? 0 : 1), "Unexpected cast tasks: " + id);
                 flush();
                 final int[] expected = {0}; cue.draw((ink, x, y, z, rgb) -> expected[0]++);
                 require(count(particles, "Caster") == expected[0] && tasks.isEmpty(), "Cast duplicated: " + id);
                 require(count(particles, "CannotSee") == 0 && count(particles, "Far") == 0, "Cast visibility leaked: " + id);
-                if (AbilityTheme.privateCast(id)) require(count(particles, "Near") == 0 && count(sounds, "Near") == 0,
+                if (visuals.ability(id).style().privateCast()) require(count(particles, "Near") == 0 && count(sounds, "Near") == 0,
                     "Private cast leaked: " + id);
                 feedback.clear();
             }
         }
         // The same invocation can reach the activation, potion, damage and message hooks.
         clearOutput();
-        AbilityFeedback feedback = new AbilityFeedback();
+        AbilityFeedback feedback = new AbilityFeedback(visuals.ability("gaia"));
         AbilityPlayerContext healing = context("gaia"); Player target = viewers.get(1);
         feedback.activated(healing, caster, false);
         feedback.status(healing, target, "SPEED");
@@ -272,28 +289,30 @@ final class FeedbackRegressionChecks {
         World priorWorld = world; world = proxy(World.class, (p, m, a) -> defaultValue(m.getReturnType()));
         flush(); require(particles.isEmpty(), "Reaction crossed a world change"); world = priorWorld;
         feedback.clear(); clearOutput();
+        feedback = new AbilityFeedback(visuals.ability("hecate"));
         feedback.affected(context("hecate"), target, "저주", true); flush();
         require(count(particles, "Caster") > 0 && count(particles, "CannotSee") == 0 && count(particles, "Near") == 0,
             "Target effect revealed a private caster");
 
         feedback.clear(); clearOutput();
+        feedback = new AbilityFeedback(visuals.ability("thor"));
         AbilityPlayerContext thor = context("thor");
         feedback.activated(thor, caster, true);
         feedback.status(thor, target, "SLOWNESS");
         feedback.affected(thor, target, "천둥 강타", true);
         feedback.impact(thor, target);
         require(tasks.isEmpty() && particles.isEmpty(), "Thor stacked generic feedback on his dedicated effect");
-        feedback.thunderbolt(thor, target.getLocation());
+        visuals.effect("thunderbolt", thor, target.getLocation());
         require(count(particles, "Caster") == 25, "Thunderbolt was duplicated");
-        clearOutput(); feedback.echoSlash(context("echo"), target.getLocation(), 3);
+        clearOutput(); visuals.effect("echoSlash", context("echo"), target.getLocation(), 3);
         require(count(particles, "Caster") == 1 && kinds.get(0) == AbilityTheme.ECHO.particle(), "Native crescent stacked into a disc");
-        clearOutput(); feedback.pulse(context("echo"), target.getLocation(), 3);
+        clearOutput(); new AbilityFeedback(visuals.ability("echo")).pulse(context("echo"), target.getLocation(), 3);
         require(!kinds.contains(AbilityTheme.ECHO.particle()), "Echo warning ring still stacks full crescent sprites");
-        clearOutput(); feedback.melody(context("pan"), caster.getLocation(), 7, 1, false);
+        clearOutput(); visuals.effect("melody", context("pan"), caster.getLocation(), 7, 1, false);
         require(count(particles, "Caster") == 6, "Melody filled the area with overlapping note sprites");
-        clearOutput(); feedback.gravityWell(context("graviton"), target.getLocation(), 5, 1);
+        clearOutput(); visuals.effect("gravityWell", context("graviton"), target.getLocation(), 5, 1);
         require(count(particles, "Caster") == 24, "Gravity streams were missing or duplicated");
-        clearOutput(); feedback.frostCage(context("frost"), target.getLocation(), 3);
+        clearOutput(); visuals.effect("frostCage", context("frost"), target.getLocation(), 3);
         require(count(particles, "Caster") <= 36 && count(particles, "Caster") > 0, "Ice cage was unbounded");
         feedback.clear(); clearOutput();
         core.getConfig().set("abilities.effects.particles", false);
@@ -311,35 +330,37 @@ final class FeedbackRegressionChecks {
 
     private AbilityPlayerContext context(String id) { return new AbilityPlayerContext(core, caster, core.abilities().registry().get(id)); }
     private void signatureEffects(AbilityFeedback feedback, Location center) {
-        feedback.hammer(context("thor"), center);
-        feedback.thunderbolt(context("thor"), center);
-        feedback.huntMark(context("artemis"), viewers.get(1), 2);
-        feedback.echoSlash(context("echo"), center, 3);
-        feedback.rune(context("runesmith"), center, 3, true);
-        feedback.runeBurst(context("runesmith"), center, false);
-        feedback.shield(context("hermione"), center, 5);
+        visuals.effect("hammer", context("thor"), center);
+        visuals.effect("thunderbolt", context("thor"), center);
+        visuals.effect("huntMark", context("artemis"), viewers.get(1), 2);
+        visuals.effect("echoSlash", context("echo"), center, 3);
+        visuals.effect("rune", context("runesmith"), center, 3, true);
+        visuals.effect("runeBurst", context("runesmith"), center, false);
+        visuals.effect("shield", context("hermione"), center, 5);
     }
     private void namedKitEffects(AbilityFeedback feedback, Location center) {
-        feedback.clockFace(context("chronos"), center, 6, 2);
+        visuals.effect("clockFace", context("chronos"), center, 6, 2);
         feedback.flock(context("odin"), viewers.get(1), 0, false);
         feedback.spear(context("odin"), center, center.clone().add(0, 1, 5));
-        feedback.forge(context("hephaestus"), center, true);
-        feedback.phalanx(context("athena"), center, new org.bukkit.util.Vector(0, 0, 1));
-        feedback.oath(context("hera"), caster, viewers.get(1));
-        feedback.scales(context("anubis"), viewers.get(1), 4);
+        visuals.effect("forge", context("hephaestus"), center, true);
+        visuals.effect("phalanx", context("athena"), center, new org.bukkit.util.Vector(0, 0, 1));
+        visuals.effect("oath", context("hera"), caster, viewers.get(1));
+        visuals.effect("scales", context("anubis"), viewers.get(1), 4);
         feedback.flock(context("queenbee"), viewers.get(1), 0, true);
-        feedback.honeycomb(context("queenbee"), center);
-        feedback.wings(context("nike"), center, 3);
-        feedback.harvest(context("demeter"), center, 3);
-        feedback.melody(context("pan"), center, 7, 2, true);
+        visuals.effect("honeycomb", context("queenbee"), center);
+        visuals.effect("wings", context("nike"), center, 3);
+        visuals.effect("harvest", context("demeter"), center, 3);
+        visuals.effect("melody", context("pan"), center, 7, 2, true);
     }
-    private void clearOutput() { points.clear(); kinds.clear(); particles.clear(); sounds.clear(); messages.clear(); bars.clear(); titles.clear(); }
+    private void clearOutput() { visuals.clear(); points.clear(); kinds.clear(); particles.clear(); sounds.clear(); messages.clear(); bars.clear(); titles.clear(); }
     private int count(Map<String, Integer> map, String key) { return map.containsKey(key) ? map.get(key) : 0; }
     private boolean contains(List<String> lines, String text) { for (String line : lines) if (line.contains(text)) return true; return false; }
 
     private Player player(String name, double x, boolean visible) {
         UUID id = UUID.randomUUID();
         PlayerInventory inventory = proxy(PlayerInventory.class, (p, m, a) -> {
+            if (m.getName().equals("getStorageContents")) return new ItemStack[] {stones > 0 ? new ItemStack(Material.COBBLESTONE, stones) : null};
+            if (m.getName().equals("setItem")) { stones = a[1] == null ? 0 : ((ItemStack) a[1]).getAmount(); return null; }
             if (m.getName().equals("contains")) return stones >= ((Number) a[1]).intValue();
             if (m.getName().equals("removeItem")) {
                 for (ItemStack item : (ItemStack[]) a[0]) stones -= item.getAmount();

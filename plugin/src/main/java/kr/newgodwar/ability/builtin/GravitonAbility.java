@@ -1,11 +1,20 @@
 package kr.newgodwar.ability.builtin;
 
 import kr.newgodwar.ability.api.*;
+import kr.newgodwar.ability.feedback.AbilityStyle;
+import kr.newgodwar.ability.feedback.AbilityTheme;
+import kr.newgodwar.ability.feedback.ObjectModel;
+
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.util.Vector;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static kr.newgodwar.ability.feedback.ModelParts.*;
 
 @AbilityInfo(
     id = "graviton", name = "중력술사",
@@ -18,6 +27,13 @@ import org.bukkit.util.Vector;
     grade = AbilityGrade.A
 )
 final class GravitonAbility extends TransientAbility {
+    private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.GRAVITY)
+        .dedicated()
+        .build();
+
+    @Override
+    public AbilityStyle style() { return STYLE; }
+
     private boolean wellActive;
     private boolean repulsionPending;
 
@@ -34,7 +50,7 @@ final class GravitonAbility extends TransientAbility {
             final int phase = i;
             scheduleLater(context, () -> {
                 if (!active(context) || !player.getWorld().equals(center.getWorld())) return;
-                feedback.gravityWell(context, center, 5, phase);
+                gravityWell(context, center, 5, phase);
                 for (Player target : enemies(context, center, 5)) {
                     Vector pull = center.toVector().subtract(target.getLocation().toVector());
                     if (pull.lengthSquared() < 0.25D) continue;
@@ -71,4 +87,30 @@ final class GravitonAbility extends TransientAbility {
 
     @Override
     protected void clearTransientState() { wellActive = false; repulsionPending = false; }
+
+    static final ObjectModel GRAVITY = ObjectModel.animated((phase, detail) -> {
+        List<ObjectModel.Part> out = new ArrayList<ObjectModel.Part>();
+        box(out, "CRYING_OBSIDIAN", 0, 0.65, 0, 0.42, 0.42, 0.42, phase * 0.08, phase * 0.06);
+        for (int i = 0; i < 3; i++) {
+            double a = phase * 0.1 + i * Math.PI * 2 / 3;
+            box(out, "AMETHYST_BLOCK", Math.cos(a) * 0.85, 0.65 + Math.sin(a * 2) * 0.25,
+                Math.sin(a) * 0.85, 0.16, 0.16, 0.16, a, a);
+        }
+        return out;
+    });
+
+    /** Three inward streams show the direction of the actual pull. */
+    private void gravityWell(AbilityPlayerContext context, Location center, double radius, int phase) {
+        if (center == null || center.getWorld() == null) return;
+        if (feedback.object(context, "gravity:" + feedback.positionKey(center), GRAVITY, center, 12, radius)) return;
+        List<Player> audience = feedback.effectViewers(context, center);
+        double size = Math.max(0.5D, Math.min(6, radius));
+        for (int arm = 0; arm < 3; arm++) for (int i = 0; i < 8; i++) {
+            double fraction = (i + 1) / 8D;
+            double angle = arm * Math.PI * 2 / 3 + phase * 0.45D + fraction * 1.5D;
+            feedback.particle(context, center.clone().add(Math.cos(angle) * size * fraction,
+                0.15D + (1 - fraction) * 0.65D, Math.sin(angle) * size * fraction),
+                AbilityTheme.GRAVITY.particle(), audience, 1, 0);
+        }
+    }
 }

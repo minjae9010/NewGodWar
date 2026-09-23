@@ -1,6 +1,10 @@
 package kr.newgodwar.ability.builtin;
 
 import kr.newgodwar.ability.api.*;
+import kr.newgodwar.ability.feedback.AbilityStyle;
+import kr.newgodwar.ability.feedback.AbilityTheme;
+import kr.newgodwar.ability.feedback.ObjectModel;
+
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -11,8 +15,11 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import static kr.newgodwar.ability.feedback.ModelParts.*;
 
 @AbilityInfo(
     id = "thor", name = "토르",
@@ -25,6 +32,14 @@ import java.util.List;
     grade = AbilityGrade.A
 )
 final class ThorAbility extends TransientAbility {
+    private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.LIGHTNING)
+        .dedicated()
+        .build();
+
+    @Override
+    public AbilityStyle style() { return STYLE; }
+
+    private int hammerFrame;
     private int charges;
     private long nextCharge;
     private boolean hammerDamage;
@@ -56,11 +71,11 @@ final class ThorAbility extends TransientAbility {
             scheduleLater(context, () -> {
                 if (frame == 12) hammerInFlight = false;
                 if (!active(context) || !player.getWorld().equals(impact.getWorld())) return;
-                feedback.hammer(context, frame <= 6 ? between(origin, impact, frame / 6.0D)
+                hammer(context, frame <= 6 ? between(origin, impact, frame / 6.0D)
                     : between(impact, player.getEyeLocation(), (frame - 6) / 6.0D));
                 if (frame == 6 && validEnemy(context, target, 24) && player.hasLineOfSight(target)
                     && target.getEyeLocation().distanceSquared(impact) <= 2.25D) {
-                    feedback.thunderbolt(context, impact);
+                    thunderbolt(context, impact);
                     hammerHit(context, target, 5);
                     if (validEnemy(context, target, 24)) effect(context, target, "SLOWNESS", "SLOW", 2, 0);
                 }
@@ -89,7 +104,7 @@ final class ThorAbility extends TransientAbility {
         charges = 0;
         Location center = player.getLocation();
         for (Player target : targets) {
-            feedback.thunderbolt(context, target.getLocation());
+            thunderbolt(context, target.getLocation());
             hammerHit(context, target, 3 + spent * 2);
             if (validEnemy(context, target, 5)) repel(target, center, 0.5D + spent * 0.15D);
         }
@@ -137,4 +152,34 @@ final class ThorAbility extends TransientAbility {
 
     @Override
     protected void clearTransientState() { charges = 0; nextCharge = 0; hammerInFlight = false; }
+
+    static final ObjectModel HAMMER = ObjectModel.animated((phase, detail) -> {
+        List<ObjectModel.Part> out = new ArrayList<ObjectModel.Part>();
+        box(out, "IRON_BLOCK", 0, 0.12, 0, 0.78, 0.34, 0.34, 0, 0);
+        box(out, "POLISHED_ANDESITE", -0.43, 0.12, 0, 0.09, 0.28, 0.28, 0, 0);
+        box(out, "POLISHED_ANDESITE", 0.43, 0.12, 0, 0.09, 0.28, 0.28, 0, 0);
+        box(out, "DARK_OAK_PLANKS", 0, -0.4, 0, 0.11, 0.7, 0.11, 0, 0);
+        box(out, "GOLD_BLOCK", 0, -0.1, 0, 0.18, 0.09, 0.18, 0, 0);
+        box(out, "GOLD_BLOCK", 0, -0.76, 0, 0.18, 0.12, 0.18, 0, 0);
+        return rotate(out, Math.sin(phase * 0.6) * 0.4);
+    });
+
+    /** A small hammer silhouette, used along Mjolnir's actual outbound/return path. */
+    private void hammer(AbilityPlayerContext context, Location center) {
+        if (center == null || center.getWorld() == null || !feedback.visuals(context)) return;
+        if (feedback.object(context, "hammer", HAMMER, center, 5, 1)) return;
+        feedback.modelOutline(context, center, HAMMER, ++hammerFrame, 1, feedback.effectViewers(context, center));
+    }
+
+    /** Cosmetic lightning never ignites blocks or damages teammates. */
+    private void thunderbolt(AbilityPlayerContext context, Location center) {
+        if (center == null || center.getWorld() == null) return;
+        List<Player> audience = feedback.effectViewers(context, center);
+        for (int i = 0; i <= 24; i++) {
+            double offset = i == 24 ? 0 : Math.sin(i * 1.9D) * 0.35D;
+            feedback.particle(context, center.clone().add(offset, 6.0D - i * 0.25D, -offset),
+                AbilityTheme.LIGHTNING.particle(), audience, 1, 0);
+        }
+        if (feedback.allow("thunder-sound", 150L)) feedback.sound(context, center, audience, AbilityTheme.LIGHTNING.sound(), 0.6F, 1.1F);
+    }
 }

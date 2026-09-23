@@ -31,6 +31,7 @@ final class TeamChatRegression {
             new Class<?>[] {Player.class}, (proxy, method, args) -> {
                 switch (method.getName()) {
                     case "getUniqueId": return id;
+                    case "getActivePotionEffects": return java.util.Collections.emptyList();
                     case "getName": case "getDisplayName": return "OfflineTeamPlayer";
                     case "getScoreboard": return board[0];
                     case "setScoreboard": board[0] = (Scoreboard) args[0]; return null;

@@ -1,6 +1,10 @@
 package kr.newgodwar.ability.builtin;
 
 import kr.newgodwar.ability.api.*;
+import kr.newgodwar.ability.feedback.AbilityStyle;
+import kr.newgodwar.ability.feedback.AbilityTheme;
+import kr.newgodwar.ability.feedback.EffectCue;
+
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
@@ -28,6 +32,14 @@ import java.util.List;
     grade = AbilityGrade.A
 )
 final class NatureAbility extends BaseAbility {
+    private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.NATURE)
+        .normal(EffectCue.ITEM)
+        .benefit(EffectCue.HEAL)
+        .build();
+
+    @Override
+    public AbilityStyle style() { return STYLE; }
+
     private static final int GROW_RADIUS = 5;
     private static final int BUFF_RADIUS = 4;
     private static final int MAX_GROWTHS_PER_TICK = 8;

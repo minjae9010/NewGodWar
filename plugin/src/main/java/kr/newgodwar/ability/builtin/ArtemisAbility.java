@@ -1,7 +1,12 @@
 package kr.newgodwar.ability.builtin;
 
 import kr.newgodwar.ability.api.*;
+import kr.newgodwar.ability.feedback.AbilityStyle;
+import kr.newgodwar.ability.feedback.AbilityTheme;
+import kr.newgodwar.ability.feedback.EffectCue;
+
 import org.bukkit.ChatColor;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Player;
@@ -26,6 +31,15 @@ import java.util.UUID;
     grade = AbilityGrade.A
 )
 final class ArtemisAbility extends TransientAbility {
+    private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.HUNT)
+        .normal(EffectCue.ITEM)
+        .dedicated()
+        .trail(AbilityTheme.LIGHTNING)
+        .build();
+
+    @Override
+    public AbilityStyle style() { return STYLE; }
+
     private UUID prey;
     private int marks;
     private long expiresAt;
@@ -66,7 +80,7 @@ final class ArtemisAbility extends TransientAbility {
             clearTransientState();
             event.setDamage(event.getDamage() + 4);
             effect(context, victim, "SLOWNESS", "SLOW", 3, 1);
-            feedback.huntMark(context, victim, 3);
+            huntMark(context, victim, 3);
             feedback.affected(context, victim, "사냥 완성 · 추가 피해 / 감속 3초", true);
         } else {
             mark(context, victim, next);
@@ -79,14 +93,14 @@ final class ArtemisAbility extends TransientAbility {
         prey = target.getUniqueId();
         marks = count;
         expiresAt = System.currentTimeMillis() + 8000L;
-        feedback.huntMark(context, target, marks);
+        huntMark(context, target, marks);
         final int[] remaining = {8};
         markTask = scheduleRepeating(context, () -> {
             if (--remaining[0] <= 0 || System.currentTimeMillis() >= expiresAt || !validEnemy(context, target, 64)) {
                 clearTransientState();
                 return;
             }
-            feedback.huntMark(context, target, marks);
+            huntMark(context, target, marks);
         }, 20L, 20L);
     }
 
@@ -109,5 +123,20 @@ final class ArtemisAbility extends TransientAbility {
         cancelScheduledTask(markTask);
         markTask = -1;
         prey = null; marks = 0; expiresAt = 0;
+    }
+
+    /** Silver crescent and one star per mark, attached to the hunted player's position. */
+    private void huntMark(AbilityPlayerContext context, Player target, int marks) {
+        if (target == null || !target.isOnline() || !feedback.enabled(context, "particles")) return;
+        Location center = target.getLocation().add(0, 2.3D, 0);
+        List<Player> audience = feedback.targetViewers(context, target, center);
+        for (int i = 0; i < 15; i++) {
+            double angle = Math.PI * (0.25D + i * 1.5D / 14.0D);
+            feedback.particle(context, center.clone().add(Math.cos(angle) * 0.4D, Math.sin(angle) * 0.4D, 0),
+                AbilityTheme.LIGHTNING.particle(), audience, 1, 0);
+        }
+        for (int i = 0; i < Math.min(3, Math.max(0, marks)); i++) {
+            feedback.particle(context, center.clone().add((i - 1) * 0.3D, 0.65D, 0), AbilityTheme.HUNT.particle(), audience, 2, 0);
+        }
     }
 }

@@ -1,10 +1,14 @@
 package kr.newgodwar.ability.builtin;
 
 import kr.newgodwar.ability.api.*;
+import kr.newgodwar.ability.feedback.AbilityStyle;
+import kr.newgodwar.ability.feedback.AbilityTheme;
+
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerInteractEvent;
+
 import java.util.List;
 
 @AbilityInfo(
@@ -18,6 +22,13 @@ import java.util.List;
     grade = AbilityGrade.S
 )
 final class ChronosAbility extends TransientAbility {
+    private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.TIME)
+        .dedicated()
+        .build();
+
+    @Override
+    public AbilityStyle style() { return STYLE; }
+
     private Location anchor;
     private double recordedHealth;
     private int anchorTask = -1;
@@ -37,7 +48,7 @@ final class ChronosAbility extends TransientAbility {
             cancelScheduledTask(anchorTask);
             anchorTask = -1;
             anchor = null;
-            feedback.clockFace(context, destination, 1.2D, 0);
+            clockFace(context, destination, 1.2D, 0);
             feedback.timer(context, "시간 되감기 완료");
             return;
         }
@@ -49,7 +60,7 @@ final class ChronosAbility extends TransientAbility {
         if (!useNormal(context, player)) return;
         anchor = location;
         recordedHealth = player.getHealth();
-        feedback.clockFace(context, anchor, 1.2D, 0);
+        clockFace(context, anchor, 1.2D, 0);
         anchorTask = scheduleLater(context, () -> {
             anchor = null; anchorTask = -1;
             feedback.timer(context, "시간 좌표 소멸");
@@ -78,7 +89,7 @@ final class ChronosAbility extends TransientAbility {
             final int phase = i;
             scheduleLater(context, () -> {
                 if (!active(context) || !player.getWorld().equals(center.getWorld())) return;
-                feedback.clockFace(context, center, 6, phase);
+                clockFace(context, center, 6, phase);
                 for (Player target : enemies(context, center, 6)) {
                     effectTicks(target, "SLOWNESS", "SLOW", 12, 3);
                     effectTicks(target, "MINING_FATIGUE", "SLOW_DIGGING", 12, 2);
@@ -97,4 +108,19 @@ final class ChronosAbility extends TransientAbility {
 
     @Override
     protected void clearTransientState() { anchor = null; anchorTask = -1; fieldActive = false; recordedHealth = 0; }
+
+    private void clockFace(AbilityPlayerContext context, Location center, double radius, int phase) {
+        if (center == null || center.getWorld() == null) return;
+        List<Player> audience = feedback.effectViewers(context, center);
+        double size = Math.max(0.5D, Math.min(6, radius));
+        for (int i = 0; i < 12; i++) {
+            double angle = i * Math.PI / 6;
+            feedback.particle(context, center.clone().add(Math.cos(angle) * size, 0.15D, Math.sin(angle) * size),
+                AbilityTheme.TIME.particle(), audience, 2, 0);
+        }
+        double angle = phase * Math.PI / 3;
+        feedback.segment(context, center.clone().add(0, 0.2D, 0),
+            center.clone().add(Math.cos(angle) * size, 0.2D, Math.sin(angle) * size), AbilityTheme.TIME, audience);
+        feedback.sound(context, center, audience, AbilityTheme.TIME.sound(), 0.3F, 1.4F);
+    }
 }

@@ -1,12 +1,18 @@
 package kr.newgodwar.ability.builtin;
 
 import kr.newgodwar.ability.api.*;
+import kr.newgodwar.ability.feedback.AbilityStyle;
+import kr.newgodwar.ability.feedback.AbilityTheme;
+import kr.newgodwar.ability.feedback.EffectCue;
+
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.FoodLevelChangeEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
+
+import java.util.List;
 
 @AbilityInfo(
     id = "demeter", name = "데메테르",
@@ -19,6 +25,14 @@ import org.bukkit.event.player.PlayerRespawnEvent;
     grade = AbilityGrade.A
 )
 final class DemeterAbility extends TransientAbility {
+    private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.NATURE)
+        .normal(EffectCue.ITEM)
+        .dedicated()
+        .build();
+
+    @Override
+    public AbilityStyle style() { return STYLE; }
+
     private boolean harvesting;
 
     @Override
@@ -36,13 +50,13 @@ final class DemeterAbility extends TransientAbility {
         if (harvesting || !useAdvanced(context, player)) return;
         harvesting = true;
         Location center = player.getLocation();
-        feedback.harvest(context, center, 0);
+        harvest(context, center, 0);
         for (int i = 1; i <= 3; i++) {
             final int stage = i;
             scheduleLater(context, () -> {
                 if (stage == 3) harvesting = false;
                 if (!active(context) || !player.getWorld().equals(center.getWorld())) return;
-                feedback.harvest(context, center, stage);
+                harvest(context, center, stage);
                 for (Player target : alliesInRange(context, center, 5)) {
                     restoreHealth(target, 2);
                     target.setFoodLevel(Math.min(20, target.getFoodLevel() + 4));
@@ -62,4 +76,17 @@ final class DemeterAbility extends TransientAbility {
 
     @Override
     protected void clearTransientState() { harvesting = false; }
+
+    private void harvest(AbilityPlayerContext context, Location center, int stage) {
+        if (center == null || center.getWorld() == null) return;
+        List<Player> audience = feedback.effectViewers(context, center);
+        double height = 0.2D + Math.min(3, Math.max(0, stage)) * 0.3D;
+        for (int i = 0; i < 8; i++) {
+            double angle = i * Math.PI / 4;
+            Location stalk = center.clone().add(Math.cos(angle) * 3, 0.2D, Math.sin(angle) * 3);
+            feedback.segment(context, stalk, stalk.clone().add(0, height, 0), AbilityTheme.NATURE, audience);
+            feedback.particle(context, stalk.clone().add(0, height, 0), AbilityTheme.SWARM.particle(), audience, 3, 0.1D);
+        }
+        feedback.sound(context, center, audience, AbilityTheme.NATURE.sound(), 0.4F, 0.8F + stage * 0.2F);
+    }
 }

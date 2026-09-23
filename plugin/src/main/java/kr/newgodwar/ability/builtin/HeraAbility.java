@@ -1,8 +1,14 @@
 package kr.newgodwar.ability.builtin;
 
 import kr.newgodwar.ability.api.*;
+import kr.newgodwar.ability.feedback.AbilityStyle;
+import kr.newgodwar.ability.feedback.AbilityTheme;
+
+import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerInteractEvent;
+
+import java.util.Collections;
 import java.util.List;
 
 @AbilityInfo(
@@ -16,6 +22,13 @@ import java.util.List;
     grade = AbilityGrade.B
 )
 final class HeraAbility extends TransientAbility {
+    private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.GUARD)
+        .dedicated()
+        .build();
+
+    @Override
+    public AbilityStyle style() { return STYLE; }
+
     private Player partner;
     private int bondTask = -1;
 
@@ -31,7 +44,7 @@ final class HeraAbility extends TransientAbility {
             if (!bondValid(context) || remaining[0]-- <= 0) { endBond(); return; }
             effectTicks(player, "RESISTANCE", "DAMAGE_RESISTANCE", 22, 0);
             effectTicks(partner, "RESISTANCE", "DAMAGE_RESISTANCE", 22, 0);
-            feedback.oath(context, player, partner);
+            oath(context, player, partner);
         }, 1, 20);
     }
 
@@ -68,4 +81,11 @@ final class HeraAbility extends TransientAbility {
 
     @Override
     protected void clearTransientState() { partner = null; bondTask = -1; }
+
+    private void oath(AbilityPlayerContext context, Player first, Player second) {
+        Location from = first.getLocation().add(0, 1, 0), to = second.getLocation().add(0, 1, 0);
+        if (!from.getWorld().equals(to.getWorld())) return;
+        List<Player> audience = feedback.hidden(first) || feedback.hidden(second) ? Collections.singletonList(first) : feedback.targetViewers(context, second, to);
+        feedback.segment(context, from, to, AbilityTheme.GUARD, audience);
+    }
 }

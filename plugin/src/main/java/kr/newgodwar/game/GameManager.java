@@ -8,6 +8,7 @@ import kr.newgodwar.ability.api.AbilityDefinition;
 import kr.newgodwar.nms.NmsAdapter;
 import kr.newgodwar.util.BukkitCompat;
 import kr.newgodwar.util.GameTips;
+import kr.newgodwar.util.InventoryItems;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Difficulty;
@@ -59,6 +60,7 @@ public final class GameManager {
     private final Set<GodTeam> eliminatedTeams = new HashSet<GodTeam>();
     private final Set<UUID> observers = new HashSet<UUID>();
     private final Set<UUID> preparedPlayerInventories = new HashSet<UUID>();
+    private final Map<UUID, PlayerCleanup> pendingPlayerCleanup = new HashMap<UUID, PlayerCleanup>();
     private final Set<UUID> teamChatModePlayers = Collections.synchronizedSet(new HashSet<UUID>());
     private final Map<UUID, Integer> pendingSelection = new HashMap<UUID, Integer>();
     private final Map<UUID, Integer> kills = new HashMap<UUID, Integer>();
@@ -148,6 +150,7 @@ public final class GameManager {
             YamlConfiguration data = sessionStore.load();
             if (data != null) restoreSession(data);
             recoveryInitialized = true;
+            for (Player player : BukkitCompat.onlinePlayers()) completePendingPlayerCleanup(player);
             if (state == GameState.READY) {
                 waitingForRecoveredPlayers = true;
                 readyTask = Bukkit.getScheduler().scheduleSyncRepeatingTask(plugin, () -> tickReady(), 20L, 20L);
@@ -204,9 +207,13 @@ public final class GameManager {
     }
 
     private boolean saveCheckpoint() {
-        if (!recoveryInitialized || recoveryBlocked || activeMode != null) return false;
+        if (!recoveryInitialized || recoveryBlocked) return false;
         try {
-            sessionStore.save(captureSession());
+            // Custom modes are not resumable. Only update outstanding built-in cleanup in their checkpoint.
+            YamlConfiguration data = activeMode == null ? captureSession() : sessionStore.load();
+            if (data == null) return true;
+            savePendingPlayerCleanup(data);
+            sessionStore.save(data);
             return true;
         } catch (Exception ex) {
             plugin.getLogger().log(java.util.logging.Level.SEVERE, "Could not save game session; retaining the previous checkpoint", ex);
@@ -250,6 +257,16 @@ public final class GameManager {
         return data;
     }
 
+    private void savePendingPlayerCleanup(YamlConfiguration data) {
+        data.set("pending-player-cleanup", null);
+        for (Map.Entry<UUID, PlayerCleanup> entry : pendingPlayerCleanup.entrySet()) {
+            ConfigurationSection saved = data.createSection("pending-player-cleanup." + entry.getKey());
+            saved.set("clear-inventory", entry.getValue().clearInventory);
+            GameLocation lobby = entry.getValue().lobby;
+            if (lobby != null) saved.set("lobby", lobby.serialize());
+        }
+    }
+
     private void restoreSession(YamlConfiguration data) throws IOException {
         GameState restoredState = GameState.valueOf(data.getString("state"));
         activeGameWorldName = data.getString("world.name");
@@ -272,6 +289,12 @@ public final class GameManager {
         for (String id : data.getStringList("eliminated")) eliminatedTeams.add(requireSavedTeam(id));
         loadUuids(data, "observers", observers);
         loadUuids(data, "prepared-inventories", preparedPlayerInventories);
+        ConfigurationSection pendingCleanup = data.getConfigurationSection("pending-player-cleanup");
+        if (pendingCleanup != null) for (String uuid : pendingCleanup.getKeys(false)) {
+            ConfigurationSection saved = pendingCleanup.getConfigurationSection(uuid);
+            pendingPlayerCleanup.put(UUID.fromString(uuid), new PlayerCleanup(saved.getBoolean("clear-inventory"),
+                GameLocation.deserialize(saved.getString("lobby"))));
+        }
         loadUuids(data, "team-chat", teamChatModePlayers);
         loadCounts(data.getConfigurationSection("kills"), kills);
         loadCounts(data.getConfigurationSection("selections"), pendingSelection);
@@ -496,6 +519,7 @@ public final class GameManager {
         if (!isTeamEnabled(team)) {
             throw new IllegalStateException("비활성화된 팀에는 배정할 수 없습니다.");
         }
+        completePendingPlayerCleanup(player);
         teams.put(player.getUniqueId(), team);
         requestCheckpoint();
         refreshAllPlayerDisplays();
@@ -903,11 +927,15 @@ public final class GameManager {
         List<Player> endingPlayers = endingPlayers();
         String finishedSnapshot = activeGameWorldSnapshotName;
         GameState previousState = state;
+        Map<UUID, PlayerCleanup> previousCleanup = new HashMap<UUID, PlayerCleanup>(pendingPlayerCleanup);
+        queueEndingPlayerCleanup();
         state = GameState.ENDED;
         // Commit the end before touching inventories or the world. A crash now must
         // retry cleanup, never resurrect the running match or overwrite its snapshot.
         if (!saveCheckpoint()) {
             state = previousState;
+            pendingPlayerCleanup.clear();
+            pendingPlayerCleanup.putAll(previousCleanup);
             throw new IllegalStateException("종료 상태를 저장하지 못했습니다. 서버 로그와 디스크 공간을 확인해주세요.");
         }
         stopInProgress = true;
@@ -943,8 +971,7 @@ public final class GameManager {
         clearPotionEffects(BukkitCompat.onlinePlayers());
         gameRuleController.restorePreviousRules();
         restoreWorldSettings();
-        clearEndingInventories(endingPlayers);
-        teleportEndingPlayersToLobby(endingPlayers);
+        for (Player player : endingPlayers) completePendingPlayerCleanup(player);
         if (resetGameWorld) {
             resetConfiguredGameWorld();
         }
@@ -1421,36 +1448,32 @@ public final class GameManager {
     private List<Player> endingPlayers() {
         List<Player> players = new ArrayList<Player>();
         for (Player player : BukkitCompat.onlinePlayers()) {
-            if (teamOf(player) != null || isObserver(player)) {
+            if (teamOf(player) != null || isObserver(player) || pendingPlayerCleanup.containsKey(player.getUniqueId())) {
                 players.add(player);
             }
         }
         return players;
     }
 
-    private void teleportEndingPlayersToLobby(List<Player> players) {
-        if (!plugin.getConfig().getBoolean("lobby.teleport-on-game-stop", true)) {
-            return;
-        }
-        Location location = lobbyLocation();
-        if (location == null) {
-            return;
-        }
-        for (Player player : players) {
-            BukkitCompat.setSurvival(player);
-            player.teleport(location);
+    private void queueEndingPlayerCleanup() {
+        Set<UUID> players = new HashSet<UUID>(teams.keySet());
+        players.addAll(observers);
+        players.addAll(preparedPlayerInventories);
+        boolean clearInventory = plugin.getConfig().getBoolean("game.clear-inventory", true)
+            && plugin.getConfig().getBoolean("game.clear-inventory-on-stop", true);
+        GameLocation lobby = plugin.getConfig().getBoolean("lobby.teleport-on-game-stop", true) ? lobbyLocation : null;
+        for (UUID uuid : players) {
+            if (!pendingPlayerCleanup.containsKey(uuid)) {
+                pendingPlayerCleanup.put(uuid, new PlayerCleanup(clearInventory && preparedPlayerInventories.contains(uuid), lobby));
+            }
         }
     }
 
-    private void clearEndingInventories(List<Player> players) {
-        if (!plugin.getConfig().getBoolean("game.clear-inventory", true)
-            || !plugin.getConfig().getBoolean("game.clear-inventory-on-stop", true)) {
-            return;
-        }
-        for (Player player : players) {
-            if (!preparedPlayerInventories.contains(player.getUniqueId())) {
-                continue;
-            }
+    /** Finish a previous round before a returning player receives items or joins another round. */
+    public boolean completePendingPlayerCleanup(Player player) {
+        PlayerCleanup cleanup = pendingPlayerCleanup.get(player.getUniqueId());
+        if (cleanup == null) return false;
+        if (cleanup.clearInventory) {
             player.getInventory().clear();
             player.getInventory().setHelmet(null);
             player.getInventory().setChestplate(null);
@@ -1462,6 +1485,25 @@ public final class GameManager {
             }
             player.setItemOnCursor(null);
             player.updateInventory();
+        }
+        BukkitCompat.clearPotionEffects(player);
+        BukkitCompat.setSurvival(player);
+        Location lobby = cleanup.lobby == null ? null : cleanup.lobby.toLocation();
+        if (lobby != null) player.teleport(lobby);
+        // Persist vanilla data before acknowledging cleanup in the session file.
+        player.saveData();
+        pendingPlayerCleanup.remove(player.getUniqueId());
+        if (!stopInProgress) saveCheckpoint();
+        return true;
+    }
+
+    private static final class PlayerCleanup {
+        private final boolean clearInventory;
+        private final GameLocation lobby;
+
+        private PlayerCleanup(boolean clearInventory, GameLocation lobby) {
+            this.clearInventory = clearInventory;
+            this.lobby = lobby;
         }
     }
 
@@ -2239,14 +2281,7 @@ public final class GameManager {
     }
 
     private void giveStarterItem(Player player, ItemStack item) {
-        int remaining = item.getAmount();
-        int maxStack = Math.max(1, item.getMaxStackSize());
-        while (remaining > 0) {
-            ItemStack stack = item.clone();
-            stack.setAmount(Math.min(maxStack, remaining));
-            player.getInventory().addItem(stack);
-            remaining -= stack.getAmount();
-        }
+        InventoryItems.give(player, item);
     }
 
     private Material material(String modernName, String legacyName) {

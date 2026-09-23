@@ -1,10 +1,16 @@
 package kr.newgodwar.ability.builtin;
 
 import kr.newgodwar.ability.api.*;
+import kr.newgodwar.ability.feedback.AbilityStyle;
+import kr.newgodwar.ability.feedback.AbilityTheme;
+import kr.newgodwar.ability.feedback.EffectCue;
+
+import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+
 import java.util.List;
 
 @AbilityInfo(
@@ -18,6 +24,13 @@ import java.util.List;
     grade = AbilityGrade.A
 )
 final class HephaestusAbility extends TransientAbility {
+    private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.CRAFT)
+        .dedicated()
+        .build();
+
+    @Override
+    public AbilityStyle style() { return STYLE; }
+
     private int heat;
     private int heatTask = -1;
 
@@ -25,7 +38,7 @@ final class HephaestusAbility extends TransientAbility {
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
         if (heat > 0 || !useNormal(context, player)) return;
         heat = 3;
-        feedback.forge(context, player.getLocation(), false);
+        forge(context, player.getLocation(), false);
         heatTask = scheduleLater(context, () -> { heat = 0; heatTask = -1; }, 160);
     }
 
@@ -40,7 +53,7 @@ final class HephaestusAbility extends TransientAbility {
         heat = 0;
         cancelScheduledTask(heatTask); heatTask = -1;
         effect(context, player, "ABSORPTION", "ABSORPTION", 6, strength - 1);
-        feedback.forge(context, player.getLocation(), true);
+        forge(context, player.getLocation(), true);
     }
 
     @Override
@@ -73,4 +86,16 @@ final class HephaestusAbility extends TransientAbility {
 
     @Override
     protected void clearTransientState() { heat = 0; heatTask = -1; }
+
+    private void forge(AbilityPlayerContext context, Location center, boolean quenched) {
+        if (center == null || center.getWorld() == null) return;
+        List<Player> audience = feedback.effectViewers(context, center);
+        if (quenched) {
+            double yaw = Math.toRadians(center.getYaw());
+            Location hand = center.clone().add(-0.38D * Math.cos(yaw) - 0.4D * Math.sin(yaw), 1.1D,
+                -0.38D * Math.sin(yaw) + 0.4D * Math.cos(yaw));
+            feedback.particle(context, hand, AbilityTheme.WIND.particle(), audience, 4, 0.1D);
+            feedback.sound(context, hand, audience, AbilityTheme.sound("BLOCK_FIRE_EXTINGUISH"), 0.3F, 1.5F);
+        } else feedback.drawCue(context, center, EffectCue.FORGE, audience);
+    }
 }

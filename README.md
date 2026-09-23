@@ -135,7 +135,7 @@ Windows PowerShell에서는 다음처럼 실행할 수 있습니다.
 .\gradlew.bat clean build
 ```
 
-빌드 결과물은 `build/libs/NewGodWar-0.3.4.jar`에 복사되며, 모듈 산출물은 `plugin/build/libs/NewGodWar-0.3.4.jar`에서도 확인할 수 있습니다.
+빌드 결과물은 `build/libs/NewGodWar-0.3.5.jar`에 복사되며, 모듈 산출물은 `plugin/build/libs/NewGodWar-0.3.5.jar`에서도 확인할 수 있습니다.
 
 ## 라이선스
 
@@ -149,7 +149,7 @@ Copyright (c) 2026 minjae9010
 `build`는 배포 플러그인과 별도로 `plugin/build/core-regression/CoreRegressionProbe.jar`를 생성합니다. 이 파일은 테스트 전용이며 운영 서버에 설치하면 안 됩니다.
 
 ```powershell
-./scripts/Test-PaperMatrix.ps1 -SkipBuild -LatestVersion -PluginJar build/libs/NewGodWar-0.3.4.jar -ProbeJar plugin/build/core-regression/CoreRegressionProbe.jar -WorkDir .paper-smoke/core-regression
+./scripts/Test-PaperMatrix.ps1 -SkipBuild -LatestVersion -PluginJar build/libs/NewGodWar-0.3.5.jar -ProbeJar plugin/build/core-regression/CoreRegressionProbe.jar -WorkDir .paper-smoke/core-regression
 ```
 
 격리된 Paper 서버에서 비참가자·관전자 등의 심장 파괴 차단, 정상 파괴, 중복 위치, 동시 폭발의 일괄 탈락, 종료 후 이벤트 차단, 준비 인원 재검사와 타이머 정리를 검사합니다. 일반 게임과 능력 테스트에서 설치·저장한 상자가 종료 후 제거되고 다음 게임에 남지 않는지도 검사합니다. 릴리즈는 이 검사를 통과해야 게시됩니다.
@@ -159,7 +159,7 @@ Copyright (c) 2026 minjae9010
 `build`는 `plugin/build/command-regression/CommandRegressionProbe.jar`도 생성합니다. 테스트 전용으로 격리된 Paper 서버에서만 사용합니다.
 
 ```powershell
-./scripts/Test-PaperMatrix.ps1 -SkipBuild -LatestVersion -PluginJar build/libs/NewGodWar-0.3.4.jar -ProbeJar plugin/build/command-regression/CommandRegressionProbe.jar -ProbeSuccessMarker "COMMAND REGRESSION PASS" -WorkDir .paper-smoke/command-regression
+./scripts/Test-PaperMatrix.ps1 -SkipBuild -LatestVersion -PluginJar build/libs/NewGodWar-0.3.5.jar -ProbeJar plugin/build/command-regression/CommandRegressionProbe.jar -ProbeSuccessMarker "COMMAND REGRESSION PASS" -WorkDir .paper-smoke/command-regression
 ```
 
 단계형·한글·간편 명령의 권한, 자동완성, 실제 등록 상태와 쿨타임 초기화 범위를 확인합니다. 없는 대상·콘솔 대상 생략·추가 인수·능력 조회가 전체 초기화로 이어지지 않는지도 검사합니다.

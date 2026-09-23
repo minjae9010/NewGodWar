@@ -62,8 +62,10 @@ public final class GameListener implements Listener {
 
     @EventHandler
     public void onJoin(PlayerJoinEvent event) {
-        if (gameManager.hasCustomMode() || gameManager.isRecovering() || gameManager.isShuttingDown()) return;
+        if (gameManager.isRecovering() || gameManager.isShuttingDown()) return;
         Player player = event.getPlayer();
+        boolean cleanedPreviousGame = gameManager.completePendingPlayerCleanup(player);
+        if (gameManager.hasCustomMode()) return;
         plugin.updater().notifyAdminIfOutdated(player);
         if ((gameManager.isRunning() || gameManager.state() == GameState.READY) && gameManager.teamOf(player) != null) {
             if (gameManager.handleEliminatedJoin(player)) {
@@ -71,7 +73,7 @@ public final class GameListener implements Listener {
                 return;
             }
             abilityManager.reapply(player);
-        } else if (!gameManager.isRunning()
+        } else if (!cleanedPreviousGame && !gameManager.isRunning()
             && plugin.getConfig().getBoolean("lobby.teleport-on-join", true)
             && gameManager.hasLobbyLocation()) {
             Bukkit.getScheduler().runTaskLater(plugin, () -> gameManager.teleportToLobby(player), 1L);
@@ -572,8 +574,6 @@ public final class GameListener implements Listener {
 
         Player player = event.getEntity();
         addDrops(event, player.getInventory().getContents());
-        addDrops(event, player.getInventory().getArmorContents());
-        addDrop(event, offHandItem(player));
     }
 
     private void addDrops(PlayerDeathEvent event, ItemStack[] items) {
@@ -588,18 +588,6 @@ public final class GameListener implements Listener {
     private void addDrop(PlayerDeathEvent event, ItemStack item) {
         if (item != null && item.getType() != Material.AIR && item.getAmount() > 0) {
             event.getDrops().add(item.clone());
-        }
-    }
-
-    private ItemStack offHandItem(Player player) {
-        try {
-            Method method = player.getInventory().getClass().getMethod("getItemInOffHand");
-            Object result = method.invoke(player.getInventory());
-            return result instanceof ItemStack ? (ItemStack) result : null;
-        } catch (ReflectiveOperationException ex) {
-            return null;
-        } catch (NoClassDefFoundError ex) {
-            return null;
         }
     }
 

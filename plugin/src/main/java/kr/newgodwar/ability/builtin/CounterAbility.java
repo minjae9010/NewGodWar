@@ -3,6 +3,10 @@ package kr.newgodwar.ability.builtin;
 import kr.newgodwar.ability.api.AbilityGrade;
 import kr.newgodwar.ability.api.AbilityInfo;
 import kr.newgodwar.ability.api.AbilityPlayerContext;
+import kr.newgodwar.ability.feedback.AbilityStyle;
+import kr.newgodwar.ability.feedback.AbilityTheme;
+import kr.newgodwar.ability.feedback.EffectCue;
+
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerInteractEvent;
@@ -25,6 +29,13 @@ import java.util.List;
     grade = AbilityGrade.S
 )
 final class CounterAbility extends BaseAbility {
+    private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.RUNE)
+        .hit(EffectCue.SEAL)
+        .build();
+
+    @Override
+    public AbilityStyle style() { return STYLE; }
+
     private static final int ADVANCED_RANGE = 10;
     private static final int NORMAL_SUPPRESS_SECONDS = 12;
     private static final int ADVANCED_SUPPRESS_SECONDS = 6;

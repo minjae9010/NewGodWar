@@ -1,6 +1,9 @@
 package kr.newgodwar.ability.builtin;
 
 import kr.newgodwar.ability.api.*;
+import kr.newgodwar.ability.feedback.AbilityStyle;
+import kr.newgodwar.ability.feedback.AbilityTheme;
+
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -24,6 +27,13 @@ import java.util.Locale;
     grade = AbilityGrade.A
 )
 final class HermioneAbility extends TransientAbility {
+    private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.ARCANE)
+        .dedicated()
+        .build();
+
+    @Override
+    public AbilityStyle style() { return STYLE; }
+
     private boolean shieldActive;
 
     @Override
@@ -84,7 +94,7 @@ final class HermioneAbility extends TransientAbility {
             for (int i = 0; i < 6; i++) {
                 scheduleLater(context, () -> {
                     if (!active(context) || !player.getWorld().equals(center.getWorld())) return;
-                    feedback.shield(context, center, 5);
+                    shield(context, center, 5);
                     for (Player ally : allies(context, center, 5)) {
                         effectTicks(ally, "RESISTANCE", "DAMAGE_RESISTANCE", 20, 1);
                     }
@@ -130,5 +140,20 @@ final class HermioneAbility extends TransientAbility {
                 && ally.getLocation().distanceSquared(center) <= radius * radius) result.add(ally);
         }
         return result;
+    }
+
+    private void shield(AbilityPlayerContext context, Location center, double radius) {
+        if (center == null || center.getWorld() == null || !feedback.enabled(context, "particles")) return;
+        List<Player> audience = feedback.effectViewers(context, center);
+        double size = Math.max(0.5D, Math.min(5, radius));
+        for (int layer = 0; layer < 3; layer++) {
+            double elevation = layer * Math.PI / 6.0D;
+            for (int i = 0; i < 16; i++) {
+                double angle = i * Math.PI / 8.0D;
+                feedback.particle(context, center.clone().add(Math.cos(angle) * Math.cos(elevation) * size,
+                    0.2D + Math.sin(elevation) * size, Math.sin(angle) * Math.cos(elevation) * size),
+                    AbilityTheme.GUARD.particle(), audience, 1, 0);
+            }
+        }
     }
 }
