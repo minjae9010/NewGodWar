@@ -33,7 +33,7 @@ import java.util.Map;
 
 public final class NewGodWarPlugin extends JavaPlugin {
 
-    private static final int BSTATS_PLUGIN_ID = 31354;
+    private static final int BSTATS_PLUGIN_ID = 34475;
 
     private Messages messages;
     private NmsAdapter nmsAdapter;

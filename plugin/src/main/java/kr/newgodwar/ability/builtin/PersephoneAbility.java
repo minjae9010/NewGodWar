@@ -21,14 +21,14 @@ import java.util.List;
 @AbilityInfo(
     id = "persephone",
     name = "페르세포네",
-    description = "봄의 회복과 저승의 뿌리로 전장을 보조해요.",
-    normalSkill = "블레이즈 막대기 좌클릭: 18블록 안에서 바라보는 적을 짧게 속박해요.",
+    description = "봄의 회복과 저승의 뿌리로 전장을 보조합니다.",
+    normalSkill = "블레이즈 막대기 좌클릭: 18블록 안에서 바라보는 적에게 8초 동안 감속 IV와 약화를 줍니다.",
     normalStoneCost = 12,
     normalCooldownSeconds = 55,
-    advancedSkill = "블레이즈 막대기 우클릭: 자신과 반경 7블록 아군을 조금 회복시키고 재생을 줘요.",
+    advancedSkill = "블레이즈 막대기 우클릭: 자신과 반경 7블록 아군의 체력을 4 회복하고 8초 재생을 줍니다.",
     advancedStoneCost = 22,
     advancedCooldownSeconds = 115,
-    passiveSkill = "치명상을 입으면 가끔 짧은 재생을 얻어요.",
+    passiveSkill = "피해를 받아 체력이 8(하트 4칸) 이하가 되면 30% 확률로 8초 재생을 얻습니다. 발동 후 60초 동안은 다시 발동하지 않습니다.",
     grade = AbilityGrade.A
 )
 final class PersephoneAbility extends BaseAbility {
@@ -72,7 +72,9 @@ final class PersephoneAbility extends BaseAbility {
     public void onGenericDamage(AbilityPlayerContext context, EntityDamageEvent event) {
         long now = System.currentTimeMillis();
         Player player = context.player();
-        if (now < bloomReadyAt || event.getFinalDamage() < player.getHealth() || player.getHealth() > 8.0D) {
+        double remaining = player.getHealth() - event.getFinalDamage();
+        // Lethal hits cannot be saved by regeneration, so only react to surviving at low health.
+        if (now < bloomReadyAt || event.isCancelled() || remaining <= 0.0D || remaining > 8.0D) {
             return;
         }
         if (rollChance(3, 10)) {

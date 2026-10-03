@@ -20,12 +20,12 @@ import java.util.List;
 @AbilityInfo(
     id = "ares",
     name = "아레스",
-    description = "공격 피해가 크게 증가하고 일정 확률로 받은 공격을 회피해요.",
+    description = "공격 피해가 크게 증가하고 일정 확률로 받은 공격을 회피합니다.",
     normalSkill = "없음",
     normalStoneCost = 0,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "공격 피해가 40% 증가하고 공격받으면 10% 확률로 회피해요.",
+    passiveSkill = "공격 피해가 40% 증가하고 공격받으면 10% 확률로 회피합니다.",
     grade = AbilityGrade.S
 )
 final class AresAbility extends BaseAbility {

@@ -20,12 +20,12 @@ import java.util.List;
 @AbilityInfo(
     id = "dionysus",
     name = "디오니소스",
-    description = "공격받으면 확률로 공격자를 취하게 해요.",
+    description = "공격받으면 확률로 공격자를 취하게 합니다.",
     normalSkill = "없음",
     normalStoneCost = 0,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "공격받으면 확률로 공격자에게 감속, 약화, 혼란을 줘요.",
+    passiveSkill = "공격받으면 10% 확률로 공격자에게 12초 동안 감속, 약화, 혼란을 줍니다.",
     grade = AbilityGrade.B
 )
 final class DionysusAbility extends BaseAbility {

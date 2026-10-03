@@ -21,14 +21,14 @@ import java.util.List;
 @AbilityInfo(
     id = "harry",
     name = "해리포터",
-    description = "채팅 주문으로 시간 변경, 폭발, 보호, 무장 해제, 즉사 주문을 사용해요.",
-    normalSkill = "채팅으로 루모스, 녹스, 봄바르다를 시전해요.",
+    description = "채팅 주문으로 시간 변경, 폭발, 보호, 무장 해제, 즉사 주문을 사용합니다.",
+    normalSkill = "채팅에 루모스(낮), 녹스(밤), 봄바르다(5블록 앞 위력 1 폭발)를 입력합니다.",
     normalStoneCost = 6,
     normalCooldownSeconds = 8,
-    advancedSkill = "채팅에 스투페파이(감속), 익스펙토 패트로눔(보호), 엑스펠리아무스(무장 해제), 아바다 케다브라(즉사)를 입력해요. 주문은 확률적으로 성공하며 실패해도 비용과 쿨타임이 적용돼요.",
+    advancedSkill = "채팅에 스투페파이(반경 10블록 적마다 50% 확률로 감속 II 10초), 익스펙토 패트로눔(75% 확률로 5초 무적), 엑스펠리아무스(바라보는 적 25% 확률 무장 해제), 아바다 케다브라(바라보는 적 20% 확률 즉사)를 입력합니다. 실패해도 비용과 쿨타임이 적용됩니다.",
     advancedStoneCost = 20,
     advancedCooldownSeconds = 60,
-    passiveSkill = "능력을 받으면 주문서를 받고 보호 주문 중 모든 피해를 무시해요.",
+    passiveSkill = "능력을 받으면 주문서를 받습니다. 보호 주문 동안 모든 피해를 무시합니다. 일반 주문끼리, 고급 주문끼리 쿨타임을 공유합니다.",
     grade = AbilityGrade.S
 )
 final class HarryAbility extends BaseAbility {

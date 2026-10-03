@@ -22,6 +22,17 @@ public final class AbilityUsageTest {
         assertTrue(registry.get("hecate").advancedSkill().contains("/x <플레이어>"));
     }
 
+    @Test
+    public void onlyTargetAbilitiesMentionTheTargetCommand() {
+        AbilityRegistry registry = new AbilityRegistry();
+        new DefaultAbilityRegistrar().registerAbilities(registry);
+        for (AbilityDefinition ability : registry.all()) {
+            boolean mentionsTarget = (ability.normalSkill() + ability.advancedSkill() + ability.passiveSkill()).contains("/x");
+            assertEquals(ability.id() + ": /x guidance must match requiresTarget()",
+                ability.create().requiresTarget(), mentionsTarget);
+        }
+    }
+
     private void checkUsage(String id, String skill) {
         if (skill.isEmpty() || "없음".equals(skill)) return;
         assertTrue(id + ": missing input instructions: " + skill,

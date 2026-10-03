@@ -24,13 +24,13 @@ import java.util.UUID;
 @AbilityInfo(
     id = "voodoo",
     name = "부두술사",
-    description = "팻말로 대상을 연결해 원격 피해를 줘요.",
-    normalSkill = "팻말 첫 줄에 접속 중인 적의 정확한 이름을 적으세요. 연결된 팻말을 좌클릭하면 피해를 줘요. 킬타임으로 유저 간 공격이 막혀 있으면 연결할 수 없어요.",
+    description = "팻말로 대상을 연결해 원격 피해를 줍니다.",
+    normalSkill = "팻말 설치 후 첫 줄에 적 이름 입력: 접속 중인 적과 팻말을 연결합니다. 연결된 팻말을 좌클릭하면 그 적에게 피해를 줍니다. 킬타임으로 유저 간 공격이 막혀 있으면 연결할 수 없습니다.",
     normalStoneCost = 5,
     normalCooldownSeconds = 180,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "7초 뒤 연결이 끊기고 팻말이 사라져요. 피해량과 타격 간격은 서버 설정에 따라 달라요.",
+    passiveSkill = "연결은 7초 뒤 끊기고 팻말이 사라집니다. 타격 피해(기본 0.5)와 간격(기본 1초)은 서버 설정을 따릅니다.",
     grade = AbilityGrade.B
 )
 final class VoodooAbility extends BaseAbility {

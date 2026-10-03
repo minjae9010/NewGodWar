@@ -13,4 +13,4 @@
 
 - [능력 이펙트 안내](https://github.com/minjae9010/NewGodWar/wiki/ability-effects)
 
-- [버전별 리소스팩](https://github.com/minjae9010/NewGodWar/wiki/resource-packs)
+- [리소스팩](https://github.com/minjae9010/NewGodWar/wiki/resource-packs)

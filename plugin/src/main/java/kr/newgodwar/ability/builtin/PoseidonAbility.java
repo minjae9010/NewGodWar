@@ -23,14 +23,14 @@ import java.util.Map;
 @AbilityInfo(
     id = "poseidon",
     name = "포세이돈",
-    description = "물을 만들어 전장을 바꾸고 물가에서 전투 능력이 크게 올라가요.",
-    normalSkill = "블레이즈 막대기 좌클릭: 10블록 안의 바라보는 위치에 8초 동안 실제 물로 3x3 해역을 만들어요. 물의 이동 영향은 아군과 적 모두에게 적용돼요.",
+    description = "물을 만들어 전장을 바꾸고 물가에서 전투 능력이 크게 올라갑니다.",
+    normalSkill = "블레이즈 막대기 좌클릭: 10블록 안의 바라보는 위치에 8초 동안 3x3 실제 물을 만들고 자신은 신속 II 8초와 재생 7초를 얻습니다. 물은 아군과 적 모두에게 영향을 줍니다.",
     normalStoneCost = 12,
     normalCooldownSeconds = 45,
-    advancedSkill = "블레이즈 막대기 우클릭: 반경 12블록 적에게 해일 피해를 주고 밀쳐내며 약화/감속시켜요.",
+    advancedSkill = "블레이즈 막대기 우클릭: 반경 12블록 적에게 피해 4를 주고 밀쳐내며 감속 III·약화 10초와 혼란 8초를 줍니다. 주변에 6초 동안 물이 생깁니다.",
     advancedStoneCost = 28,
     advancedCooldownSeconds = 115,
-    passiveSkill = "익사를 무시하고 물속에서 신속, 재생, 저항과 물 전투 피해 증가를 얻어요.",
+    passiveSkill = "익사하지 않습니다. 물에 닿아 있으면 신속 II, 재생, 저항을 얻고 화염 피해가 절반이 됩니다. 자신이나 적이 물에 닿아 있으면 공격 피해가 25% 늘고 25% 확률로 감속을 줍니다.",
     grade = AbilityGrade.S
 )
 final class PoseidonAbility extends BaseAbility {

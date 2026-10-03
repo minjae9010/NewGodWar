@@ -15,12 +15,12 @@ import java.util.List;
 
 @AbilityInfo(
     id = "echo", name = "메아리 검사",
-    description = "검으로 벤 자리에 메아리처럼 추가 공격을 남겨요.",
-    normalSkill = "블레이즈 막대기 좌클릭: 6초 안의 다음 검 직접 공격을 기록해요. 0.75초 뒤 적이 타격 지점 2블록 안에 있으면 피해의 절반을 한 번 더 줘요. 추가 피해는 최대 4예요.",
+    description = "검으로 벤 자리에 메아리처럼 추가 공격을 남깁니다.",
+    normalSkill = "블레이즈 막대기 좌클릭: 6초 안의 다음 검 직접 공격을 기록합니다. 0.75초 뒤 적이 타격 지점 2블록 안에 있으면 피해의 절반을 한 번 더 줍니다. 추가 피해는 최대 4입니다.",
     normalStoneCost = 10, normalCooldownSeconds = 25,
-    advancedSkill = "블레이즈 막대기 우클릭: 최근 8초 안의 타격 지점을 다시 베어요. 기록이 24블록 안에 있어야 해요. 1초 뒤부터 0.5초 간격으로 3번, 반경 3블록 적에게 피해 2씩 줘요.",
+    advancedSkill = "블레이즈 막대기 우클릭: 최근 8초 안의 타격 지점을 다시 벱니다. 기록이 24블록 안에 있어야 합니다. 1초 뒤부터 0.5초 간격으로 3번, 반경 3블록 적에게 피해 2씩 줍니다.",
     advancedStoneCost = 22, advancedCooldownSeconds = 65,
-    passiveSkill = "검으로 직접 공격하면 타격 위치를 8초간 기록해요. 적이 범위를 벗어나면 후속 공격은 빗나가요.",
+    passiveSkill = "검으로 직접 공격하면 타격 위치를 8초간 기록합니다. 적이 범위를 벗어나면 후속 공격은 빗나갑니다.",
     grade = AbilityGrade.A
 )
 final class EchoAbility extends TransientAbility {
@@ -35,6 +35,7 @@ final class EchoAbility extends TransientAbility {
     private long recordedUntil;
     private Location recorded;
     private boolean replaying;
+    private int echoScene;
 
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
@@ -105,6 +106,12 @@ final class EchoAbility extends TransientAbility {
     private void echoSlash(AbilityPlayerContext context, Location center, double radius) {
         if (center == null || center.getWorld() == null) return;
         List<Player> audience = feedback.effectViewers(context, center);
+        Location anchor = center.clone(); anchor.setYaw(0); anchor.setPitch(0);
+        // Each replay is its own scene, so its blade sweep plays again from the first frame.
+        if (feedback.object(context, "echo:" + (++echoScene), AbilityDesigns.ECHO_SLASH, anchor, 14, radius)) {
+            feedback.sound(context, center, audience, AbilityTheme.ECHO.sound(), 0.4F, 1.2F);
+            return;
+        }
         // SWEEP_ATTACK already draws a full crescent; repeating it made a white disc.
         feedback.particle(context, center.clone().add(0, 1, 0), AbilityTheme.ECHO.particle(), audience, 1, 0);
         feedback.sound(context, center, audience, AbilityTheme.ECHO.sound(), 0.4F, 1.2F);

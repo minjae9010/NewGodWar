@@ -18,12 +18,12 @@ import static kr.newgodwar.ability.feedback.ModelParts.*;
 
 @AbilityInfo(
     id = "graviton", name = "중력술사",
-    description = "공간에 중력핵을 만들고 인력과 반발력으로 적의 위치를 조절해요.",
-    normalSkill = "블레이즈 막대기 좌클릭: 16블록 안의 바라보는 위치에 반경 5블록 중력핵을 4초 동안 만들어요. 0.5초마다 공중의 적까지 중심으로 당겨요.",
+    description = "공간에 중력핵을 만들고 인력과 반발력으로 적의 위치를 조절합니다.",
+    normalSkill = "블레이즈 막대기 좌클릭: 16블록 안의 바라보는 위치에 반경 5블록 중력핵을 4초 동안 만듭니다. 0.5초마다 공중의 적까지 중심으로 당깁니다.",
     normalStoneCost = 14, normalCooldownSeconds = 35,
-    advancedSkill = "블레이즈 막대기 우클릭: 현재 위치에 1초의 예고 후 반경 6블록 반발장을 폭발시켜 피해 5를 주고 적을 밀쳐내요.",
+    advancedSkill = "블레이즈 막대기 우클릭: 현재 위치에 1초의 예고 후 반경 6블록 반발장을 폭발시켜 피해 5를 주고 적을 밀쳐냅니다.",
     advancedStoneCost = 26, advancedCooldownSeconds = 80,
-    passiveSkill = "중력장은 지형을 바꾸지 않으며 범위 밖으로 벗어나면 영향을 받지 않아요.",
+    passiveSkill = "중력장은 지형을 바꾸지 않으며 범위 밖으로 벗어나면 영향을 받지 않습니다.",
     grade = AbilityGrade.A
 )
 final class GravitonAbility extends TransientAbility {

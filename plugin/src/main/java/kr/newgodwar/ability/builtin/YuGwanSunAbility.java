@@ -16,14 +16,14 @@ import java.util.List;
 @AbilityInfo(
     id = "yugwansun",
     name = "유관순",
-    description = "만세의 함성으로 아군의 사기를 끌어올리고 적을 흔들어요.",
-    normalSkill = "블레이즈 막대기 좌클릭: 자신과 반경 12블록 아군에게 신속, 공격력 증가, 저항을 주고 반경 12블록 적에게 약화와 감속을 줘요.",
+    description = "만세의 함성으로 아군의 사기를 끌어올리고 적을 흔듭니다.",
+    normalSkill = "블레이즈 막대기 좌클릭: 자신과 반경 12블록 아군에게 신속 II 12초, 공격력 증가 10초, 저항 9초를 주고 반경 12블록 적에게 10초 동안 약화와 감속 II를 줍니다.",
     normalStoneCost = 44,
     normalCooldownSeconds = 190,
-    advancedSkill = "블레이즈 막대기 우클릭: 자신과 반경 14블록 아군에게 강한 생존 효과를 주고, 접속 중인 생존 적 전체에게 실명, 혼란, 화염을 줘요. 적은 거리·월드 제한이 없어요.",
+    advancedSkill = "블레이즈 막대기 우클릭: 자신과 반경 14블록 아군에게 흡수 II, 재생 II, 저항을 주고 접속 중인 모든 생존 적에게 실명·혼란·약화와 6초 화염을 줍니다. 적은 거리·월드 제한이 없습니다.",
     advancedStoneCost = 64,
     advancedCooldownSeconds = 280,
-    passiveSkill = "치명상을 입으면 짧게 흡수와 저항을 얻어요.",
+    passiveSkill = "피해를 받아 체력이 8(하트 4칸) 이하가 되면 흡수 II, 저항 II, 재생 II를 얻습니다. 발동 후 90초 동안은 다시 발동하지 않습니다.",
     grade = AbilityGrade.S
 )
 final class YuGwanSunAbility extends BaseAbility {
@@ -89,13 +89,15 @@ final class YuGwanSunAbility extends BaseAbility {
     public void onGenericDamage(AbilityPlayerContext context, EntityDamageEvent event) {
         long now = System.currentTimeMillis();
         Player player = context.player();
-        if (now < lastIndependenceGuard || event.getFinalDamage() < player.getHealth() || player.getHealth() > 8.0D) {
+        double remaining = player.getHealth() - event.getFinalDamage();
+        // Effects applied during a lethal hit cannot prevent that death.
+        if (now < lastIndependenceGuard || event.isCancelled() || remaining <= 0.0D || remaining > 8.0D) {
             return;
         }
         lastIndependenceGuard = now + context.plugin().abilities().scaleCooldownMillis(90 * 1000L);
         effect(context, player, "ABSORPTION", "ABSORPTION", 12, 1);
         effect(context, player, "RESISTANCE", "DAMAGE_RESISTANCE", 8, 1);
         effect(context, player, PotionEffectType.REGENERATION, 8, 1);
-        player.sendMessage(ChatColor.AQUA + "꺼지지 않는 의지가 치명상을 버텨냈습니다.");
+        player.sendMessage(ChatColor.AQUA + "꺼지지 않는 의지가 위기를 버티게 합니다.");
     }
 }

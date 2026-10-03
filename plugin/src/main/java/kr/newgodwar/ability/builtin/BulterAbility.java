@@ -20,12 +20,12 @@ import java.util.List;
 @AbilityInfo(
     id = "bulter",
     name = "집사",
-    description = "블록에서 일어나는 폭발을 막아요.",
+    description = "블록에서 일어나는 폭발을 막습니다.",
     normalSkill = "없음",
     normalStoneCost = 0,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "블록에서 시작된 폭발을 막아요.",
+    passiveSkill = "블록에서 시작된 폭발을 막습니다.",
     grade = AbilityGrade.C
 )
 final class BulterAbility extends BaseAbility {

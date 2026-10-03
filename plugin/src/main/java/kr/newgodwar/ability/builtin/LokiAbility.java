@@ -21,14 +21,14 @@ import java.util.List;
 @AbilityInfo(
     id = "loki",
     name = "로키",
-    description = "은신과 위치 교란으로 적을 속여요.",
-    normalSkill = "블레이즈 막대기 좌클릭: 잠시 투명화하고 신속을 얻어요.",
+    description = "은신과 위치 교란으로 적을 속입니다.",
+    normalSkill = "블레이즈 막대기 좌클릭: 9초 동안 투명화하고 신속 II를 얻습니다.",
     normalStoneCost = 12,
     normalCooldownSeconds = 55,
-    advancedSkill = "블레이즈 막대기 우클릭: 20블록 안에서 바라보는 적과 위치를 바꾸고 시야를 흐려요.",
+    advancedSkill = "블레이즈 막대기 우클릭: 20블록 안에서 바라보는 적과 위치를 바꾸고 그 적에게 실명 6초와 혼란 8초를 줍니다.",
     advancedStoneCost = 22,
     advancedCooldownSeconds = 105,
-    passiveSkill = "공격받으면 가끔 공격자에게 혼란을 줘요.",
+    passiveSkill = "공격받으면 20% 확률로 공격자에게 8초 혼란을 줍니다.",
     grade = AbilityGrade.A
 )
 final class LokiAbility extends BaseAbility {

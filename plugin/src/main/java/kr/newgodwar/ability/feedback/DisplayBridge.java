@@ -24,7 +24,8 @@ final class DisplayBridge {
     private final Method spawn, visible, persistent, show, hide, transform, translate, rotateZ, rotateY, rotateX, scale;
     private final Method block, item, itemTransform, blockData, material;
     private final Method interpolation, delay, teleportDuration, light, width, height, viewRange;
-    private final Object fixed;
+    private final Object fixed, vertical;
+    private final Method billboard;
     private final Map<String, Object> blocks = new HashMap<String, Object>();
     private final Map<String, ItemStack> items = new HashMap<String, ItemStack>();
 
@@ -60,6 +61,14 @@ final class DisplayBridge {
         for (Object value : itemTransformClass.getEnumConstants()) if (value.toString().equals("FIXED")) mode = value;
         if (mode == null) throw new NoSuchFieldException("FIXED item transform");
         fixed = mode;
+        // Absent billboard support only costs the facing behaviour, never the effect itself.
+        Method facing = null; Object upright = null;
+        try {
+            Class<?> billboardClass = Class.forName("org.bukkit.entity.Display$Billboard");
+            for (Object value : billboardClass.getEnumConstants()) if (value.toString().equals("VERTICAL")) upright = value;
+            if (upright != null) facing = display.getMethod("setBillboard", billboardClass);
+        } catch (ClassNotFoundException | NoSuchMethodException unsupported) { facing = null; }
+        billboard = facing; vertical = upright;
         blockData = Bukkit.class.getMethod("createBlockData", String.class);
         // Reflection bypasses Paper's legacy Material.valueOf remapping for this 1.12-compatible plugin.
         material = Material.class.getMethod("valueOf", String.class);
@@ -86,10 +95,11 @@ final class DisplayBridge {
                 interpolation.invoke(entity, 2); delay.invoke(entity, 0);
                 if (teleportDuration != null) teleportDuration.invoke(entity, 2);
                 light.invoke(entity, brightness.newInstance(part.art == null ? 12 : 15, part.art == null ? 12 : 15));
-                width.invoke(entity, 12F); height.invoke(entity, 6F); viewRange.invoke(entity, 0.6F);
+                width.invoke(entity, 16F); height.invoke(entity, 10F); viewRange.invoke(entity, 0.6F);
                 if (part.item) {
                     ItemStack stack = stack(part);
                     item.invoke(entity, stack.clone()); itemTransform.invoke(entity, fixed);
+                    if (part.billboard && billboard != null) billboard.invoke(entity, vertical);
                 } else {
                     Object data = blocks.get(part.material);
                     if (data == null) {

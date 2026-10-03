@@ -21,13 +21,13 @@ import java.util.List;
 @AbilityInfo(
     id = "hermes",
     name = "헤르메스",
-    description = "항상 빠른 이동과 짧은 비행으로 섬 사이 이동을 보조해요.",
-    normalSkill = "블레이즈 막대기 좌클릭: 7초 동안 비행해요.",
+    description = "항상 빠른 이동과 짧은 비행으로 섬 사이 이동을 보조합니다.",
+    normalSkill = "블레이즈 막대기 좌클릭: 7초 동안 비행합니다.",
     normalStoneCost = 14,
     normalCooldownSeconds = 75,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "항상 신속 효과를 받아요.",
+    passiveSkill = "항상 신속 효과를 받습니다.",
     grade = AbilityGrade.A
 )
 final class HermesAbility extends BaseAbility {

@@ -16,14 +16,14 @@ import java.util.List;
 @AbilityInfo(
     id = "thisisfine",
     name = "괜찮아",
-    description = "불타는 상황에서도 태연하게 버티고 주변을 태워요.",
-    normalSkill = "블레이즈 막대기 좌클릭: 자신에게 화염 저항을 주고 반경 7블록 적을 불태워요.",
+    description = "불타는 상황에서도 태연하게 버티고 주변을 태웁니다.",
+    normalSkill = "블레이즈 막대기 좌클릭: 12초 동안 화염 저항을 얻고 반경 7블록 적을 5초 동안 불태웁니다.",
     normalStoneCost = 12,
     normalCooldownSeconds = 55,
-    advancedSkill = "블레이즈 막대기 우클릭: 불을 끄고 체력을 회복하며 짧게 저항을 얻어요.",
+    advancedSkill = "블레이즈 막대기 우클릭: 불을 끄고 체력을 6 회복하며 8초 동안 저항을 얻습니다.",
     advancedStoneCost = 20,
     advancedCooldownSeconds = 95,
-    passiveSkill = "화염 피해를 무시하고 불이 붙으면 신속을 얻어요.",
+    passiveSkill = "화염 피해를 무시하고, 불에 닿으면 6초 동안 신속을 얻습니다.",
     grade = AbilityGrade.B
 )
 final class ThisIsFineAbility extends BaseAbility {

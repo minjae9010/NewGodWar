@@ -16,24 +16,30 @@ import java.util.List;
 @AbilityInfo(
     id = "jangyeongsil",
     name = "장영실",
-    description = "실용적인 부품과 전투 보조 장치로 아군의 채굴과 진입을 도와요.",
-    normalSkill = "블레이즈 막대기 좌클릭: 부품을 쌓고 3스택이 되면 철 곡괭이를 제작해요.",
+    description = "실용적인 부품과 전투 보조 장치로 아군의 채굴과 진입을 돕습니다.",
+    normalSkill = "블레이즈 막대기 좌클릭: 부품을 1개 만들고 12초 동안 성급함 II를 얻습니다. 부품 3개가 모이면 철 곡괭이를 만듭니다.",
     normalStoneCost = 12,
     normalCooldownSeconds = 60,
-    advancedSkill = "블레이즈 막대기 우클릭: 자신과 반경 10블록 아군에게 성급함, 신속, 저항을 줘요.",
+    advancedSkill = "블레이즈 막대기 우클릭: 자신과 반경 10블록 아군에게 성급함 II 12초, 신속 10초, 저항 8초를 줍니다.",
     advancedStoneCost = 30,
     advancedCooldownSeconds = 145,
-    passiveSkill = "곡괭이를 들고 공격하면 가끔 추가 피해와 감속을 줘요.",
+    passiveSkill = "곡괭이로 공격하면 25% 확률로 피해 2를 더하고 6초 감속을 줍니다.",
     grade = AbilityGrade.A
 )
 final class JangYeongSilAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.CRAFT)
-        .normal(EffectCue.FORGE)
+        // Each part shows its count; the advanced device outranks the allies' buff marks on the caster.
+        .advanced(EffectCue.CLEANSE)
         .hit(EffectCue.HIT)
         .benefit(EffectCue.GUARD)
-        .effect(EffectCue.FORGE, AbilityDesigns.ARMILLARY)
-        .effect(EffectCue.GUARD, AbilityDesigns.ARMILLARY)
-        .effect(EffectCue.HIT, AbilityDesigns.ARMILLARY)
+        .effect(EffectCue.FORGE, AbilityDesigns.PART_ONE)
+        .effect(EffectCue.ARCANE, AbilityDesigns.PART_TWO)
+        .effect(EffectCue.CHARGE, AbilityDesigns.PICKAXE_CRAFT)
+        .effect(EffectCue.CLEANSE, AbilityDesigns.DEVICE_FIELD)
+        .effect(EffectCue.GUARD, AbilityDesigns.GEAR_MARK)
+        .effect(EffectCue.WIND, AbilityDesigns.GEAR_MARK)
+        .effect(EffectCue.HIT, AbilityDesigns.PICKAXE_STRIKE)
+        .effect(EffectCue.SLOW, AbilityDesigns.PICKAXE_STRIKE)
         .build();
 
     @Override
@@ -50,6 +56,8 @@ final class JangYeongSilAbility extends BaseAbility {
         }
         pickaxeParts++;
         effect(context, player, "HASTE", "FAST_DIGGING", 12, 1);
+        feedback.cue(context, player, pickaxeParts >= PICKAXE_PARTS_REQUIRED ? EffectCue.CHARGE
+            : pickaxeParts == 1 ? EffectCue.FORGE : EffectCue.ARCANE);
         if (pickaxeParts >= PICKAXE_PARTS_REQUIRED) {
             pickaxeParts = 0;
             give(player, Material.IRON_PICKAXE, 1);
@@ -79,6 +87,7 @@ final class JangYeongSilAbility extends BaseAbility {
     public void onDamageByEntity(AbilityPlayerContext context, org.bukkit.event.entity.EntityDamageByEntityEvent event, Player opponent, boolean attacker) {
         if (attacker && isPickaxe(context.player().getItemInHand().getType()) && oneIn(4)) {
             event.setDamage(event.getDamage() + 2.0D);
+            feedback.cue(context, opponent, EffectCue.HIT);
             effect(context, opponent, "SLOWNESS", "SLOW", 6, 0);
         }
     }

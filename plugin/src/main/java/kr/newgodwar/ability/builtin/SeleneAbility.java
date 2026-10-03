@@ -21,14 +21,14 @@ import java.util.List;
 @AbilityInfo(
     id = "selene",
     name = "셀레네",
-    description = "달빛으로 은신하고 적의 시야를 흐려요.",
-    normalSkill = "블레이즈 막대기 좌클릭: 시간을 밤으로 바꾸고 잠시 투명화해요.",
+    description = "달빛으로 은신하고 적의 시야를 흐립니다.",
+    normalSkill = "블레이즈 막대기 좌클릭: 시간을 밤으로 바꾸고 8초 동안 투명화합니다.",
     normalStoneCost = 10,
     normalCooldownSeconds = 55,
-    advancedSkill = "블레이즈 막대기 우클릭: 18블록 안에서 바라보는 적에게 실명과 감속을 줘요.",
+    advancedSkill = "블레이즈 막대기 우클릭: 18블록 안에서 바라보는 적에게 실명 7초와 감속 II 8초를 줍니다.",
     advancedStoneCost = 18,
     advancedCooldownSeconds = 100,
-    passiveSkill = "야간 투시 효과를 유지해요.",
+    passiveSkill = "항상 야간 투시를 받습니다.",
     grade = AbilityGrade.B
 )
 final class SeleneAbility extends BaseAbility {

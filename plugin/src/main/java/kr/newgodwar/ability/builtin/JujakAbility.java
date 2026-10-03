@@ -21,13 +21,13 @@ import java.util.List;
 @AbilityInfo(
     id = "jujak",
     name = "주작",
-    description = "화염을 무시하고 긴 비행으로 공중 섬 전장을 가로질러요.",
-    normalSkill = "블레이즈 막대기 좌클릭: 12초 동안 비행해요.",
+    description = "화염을 무시하고 긴 비행으로 공중 섬 전장을 가로지릅니다.",
+    normalSkill = "블레이즈 막대기 좌클릭: 12초 동안 비행합니다.",
     normalStoneCost = 18,
     normalCooldownSeconds = 100,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "화염 피해를 무시하지만 익사 피해를 2배로 받아요.",
+    passiveSkill = "화염 피해를 무시하지만 익사 피해를 2배로 받습니다.",
     grade = AbilityGrade.A
 )
 final class JujakAbility extends BaseAbility {

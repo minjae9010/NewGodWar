@@ -15,14 +15,14 @@ import java.util.List;
 @AbilityInfo(
     id = "rickroll",
     name = "릭롤",
-    description = "예상 밖의 공연으로 적의 움직임과 시야를 흔들어요.",
-    normalSkill = "블레이즈 막대기 좌클릭: 반경 8블록 적에게 혼란, 감속, 약화를 줘요.",
+    description = "예상 밖의 공연으로 적의 움직임과 시야를 흔듭니다.",
+    normalSkill = "블레이즈 막대기 좌클릭: 반경 8블록 적에게 9초 동안 혼란, 감속 II, 약화를 줍니다.",
     normalStoneCost = 14,
     normalCooldownSeconds = 60,
-    advancedSkill = "블레이즈 막대기 우클릭: 22블록 안에서 바라보는 적을 자신의 앞으로 끌어오고 실명시켜요.",
+    advancedSkill = "블레이즈 막대기 우클릭: 22블록 안에서 바라보는 적을 자신의 바로 앞으로 끌어오고 실명 7초와 혼란 8초를 줍니다.",
     advancedStoneCost = 24,
     advancedCooldownSeconds = 115,
-    passiveSkill = "공격받으면 가끔 공격자를 혼란시켜요.",
+    passiveSkill = "공격받으면 20% 확률로 공격자에게 8초 혼란을 줍니다.",
     grade = AbilityGrade.B
 )
 final class RickrollAbility extends BaseAbility {

@@ -10,10 +10,8 @@ import javax.imageio.ImageIO;
 
 /** Editable vector artwork, rasterized deterministically for vanilla Minecraft item models. */
 public class BuildEffectPack {
-    static final int SIZE = 128;
+    static final int SIZE = 128, LOOP_COLUMNS = 8;
     static final List<Shape> ink = new ArrayList<>();
-    static boolean rainbow;
-    static String activeMotif, activeLayer;
     static void line(double... v) { Path2D p=new Path2D.Double(); p.moveTo(v[0],v[1]); for(int i=2;i<v.length;i+=2)p.lineTo(v[i],v[i+1]); if(v[0]==v[v.length-2]&&v[1]==v[v.length-1])p.closePath();ink.add(p); }
     static void curve(double x,double y,double... v) { Path2D p=new Path2D.Double();p.moveTo(x,y);for(int i=0;i<v.length;i+=6)p.curveTo(v[i],v[i+1],v[i+2],v[i+3],v[i+4],v[i+5]);if(x==v[v.length-2]&&y==v[v.length-1])p.closePath();ink.add(p); }
     static void circle(double x,double y,double r) { ink.add(new Ellipse2D.Double(x-r,y-r,r*2,r*2)); }
@@ -23,6 +21,10 @@ public class BuildEffectPack {
     static void star(double x,double y,double r) {line(x,y-r,x,y+r);line(x-r*.7,y,x+r*.7,y);diamond(x,y,r*.4);}
     static void rotate(double angle,Runnable body) {
         int first=ink.size();body.run();AffineTransform a=AffineTransform.getRotateInstance(angle,128,128);
+        for(int i=first;i<ink.size();i++)ink.set(i,a.createTransformedShape(ink.get(i)));
+    }
+    static void scale(double k,Runnable body) {
+        int first=ink.size();body.run();AffineTransform a=new AffineTransform();a.translate(128,128);a.scale(k,k);a.translate(-128,-128);
         for(int i=first;i<ink.size();i++)ink.set(i,a.createTransformedShape(ink.get(i)));
     }
     static void leaf(double x,double y,double s,double rot) {
@@ -62,8 +64,18 @@ public class BuildEffectPack {
         case "lotus": case "orchid":
             for(int i=0;i<(motif.equals("orchid")?5:8);i++) {final int n=i;rotate(i*Math.PI*2/(motif.equals("orchid")?5:8),()->leaf(128,85,43,n%2*.08));}
             circle(128,128,18);for(int i=0;i<5;i++)rotate(i*Math.PI*.4,()->diamond(128,119,4));break;
-        case "leaf": case "vine": case "wheat":
+        case "leaf":
             curve(118,224,145,159,114,99,140,35);for(int i=0;i<4;i++){leaf(106,183-i*34,21,-.85);leaf(152,165-i*34,21,.85);}break;
+        case "wheat":
+            // A grain ear with awns, distinct from the herb sprig.
+            curve(128,230,124,180,132,120,128,52);curve(126,206,96,192,76,166,64,132);
+            for(int i=0;i<6;i++){double y=176-i*22;leaf(114,y,13,-.55);leaf(142,y-8,13,.55);line(108,y-10,92,y-40);line(148,y-18,164,y-48);}
+            leaf(128,42,13,0);line(128,30,128,8);break;
+        case "vine":
+            // Roots reach down and curl, where the gameplay effect grips the ankles.
+            curve(128,30,118,62,138,92,128,124);leaf(110,44,17,-.95);leaf(148,38,17,.95);
+            for(int i=0;i<5;i++){double dx=(i-2)*42;double curl=i<2?-1:i>2?1:(i==2?0:1);curve(128,124,128+dx*.3,150,128+dx*.9,170,128+dx,206);curve(128+dx,206,128+dx,222,128+dx+curl*16,224,128+dx+curl*12,212);}
+            for(int s:new int[]{-1,1})line(128+s*30,160,128+s*52,150);break;
         case "laurel": for(int s:new int[]{-1,1}) {curve(128+s*8,211,128+s*85,188,128+s*86,98,128+s*39,43);for(int i=0;i<5;i++)leaf(128+s*(64-i*i*1.4),174-i*24,18,s*.85);}star(128,74,16);break;
         case "rainbow": for(int i=0;i<7;i++)ink.add(new Arc2D.Double(27+i*10,37+i*10,202-i*20,202-i*20,0,180,Arc2D.OPEN));break;
         case "wind": for(int i=0;i<3;i++){final int n=i;curve(33,102+n*31,84,52+n*34,158,163-n*8,201,70+n*29,226,33+n*33,168,31+n*28,176,60+n*25);}break;
@@ -71,9 +83,26 @@ public class BuildEffectPack {
         case "bolt": line(145,31,69,137,122,137,102,225,190,107,138,107,145,31);line(58,87,40,104);line(199,166,216,148);break;
         case "cross": line(113,46,143,46,143,97,193,97,193,127,143,127,143,211,113,211,113,127,63,127,63,97,113,97,113,46);star(128,110,14);break;
         case "caduceus": line(128,35,128,222);circle(128,37,11);curve(98,68,46,95,190,105,157,133,68,164,157,168,141,199);curve(158,68,211,95,67,105,99,133,186,164,99,168,115,199);line(93,64,103,73,92,81);line(163,64,153,73,164,81);break;
-        case "serpent": curve(85,217,221,180,48,150,144,118,232,72,119,30,76,79);line(76,79,86,56,111,62,105,85,76,79);line(79,81,58,88,45,81);break;
+        case "serpent":
+            // Two rails give the coiled body visible width at a distance.
+            scale(1.22,()->{curve(85,217,221,180,48,150,144,118,232,72,119,30,76,79);curve(97,209,201,180,64,148,148,108,212,74,122,44,84,86);
+                line(76,79,86,56,111,62,105,85,76,79);line(79,81,58,88,45,81);circle(97,68,3);});break;
         case "heart": curve(128,202,91,178,43,139,46,93,49,50,105,44,128,82,151,44,207,50,210,93,213,139,165,178,128,202);break;
-        case "chain": case "knot": rotate(.6,()->oval(62,93,101,64));rotate(-.6,()->oval(93,94,100,63));break;
+        case "chain":
+            // Two chain arms lock into a central padlock.
+            ink.add(new RoundRectangle2D.Double(90,118,76,80,16,16));curve(102,118,102,64,154,64,154,118);curve(112,118,112,80,144,80,144,118);
+            circle(128,150,9);line(128,158,128,180);
+            for(int s:new int[]{-1,1}){oval(s<0?8:200,140,48,28);oval(s<0?44:162,146,50,16);}break;
+        case "knot": circle(98,132,56);circle(158,132,56);circle(98,132,44);circle(158,132,44);star(128,52,14);break;
+        case "cloak":
+            curve(128,28,88,30,76,72,86,104,66,150,52,190,44,222,80,210,100,230,128,216,156,230,176,210,212,222,204,190,190,150,170,104,180,72,168,30,128,28);
+            curve(128,56,104,58,100,88,110,104,120,114,136,114,146,104,156,88,152,58,128,56);
+            line(110,132,96,208);line(146,132,160,208);line(128,124,128,212);break;
+        case "quench":
+            // Glowing blade dipped in water, with steam leaving the surface.
+            rotate(.62,BuildEffectPack::sword);
+            curve(30,196,64,178,96,214,128,196,160,178,192,214,226,196);curve(48,222,80,206,104,236,136,222,166,208,190,234,214,222);
+            for(int i=0;i<3;i++)curve(54+i*34,172,34+i*34,140,78+i*34,128,58+i*34,92);break;
         case "eye": curve(30,128,91,53,165,53,226,128,166,203,90,203,30,128);circle(128,128,36);circle(128,128,13);line(66,62,48,41);line(190,62,208,41);break;
         case "mask": curve(54,72,92,88,164,88,202,72,213,161,166,204,128,218,90,204,43,161,54,72);line(71,113,110,129,81,142);line(185,113,146,129,175,142);curve(101,174,117,187,139,187,155,174);line(60,79,65,39,91,81);line(196,79,191,39,165,81);break;
         case "crystal": line(128,32,183,84,178,169,128,223,78,169,73,84,128,32);line(128,32,109,84,116,172,128,223,140,172,147,84,128,32);line(73,84,183,84);line(78,169,178,169);break;
@@ -99,62 +128,50 @@ public class BuildEffectPack {
         case "raven": curve(128,158,86,141,70,75,27,71,36,110,64,141,92,151);curve(128,158,170,141,186,75,229,71,220,110,192,141,164,151);line(105,157,117,192,128,175,139,192,151,157);circle(129,128,19);line(145,123,168,133,145,138);break;
         case "doll": circle(128,68,32);line(103,99,62,124,73,148,105,136,96,214,120,218,128,172,136,218,160,214,151,136,183,148,194,124,153,99);for(int x:new int[]{115,141}){line(x-5,61,x+5,73);line(x+5,61,x-5,73);}line(116,85,139,85);line(114,139,144,168);line(118,155,137,149);break;
         case "feast": oval(37,139,181,62);oval(56,151,143,32);curve(76,147,70,65,181,61,184,147);line(84,117,178,117);star(128,51,13);break;
+        // Workshop and economy props: the objects these abilities actually make, trade or examine.
+        case "anvil": line(40,92,196,92,222,104,186,118,176,118,168,140,150,150,150,186,186,196,186,212,70,212,70,196,106,186,106,150,88,140,80,118,52,118,40,92);line(62,102,178,102);break;
+        case "ingot": for(double[] b:new double[][]{{22,168},{134,168},{78,124}}){double x=b[0],y=b[1];line(x+16,y,x+100,y,x+116,y+36,x,y+36,x+16,y);line(x+24,y+9,x+60,y+9);}break;
+        case "gem": line(78,62,178,62,216,104,128,216,40,104,78,62);line(40,104,216,104);line(78,62,104,104,128,216,152,104,178,62);line(104,104,128,62,152,104);break;
+        case "sword": sword();break;
+        case "pickaxe": curve(40,92,92,40,164,40,216,92);curve(216,92,170,70,86,70,40,92);line(122,62,122,226,138,226,138,62);line(112,104,148,104);break;
+        case "swirl": for(int i=0;i<3;i++){final int n=i;rotate(n*Math.PI*2/3,()->curve(128,128,128,86,182,74,196,110,206,140,180,170,150,160));}circle(128,128,14);break;
+        case "drop": curve(128,30,150,80,196,118,196,160,196,200,164,226,128,226,92,226,60,200,60,160,60,118,106,80,128,30);curve(92,160,92,186,108,200,128,202);break;
+        case "note": oval(58,168,64,46);oval(150,146,64,46);line(118,190,118,48,210,30,210,168);line(118,82,210,64);break;
+        case "arrows": for(int i=-1;i<=1;i++){final int n=i;rotate(-.6+n*.16,()->{line(128,34,128,214);line(112,62,128,30,144,62,112,62);line(128,214,110,232);line(128,214,146,232);line(128,198,110,216);line(128,198,146,216);});}break;
+        case "pan": oval(30,98,150,96);oval(48,114,114,64);line(178,138,238,124,242,140,180,156);break;
+        case "foot": oval(98,98,62,112);circle(102,74,9);circle(121,62,10);circle(142,63,9);circle(158,73,8);circle(167,90,7);break;
+        case "question": curve(82,98,82,30,176,30,176,96,176,140,128,124,128,172);circle(128,208,13);break;
+        case "tag": line(56,72,160,72,224,128,160,184,56,184,56,72);circle(184,128,10);circle(88,104,13);circle(128,154,13);line(134,94,82,164);break;
+        case "compass": circle(128,128,98);circle(128,128,86);line(128,42,152,128,128,214,104,128,128,42);line(104,128,152,128);for(int i=0;i<4;i++)rotate(i*Math.PI/2,()->diamond(128,20,6));circle(128,128,8);break;
+        case "scroll": line(68,58,190,58,190,198,68,198,68,58);oval(54,44,26,28);oval(176,184,26,28);line(88,96,170,96);line(88,124,170,124);line(88,152,142,152);break;
+        case "xmark": circle(128,128,98);line(78,78,178,178);line(178,78,78,178);line(92,70,186,164);line(70,92,164,186);break;
+        case "hunger": curve(66,58,26,92,34,176,98,178,150,180,176,128,164,92,152,52,108,30,66,58);curve(84,88,70,108,74,138,96,146);line(150,152,198,200);circle(208,194,13);circle(194,210,13);break;
         default: throw new IllegalArgumentException("Unpainted motif: "+motif);
         }
     }
-    static void shape(String type,String motif,int seed) {
-        ink.clear();
-        activeMotif=motif; activeLayer=type;
-        rainbow=type.equals("glyph")&&motif.equals("rainbow");
-        switch(type) {
-        case "glyph": glyph(motif);break;
-        case "arc": arc(91,15,128);arc(83,28,83);arc(91,196,42);star(56,192,7);break;
-        case "ring": circle(128,128,94);arc(84,13,84);arc(84,133,84);arc(84,253,84);for(int i=0;i<12;i++)rotate(i*Math.PI/6,()->diamond(128,35,4));break;
-        case "mote": if(motif.equals("leaf")||motif.equals("lotus")||motif.equals("rose")||motif.equals("orchid")||motif.equals("vine"))leaf(128,128,72,.25);else if(motif.equals("feather")||motif.equals("laurel"))feather();else{star(128,128,77);star(183,64,12);}break;
+    /** Four alpha steps per sprite; ArtModels chooses one per frame to fade without extra entities. */
+    static void sprite(Path root,String base,BufferedImage image) throws Exception {
+        for(int fade=0;fade<4;fade++)texture(root,base+fade,VfxPainter.faded(image,fade));
+    }
+    /** One-shot animation: one sprite per frame; the server selects the frame from the scene's age. */
+    static void frames(Path root,String base,List<BufferedImage> frames) throws Exception {
+        for(int i=0;i<frames.size();i++)texture(root,base+i,frames.get(i));
+    }
+    /** Looping animation: a vertical strip per fade step, played smoothly by the client through .mcmeta. */
+    static void strip(Path root,String base,List<BufferedImage> frames,boolean interpolate) throws Exception {
+        int size=frames.get(0).getWidth();
+        for(int fade=0;fade<4;fade++) {
+            BufferedImage strip=new BufferedImage(size,size*frames.size(),BufferedImage.TYPE_INT_ARGB);Graphics2D g=strip.createGraphics();
+            for(int i=0;i<frames.size();i++)g.drawImage(VfxPainter.faded(frames.get(i),fade),0,i*size,null);
+            g.dispose();texture(root,base+fade,strip);
+            write(root,"assets/newgodwar/textures/"+base+fade+".png.mcmeta","{\"animation\":{\"frametime\":2,\"interpolate\":"+interpolate+"}}");
         }
     }
-    static BufferedImage draw(Color color,int fade) {
-        BufferedImage img=new BufferedImage(SIZE,SIZE,BufferedImage.TYPE_INT_ARGB);
-        Graphics2D g=img.createGraphics();g.setRenderingHint(RenderingHints.KEY_ANTIALIASING,RenderingHints.VALUE_ANTIALIAS_ON);
-        g.scale(SIZE/256.0,SIZE/256.0);
-        float alpha=new float[]{.12f,.35f,.68f,1f}[fade];
-        // Opaque tinted cores make the silhouette readable in daylight. Small ornamental layers stay light.
-        g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER,(activeLayer.equals("glyph")?.68f:.32f)*alpha));
-        int shapeIndex=0;
-        for(Shape shape:ink){
-            boolean closed=shape instanceof Ellipse2D || shape instanceof Rectangle2D;
-            if(shape instanceof Path2D){PathIterator it=shape.getPathIterator(null);double[] v=new double[6];while(!it.isDone()){closed|=it.currentSegment(v)==PathIterator.SEG_CLOSE;it.next();}}
-            Color fill=coreColor(activeMotif,color,shapeIndex++);
-            g.setPaint(new GradientPaint(60,40,fill.brighter(),185,220,fill.darker()));
-            if(closed)g.fill(shape);
-        }
-        g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER,.50f*alpha));
-        g.setColor(new Color(color.getRed()/4,color.getGreen()/4,color.getBlue()/4));g.setStroke(new BasicStroke(9,BasicStroke.CAP_ROUND,BasicStroke.JOIN_ROUND));for(Shape shape:ink)g.draw(shape);
-        for(int pass=0;pass<5;pass++) {
-            float stroke=new float[]{18,12,8,5.5f,2.0f}[pass];
-            float opacity=new float[]{.045f,.09f,.25f,.88f,1f}[pass]*alpha;
-            g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER,opacity));
-            g.setColor(pass==4?new Color(255,251,237):color);
-            g.setStroke(new BasicStroke(stroke,BasicStroke.CAP_ROUND,BasicStroke.JOIN_ROUND));
-            int n=0;for(Shape shape:ink){if(rainbow)g.setColor(Color.getHSBColor(n++/8f,pass==4?.3f:.64f,1));g.draw(shape);}
-        }
-        g.dispose();return img;
-    }
-    static Color coreColor(String motif,Color base,int index) {
-        return switch(motif) {
-            case "rose", "orchid", "lotus" -> index%2==0?base:new Color(230,120,171);
-            case "book", "cards" -> new Color(230,215,172);
-            case "feather", "caduceus" -> new Color(154,214,215);
-            case "leaf", "vine", "laurel" -> new Color(103,178,127);
-            case "raven" -> new Color(73,68,119);
-            case "bee" -> index==0?new Color(233,170,50):new Color(176,225,240);
-            case "fruit" -> new Color(172,47,91);
-            case "snow", "crystal" -> new Color(92,183,219);
-            case "flame", "bolt" -> new Color(236,125,60);
-            case "shield", "hammer", "swords", "trident" -> new Color(104,151,176);
-            case "sun", "coin", "scales" -> new Color(215,165,66);
-            default -> base.darker();
-        };
+    static void texture(Path root,String path,BufferedImage image) throws Exception {
+        Path png=root.resolve("assets/newgodwar/textures/"+path+".png");Files.createDirectories(png.getParent());
+        ImageIO.write(image,"png",png.toFile());
+        write(root,"assets/newgodwar/models/"+path+".json","{\"textures\":{\"particle\":\"#art\",\"art\":\"newgodwar:"+path+"\"},\"elements\":[{\"from\":[0,0,8],\"to\":[16,16,8],\"shade\":false,\"faces\":{\"north\":{\"uv\":[0,0,16,16],\"texture\":\"#art\"},\"south\":{\"uv\":[16,0,0,16],\"texture\":\"#art\"}}}]}");
+        write(root,"assets/newgodwar/items/"+path+".json","{\"model\":{\"type\":\"minecraft:model\",\"model\":\"newgodwar:"+path+"\"}}");
     }
     static void write(Path root,String path,String text) throws Exception {Path p=root.resolve(path);Files.createDirectories(p.getParent());Files.writeString(p,text,StandardCharsets.UTF_8);}
     static Path2D foodPath(double... points) {
@@ -236,31 +253,68 @@ public class BuildEffectPack {
     }
     public static void main(String[] args) throws Exception {
         Path repo=Path.of(args.length==0?".":args[0]).toAbsolutePath().normalize();
-        Path root=repo.resolve("build/effect-pack/NewGodWar-Art");Files.createDirectories(root);
-        write(root,"pack.mcmeta","{\"pack\":{\"description\":\"NewGodWar · Luminous Arts & Menus / 26.3\",\"min_format\":[97,1],\"max_format\":[97,1]}}\n");
-        // 26.3 resolves each sprite across atlases. Register only once to avoid duplicate sprites.
-        Files.deleteIfExists(root.resolve("assets/minecraft/atlases/blocks.json"));
-        for(String atlas:List.of("items"))write(root,"assets/minecraft/atlases/"+atlas+".json",
-            "{\"sources\":[{\"type\":\"minecraft:directory\",\"source\":\"art\",\"prefix\":\"art/\"},{\"type\":\"minecraft:directory\",\"source\":\"gui\",\"prefix\":\"gui/\"}]}");
+        Path root=repo.resolve("build/effect-pack/NewGodWar-Art");
+        // Start clean: VersionedPacks zips every staged file, so retired sprites must not linger.
+        if(Files.exists(root))try(var stale=Files.walk(root)){for(Path path:stale.sorted(Comparator.reverseOrder()).toList())Files.delete(path);}
+        Files.createDirectories(root);
+        // VersionedPacks writes pack.mcmeta; textures under item/ need no atlas registration in any release.
         List<String> profiles=Files.readAllLines(repo.resolve("plugin/src/main/resources/effect-art.tsv"));
-        BufferedImage sheet=new BufferedImage(8*160,((profiles.size()+7)/8)*175,BufferedImage.TYPE_INT_RGB);Graphics2D g=sheet.createGraphics();g.setColor(new Color(15,20,32));g.fillRect(0,0,sheet.getWidth(),sheet.getHeight());int index=0;
-        for(String row:profiles) {
-            if(row.startsWith("#")||row.isBlank())continue;
-            String[] p=row.split("\\|");String key=p[0].toLowerCase(Locale.ROOT).replace('.','/');Color color=new Color(Integer.parseInt(p[2],16));
-            for(String layer:List.of("glyph","arc","ring","mote"))for(int fade=0;fade<4;fade++) {
-                shape(layer,p[1],p[0].hashCode());BufferedImage img=draw(color,fade);String path="art/"+key+"/"+layer+fade;
-                Path png=root.resolve("assets/newgodwar/textures/"+path+".png");Files.createDirectories(png.getParent());ImageIO.write(img,"png",png.toFile());
-                write(root,"assets/newgodwar/models/"+path+".json","{\"textures\":{\"particle\":\"#art\",\"art\":\"newgodwar:"+path+"\"},\"elements\":[{\"from\":[0,0,8],\"to\":[16,16,8],\"shade\":false,\"faces\":{\"north\":{\"uv\":[0,0,16,16],\"texture\":\"#art\"},\"south\":{\"uv\":[16,0,0,16],\"texture\":\"#art\"}}}]}");
-                write(root,"assets/newgodwar/items/"+path+".json","{\"model\":{\"type\":\"minecraft:model\",\"model\":\"newgodwar:"+path+"\"}}");
-                if(layer.equals("glyph")&&fade==3){int x=index%8*160,y=index/8*175;g.drawImage(img,x+15,y,130,130,null);g.setColor(color);g.setFont(new Font("SansSerif",Font.PLAIN,10));g.drawString(p[0],x+8,y+148);g.drawString(p[3],x+8,y+163);}
+        List<String[]> rows=new ArrayList<>();
+        for(String row:profiles)if(!row.startsWith("#")&&!row.isBlank())rows.add(row.split("\\|"));
+        Set<String> families=new TreeSet<>();for(String[] p:rows)families.add(p[4]);
+        int columns=8,cell=160,sheetRows=(rows.size()+columns-1)/columns+families.size();
+        BufferedImage sheet=new BufferedImage(columns*cell,sheetRows*cell,BufferedImage.TYPE_INT_RGB);Graphics2D g=sheet.createGraphics();
+        g.setColor(new Color(15,20,32));g.fillRect(0,0,sheet.getWidth(),sheet.getHeight());g.setFont(new Font("SansSerif",Font.PLAIN,10));
+        int index=0;
+        for(String[] p:rows) {
+            // Each ability owns its emblem; the surrounding light, waves and debris come from its palette.
+            String key=p[0].toLowerCase(Locale.ROOT).replace('.','/');Color color=new Color(Integer.parseInt(p[2],16));
+            ink.clear();glyph(p[1]);
+            BufferedImage emblem=VfxPainter.emblem(new ArrayList<>(ink),color,VfxPainter.FAMILIES.get(p[4]),p[1].equals("rainbow"));
+            sprite(root,"art/"+key+"/glyph",emblem);
+            List<BufferedImage> traced=new ArrayList<>();
+            for(int i=0;i<VfxAnimator.TRACE;i++)traced.add(VfxAnimator.trace(new ArrayList<>(ink),VfxPainter.FAMILIES.get(p[4]),.4+.4*i));
+            frames(root,"art/"+key+"/draw",traced);
+            if(p.length>5)for(String prop:p[5].split(",")) {
+                // Secondary props (an anvil, the finished product, a price tag...) share the ability's light.
+                String[] role=prop.split(":");ink.clear();glyph(role[1]);
+                sprite(root,"art/"+key+"/"+role[0],VfxPainter.emblem(new ArrayList<>(ink),color,VfxPainter.FAMILIES.get(p[4]),false));
             }
+            int x=index%columns*cell,y=index/columns*cell;g.drawImage(emblem,x+16,y+4,128,128,null);
+            g.setColor(color);g.drawString(p[0],x+8,y+142);g.drawString(p[3]+" · "+p[4],x+8,y+155);
             index++;
         }
+        int row=(index+columns-1)/columns;
+        for(String family:families) {
+            int column=0;
+            for(String layer:VfxPainter.LAYERS) {
+                BufferedImage image=VfxPainter.layer(layer,VfxPainter.FAMILIES.get(family));
+                sprite(root,"art/fx/"+family+"/"+layer,image);
+                g.drawImage(image,column*cell+16,row*cell+4,128,128,null);g.setColor(Color.LIGHT_GRAY);g.drawString(family+"/"+layer,column*cell+8,row*cell+148);
+                column++;
+            }
+            row++;
+        }
         g.dispose();ImageIO.write(sheet,"png",repo.resolve("build/effect-pack/contact-sheet.png").toFile());
+        // Animated layers, plus a frame-by-frame preview sheet (one row per palette and animation).
+        BufferedImage frameSheet=new BufferedImage(LOOP_COLUMNS*96,families.size()*5*104,BufferedImage.TYPE_INT_RGB);Graphics2D a=frameSheet.createGraphics();
+        a.setColor(new Color(15,20,32));a.fillRect(0,0,frameSheet.getWidth(),frameSheet.getHeight());a.setFont(new Font("SansSerif",Font.PLAIN,10));
+        int line=0;
+        for(String family:families) {
+            VfxPainter.Family palette=VfxPainter.FAMILIES.get(family);
+            Map<String,List<BufferedImage>> animated=new LinkedHashMap<>();
+            for(String layer:VfxAnimator.SEQUENCES){List<BufferedImage> f=VfxAnimator.sequence(layer,palette);frames(root,"art/fx/"+family+"/"+layer,f);animated.put(layer,f);}
+            for(String layer:VfxAnimator.LOOPS){List<BufferedImage> f=VfxAnimator.loop(layer,palette);// Lightning re-forks with hard cuts; crossfading two bolts would read as a ghost.
+                strip(root,"art/fx/"+family+"/"+layer,f,!(family.equals("storm")&&layer.equals("shard")));animated.put(layer,f);}
+            for(var entry:animated.entrySet()) {
+                for(int i=0;i<entry.getValue().size();i++)a.drawImage(entry.getValue().get(i),i*96+4,line*104+2,88,88,null);
+                a.setColor(Color.LIGHT_GRAY);a.drawString(family+"/"+entry.getKey(),4,line*104+100);line++;
+            }
+        }
+        a.dispose();ImageIO.write(frameSheet,"png",repo.resolve("build/effect-pack/animation-frames.png").toFile());
         int menuIcons=GuiArtwork.writePack(root,repo.resolve("build/effect-pack/menu-icons.png"));
         foods(repo,root);
-        Files.createDirectories(repo.resolve("build/libs"));
         VersionedPacks.build(repo,root);
-        System.out.println(index+" artworks + "+menuIcons+" menu icons; versioned packs complete.");
+        System.out.println(index+" emblems + "+families.size()+" palettes + "+menuIcons+" menu icons; versioned packs complete.");
     }
 }

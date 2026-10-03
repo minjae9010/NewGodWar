@@ -20,12 +20,12 @@ import java.util.List;
 @AbilityInfo(
     id = "gardener",
     name = "정원사",
-    description = "나무를 캐면 꽃과 조약돌을 얻어요.",
+    description = "나무를 캐면 꽃과 조약돌이 함께 떨어집니다.",
     normalSkill = "없음",
     normalStoneCost = 0,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "능력을 받으면 묘목과 염료를 받고 나무 채굴 시 보상을 얻어요.",
+    passiveSkill = "능력을 받으면 묘목 5개와 연두색 염료를 받습니다. 원목을 캘 때마다 양귀비 1개와 조약돌 1개가 추가로 떨어집니다.",
     grade = AbilityGrade.B
 )
 final class GardenerAbility extends BaseAbility {

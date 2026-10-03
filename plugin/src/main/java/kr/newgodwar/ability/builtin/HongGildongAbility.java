@@ -18,14 +18,14 @@ import org.bukkit.potion.PotionEffectType;
 @AbilityInfo(
     id = "honggildong",
     name = "홍길동",
-    description = "재빠른 의적으로 숨어들고 적의 조약돌을 크게 빼앗아요.",
-    normalSkill = "블레이즈 막대기 좌클릭: 짧게 투명화하고 신속을 얻어요.",
+    description = "재빠른 의적으로 숨어들고 적의 조약돌을 크게 빼앗습니다.",
+    normalSkill = "블레이즈 막대기 좌클릭: 9초 동안 투명화하고 10초 동안 신속 II를 얻습니다.",
     normalStoneCost = 10,
     normalCooldownSeconds = 55,
-    advancedSkill = "블레이즈 막대기 우클릭: 20블록 안에서 바라보는 적에게서 조약돌을 훔치고 자신의 위치를 흐려요.",
+    advancedSkill = "블레이즈 막대기 우클릭: 20블록 안에서 바라보는 적의 조약돌을 최대 24개 훔치고 8초 혼란을 줍니다. 자신은 7초 동안 투명화합니다.",
     advancedStoneCost = 20,
     advancedCooldownSeconds = 100,
-    passiveSkill = "공격받으면 가끔 짧은 신속을 얻어요.",
+    passiveSkill = "공격받으면 25% 확률로 8초 동안 신속 II를 얻습니다.",
     grade = AbilityGrade.B
 )
 final class HongGildongAbility extends BaseAbility {

@@ -51,7 +51,7 @@ Wiki 배포 전 저장소 Settings > Features에서 Wiki 기능을 켜야 합니
 
 설정 홈은 게임 준비·전투와 능력·팀·월드·심장 보호·화면과 알림·도박을 목적별로 안내합니다. 우르프·킬타임·팀킬은 `/gmenu combat`, 월드 게임룰은 `/gmenu rules`에 있습니다. 도박 화면에서는 보유 조약돌, 1회 비용, 보상별 실제 확률과 최근 결과를 확인할 수 있습니다.
 
-버전별 메뉴·능력 리소스팩 25종을 [resoucepack 디렉토리](https://github.com/minjae9010/NewGodWar/tree/master/resoucepack)에서 제공합니다. ZIP은 플러그인 JAR에 포함되지 않으며, 기본 설정 `url: auto`로 서버 버전에 맞는 고정 GitHub Raw 주소와 SHA-1을 적용합니다. [다운로드와 호환 범위](docs/wiki/resource-packs.md)를 확인하세요. 리소스팩을 받지 않은 플레이어에게는 일반 아이템과 한글 안내가 표시됩니다.
+메뉴·능력 통합 리소스팩을 [resoucepack 디렉토리](https://github.com/minjae9010/NewGodWar/tree/master/resoucepack)에서 제공합니다. ZIP은 플러그인 JAR에 포함되지 않으며, 기본 설정 `url: auto`로 통합 팩의 고정 GitHub Raw 주소와 SHA-1을 적용합니다. [다운로드와 호환 범위](docs/wiki/resource-packs.md)를 확인하세요. 리소스팩을 받지 않은 플레이어에게는 일반 아이템과 한글 안내가 표시됩니다.
 
 쿨타임 초기화는 관리자 전용이며 본인·특정 플레이어·전체를 구분합니다. 콘솔은 `/gcd <player|all>`처럼 대상을 지정해야 합니다. 잘못된 플레이어 이름이 전체 초기화로 처리되지 않습니다.
 
@@ -139,7 +139,7 @@ Windows PowerShell에서는 다음처럼 실행할 수 있습니다.
 .\gradlew.bat clean build
 ```
 
-빌드 결과물은 `build/libs/NewGodWar-0.3.8.jar`에 복사되며, 모듈 산출물은 `plugin/build/libs/NewGodWar-0.3.8.jar`에서도 확인할 수 있습니다.
+빌드 결과물은 `build/libs/NewGodWar-0.3.9.jar`에 복사되며, 모듈 산출물은 `plugin/build/libs/NewGodWar-0.3.9.jar`에서도 확인할 수 있습니다.
 
 ## 라이선스
 
@@ -153,7 +153,7 @@ Copyright (c) 2026 minjae9010
 `build`는 배포 플러그인과 별도로 `plugin/build/core-regression/CoreRegressionProbe.jar`를 생성합니다. 이 파일은 테스트 전용이며 운영 서버에 설치하면 안 됩니다.
 
 ```powershell
-./scripts/Test-PaperMatrix.ps1 -SkipBuild -LatestVersion -PluginJar build/libs/NewGodWar-0.3.8.jar -ProbeJar plugin/build/core-regression/CoreRegressionProbe.jar -WorkDir .paper-smoke/core-regression
+./scripts/Test-PaperMatrix.ps1 -SkipBuild -LatestVersion -PluginJar build/libs/NewGodWar-0.3.9.jar -ProbeJar plugin/build/core-regression/CoreRegressionProbe.jar -WorkDir .paper-smoke/core-regression
 ```
 
 격리된 Paper 서버에서 비참가자·관전자 등의 심장 파괴 차단, 정상 파괴, 중복 위치, 동시 폭발의 일괄 탈락, 종료 후 이벤트 차단, 준비 인원 재검사와 타이머 정리를 검사합니다. 일반 게임과 능력 테스트에서 설치·저장한 상자가 종료 후 제거되고 다음 게임에 남지 않는지도 검사합니다. 릴리즈는 이 검사를 통과해야 게시됩니다.
@@ -163,7 +163,7 @@ Copyright (c) 2026 minjae9010
 `build`는 `plugin/build/command-regression/CommandRegressionProbe.jar`도 생성합니다. 테스트 전용으로 격리된 Paper 서버에서만 사용합니다.
 
 ```powershell
-./scripts/Test-PaperMatrix.ps1 -SkipBuild -LatestVersion -PluginJar build/libs/NewGodWar-0.3.8.jar -ProbeJar plugin/build/command-regression/CommandRegressionProbe.jar -ProbeSuccessMarker "COMMAND REGRESSION PASS" -WorkDir .paper-smoke/command-regression
+./scripts/Test-PaperMatrix.ps1 -SkipBuild -LatestVersion -PluginJar build/libs/NewGodWar-0.3.9.jar -ProbeJar plugin/build/command-regression/CommandRegressionProbe.jar -ProbeSuccessMarker "COMMAND REGRESSION PASS" -WorkDir .paper-smoke/command-regression
 ```
 
 단계형·한글·간편 명령의 권한, 자동완성, 실제 등록 상태와 쿨타임 초기화 범위를 확인합니다. 없는 대상·콘솔 대상 생략·추가 인수·능력 조회가 전체 초기화로 이어지지 않는지도 검사합니다.

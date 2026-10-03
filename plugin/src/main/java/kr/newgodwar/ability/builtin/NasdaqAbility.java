@@ -20,19 +20,20 @@ import java.util.List;
 @AbilityInfo(
     id = "nasdaq",
     name = "나스닥",
-    description = "철괴나 다이아몬드를 걸고 확률적으로 자원 복사를 시도해요.",
-    normalSkill = "철괴나 다이아몬드를 든 채 좌클릭하면 확률적으로 들고 있는 수량을 복사해요.",
+    description = "철괴나 다이아몬드를 걸고 확률적으로 자원 복사를 시도합니다.",
+    normalSkill = "철괴나 다이아몬드를 손에 들고 좌클릭: 들고 있는 수량만큼 복사를 시도합니다. 기본 성공률은 철괴 25%, 다이아몬드 5%입니다.",
     normalStoneCost = 16,
     normalCooldownSeconds = 45,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "성공 시 들고 있던 수량만큼 얻고 실패 시 들고 있던 수량을 잃어요.",
+    passiveSkill = "성공하면 같은 수량을 더 얻고, 실패하면 들고 있던 아이템을 모두 잃습니다. 블레이즈 막대기는 필요 없습니다.",
     grade = AbilityGrade.B
 )
 final class NasdaqAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.CRAFT)
         .hit(EffectCue.ITEM)
         .effect(EffectCue.ITEM, AbilityDesigns.STOCK_SPLIT)
+        .effect(EffectCue.HUNGER, AbilityDesigns.STOCK_CRASH)
         .build();
 
     @Override
@@ -61,6 +62,7 @@ final class NasdaqAbility extends BaseAbility {
             sendAbilityMessage(context, player, "success", ChatColor.GREEN + "복사에 성공했습니다. 확률 " + successPercent + "%");
         } else {
             player.getInventory().removeItem(item.clone());
+            feedback.cue(context, player, kr.newgodwar.ability.feedback.EffectCue.HUNGER);
             sendAbilityMessage(context, player, "failure", ChatColor.RED + "복사에 실패해 들고 있던 자원을 잃었습니다. 확률 " + successPercent + "%");
         }
     }

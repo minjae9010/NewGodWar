@@ -20,13 +20,13 @@ import java.util.List;
 @AbilityInfo(
     id = "witch",
     name = "마녀",
-    description = "주변 적과 공격자에게 저주를 걸어요.",
-    normalSkill = "블레이즈 막대기 좌클릭: 반경 10블록 적에게 저주를 걸어요.",
+    description = "주변 적과 공격자에게 저주를 겁니다.",
+    normalSkill = "블레이즈 막대기 좌클릭: 반경 10블록 적에게 12초 동안 허기, 독, 감속, 채굴 피로 저주를 겁니다.",
     normalStoneCost = 15,
     normalCooldownSeconds = 60,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "공격받으면 확률로 공격자에게 저주를 걸어요.",
+    passiveSkill = "공격받으면 약 7% 확률로 공격자에게 같은 저주를 겁니다.",
     grade = AbilityGrade.A
 )
 final class WitchAbility extends BaseAbility {

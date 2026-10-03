@@ -20,12 +20,12 @@ import java.util.List;
 @AbilityInfo(
     id = "miner",
     name = "광부",
-    description = "조약돌 채굴 보너스와 곡괭이 고정 피해를 얻어요.",
+    description = "항상 성급함을 받고 곡괭이로 고정 피해를 줍니다.",
     normalSkill = "없음",
     normalStoneCost = 0,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "항상 성급함 효과를 받고 조약돌 채굴 보너스와 곡괭이 고정 피해를 얻어요.",
+    passiveSkill = "항상 성급함 I을 받습니다. 곡괭이 공격 피해는 항상 4로 고정됩니다. 조약돌을 캐면 3% 확률로 조약돌 9개가 추가로 떨어집니다.",
     grade = AbilityGrade.A
 )
 final class MinerAbility extends BaseAbility {

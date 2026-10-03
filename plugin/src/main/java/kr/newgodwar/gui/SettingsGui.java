@@ -21,6 +21,7 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -189,6 +190,19 @@ public final class SettingsGui implements Listener {
         final Player player = event.getPlayer();
         final String name = event.getMessage().trim();
         Bukkit.getScheduler().runTask(plugin, () -> finishTeamRename(player, teamId, name));
+    }
+
+    @EventHandler
+    public void onQuit(PlayerQuitEvent event) {
+        // A rename prompt must not capture the first chat message after reconnecting.
+        UUID uuid = event.getPlayer().getUniqueId();
+        pendingTeamRenameIds.remove(uuid);
+        refreshingViewers.remove(uuid);
+        openViewers.remove(uuid);
+        openViews.remove(uuid);
+        teamPages.remove(uuid);
+        rewardPages.remove(uuid);
+        selectedTeamIds.remove(uuid);
     }
 
     @EventHandler

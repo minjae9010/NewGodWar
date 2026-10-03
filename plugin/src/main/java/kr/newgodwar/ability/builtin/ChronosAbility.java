@@ -13,12 +13,12 @@ import java.util.List;
 
 @AbilityInfo(
     id = "chronos", name = "크로노스",
-    description = "시간을 되감아 돌아오고, 주변 적을 느리게 만들어요.",
-    normalSkill = "블레이즈 막대기 좌클릭: 안전한 발밑에 돌아올 위치를 5초간 기록해요. 다시 좌클릭하면 돌아오고, 잃은 체력을 최대 4 회복해요.",
+    description = "시간을 되감아 돌아오고, 주변 적을 느리게 만듭니다.",
+    normalSkill = "블레이즈 막대기 좌클릭: 안전한 발밑에 돌아올 위치를 5초간 기록합니다. 다시 좌클릭하면 돌아오고, 잃은 체력을 최대 4 회복합니다.",
     normalStoneCost = 14, normalCooldownSeconds = 45,
-    advancedSkill = "블레이즈 막대기 우클릭: 현재 위치에 반경 6블록 시간장을 3초간 만들어요. 안에 있는 적의 이동과 채굴이 느려져요.",
+    advancedSkill = "블레이즈 막대기 우클릭: 현재 위치에 반경 6블록 시간장을 3초간 만듭니다. 안에 있는 적의 이동과 채굴이 느려집니다.",
     advancedStoneCost = 26, advancedCooldownSeconds = 90,
-    passiveSkill = "되감아도 쓴 재료와 쿨타임은 돌아오지 않아요. 기록한 위치가 위험해지면 돌아갈 수 없어요.",
+    passiveSkill = "되감아도 쓴 재료와 쿨타임은 돌아오지 않습니다. 기록한 위치가 위험해지면 돌아갈 수 없습니다.",
     grade = AbilityGrade.S
 )
 final class ChronosAbility extends TransientAbility {

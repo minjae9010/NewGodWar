@@ -14,12 +14,12 @@ import java.util.List;
 
 @AbilityInfo(
     id = "pan", name = "판",
-    description = "제자리에 서서 피리를 불어 퍼져 나가는 선율로 적을 겁주고 아군을 춤추게 해요.",
-    normalSkill = "블레이즈 막대기 좌클릭: 2초간 공포의 피리를 연주해요. 반경 3·5·7블록으로 퍼지는 세 선율이 적을 감속시키고 마지막 선율이 밀쳐내요.",
+    description = "제자리에 서서 피리를 불어 퍼져 나가는 선율로 적을 겁주고 아군을 춤추게 합니다.",
+    normalSkill = "블레이즈 막대기 좌클릭: 2초간 공포의 피리를 연주합니다. 반경 3·5·7블록으로 퍼지는 세 선율이 적을 감속시키고 마지막 선율이 밀쳐냅니다.",
     normalStoneCost = 12, normalCooldownSeconds = 35,
-    advancedSkill = "블레이즈 막대기 우클릭: 2초간 목동의 피리를 연주해요. 세 선율이 아군에게 4초간 신속과 점프 강화를 주고 끝까지 연주하면 체력 2를 회복해요.",
+    advancedSkill = "블레이즈 막대기 우클릭: 2초간 목동의 피리를 연주합니다. 세 선율이 아군에게 4초간 신속과 점프 강화를 주고 끝까지 연주하면 체력 2를 회복합니다.",
     advancedStoneCost = 18, advancedCooldownSeconds = 65,
-    passiveSkill = "연주 시작점에서 1블록 넘게 이동하면 연주가 중단돼요. 염소의 다리로 낙하 피해를 30% 줄여요.",
+    passiveSkill = "연주 시작점에서 1블록 넘게 이동하면 연주가 중단됩니다. 염소의 다리로 낙하 피해를 30% 줄입니다.",
     grade = AbilityGrade.B
 )
 final class PanAbility extends TransientAbility {
@@ -95,6 +95,12 @@ final class PanAbility extends TransientAbility {
         if (center == null || center.getWorld() == null) return;
         List<Player> audience = feedback.effectViewers(context, center);
         double size = Math.max(0.5D, Math.min(8, radius));
+        Location anchor = center.clone(); anchor.setYaw(0); anchor.setPitch(0);
+        // One scene for the whole song: its radius widens on every beat instead of restarting.
+        if (feedback.object(context, "melody", AbilityDesigns.MELODY, anchor, 24, size)) {
+            feedback.sound(context, center, audience, AbilityTheme.MUSIC.sound(), 0.6F, (joyful ? 1.0F : 0.5F) + note * 0.2F);
+            return;
+        }
         for (int i = 0; i < 6; i++) {
             double angle = i * Math.PI / 3 + note * 0.3D;
             feedback.particle(context, center.clone().add(Math.cos(angle) * size, 1.5D + Math.sin(angle * 2) * 0.25D,

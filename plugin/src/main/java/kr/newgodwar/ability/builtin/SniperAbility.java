@@ -20,13 +20,13 @@ import java.util.List;
 @AbilityInfo(
     id = "sniper",
     name = "저격수",
-    description = "웅크려 저격 자세를 잡은 뒤 다음 화살을 초고속으로 발사해요.",
-    normalSkill = "활을 들고 웅크린 채 좌클릭해 다음 화살의 저격을 준비해요.",
+    description = "웅크려 저격 자세를 잡은 뒤 다음 화살을 초고속으로 발사합니다.",
+    normalSkill = "활을 들고 웅크린 채 좌클릭: 4초 뒤 저격 모드가 준비됩니다. 조약돌은 들지 않습니다.",
     normalStoneCost = 0,
-    advancedSkill = "저격 준비 후 활 우클릭을 놓아 발사한 다음 화살의 속도를 크게 높여요.",
+    advancedSkill = "저격 준비 후 활 우클릭으로 발사: 다음 화살이 매우 빠른 속도로 날아갑니다. 이때 조약돌과 쿨타임이 소모됩니다.",
     advancedStoneCost = 6,
     advancedCooldownSeconds = 18,
-    passiveSkill = "능력을 받으면 활과 화살 10개를 받고 리스폰 시 화살 2개를 받아요.",
+    passiveSkill = "능력을 받으면 활과 화살 10개를 받고 리스폰 시 화살 2개를 받습니다.",
     grade = AbilityGrade.A
 )
 final class SniperAbility extends BaseAbility {

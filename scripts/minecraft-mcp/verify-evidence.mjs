@@ -45,9 +45,11 @@ check(food.session.pluginSha256===session.pluginSha256&&food.session.artPackSha1
 const deployed=join(root,'.build/minecraft-mcp/server/plugins/NewGodWar.jar');
 const digest=createHash('sha256').update(readFileSync(deployed)).digest('hex');check(digest===session.pluginSha256,'Deployed snapshot changed');
 const archive=join(out,'tested');mkdirSync(archive,{recursive:true});copyFileSync(deployed,join(archive,'NewGodWar.jar'));
-const pack=join(root,'build/libs/NewGodWar-Art-26.3.zip');
+const packName=readdirSync(join(root,'build/effect-pack/dist')).find(n=>/^NewGodWar-Art-[0-9a-f]{8}\.zip$/.test(n));
+check(packName,'Build the combined art pack first');
+const pack=join(root,'build/effect-pack/dist',packName);
 check(createHash('sha1').update(readFileSync(pack)).digest('hex')===session.artPackSha1,'Pack differs from the captured build');
-copyFileSync(pack,join(archive,'NewGodWar-Art-26.3.zip'));
+copyFileSync(pack,join(archive,packName));
 const unitTests={tests:0,failures:0,errors:0,skipped:0};
 for(const name of readdirSync(join(archive,'unit-results')).filter(n=>n.endsWith('.xml'))){
   const header=readFileSync(join(archive,'unit-results',name),'utf8').match(/<testsuite\s[^>]+>/)?.[0]??'';

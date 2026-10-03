@@ -18,14 +18,14 @@ import java.util.List;
 @AbilityInfo(
     id = "gigachad",
     name = "기가채드",
-    description = "압도적인 자신감으로 적을 밀쳐내고 위기에서 버텨요.",
-    normalSkill = "블레이즈 막대기 좌클릭: 반경 6블록 적을 밀쳐내고 자신에게 저항과 흡수를 줘요.",
+    description = "압도적인 자신감으로 적을 밀쳐내고 위기에서 버팁니다.",
+    normalSkill = "블레이즈 막대기 좌클릭: 반경 6블록 적을 밀쳐내고 10초 동안 저항과 흡수를 얻습니다.",
     normalStoneCost = 16,
     normalCooldownSeconds = 70,
-    advancedSkill = "블레이즈 막대기 우클릭: 짧게 신속, 공격력 증가, 저항을 얻어요.",
+    advancedSkill = "블레이즈 막대기 우클릭: 11초 동안 신속 II, 공격력 증가, 저항을 얻습니다.",
     advancedStoneCost = 28,
     advancedCooldownSeconds = 135,
-    passiveSkill = "치명적인 피해를 받을 때 가끔 흡수와 저항을 얻어요.",
+    passiveSkill = "피해를 받아 체력이 6(하트 3칸) 이하가 되면 25% 확률로 흡수 II와 저항을 얻습니다.",
     grade = AbilityGrade.A
 )
 final class GigachadAbility extends BaseAbility {

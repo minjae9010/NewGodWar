@@ -1,4 +1,4 @@
-"""Check every release pack against its runtime catalogue and both item-model pipelines."""
+"""Check the combined pack against the runtime catalogue, both item-model pipelines and every release."""
 import hashlib
 import json
 import re
@@ -6,7 +6,9 @@ import sys
 import zipfile
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from packfile import ROOT, built_pack
+
 rows = [line.split('|') for line in (ROOT / 'scripts/effect-art/pack-versions.tsv').read_text().splitlines()
         if line and not line.startswith('#')]
 
@@ -28,62 +30,64 @@ def select(overrides, value, base):
             result = entry['model']
     return result
 
+path = built_pack()
+sha = hashlib.sha1(path.read_bytes()).hexdigest()
+assert path.name == f'NewGodWar-Art-{sha[:8]}.zip', 'The pack must be named by its own hash'
+assert path.with_suffix('.zip.sha1').read_text().strip() == sha
+
 covered = set()
-for suffix, fmt, system, atlas, versions in rows:
-    filename = f'NewGodWar-Art-{suffix}.zip'
-    path = ROOT / 'build/libs' / filename
-    sha = hashlib.sha1(path.read_bytes()).hexdigest()
-    assert path.with_suffix('.zip.sha1').read_text().strip() == sha
+for system, versions in rows:
     for version in versions.split(','):
         assert version not in covered, version
         covered.add(version)
-        assert catalogue[version] == f'{filename}|{sha}|{system}'
-    with zipfile.ZipFile(path) as archive:
-        names = archive.namelist()
-        assert len(names) == len(set(names)), filename
-        assert all(not name.startswith('/') and '..' not in name.split('/') for name in names)
-        objects = {name: json.loads(archive.read(name)) for name in names if name.endswith(('.json', '.mcmeta'))}
-        meta = objects['pack.mcmeta']['pack']
-        if '.' in fmt:
-            assert meta['min_format'] == meta['max_format'] == [int(n) for n in fmt.split('.')]
-        else:
-            assert meta['pack_format'] == int(fmt)
-        atlases = [name for name in names if '/atlases/' in name]
-        assert atlases == ([] if atlas == 'none' else [f'assets/minecraft/atlases/{atlas}.json'])
-        for name, obj in objects.items():
-            if '/models/' in name:
-                for texture in obj.get('textures', {}).values():
-                    if texture.startswith('newgodwar:'):
-                        assert 'assets/newgodwar/textures/' + texture.split(':')[1] + '.png' in names, (filename, name, texture)
-                for entry in obj.get('overrides', []):
-                    if entry['model'].startswith('newgodwar:'):
-                        assert 'assets/newgodwar/models/' + entry['model'].split(':')[1] + '.json' in names
-        if system == 'modern':
-            for key in model_ids:
-                node = objects[f'assets/newgodwar/items/{key}.json']['model']
-                assert node['model'] == 'newgodwar:' + key
-                assert f'assets/newgodwar/models/{key}.json' in names
-            for index, material in enumerate(['bread', 'cooked_chicken', 'cooked_beef', 'baked_potato', 'cooked_porkchop', 'cooked_cod']):
-                node = objects[f'assets/minecraft/items/{material}.json']['model']
-                assert node['type'] == 'minecraft:range_dispatch'
-                assert node['entries'][0]['threshold'] == 73101 + index
-                assert node['entries'][1]['threshold'] == 73102 + index
-                assert node['entries'][1]['model'] == node['fallback']
-        else:
-            assert not any('/items/' in name for name in names)
-            if system == 'legacy':
-                overrides = objects['assets/minecraft/models/item/paper.json']['overrides']
-                for key, code in model_ids.items():
-                    assert select(overrides, code, 'minecraft:item/paper') == 'newgodwar:' + key
-                    assert select(overrides, code+1, 'minecraft:item/paper') == 'minecraft:item/paper'
-                assert select(overrides, 0, 'minecraft:item/paper') == 'minecraft:item/paper'
-                for index, material in enumerate(['bread', 'cooked_chicken', 'cooked_beef', 'baked_potato', 'cooked_porkchop', 'cooked_cod']):
-                    base = 'minecraft:item/' + material
-                    overrides = objects[f'assets/minecraft/models/item/{material}.json']['overrides']
-                    code = 73101 + index
-                    assert select(overrides, code, base).startswith('newgodwar:art/food/')
-                    assert all(select(overrides, value, base) == base for value in (0, code-1, code+1, 999999))
-    print(f'PASS {suffix}: format {fmt}, {system}, {sha}')
+        assert catalogue[version] == f'{path.name}|{sha}|{system}', version
+
+with zipfile.ZipFile(path) as archive:
+    names = archive.namelist()
+    assert len(names) == len(set(names))
+    assert all(not name.startswith('/') and '..' not in name.split('/') for name in names)
+    objects = {name: json.loads(archive.read(name)) for name in names if name.endswith(('.json', '.mcmeta'))}
+    meta = objects['pack.mcmeta']['pack']
+    # Every syntax at once: pack_format (<1.20.2), supported_formats (1.20.2-1.21.8), min/max_format (1.21.9+).
+    assert meta['supported_formats'] == [4, 97] and meta['min_format'] == 4 and meta['max_format'] == 97
+    assert 4 <= meta['pack_format'] <= 97
+    assert not any('/atlases/' in name for name in names), 'Textures under item/ need no atlas file'
+    assert not any(name.startswith('assets/newgodwar/textures/') and '/textures/item/' not in name for name in names)
+    for name, obj in objects.items():
+        if '/models/' in name:
+            for texture in obj.get('textures', {}).values():
+                if texture.startswith('newgodwar:'):
+                    assert texture.startswith('newgodwar:item/'), (name, texture)
+                    assert 'assets/newgodwar/textures/' + texture.split(':')[1] + '.png' in names, (name, texture)
+            for entry in obj.get('overrides', []):
+                if entry['model'].startswith('newgodwar:'):
+                    assert 'assets/newgodwar/models/' + entry['model'].split(':')[1] + '.json' in names
+    # Modern pipeline (1.21.4+): item model definitions.
+    for key in model_ids:
+        node = objects[f'assets/newgodwar/items/{key}.json']['model']
+        assert node['model'] == 'newgodwar:' + key
+        assert f'assets/newgodwar/models/{key}.json' in names
+    foods = ['bread', 'cooked_chicken', 'cooked_beef', 'baked_potato', 'cooked_porkchop', 'cooked_cod']
+    for index, material in enumerate(foods):
+        node = objects[f'assets/minecraft/items/{material}.json']['model']
+        assert node['type'] == 'minecraft:range_dispatch'
+        assert node['entries'][0]['threshold'] == 73101 + index
+        assert node['entries'][1]['threshold'] == 73102 + index
+        assert node['entries'][1]['model'] == node['fallback']
+    # Legacy pipeline (1.14 - 1.21.3): custom_model_data overrides.
+    overrides = objects['assets/minecraft/models/item/paper.json']['overrides']
+    for key, code in model_ids.items():
+        assert select(overrides, code, 'minecraft:item/paper') == 'newgodwar:' + key
+        assert select(overrides, code+1, 'minecraft:item/paper') == 'minecraft:item/paper'
+    assert select(overrides, 0, 'minecraft:item/paper') == 'minecraft:item/paper'
+    for index, material in enumerate(foods):
+        base = 'minecraft:item/' + material
+        overrides = objects[f'assets/minecraft/models/item/{material}.json']['overrides']
+        code = 73101 + index
+        assert select(overrides, code, base).startswith('newgodwar:art/food/')
+        assert all(select(overrides, value, base) == base for value in (0, code-1, code+1, 999999))
+    animated = [name for name in names if name.endswith('.png.mcmeta')]
+    assert animated and all(name[:-len('.mcmeta')] in names for name in animated)
 
 supported_source = (ROOT / 'scripts/Test-PaperMatrix.ps1').read_text()
 supported = set(re.findall(r'"([0-9.]+)"', supported_source.split('function Get-SupportedPaperVersions')[1].split('function Get-LatestSupportedPaperVersion')[0]))
@@ -94,4 +98,4 @@ if '--skip-jar' not in sys.argv:
     with zipfile.ZipFile(ROOT / f'build/libs/NewGodWar-{version}.jar') as jar:
         for resource in ('art-models.properties', 'art-packs.properties'):
             assert jar.read(resource) == (ROOT / 'build/generated/pack-resources' / resource).read_bytes()
-print(f'PASS {len(rows)} ZIPs, {len(covered)} releases, {len(model_ids)} model IDs')
+print(f'PASS {path.name}: one pack for {len(covered)} releases, both model pipelines, {len(model_ids)} model IDs, {len(animated)} animations')

@@ -21,17 +21,20 @@ models = properties('art-models.properties')
 rows = [line.split('|') for line in (ROOT / 'scripts/effect-art/pack-versions.tsv').read_text().splitlines()
         if line and not line.startswith('#')]
 expected = {}
-for suffix, fmt, system, atlas, versions in rows:
+for system, versions in rows:
     for version in versions.split(','):
-        expected[version] = (f'NewGodWar-Art-{suffix}.zip', system)
+        expected[version] = system
 assert set(packs) == set(expected)
+assert len({value.split('|')[0] for value in packs.values()}) == 1, 'Every release is served the same combined pack'
 for version, value in packs.items():
     filename, sha, system = value.split('|')
-    assert (filename, system) == expected[version]
+    assert system == expected[version]
     assert re.fullmatch('[0-9a-f]{40}', sha), version
+    assert filename == f'NewGodWar-Art-{sha[:8]}.zip', 'The pack is named by its own hash'
 static = ROOT / 'resoucepack'
 files = {value.split('|')[0]: value.split('|')[1] for value in packs.values()}
-assert {p.name for p in static.glob('*.zip')} == set(files), 'Static directory does not match pack catalogue'
+# Older packs may remain for released plugin versions; the current one must be present.
+assert set(files) <= {p.name for p in static.glob('*.zip')}, 'Static directory is missing the catalogued pack'
 for filename, sha in files.items():
     assert hashlib.sha1((static / filename).read_bytes()).hexdigest() == sha, filename
     assert (static / (filename + '.sha1')).read_text().strip() == sha
@@ -48,9 +51,16 @@ assert {key[4:] for key in models if key.startswith('gui/')} == {icon.lower() fo
 art_keys = set()
 for line in (resources / 'effect-art.tsv').read_text(encoding='utf-8').splitlines():
     if line and not line.startswith('#'):
-        key = line.split('|')[0].lower().replace('.', '/')
-        for layer in ('glyph', 'arc', 'ring', 'mote'):
-            art_keys.update(f'art/{key}/{layer}{fade}' for fade in range(4))
+        fields = line.split('|')
+        key = fields[0].lower().replace('.', '/')
+        art_keys.update(f'art/{key}/glyph{fade}' for fade in range(4))
+        art_keys.update(f'art/{key}/draw{frame}' for frame in range(2))
+        for layer in ('flash', 'wave', 'sigil', 'ring', 'beam', 'spark', 'shard'):
+            art_keys.update(f'art/fx/{fields[4]}/{layer}{fade}' for fade in range(4))
+        for layer in ('burst', 'slash', 'craft', 'chart', 'crash'):
+            art_keys.update(f'art/fx/{fields[4]}/{layer}{frame}' for frame in range(6))
+        for prop in (fields[5].split(',') if len(fields) > 5 else []):
+            art_keys.update(f'art/{key}/{prop.split(":")[0]}{fade}' for fade in range(4))
 assert art_keys == {key for key in models if key.startswith('art/')}, 'Publish updated artwork before releasing the plugin'
 version = re.search(r'version = "([^"]+)"', (ROOT / 'build.gradle').read_text()).group(1)
 with zipfile.ZipFile(ROOT / f'build/libs/NewGodWar-{version}.jar') as jar:

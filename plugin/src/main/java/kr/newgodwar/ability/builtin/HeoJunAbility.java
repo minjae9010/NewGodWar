@@ -17,14 +17,14 @@ import java.util.List;
 @AbilityInfo(
     id = "heojun",
     name = "허준",
-    description = "동의보감으로 치명적인 상태 이상을 씻어내고 아군을 크게 회복해요.",
-    normalSkill = "블레이즈 막대기 좌클릭: 자신을 완전히 회복하고 주요 해로운 효과를 제거해요.",
+    description = "동의보감으로 치명적인 상태 이상을 씻어내고 아군을 크게 회복합니다.",
+    normalSkill = "블레이즈 막대기 좌클릭: 자신을 완전히 회복하고 독·위더·실명·약화·감속 등 해로운 효과를 없앱니다.",
     normalStoneCost = 36,
     normalCooldownSeconds = 160,
-    advancedSkill = "블레이즈 막대기 우클릭: 자신과 반경 10블록 아군을 완전히 회복하고 흡수, 재생, 저항을 줘요.",
+    advancedSkill = "블레이즈 막대기 우클릭: 자신과 반경 10블록 아군을 완전히 회복하고 해로운 효과를 없앤 뒤 흡수 II·재생 II 12초, 저항 10초를 줍니다.",
     advancedStoneCost = 64,
     advancedCooldownSeconds = 320,
-    passiveSkill = "독과 위더 피해를 무시하고 받는 회복량이 늘어나요.",
+    passiveSkill = "독과 위더 피해를 무시하고 받는 회복량이 35% 늘어납니다.",
     grade = AbilityGrade.S
 )
 final class HeoJunAbility extends BaseAbility {

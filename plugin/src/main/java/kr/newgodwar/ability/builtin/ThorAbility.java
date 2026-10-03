@@ -23,12 +23,12 @@ import static kr.newgodwar.ability.feedback.ModelParts.*;
 
 @AbilityInfo(
     id = "thor", name = "토르",
-    description = "천둥신의 망치 묠니르를 던지고 회수하며 모은 전하로 낙뢰를 내려요.",
-    normalSkill = "블레이즈 막대기 좌클릭: 20블록 안의 적 위치로 묠니르를 던져요. 0.6초 뒤 적이 충돌 지점 1.5블록 안에 있으면 피해 5와 감속 2초를 주고, 1.2초 뒤 회수하며 전하 1을 얻어요.",
+    description = "천둥신의 망치 묠니르를 던지고 회수하며 모은 전하로 낙뢰를 내립니다.",
+    normalSkill = "블레이즈 막대기 좌클릭: 20블록 안의 적 위치로 묠니르를 던집니다. 0.6초 뒤 적이 충돌 지점 1.5블록 안에 있으면 피해 5와 감속 2초를 주고, 1.2초 뒤 회수하며 전하 1을 얻습니다.",
     normalStoneCost = 12, normalCooldownSeconds = 18,
-    advancedSkill = "블레이즈 막대기 우클릭: 전하를 모두 소모해 반경 5블록 적에게 천둥 강타를 내려요. 낙뢰 피해 3 + 전하당 2를 주고 밀쳐내며 전하가 1 이상 필요해요.",
+    advancedSkill = "블레이즈 막대기 우클릭: 전하를 모두 소모해 반경 5블록 적에게 천둥 강타를 내립니다. 낙뢰 피해 3 + 전하당 2를 주고 밀쳐내며 전하가 1 이상 필요합니다.",
     advancedStoneCost = 24, advancedCooldownSeconds = 65,
-    passiveSkill = "묠니르(철 도끼)를 지급받고 도끼 직접 공격의 피해가 15% 늘어나요. 1초마다 적중 시 전하 1을 얻으며 최대 3까지 저장해요. 번개 피해를 무시해요.",
+    passiveSkill = "능력을 받으면 묠니르(철 도끼)를 받습니다. 도끼로 직접 공격하면 피해가 15% 늘고 전하를 1 얻습니다(1초에 한 번). 전하는 최대 3입니다. 번개 피해를 무시합니다.",
     grade = AbilityGrade.A
 )
 final class ThorAbility extends TransientAbility {

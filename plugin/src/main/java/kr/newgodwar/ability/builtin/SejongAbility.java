@@ -17,14 +17,14 @@ import java.util.List;
 @AbilityInfo(
     id = "sejong",
     name = "세종대왕",
-    description = "집현전의 지혜로 아군을 강화하고 훈민정음의 칙령으로 적의 능력을 봉인해요.",
-    normalSkill = "블레이즈 막대기 좌클릭: 자신과 반경 10블록 아군에게 재생, 저항, 성급함을 부여하고 경험 레벨을 나눠요.",
+    description = "집현전의 지혜로 아군을 강화하고 훈민정음의 칙령으로 적의 능력을 봉인합니다.",
+    normalSkill = "블레이즈 막대기 좌클릭: 자신과 반경 10블록 아군에게 재생 II 10초, 저항 10초, 성급함 II 14초를 주고 경험 레벨을 2씩 올립니다.",
     normalStoneCost = 40,
     normalCooldownSeconds = 180,
-    advancedSkill = "블레이즈 막대기 우클릭: 28블록 안에서 바라보는 적의 능력을 봉인하고 실명, 약화, 감속을 줘요.",
+    advancedSkill = "블레이즈 막대기 우클릭: 28블록 안에서 바라보는 적의 능력을 10초 동안 봉인하고 실명 8초, 약화·감속 III 12초를 줍니다.",
     advancedStoneCost = 64,
     advancedCooldownSeconds = 300,
-    passiveSkill = "책을 들고 공격하면 피해가 증가하고, 능력을 받으면 책을 받아요.",
+    passiveSkill = "능력을 받으면 책을 받습니다. 책을 들고 공격하면 피해가 35% 늘어납니다.",
     grade = AbilityGrade.S
 )
 final class SejongAbility extends BaseAbility {

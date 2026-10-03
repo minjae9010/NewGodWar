@@ -22,12 +22,12 @@ import java.util.UUID;
 
 @AbilityInfo(
     id = "artemis", name = "아르테미스",
-    description = "활로 표식을 쌓고, 세 번째 화살로 큰 피해를 줘요.",
-    normalSkill = "블레이즈 막대기 좌클릭: 화살 6개를 만들고 5초 동안 신속을 얻어요.",
+    description = "활로 표식을 쌓고, 세 번째 화살로 큰 피해를 줍니다.",
+    normalSkill = "블레이즈 막대기 좌클릭: 화살 6개를 만들고 5초 동안 신속을 얻습니다.",
     normalStoneCost = 8, normalCooldownSeconds = 25,
-    advancedSkill = "블레이즈 막대기 우클릭: 바라보는 30블록 안의 적에게 표식 2개를 남겨요. 8초 안에 화살을 맞히면 사냥이 완성돼요.",
+    advancedSkill = "블레이즈 막대기 우클릭: 바라보는 30블록 안의 적에게 표식 2개를 남깁니다. 8초 안에 화살을 맞히면 사냥이 완성됩니다.",
     advancedStoneCost = 20, advancedCooldownSeconds = 65,
-    passiveSkill = "능력을 받으면 은빛 사냥활과 화살 12개를 얻어요. 같은 적에게 8초 안에 화살 3발을 맞히면 추가 피해 4와 감속 3초를 줘요. 다른 적을 맞히면 표식이 옮겨가요.",
+    passiveSkill = "능력을 받으면 은빛 사냥활과 화살 12개를 얻습니다. 같은 적에게 8초 안에 화살 3발을 맞히면 추가 피해 4와 감속 3초를 줍니다. 다른 적을 맞히면 표식이 옮겨갑니다.",
     grade = AbilityGrade.A
 )
 final class ArtemisAbility extends TransientAbility {
@@ -128,7 +128,12 @@ final class ArtemisAbility extends TransientAbility {
 
     /** Silver crescent and one star per mark, attached to the hunted player's position. */
     private void huntMark(AbilityPlayerContext context, Player target, int marks) {
-        if (target == null || !target.isOnline() || !feedback.enabled(context, "particles")) return;
+        if (target == null || !target.isOnline()) return;
+        if (feedback.followObject("hunt:" + target.getUniqueId(), context, AbilityDesigns.HUNT_MARK, () -> {
+                if (!target.isOnline() || target.isDead()) return null;
+                Location at = target.getLocation(); at.setYaw(0); at.setPitch(0); return at;
+            }, () -> feedback.targetViewers(context, target, target.getLocation()), 24, marks)) return;
+        if (!feedback.enabled(context, "particles")) return;
         Location center = target.getLocation().add(0, 2.3D, 0);
         List<Player> audience = feedback.targetViewers(context, target, center);
         for (int i = 0; i < 15; i++) {

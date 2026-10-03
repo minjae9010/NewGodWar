@@ -20,12 +20,12 @@ import java.util.List;
 @AbilityInfo(
     id = "stance",
     name = "스탠스",
-    description = "공격 넉백과 피해 증폭을 무시해요.",
+    description = "다른 플레이어의 공격에 밀려나지 않습니다.",
     normalSkill = "없음",
     normalStoneCost = 0,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "공격과 투사체 피해의 넉백/증폭을 억제해요.",
+    passiveSkill = "근접·투사체 공격을 받아도 넉백 없이 피해만 받습니다.",
     grade = AbilityGrade.B
 )
 final class StanceAbility extends BaseAbility {

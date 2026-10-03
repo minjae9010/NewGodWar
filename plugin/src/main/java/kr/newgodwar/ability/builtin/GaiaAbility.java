@@ -21,14 +21,14 @@ import java.util.List;
 @AbilityInfo(
     id = "gaia",
     name = "가이아",
-    description = "대지의 회복과 속박으로 전장을 장악해요.",
-    normalSkill = "블레이즈 막대기 좌클릭: 자신과 반경 8블록 아군을 회복시키고 재생을 줘요.",
+    description = "대지의 회복과 속박으로 전장을 장악합니다.",
+    normalSkill = "블레이즈 막대기 좌클릭: 자신과 반경 8블록 아군의 체력을 6 회복하고 8초 재생을 줍니다.",
     normalStoneCost = 16,
     normalCooldownSeconds = 70,
-    advancedSkill = "블레이즈 막대기 우클릭: 반경 9블록 적을 속박하고 약화시켜요.",
+    advancedSkill = "블레이즈 막대기 우클릭: 반경 9블록 적에게 8초 동안 감속 V(속박)와 약화를 줍니다.",
     advancedStoneCost = 30,
     advancedCooldownSeconds = 145,
-    passiveSkill = "낙하 피해를 줄이고 흙/잔디 위에서 재생을 유지해요.",
+    passiveSkill = "낙하 피해를 65% 줄입니다. 흙이나 잔디 블록 위에 서 있으면 재생을 유지합니다.",
     grade = AbilityGrade.S
 )
 final class GaiaAbility extends BaseAbility {

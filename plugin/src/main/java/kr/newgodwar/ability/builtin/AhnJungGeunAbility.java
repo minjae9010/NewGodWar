@@ -15,14 +15,14 @@ import org.bukkit.potion.PotionEffectType;
 @AbilityInfo(
     id = "anjunggeun",
     name = "안중근",
-    description = "의거의 결의로 적 하나를 정확히 제압해요.",
-    normalSkill = "블레이즈 막대기 좌클릭: 24블록 안에서 바라보는 적에게 피해와 감속, 약화를 줘요.",
+    description = "의거의 결의로 적 하나를 정확히 제압합니다.",
+    normalSkill = "블레이즈 막대기 좌클릭: 24블록 안에서 바라보는 적에게 피해 5를 주고 9초 동안 감속 II와 약화를 줍니다.",
     normalStoneCost = 22,
     normalCooldownSeconds = 95,
-    advancedSkill = "블레이즈 막대기 우클릭: 28블록 안에서 바라보는 적에게 큰 피해를 주고 짧게 능력을 봉인해요.",
+    advancedSkill = "블레이즈 막대기 우클릭: 28블록 안에서 바라보는 적에게 피해 9를 주고 실명 7초, 감속 III 9초를 줍니다. 능력도 5초 동안 봉인합니다.",
     advancedStoneCost = 38,
     advancedCooldownSeconds = 180,
-    passiveSkill = "검 공격하면 낮은 확률로 짧은 공격력 증가를 얻어요.",
+    passiveSkill = "능력을 받으면 철 검을 받습니다. 검으로 공격하면 20% 확률로 7초 동안 공격력 증가를 얻습니다.",
     grade = AbilityGrade.A
 )
 final class AhnJungGeunAbility extends BaseAbility {

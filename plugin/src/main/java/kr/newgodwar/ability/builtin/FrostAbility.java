@@ -22,14 +22,14 @@ import java.util.Map;
 @AbilityInfo(
     id = "frost",
     name = "잭프로스트",
-    description = "얼음 구체로 길을 막고 시야 안의 적을 얼음 안에 가둬요.",
-    normalSkill = "블레이즈 막대기 좌클릭: 15블록 안의 바라보는 위치에 5초 동안 반경 3블록 얼음 구체를 만들어요. 실제 얼음 벽은 누구나 막아요.",
+    description = "얼음 구체로 길을 막고 시야 안의 적을 얼음 안에 가둡니다.",
+    normalSkill = "블레이즈 막대기 좌클릭: 15블록 안의 바라보는 위치에 5초 동안 반경 3블록 얼음 구체를 만듭니다. 실제 얼음 벽은 누구나 막습니다.",
     normalStoneCost = 12,
     normalCooldownSeconds = 20,
-    advancedSkill = "블레이즈 막대기 우클릭: 20블록 안의 바라보는 적을 8초 동안 반경 5블록 얼음 구체에 가둬요. 실제 얼음 벽은 아군도 막아요.",
+    advancedSkill = "블레이즈 막대기 우클릭: 20블록 안의 바라보는 적을 8초 동안 반경 5블록 얼음 구체에 가둡니다. 실제 얼음 벽은 아군도 막습니다.",
     advancedStoneCost = 24,
     advancedCooldownSeconds = 150,
-    passiveSkill = "/x <플레이어>로 대상을 지정할 수도 있어요.",
+    passiveSkill = "얼음은 시간이 지나면 원래 블록으로 돌아옵니다. 다이아몬드 블록은 얼리지 않습니다.",
     grade = AbilityGrade.A
 )
 final class FrostAbility extends BaseAbility {
@@ -100,6 +100,8 @@ final class FrostAbility extends BaseAbility {
     /** Four sparse icy ribs follow the sphere's surface without filling it with particles. */
     private void frostCage(AbilityPlayerContext context, Location center, double radius) {
         if (center == null || center.getWorld() == null) return;
+        Location anchor = center.clone(); anchor.setYaw(0); anchor.setPitch(0);
+        if (feedback.object(context, "frost-cage:" + feedback.positionKey(anchor), AbilityDesigns.FROST_CAGE, anchor, 22, radius)) return;
         List<Player> audience = feedback.effectViewers(context, center);
         double size = Math.max(0.5D, Math.min(6, radius));
         for (int rib = 0; rib < 4; rib++) for (int i = 0; i <= 8; i++) {

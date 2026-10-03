@@ -146,6 +146,9 @@ public final class AbilityFeedback {
     public void drawCue(AbilityPlayerContext context, Location center, EffectCue cue, List<Player> audience, Player subject, boolean useObjects) {
         if (center == null || center.getWorld() == null || !visuals(context)) return;
         DesignedEffect design = style().effect(cue);
+        // An undecorated reaction still gets its shared animated design; shields and wings keep their shared models.
+        if (design == null && cue != EffectCue.GUARD && cue != EffectCue.WINGS)
+            design = kr.newgodwar.ability.builtin.AbilityDesigns.status(cue);
         if (design != null) {
             designed(context, center, cue, design, audience, subject, useObjects);
             cueSound(context, center, cue, audience);

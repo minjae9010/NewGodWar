@@ -20,8 +20,8 @@ import java.util.List;
 @AbilityInfo(
     id = "girl",
     name = "안락소녀",
-    description = "가까운 적을 자신의 섬 위치로 끌어와 허기와 움직임을 끊어요.",
-    normalSkill = "블레이즈 막대기 좌클릭: 수평 반경 5블록 적을 끌어오고 허기를 0으로 만들어요.",
+    description = "가까운 적을 끌어와 허기를 없애고 발을 묶습니다.",
+    normalSkill = "블레이즈 막대기 좌클릭: 수평 반경 5블록 적을 자신의 위치로 끌어와 허기를 0으로 만들고 3초 동안 움직이지 못하게 합니다.",
     normalStoneCost = 22,
     normalCooldownSeconds = 90,
     advancedSkill = "없음",

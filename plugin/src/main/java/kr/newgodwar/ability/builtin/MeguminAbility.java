@@ -19,12 +19,12 @@ import java.util.List;
 @AbilityInfo(
     id = "megumin",
     name = "메구밍",
-    description = "게임 중 한 번 모든 것을 걸고 강력한 지연 폭발을 일으켜요.",
-    normalSkill = "블레이즈 막대기 좌클릭 (게임당 1회): 25블록 안의 바라보는 위치에 3초 후 위력 5 폭발을 일으키고 사망해요. 바깥 경고선은 최대 10블록 피해 거리이며, 실제 피해는 거리와 장애물에 따라 달라져요.",
+    description = "게임 중 한 번 모든 것을 걸고 강력한 지연 폭발을 일으킵니다.",
+    normalSkill = "블레이즈 막대기 좌클릭 (게임당 1회): 25블록 안의 바라보는 위치에 3초 후 위력 5 폭발을 일으키고 사망합니다. 바깥 경고선은 최대 10블록 피해 거리이며, 실제 피해는 거리와 장애물에 따라 달라집니다.",
     normalStoneCost = 32,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "게임 중 한 번만 사용할 수 있어요.",
+    passiveSkill = "게임 중 한 번만 사용할 수 있습니다.",
     grade = AbilityGrade.C
 )
 final class MeguminAbility extends BaseAbility {

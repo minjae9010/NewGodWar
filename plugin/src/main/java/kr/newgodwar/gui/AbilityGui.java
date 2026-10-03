@@ -4,6 +4,7 @@ import kr.newgodwar.NewGodWarPlugin;
 import kr.newgodwar.ability.AbilityManager;
 import kr.newgodwar.ability.api.AbilityDefinition;
 import kr.newgodwar.ability.api.AbilityGrade;
+import kr.newgodwar.util.InventoryItems;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -207,15 +208,18 @@ public final class AbilityGui implements Listener {
         Inventory inventory = Bukkit.createInventory(player, CURRENT_SIZE, DETAIL_TITLE);
         GuiTheme.frame(inventory);
         inventory.setItem(4, GuiTheme.heading(ability.name(), "도감에는 기본 비용과 쿨타임이 표시돼요."));
-        inventory.setItem(22, item("NETHER_STAR", "NETHER_STAR", 1, (short) 0,
-            ChatColor.AQUA + ability.name(), ChatColor.WHITE + ability.description(),
-            ChatColor.GRAY + "등급: " + ability.gradeText(), ChatColor.GRAY + "제작자: " + ability.author()));
+        inventory.setItem(22, currentAbilityItem(ability));
         if (hasSkill(ability.normalSkill())) inventory.setItem(20, skillItem("LIGHT_BLUE_STAINED_GLASS", (short) 3,
             ChatColor.AQUA + "일반 능력", ability.normalSkill(), ability.normalStoneCost(), ability.normalCooldown(), ""));
         if (hasSkill(ability.advancedSkill())) inventory.setItem(24, skillItem("RED_STAINED_GLASS", (short) 14,
             ChatColor.RED + "고급 능력", ability.advancedSkill(), ability.advancedStoneCost(), ability.advancedCooldown(), ""));
-        if (hasSkill(ability.passiveSkill())) inventory.setItem(30, item("EMERALD", "EMERALD", 1, (short) 0,
-            ChatColor.GREEN + "패시브 · 알아두기", new ArrayList<String>(GuiText.skill(ability.passiveSkill()))));
+        if (hasSkill(ability.passiveSkill())) inventory.setItem(30, passiveItem(ability));
+        inventory.setItem(32, item("PAPER", "PAPER", 1, (short) 0,
+            ChatColor.GOLD + "" + ChatColor.BOLD + "세부 정보",
+            ChatColor.GRAY + "ID: " + ChatColor.WHITE + ability.id(),
+            ChatColor.GRAY + "제작자: " + ChatColor.WHITE + ability.author(),
+            ChatColor.GRAY + "랜덤 배정: " + (abilityManager.isBlacklisted(ability) ? ChatColor.RED + "제외"
+                : abilityManager.isEnabled(ability) ? ChatColor.GREEN + "포함" : ChatColor.RED + "비활성")));
         inventory.setItem(36, GuiTheme.item("ARROW", "ARROW", (short) 0, ChatColor.YELLOW + "도감으로 돌아가기",
             ChatColor.GRAY + "보던 목록으로 돌아가요."));
         inventory.setItem(CURRENT_CLOSE_SLOT, closeItem());
@@ -271,13 +275,11 @@ public final class AbilityGui implements Listener {
             if (hasSkill(current.normalSkill())) {
                 inventory.setItem(20, currentSkillItem(shown, current, 1));
             }
-            inventory.setItem(22, currentAbilityItem(shown, current));
+            inventory.setItem(22, currentAbilityItem(current));
             if (hasSkill(current.advancedSkill())) {
                 inventory.setItem(24, currentSkillItem(shown, current, 2));
             }
-            if (hasSkill(current.passiveSkill())) inventory.setItem(30, item("EMERALD", "EMERALD", 1, (short) 0,
-                ChatColor.GREEN + "" + ChatColor.BOLD + "패시브 · 알아두기",
-                new ArrayList<String>(GuiText.skill(current.passiveSkill()))));
+            if (hasSkill(current.passiveSkill())) inventory.setItem(30, passiveItem(current));
             inventory.setItem(32, item("PAPER", "PAPER", 1, (short) 0,
                 ChatColor.GOLD + "" + ChatColor.BOLD + "세부 정보",
                 ChatColor.GRAY + "ID: " + ChatColor.WHITE + current.id(),
@@ -285,7 +287,8 @@ public final class AbilityGui implements Listener {
                 ChatColor.GRAY + "타이머: " + currentTimerText(shown)));
         }
 
-        inventory.setItem(36, GuiTheme.item("BOOK", "BOOK", (short) 0, ChatColor.AQUA + "능력 도감"));
+        inventory.setItem(36, GuiTheme.item("BOOK", "BOOK", (short) 0, ChatColor.AQUA + "능력 도감",
+            ChatColor.GRAY + "모든 능력의 사용법을 찾아볼 수 있어요."));
         inventory.setItem(44, GuiTheme.item("CLOCK", "WATCH", (short) 0, ChatColor.YELLOW + "현재 상태 확인",
             ChatColor.GRAY + "클릭하면 남은 시간과 재료를 다시 확인해요."));
         inventory.setItem(CURRENT_CLOSE_SLOT, closeItem());
@@ -351,12 +354,18 @@ public final class AbilityGui implements Listener {
             ChatColor.GRAY + "능력을 클릭하면 자세한 사용법이 나와요.");
     }
 
-    private ItemStack currentAbilityItem(Player target, AbilityDefinition ability) {
+    private ItemStack currentAbilityItem(AbilityDefinition ability) {
         return item("NETHER_STAR", "NETHER_STAR", 1, (short) 0,
             ChatColor.AQUA + "" + ChatColor.BOLD + ability.name(),
             ChatColor.GRAY + "등급: " + gradeColor(ability.grade()) + ability.gradeText(),
             "",
             ChatColor.WHITE + ability.description());
+    }
+
+    private ItemStack passiveItem(AbilityDefinition ability) {
+        return item("EMERALD", "EMERALD", 1, (short) 0,
+            ChatColor.GREEN + "" + ChatColor.BOLD + "패시브 · 알아두기",
+            new ArrayList<String>(GuiText.skill(ability.passiveSkill())));
     }
 
     private ItemStack noAbilityItem(Player target) {
@@ -508,16 +517,12 @@ public final class AbilityGui implements Listener {
         if (!plugin.game().canUseAbility(player)) return ChatColor.RED + "지금은 능력을 쓸 수 없는 상태예요.";
         int baseCost = slot == 1 ? ability.normalStoneCost() : ability.advancedStoneCost();
         int cost = abilityManager.effectiveResourceCost(player, baseCost);
-        int held = 0;
-        for (ItemStack stack : player.getInventory().getStorageContents()) {
-            if (stack != null && stack.getType() == Material.COBBLESTONE) held += stack.getAmount();
-        }
+        int held = InventoryItems.count(player.getInventory(), Material.COBBLESTONE);
         String resources = held < cost ? "\n" + ChatColor.RED + "조약돌 " + (cost - held) + "개가 더 필요해요." : "";
         if ("blacksmith".equals(ability.id()) && slot == 2) {
-            int iron = 0;
-            for (ItemStack stack : player.getInventory().getStorageContents())
-                if (stack != null && stack.getType() == Material.IRON_INGOT) iron += stack.getAmount();
-            int requiredIron = abilityManager.effectiveResourceCost(player, 15);
+            int iron = InventoryItems.count(player.getInventory(), Material.IRON_INGOT);
+            // Team discounts only apply to cobblestone; the forge always consumes 15 ingots.
+            int requiredIron = 15;
             resources += "\n" + (iron < requiredIron ? ChatColor.RED : ChatColor.GRAY)
                 + "철괴 " + iron + "/" + requiredIron + "개";
         }

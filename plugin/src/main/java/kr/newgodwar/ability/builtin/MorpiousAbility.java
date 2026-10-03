@@ -20,13 +20,13 @@ import java.util.List;
 @AbilityInfo(
     id = "morpious",
     name = "모르피우스",
-    description = "지정한 적을 수면 상태로 만들어요.",
-    normalSkill = "먼저 /x <플레이어>로 적 지정. 블레이즈 막대기 좌클릭: 같은 월드의 지정한 적에게 30초 실명과 강한 감속을 줘요. 거리·시야 제한은 없어요.",
+    description = "지정한 적을 수면 상태로 만듭니다.",
+    normalSkill = "/x <플레이어>로 적 지정 후 블레이즈 막대기 좌클릭: 같은 월드의 지정한 적에게 30초 동안 실명과 감속 IV를 줍니다. 거리·시야 제한은 없습니다.",
     normalStoneCost = 20,
     normalCooldownSeconds = 100,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "타깃 지정 명령을 사용할 수 있어요.",
+    passiveSkill = "/x <플레이어>로 재울 적을 미리 지정해 두세요.",
     grade = AbilityGrade.B
 )
 final class MorpiousAbility extends BaseAbility {

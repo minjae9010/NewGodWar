@@ -20,13 +20,13 @@ import java.util.List;
 @AbilityInfo(
     id = "tajja",
     name = "타짜",
-    description = "검을 숨겨 맨손 공격에 검 피해를 더해요.",
-    normalSkill = "블레이즈 막대기 좌클릭: 인벤토리의 검 하나를 숨겨요.",
+    description = "검을 숨겨 두고 맨손 공격을 검처럼 씁니다.",
+    normalSkill = "블레이즈 막대기 좌클릭: 인벤토리의 검 하나를 소모해 숨깁니다.",
     normalStoneCost = 10,
     normalCooldownSeconds = 60,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "맨손 공격에 숨긴 검 피해를 제한 횟수만큼 더해요.",
+    passiveSkill = "숨긴 뒤 맨손 공격 10회는 숨긴 검의 피해로 들어갑니다. 다시 숨기면 새 검으로 바뀝니다.",
     grade = AbilityGrade.B
 )
 final class TajjaAbility extends BaseAbility {

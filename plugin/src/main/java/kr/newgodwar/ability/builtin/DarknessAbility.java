@@ -20,12 +20,12 @@ import java.util.List;
 @AbilityInfo(
     id = "darkness",
     name = "다크니스",
-    description = "받는 피해가 크게 줄지만, 공격으로 피해를 줄 수 없어요.",
+    description = "받는 피해가 크게 줄지만, 공격으로 피해를 줄 수 없습니다.",
     normalSkill = "없음",
     normalStoneCost = 0,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "받는 피해가 크게 줄고 자신이 주는 피해는 0이 돼요.",
+    passiveSkill = "다른 플레이어에게 받는 피해가 75% 줄어듭니다(서버 설정에 따라 다릅니다). 대신 자신이 공격으로 주는 피해는 0입니다.",
     grade = AbilityGrade.A
 )
 final class DarknessAbility extends BaseAbility {

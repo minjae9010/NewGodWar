@@ -21,14 +21,14 @@ import java.util.List;
 @AbilityInfo(
     id = "hecate",
     name = "헤카테",
-    description = "짧은 은신과 지정한 적에게 약한 저주를 사용해요.",
-    normalSkill = "블레이즈 막대기 좌클릭: 잠시 투명화하고 신속을 얻어요.",
+    description = "짧은 은신과 지정한 적에게 약한 저주를 사용합니다.",
+    normalSkill = "블레이즈 막대기 좌클릭: 8초 동안 투명화하고 신속을 얻습니다.",
     normalStoneCost = 14,
     normalCooldownSeconds = 75,
-    advancedSkill = "먼저 /x <플레이어>로 적 지정. 블레이즈 막대기 우클릭: 같은 월드의 지정한 적에게 실명과 감속을 짧게 줘요. 거리·시야 제한은 없어요.",
+    advancedSkill = "/x <플레이어>로 적 지정 후 블레이즈 막대기 우클릭: 같은 월드의 지정한 적에게 실명 7초와 감속 II 8초를 줍니다. 거리·시야 제한은 없습니다.",
     advancedStoneCost = 20,
     advancedCooldownSeconds = 115,
-    passiveSkill = "타깃 지정 명령을 사용할 수 있어요.",
+    passiveSkill = "/x <플레이어>로 저주할 적을 미리 지정해 두세요.",
     grade = AbilityGrade.B
 )
 final class HecateAbility extends BaseAbility {

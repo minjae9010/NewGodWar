@@ -20,14 +20,14 @@ import java.util.List;
 @AbilityInfo(
     id = "zeus",
     name = "제우스",
-    description = "번개를 내리고 번개/폭발 피해를 무시해요.",
-    normalSkill = "블레이즈 막대기 좌클릭: 바라보는 위치에 번개를 내려요.",
+    description = "번개를 내리고 번개/폭발 피해를 무시합니다.",
+    normalSkill = "블레이즈 막대기 좌클릭: 50블록 안의 바라보는 위치에 번개를 내립니다.",
     normalStoneCost = 15,
     normalCooldownSeconds = 90,
-    advancedSkill = "블레이즈 막대기 우클릭: 지정 위치 주변에 연속 번개를 내려요.",
+    advancedSkill = "블레이즈 막대기 우클릭: 30블록 안의 바라보는 위치 주변(반경 5블록)에 번개를 5번 내립니다.",
     advancedStoneCost = 25,
     advancedCooldownSeconds = 150,
-    passiveSkill = "번개와 폭발 피해를 무시해요.",
+    passiveSkill = "번개 피해와 TNT·크리퍼 같은 엔티티 폭발 피해를 무시합니다.",
     grade = AbilityGrade.S
 )
 final class ZeusAbility extends BaseAbility {

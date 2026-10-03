@@ -15,12 +15,12 @@ import java.util.List;
 
 @AbilityInfo(
     id = "hephaestus", name = "헤파이토스",
-    description = "열기로 무기를 강화하거나, 남은 열기로 몸을 지켜요.",
-    normalSkill = "블레이즈 막대기 좌클릭: 8초 동안 검과 도끼의 다음 3회 근접 공격에 피해 2를 추가하는 화로 열기를 얻어요.",
+    description = "열기로 무기를 강화하거나, 남은 열기로 몸을 지킵니다.",
+    normalSkill = "블레이즈 막대기 좌클릭: 8초 동안 검과 도끼의 다음 3회 근접 공격에 피해 2를 추가하는 화로 열기를 얻습니다.",
     normalStoneCost = 10, normalCooldownSeconds = 30,
-    advancedSkill = "블레이즈 막대기 우클릭: 남은 열기를 모두 소비해 6초간 흡수를 얻어요. 열기 1개마다 추가 체력 4를 얻어요.",
+    advancedSkill = "블레이즈 막대기 우클릭: 남은 열기를 모두 소비해 6초간 흡수를 얻습니다. 열기 1개마다 추가 체력 4를 얻습니다.",
     advancedStoneCost = 16, advancedCooldownSeconds = 60,
-    passiveSkill = "화염 피해를 무시하지만 익사 피해를 2배로 받아요. 열기는 공격 강화와 방어구 담금질 중 선택해 사용해요.",
+    passiveSkill = "화염 피해를 무시하지만 익사 피해를 2배로 받습니다. 열기는 공격 강화와 방어구 담금질 중 선택해 사용합니다.",
     grade = AbilityGrade.A
 )
 final class HephaestusAbility extends TransientAbility {
@@ -83,7 +83,7 @@ final class HephaestusAbility extends TransientAbility {
     @Override
     public List<String> activeTimerLines() {
         List<String> lines = super.activeTimerLines();
-        lines.add("화로 열기 · " + heat + "/3");
+        if (heat > 0) lines.add("화로 열기 · " + heat + "/3");
         return lines;
     }
 

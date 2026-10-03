@@ -17,12 +17,12 @@ import static kr.newgodwar.ability.feedback.ModelParts.*;
 
 @AbilityInfo(
     id = "anubis", name = "아누비스",
-    description = "적에게 받은 피해를 저울에 쌓아 되돌려줘요.",
-    normalSkill = "블레이즈 막대기 좌클릭: 바라보는 20블록 안의 적을 8초간 심판 대상으로 지정해요. 그 적에게 받은 피해를 최대 4까지 저울에 기록해요.",
+    description = "적에게 받은 피해를 저울에 쌓아 되돌려줍니다.",
+    normalSkill = "블레이즈 막대기 좌클릭: 바라보는 20블록 안의 적을 8초간 심판 대상으로 지정합니다. 그 적에게 받은 피해를 최대 4까지 저울에 기록합니다.",
     normalStoneCost = 10, normalCooldownSeconds = 35,
-    advancedSkill = "블레이즈 막대기 우클릭: 24블록 안에서 보이는 심판 대상에게 피해 4 + 저울 무게를 주고, 실제로 깎은 체력만큼 최대 3 회복해요.",
+    advancedSkill = "블레이즈 막대기 우클릭: 24블록 안에서 보이는 심판 대상에게 피해 4 + 저울 무게를 주고, 실제로 깎은 체력만큼 최대 3 회복합니다.",
     advancedStoneCost = 22, advancedCooldownSeconds = 70,
-    passiveSkill = "아누비스를 공격한 심판 대상일수록 더 무거운 대가를 치러요. 막힌 피해로는 체력을 흡수하지 못해요.",
+    passiveSkill = "아누비스를 공격한 심판 대상일수록 더 무거운 대가를 치릅니다. 막힌 피해로는 체력을 흡수하지 못합니다.",
     grade = AbilityGrade.A
 )
 final class AnubisAbility extends TransientAbility {

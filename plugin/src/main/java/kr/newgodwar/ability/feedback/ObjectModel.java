@@ -20,11 +20,18 @@ public interface ObjectModel {
         public final boolean item;
         public final double x, y, z, sx, sy, sz, roll, turn, pitch;
         public final String art;
+        /** Pack art that turns around the vertical axis to face each viewer. Fixed for a part's lifetime. */
+        public final boolean billboard;
         public Part(String material, boolean item, double x, double y, double z, double sx, double sy, double sz, double roll, double turn) {
             this(material, item, x, y, z, sx, sy, sz, roll, turn, 0, null);
         }
         public Part(String material, boolean item, double x, double y, double z, double sx, double sy, double sz,
                     double roll, double turn, double pitch, String art) {
+            this(material, item, x, y, z, sx, sy, sz, roll, turn, pitch, art, false);
+        }
+        public Part(String material, boolean item, double x, double y, double z, double sx, double sy, double sz,
+                    double roll, double turn, double pitch, String art, boolean billboard) {
+            this.billboard = billboard;
             this.material = material; this.item = item; this.x = x; this.y = y; this.z = z;
             this.sx = sx; this.sy = sy; this.sz = sz; this.roll = roll; this.turn = turn;
             this.pitch = pitch; this.art = art;

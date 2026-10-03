@@ -12,12 +12,12 @@ import java.util.List;
 
 @AbilityInfo(
     id = "queenbee", name = "여왕벌",
-    description = "일벌에게 표적을 지시하고 벌집의 꿀로 아군을 돌봐요.",
-    normalSkill = "블레이즈 막대기 좌클릭: 바라보는 20블록 안의 적에게 벌떼를 보내요. 3초 동안 3회 쏘아 각각 피해 2를 줘요.",
+    description = "일벌에게 표적을 지시하고 벌집의 꿀로 아군을 돌봅니다.",
+    normalSkill = "블레이즈 막대기 좌클릭: 바라보는 20블록 안의 적에게 벌떼를 보냅니다. 3초 동안 3회 쏘아 각각 피해 2를 줍니다.",
     normalStoneCost = 12, normalCooldownSeconds = 30,
-    advancedSkill = "블레이즈 막대기 우클릭: 발밑에 반경 4블록 벌집 영역을 4초간 만들어요. 안에 있는 아군의 체력 1과 허기 2를 매초 회복해요.",
+    advancedSkill = "블레이즈 막대기 우클릭: 발밑에 반경 4블록 벌집 영역을 4초간 만듭니다. 안에 있는 아군의 체력 1과 허기 2를 매초 회복합니다.",
     advancedStoneCost = 20, advancedCooldownSeconds = 65,
-    passiveSkill = "벌떼는 움직이는 표적을 추적하지만 벽 뒤나 20블록 밖으로 벗어나면 흩어져요.",
+    passiveSkill = "벌떼는 움직이는 표적을 추적하지만 벽 뒤나 20블록 밖으로 벗어나면 흩어집니다.",
     grade = AbilityGrade.A
 )
 final class QueenBeeAbility extends TransientAbility {

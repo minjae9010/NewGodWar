@@ -7,14 +7,17 @@ public class PackModelsTest {
     @Test public void downloadAddressIsIndependentOfPluginReleases() {
         String[] pack = PackModels.pack("26.3");
         assertEquals("https://raw.githubusercontent.com/minjae9010/NewGodWar/master/resoucepack/"
-            + "NewGodWar-Art-26.3.zip", PackModels.downloadUrl(pack));
+            + pack[0], PackModels.downloadUrl(pack));
+        assertTrue("The pack is named by its own hash", pack[0].equals("NewGodWar-Art-" + pack[1].substring(0, 8) + ".zip"));
         assertFalse(PackModels.downloadUrl(pack).contains("/releases/"));
     }
     @Test public void selectsExactReleasedVersionAndServerSuffix() {
-        assertEquals("NewGodWar-Art-1.21-1.21.1.zip", PackModels.pack("1.21.1-R0.1-SNAPSHOT")[0]);
+        // One combined pack serves every release; only the runtime model system differs.
+        assertEquals(PackModels.pack("26.3")[0], PackModels.pack("1.21.1-R0.1-SNAPSHOT")[0]);
+        assertEquals(PackModels.pack("26.3")[0], PackModels.pack("1.14")[0]);
         assertEquals("legacy", PackModels.pack("1.21.3")[2]);
         assertEquals("modern", PackModels.pack("1.21.4")[2]);
-        assertEquals("NewGodWar-Art-26.3.zip", PackModels.pack("26.3-R0.1-SNAPSHOT")[0]);
+        assertEquals("modern", PackModels.pack("26.3-R0.1-SNAPSHOT")[2]);
         assertTrue(PackModels.pack("26.1.2")[1].matches("[0-9a-f]{40}"));
     }
     @Test public void unknownAndPrereleaseClientsAreNotGivenAnIncompatiblePack() {

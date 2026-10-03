@@ -20,13 +20,13 @@ import java.util.List;
 @AbilityInfo(
     id = "naro",
     name = "나로호",
-    description = "강한 수직 도약으로 진입하거나 탈출하고 낙하 피해를 무시해요.",
-    normalSkill = "블레이즈 막대기 좌클릭: 바라보는 방향으로 높게 도약해요.",
+    description = "강한 수직 도약으로 진입하거나 탈출하고 낙하 피해를 무시합니다.",
+    normalSkill = "블레이즈 막대기 좌클릭: 바라보는 방향으로 높게 도약합니다.",
     normalStoneCost = 5,
     normalCooldownSeconds = 18,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "낙하 피해를 무시해요.",
+    passiveSkill = "낙하 피해를 무시합니다.",
     grade = AbilityGrade.B
 )
 final class NaroAbility extends BaseAbility {

@@ -19,12 +19,12 @@ import static kr.newgodwar.ability.feedback.ModelParts.*;
 
 @AbilityInfo(
     id = "runesmith", name = "룬 세공사",
-    description = "화염과 서리 룬을 새겨 두고, 원하는 순간 터뜨려요.",
-    normalSkill = "블레이즈 막대기 좌클릭: 발밑에 20초 동안 유지되는 룬을 설치해요(최대 3개). 웅크린 채 좌클릭하면 비용 없이 화염/서리 모드를 바꿔요.",
+    description = "화염과 서리 룬을 새겨 두고, 원하는 순간 터뜨립니다.",
+    normalSkill = "블레이즈 막대기 좌클릭: 발밑에 20초 동안 유지되는 룬을 설치합니다(최대 3개). 웅크린 채 좌클릭하면 비용 없이 화염/서리 모드를 바꿉니다.",
     normalStoneCost = 6, normalCooldownSeconds = 7,
-    advancedSkill = "블레이즈 막대기 우클릭: 같은 월드의 24블록 안에 있는 룬을 0.5초 뒤 터뜨려요. 범위는 룬마다 반경 3블록이에요. 화염은 피해 4, 서리는 피해 2와 감속 3초를 줘요. 겹친 피해는 최대 8이에요.",
+    advancedSkill = "블레이즈 막대기 우클릭: 같은 월드의 24블록 안에 있는 룬을 0.5초 뒤 터뜨립니다. 범위는 룬마다 반경 3블록입니다. 화염은 피해 4, 서리는 피해 2와 감속 3초를 줍니다. 겹친 피해는 최대 8입니다.",
     advancedStoneCost = 16, advancedCooldownSeconds = 40,
-    passiveSkill = "룬은 지형을 바꾸지 않으며 모드를 바꾸어도 이미 설치한 룬의 속성은 유지돼요.",
+    passiveSkill = "룬은 지형을 바꾸지 않으며 모드를 바꾸어도 이미 설치한 룬의 속성은 유지됩니다.",
     grade = AbilityGrade.B
 )
 final class RunesmithAbility extends TransientAbility {

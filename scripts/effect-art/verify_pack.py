@@ -5,8 +5,10 @@ import struct
 import zipfile
 from pathlib import Path
 
-root = Path(__file__).resolve().parents[2]
-pack = root / 'build/libs/NewGodWar-Art-26.3.zip'
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from packfile import ROOT as root, built_pack
+pack = built_pack()
 materials = ['bread', 'cooked_chicken', 'cooked_beef', 'baked_potato', 'cooked_porkchop', 'cooked_cod']
 with zipfile.ZipFile(pack) as archive:
     names = set(archive.namelist())
@@ -39,7 +41,7 @@ with zipfile.ZipFile(pack) as archive:
         model = selected(code)
         assert model.startswith('newgodwar:art/food/'), material
         path = model.split(':', 1)[1]
-        png = archive.read(f'assets/newgodwar/textures/{path}.png')
+        png = archive.read(f'assets/newgodwar/textures/item/{path}.png')
         assert png[:8] == b'\x89PNG\r\n\x1a\n' and struct.unpack('>II', png[16:24]) == (128, 128)
         assert png[25] == 6, 'Food must have an alpha channel'
         textures.append(hashlib.sha256(png).hexdigest())

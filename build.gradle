@@ -4,7 +4,7 @@ plugins {
 
 allprojects {
     group = "kr.newgodwar"
-    version = "0.3.8"
+    version = "0.3.9"
     description = "Modern Gods War minigame plugin with modular compatibility support."
 }
 
@@ -59,17 +59,13 @@ tasks.register("compileResourcePack", Exec) {
 
 tasks.register("resourcePack", Exec) {
     group = "build"
-    description = "Builds versioned Minecraft menu and ability packs, hashes and runtime catalogue."
+    description = "Builds the combined 1.14-26.3 menu and ability pack, its hash and runtime catalogue."
     dependsOn("compileResourcePack")
     inputs.dir(packClasses)
     inputs.file("plugin/src/main/resources/effect-art.tsv")
     inputs.file("scripts/effect-art/pack-versions.tsv")
     outputs.dir(layout.buildDirectory.dir("effect-pack"))
     outputs.dir(layout.buildDirectory.dir("generated/pack-resources"))
-    def packNames = file("scripts/effect-art/pack-versions.tsv").readLines("UTF-8")
-        .findAll { it && !it.startsWith("#") }.collect { it.split("\\|")[0] }
-    outputs.files(packNames.collectMany { name -> ["build/libs/NewGodWar-Art-${name}.zip", "build/libs/NewGodWar-Art-${name}.zip.sha1"] })
-    outputs.file(layout.buildDirectory.file("libs/NewGodWar-Art-manifest.tsv"))
     executable new File(System.getProperty("java.home"), "bin/java").absolutePath
     args "-Djava.awt.headless=true", "-cp", packClasses.get().asFile.absolutePath, "BuildEffectPack", rootDir.absolutePath
 }

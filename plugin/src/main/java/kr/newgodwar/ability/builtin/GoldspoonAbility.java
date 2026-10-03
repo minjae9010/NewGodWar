@@ -20,12 +20,12 @@ import java.util.List;
 @AbilityInfo(
     id = "goldspoon",
     name = "금수저",
-    description = "리스폰할 때 레깅스를 받아요.",
+    description = "리스폰할 때 레깅스를 받습니다.",
     normalSkill = "없음",
     normalStoneCost = 0,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "리스폰할 때 금 또는 다이아몬드 레깅스를 받아요.",
+    passiveSkill = "리스폰할 때 금 레깅스(90%) 또는 다이아몬드 레깅스(10%)를 받습니다.",
     grade = AbilityGrade.B
 )
 final class GoldspoonAbility extends BaseAbility {

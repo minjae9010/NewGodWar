@@ -20,13 +20,13 @@ import java.util.List;
 @AbilityInfo(
     id = "snow",
     name = "사이코스노우",
-    description = "눈덩이로 고정 피해를 주고 사망할 때마다 공격 지수가 성장해요.",
-    normalSkill = "블레이즈 막대기 좌클릭: 눈덩이를 1개 만들어요.",
+    description = "눈덩이로 고정 피해를 주고 사망할 때마다 공격 지수가 성장합니다.",
+    normalSkill = "블레이즈 막대기 좌클릭: 눈덩이를 1개 만듭니다.",
     normalStoneCost = 2,
     normalCooldownSeconds = 3,
-    advancedSkill = "블레이즈 막대기 우클릭: 현재 공격 지수를 확인해요.",
+    advancedSkill = "블레이즈 막대기 우클릭: 현재 공격 지수를 확인합니다.",
     advancedStoneCost = 0,
-    passiveSkill = "눈덩이 피해가 공격 지수를 따르고 사망할 때 최대 5까지 성장해요.",
+    passiveSkill = "능력을 받으면 눈덩이를 받습니다. 공격 지수는 0부터 시작하고 눈덩이 피해에 적용됩니다. 눈덩이 피해는 최소 1입니다. 자신이 사망할 때마다 공격 지수가 1씩 올라 최대 5가 됩니다. 대신 화염 피해를 2배로 받습니다.",
     grade = AbilityGrade.A
 )
 final class SnowAbility extends BaseAbility {
@@ -40,7 +40,19 @@ final class SnowAbility extends BaseAbility {
     @Override
     public AbilityStyle style() { return STYLE; }
 
-    private int snowAttack;
+    private int snowAttack = 0;
+
+    @Override
+    public void saveSession(org.bukkit.configuration.ConfigurationSection data) {
+        super.saveSession(data);
+        data.set("snow-attack", snowAttack);
+    }
+
+    @Override
+    public void loadSession(org.bukkit.configuration.ConfigurationSection data) {
+        super.loadSession(data);
+        snowAttack = Math.max(0, Math.min(5, data.getInt("snow-attack", 0)));
+    }
 
     @Override
     public void onPrepare(AbilityPlayerContext context) {
@@ -79,6 +91,7 @@ final class SnowAbility extends BaseAbility {
     public void onDeath(AbilityPlayerContext context, PlayerDeathEvent event) {
         if (event.getEntity().equals(context.player()) && snowAttack < 5) {
             snowAttack++;
+            context.player().sendMessage("공격 지수가 " + snowAttack + "(으)로 증가했습니다. (최대 5)");
         }
     }
 }

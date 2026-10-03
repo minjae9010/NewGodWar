@@ -88,6 +88,28 @@ public final class AbilityDesigns {
     public static final DesignedEffect TURTLE_SHIP = ship();
     public static final DesignedEffect RESOLVE = banner();
     public static final DesignedEffect JET_EXHAUST = stream("두 분사구에서 뒤로 길게 뻗는 화염", "ORANGE_CONCRETE", 2, true);
+    // Workshop, market and utility abilities: what they make, trade or test, shown as it happens.
+    public static final DesignedEffect IRON_FORGE = forge("모루를 세 번 두드려 철 주괴를 꺼냄", false);
+    public static final DesignedEffect GEM_FORGE = forge("철 주괴를 녹여 다이아몬드로 벼림", true);
+    public static final DesignedEffect ARROW_BUNDLE = bow("제작대 칸이 차오르며 화살 다발이 완성됨", false, false);
+    public static final DesignedEffect VENOM_ARROWS = bow("제작대 칸이 차오르며 독화살 다발이 완성됨", true, false);
+    public static final DesignedEffect STOCK_CRASH = coins("폭락하는 차트와 함께 깨져 떨어지는 금화", 2);
+    public static final DesignedEffect LEDGER = coins("가격표에 할인 도장이 찍히며 동전이 모여듦", 3);
+    public static final DesignedEffect COMPASS = gear("탐험 나침반과 발자국, 퍼지는 탐지 신호", "LIME_CONCRETE", 4);
+    public static final DesignedEffect EXAM = book("펼쳐지는 시험지 위로 떠오르는 물음표", "PAPER", "PURPLE_CONCRETE", false);
+    public static final DesignedEffect EXAM_WRONG = effect("시험지 위에 붉은 X가 찍힘", (t,d) -> {
+        List<ObjectModel.Part> o=parts();
+        line(o,"RED_CONCRETE",-0.3,1.0,0.3,1.6,0.65,0.07); line(o,"RED_CONCRETE",0.3,1.0,-0.3,1.6,0.65,0.07);
+        return o;
+    });
+    public static final DesignedEffect HUNGER_BALANCE = effect("흔들리던 허기 저울이 가운데에서 멈춤", (t,d) -> {
+        List<ObjectModel.Part> o=parts(); double tilt=Math.sin(t*0.6)*Math.exp(-t/8)*0.35;
+        line(o,GOLD,0,1.0,0,1.6,0.65,0.05);
+        line(o,GOLD,-0.4*Math.cos(tilt),1.6-0.4*Math.sin(tilt),0.4*Math.cos(tilt),1.6+0.4*Math.sin(tilt),0.65,0.05);
+        cube(o,"ORANGE_CONCRETE",-0.4*Math.cos(tilt),1.45-0.4*Math.sin(tilt),0.65,0.12);
+        cube(o,"RED_CONCRETE",0.4*Math.cos(tilt),1.45+0.4*Math.sin(tilt),0.65,0.12);
+        return o;
+    });
     public static final DesignedEffect OATH_KNOT = effect("두 서약 고리가 겹쳐진 뒤 풀리는 치유", (t,d) -> {
         List<ObjectModel.Part> o=parts();
         for(int s:new int[]{-1,1}) arc(o,s<0?GOLD:WHITE,s*(0.18+Math.sin(t*0.12)*0.08),1.8,0.6,0.25,0,Math.PI*2,8,0.045);
@@ -100,6 +122,100 @@ public final class AbilityDesigns {
             double x=(j-1)*0.3, y=0.3+i*0.55;
             line(o,i==1?GOLD:WHITE,x+(i%2==0?0.15:-0.15),y,x+(i%2==0?-0.15:0.15),y+0.55,0.1,0.04);
         } return o;
+    });
+
+    // Jang Yeong-sil: parts are assembled one by one until the third completes an iron pickaxe.
+    public static final DesignedEffect PART_ONE = gear("첫 번째 부품 톱니가 맞물리며 조립됨 (1/3)", "IRON_BLOCK", 3);
+    public static final DesignedEffect PART_TWO = gear("두 번째 부품이 더해져 장치가 돌기 시작함 (2/3)", "IRON_BLOCK", 5);
+    public static final DesignedEffect PICKAXE_CRAFT = gear("세 부품이 합쳐져 철 곡괭이가 완성됨", GOLD, 8);
+    public static final DesignedEffect DEVICE_FIELD = gear("발밑 혼천의 장치가 펼쳐지며 반경 10블록 아군에게 신호가 퍼짐", GOLD, 8);
+    public static final DesignedEffect GEAR_MARK = gear("장치의 도움을 받은 아군 머리 위 톱니 표식", GOLD, 4);
+    public static final DesignedEffect PICKAXE_STRIKE = impact("곡괭이가 내리찍혀 광석 파편과 감속 표식이 튐", "IRON_BLOCK", 4, true);
+
+    // Shared reactions for status changes that an ability does not decorate itself.
+    public static final DesignedEffect STATUS_SLOW = lock("발목을 붙잡는 얼음 사슬", false);
+    public static final DesignedEffect STATUS_BLIND = eye("눈앞을 덮는 어둠", DARK);
+    public static final DesignedEffect STATUS_SPEED = stream("발뒤로 흐르는 바람", WHITE, 3, true);
+    public static final DesignedEffect STATUS_POISON = stream("머리 주위를 어지럽게 도는 독기", "LIME_CONCRETE", 3, false);
+    public static final DesignedEffect STATUS_STRENGTH = fist("주먹에 차오르는 붉은 힘", "RED_CONCRETE", false);
+    public static final DesignedEffect STATUS_HEAL = flower("몸을 따라 올라오는 회복의 빛", "PINK_CONCRETE", 5, false);
+    public static final DesignedEffect STATUS_SUN = sun("하늘로 떠오르는 해", 8, false);
+    public static final DesignedEffect STATUS_MOON = moons("하늘로 떠오르는 달", 2);
+    public static final DesignedEffect STATUS_ITEM = coins("손에서 빛나며 생겨나는 물건", 3);
+    public static final DesignedEffect STATUS_REPAIR = forge("모루 위에서 장비를 두드려 고침", false);
+    public static final DesignedEffect STATUS_CLEANSE = cross();
+    public static final DesignedEffect STATUS_HIT = impact("타격 지점에서 튀는 파편", "IRON_BLOCK", 3, false);
+    public static final DesignedEffect STATUS_STEALTH = veil("몸을 감싸며 사라지는 연기", DARK, 5);
+    public static final DesignedEffect STATUS_SEAL = lock("능력을 묶는 봉인 자물쇠", false);
+    public static final DesignedEffect STATUS_ROOT = roots("발목을 감는 뿌리", false);
+    public static final DesignedEffect STATUS_FIRE = stream("몸을 타고 오르는 불꽃", "ORANGE_CONCRETE", 3, false);
+    public static final DesignedEffect STATUS_FROST = snowflake();
+    public static final DesignedEffect STATUS_WATER = stream("머리 위에서 쏟아지는 물방울", "LIGHT_BLUE_CONCRETE", 3, false);
+    public static final DesignedEffect STATUS_MUSIC = record();
+    public static final DesignedEffect STATUS_SLEEP = dream();
+    public static final DesignedEffect STATUS_BLOOM = sprout("발밑에서 돋는 새싹", "LIME_CONCRETE", false);
+    public static final DesignedEffect STATUS_ARCANE = book("손끝에서 펼쳐지는 주문서", "BOOK", "LIGHT_BLUE_CONCRETE", false);
+    public static final DesignedEffect STATUS_HUNGER = feast();
+    public static final DesignedEffect STATUS_PORTAL = gate("몸을 감싸는 이동 관문", "CYAN_CONCRETE", false);
+    public static final DesignedEffect STATUS_SLASH = blades("한 번 그어지는 검격", "IRON_BLOCK", 1);
+
+    private static final java.util.Map<kr.newgodwar.ability.feedback.EffectCue, DesignedEffect> STATUS = statusTable();
+    private static java.util.Map<kr.newgodwar.ability.feedback.EffectCue, DesignedEffect> statusTable() {
+        java.util.Map<kr.newgodwar.ability.feedback.EffectCue, DesignedEffect> map =
+            new java.util.EnumMap<kr.newgodwar.ability.feedback.EffectCue, DesignedEffect>(kr.newgodwar.ability.feedback.EffectCue.class);
+        Object[][] pairs = {{"SLOW", STATUS_SLOW}, {"BLIND", STATUS_BLIND}, {"WIND", STATUS_SPEED}, {"POISON", STATUS_POISON},
+            {"CHARGE", STATUS_STRENGTH}, {"HEAL", STATUS_HEAL}, {"SUN", STATUS_SUN}, {"MOON", STATUS_MOON}, {"ITEM", STATUS_ITEM},
+            {"FORGE", STATUS_REPAIR}, {"CLEANSE", STATUS_CLEANSE}, {"HIT", STATUS_HIT}, {"STEALTH", STATUS_STEALTH},
+            {"SEAL", STATUS_SEAL}, {"ROOT", STATUS_ROOT}, {"FIRE", STATUS_FIRE}, {"FROST", STATUS_FROST}, {"WATER", STATUS_WATER},
+            {"MUSIC", STATUS_MUSIC}, {"SLEEP", STATUS_SLEEP}, {"BLOOM", STATUS_BLOOM}, {"ARCANE", STATUS_ARCANE},
+            {"HUNGER", STATUS_HUNGER}, {"PORTAL", STATUS_PORTAL}, {"SLASH", STATUS_SLASH}};
+        for (Object[] pair : pairs) map.put(kr.newgodwar.ability.feedback.EffectCue.valueOf((String) pair[0]), (DesignedEffect) pair[1]);
+        return java.util.Collections.unmodifiableMap(map);
+    }
+    /** The shared reaction for a cue the ability leaves undecorated; null for cues with their own shared model. */
+    public static DesignedEffect status(kr.newgodwar.ability.feedback.EffectCue cue) { return STATUS.get(cue); }
+
+    // Area scenes drawn at their real radius (detail).
+    public static final ObjectModel FROST_CAGE = ObjectModel.animated((t,r) -> {
+        // The block fallback keeps a low dome; the pack scene marks the full radius.
+        List<ObjectModel.Part> o=parts(); double radius=Math.max(1,Math.min(3.5,r));
+        for(int rib=0;rib<4;rib++) for(int i=1;i<4;i++) { double e=i*Math.PI/8,a=rib*Math.PI/4;
+            box(o,"ICE",Math.cos(a)*Math.cos(e)*radius,Math.sin(e)*radius,Math.sin(a)*Math.cos(e)*radius,0.25,0.25,0.25,0,a); }
+        return o;
+    });
+    public static final ObjectModel MELODY = ObjectModel.animated((t,r) -> {
+        List<ObjectModel.Part> o=parts(); double radius=Math.max(1,r);
+        for(int i=0;i<6;i++) { double a=i*Math.PI/3+t*0.03;
+            box(o,"PINK_CONCRETE",Math.cos(a)*radius,1.5+Math.sin(t*0.2+i)*0.25,Math.sin(a)*radius,0.12,0.3,0.12,0,a); }
+        return o;
+    });
+    public static final ObjectModel HUNT_MARK = ObjectModel.animated((t,marks) -> {
+        List<ObjectModel.Part> o=parts();
+        arc(o,WHITE,0,2.3,0,0.4,Math.PI*0.25,Math.PI*1.5,6,0.05);
+        for(int i=0;i<3;i++) cube(o,"LIGHT_BLUE_CONCRETE",(i-1)*0.3,2.95,0,i<marks?0.1:0.03);
+        return o;
+    });
+    public static final ObjectModel HARVEST = ObjectModel.animated((t,stage) -> {
+        List<ObjectModel.Part> o=parts(); double height=0.2+Math.min(3,stage)*0.3;
+        for(int i=0;i<8;i++) { double a=i*Math.PI/4;
+            box(o,GOLD,Math.cos(a)*3.5,height/2,Math.sin(a)*3.5,0.08,height,0.08,0,a); }
+        return o;
+    });
+    public static final ObjectModel LEVITATE = ObjectModel.animated((t,d) -> {
+        List<ObjectModel.Part> o=parts();
+        for(int i=0;i<6;i++) { double a=i*Math.PI/3+t*0.2; cube(o,"PURPLE_CONCRETE",Math.cos(a)*0.7,0.2+i*0.3,Math.sin(a)*0.7,0.08); }
+        return o;
+    });
+    public static final ObjectModel PROTEGO = ObjectModel.animated((t,r) -> {
+        List<ObjectModel.Part> o=parts(); double radius=Math.max(1,r);
+        for(int i=0;i<6;i++) { double a=i*Math.PI/3;
+            box(o,"LIGHT_BLUE_STAINED_GLASS",Math.cos(a)*radius,1.0,Math.sin(a)*radius,0.06,1.2,0.9,0,-a); }
+        return o;
+    });
+    public static final ObjectModel ECHO_SLASH = ObjectModel.animated((t,r) -> {
+        List<ObjectModel.Part> o=parts();
+        box(o,WHITE,0,1.1,0,1.6,0.06,0.06,0.6,0); box(o,WHITE,0,1.1,0,1.6,0.06,0.06,-0.6,0);
+        return o;
     });
 
     public static final ObjectModel CLOCK = ObjectModel.animated((t,r) -> {

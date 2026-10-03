@@ -20,12 +20,12 @@ import static kr.newgodwar.ability.feedback.ModelParts.*;
 
 @AbilityInfo(
     id = "athena", name = "아테나",
-    description = "공격을 막아 반격하고, 진형을 세워 아군을 지켜요.",
-    normalSkill = "블레이즈 막대기 좌클릭: 4초 안에 받는 첫 근접 피해를 60% 줄여요. 방어에 성공하면 6초 안의 다음 근접 공격에 피해 3을 더해요.",
+    description = "공격을 막아 반격하고, 진형을 세워 아군을 지킵니다.",
+    normalSkill = "블레이즈 막대기 좌클릭: 4초 안에 받는 첫 근접 피해를 60% 줄입니다. 방어에 성공하면 6초 안의 다음 근접 공격에 피해 3을 더합니다.",
     normalStoneCost = 10, normalCooldownSeconds = 25,
-    advancedSkill = "블레이즈 막대기 우클릭: 앞쪽 반경 5블록에 진형을 6초간 세워요. 진형 안 아군은 저항 II를 받아요.",
+    advancedSkill = "블레이즈 막대기 우클릭: 앞쪽 반경 5블록에 진형을 6초간 세웁니다. 진형 안 아군은 저항 II를 받습니다.",
     advancedStoneCost = 24, advancedCooldownSeconds = 75,
-    passiveSkill = "반격은 방어 성공마다 한 번만 쓸 수 있어요. 진형은 처음 세운 위치와 방향에 고정돼요.",
+    passiveSkill = "반격은 방어 성공마다 한 번만 쓸 수 있습니다. 진형은 처음 세운 위치와 방향에 고정됩니다.",
     grade = AbilityGrade.A
 )
 final class AthenaAbility extends TransientAbility {

@@ -3,6 +3,7 @@ package kr.newgodwar.ability.builtin;
 import kr.newgodwar.ability.api.*;
 import kr.newgodwar.ability.feedback.AbilityStyle;
 import kr.newgodwar.ability.feedback.AbilityTheme;
+import kr.newgodwar.ability.feedback.EffectCue;
 import kr.newgodwar.game.GodTeam;
 
 import org.bukkit.*;
@@ -19,16 +20,18 @@ import java.util.List;
 @AbilityInfo(
     id = "anorexia",
     name = "거식증",
-    description = "허기가 절반으로 유지돼요.",
+    description = "허기가 절반으로 유지됩니다.",
     normalSkill = "없음",
     normalStoneCost = 0,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "허기가 항상 절반으로 유지돼요.",
+    passiveSkill = "허기가 항상 10(절반)으로 고정됩니다. 굶주리지 않지만 허기로 인한 자연 회복도 없습니다.",
     grade = AbilityGrade.C
 )
 final class AnorexiaAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.NATURE)
+        .passive(EffectCue.HUNGER)
+        .effect(EffectCue.HUNGER, AbilityDesigns.HUNGER_BALANCE)
         .build();
 
     @Override

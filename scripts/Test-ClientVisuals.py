@@ -343,14 +343,17 @@ def run(args):
     flags = subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
     client, server = None, None
     pack_server = None
-    pack_path = ROOT / 'build/libs/NewGodWar-Art-26.3.zip'
+    packs = sorted((ROOT / 'build/effect-pack/dist').glob('NewGodWar-Art-*.zip')) if args.art_pack else []
+    if args.art_pack and len(packs) != 1:
+        raise SystemExit('Build the combined art pack first: gradlew resourcePack')
+    pack_path = packs[0] if packs else None
     config_path = Path(plan['serverDir']) / 'plugins/NewGodWar/config.yml'
     old_config = config_path.read_bytes()
     if args.art_pack:
         pack_bytes = pack_path.read_bytes()
         class PackHandler(BaseHTTPRequestHandler):
             def do_GET(self):
-                if self.path != '/NewGodWar-Art-26.3.zip':
+                if self.path != '/' + pack_path.name:
                     self.send_error(404)
                     return
                 self.send_response(200)
@@ -364,7 +367,7 @@ def run(args):
         threading.Thread(target=pack_server.serve_forever, daemon=True).start()
         config_path.write_text('updates:\n  enabled: false\nworld:\n  reset-game-world-on-stop: false\n'
             'game:\n  killtime-seconds: 0\nabilities:\n  effects:\n    resource-pack:\n'
-            "      url: 'http://127.0.0.1:19877/NewGodWar-Art-26.3.zip'\n"
+            f"      url: 'http://127.0.0.1:19877/{pack_path.name}'\n"
             f"      sha1: '{hashlib.sha1(pack_bytes).hexdigest()}'\n", encoding='utf-8')
     try:
         with (logs / 'server.log').open('w', encoding='utf-8') as output:

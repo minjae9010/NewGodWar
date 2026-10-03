@@ -21,14 +21,14 @@ import java.util.List;
 @AbilityInfo(
     id = "ra",
     name = "라",
-    description = "태양을 불러 자신을 강화하고 주변 적을 불태워요.",
-    normalSkill = "블레이즈 막대기 좌클릭: 시간을 낮으로 바꾸고 신속과 공격력 증가를 얻어요.",
+    description = "태양을 불러 자신을 강화하고 주변 적을 불태웁니다.",
+    normalSkill = "블레이즈 막대기 좌클릭: 시간을 낮으로 바꾸고 신속 10초, 공격력 증가 8초를 얻습니다.",
     normalStoneCost = 10,
     normalCooldownSeconds = 50,
-    advancedSkill = "블레이즈 막대기 우클릭: 반경 8블록 적에게 실명과 화염을 줘요.",
+    advancedSkill = "블레이즈 막대기 우클릭: 반경 8블록 적을 5초 동안 불태우고 7초 실명을 줍니다.",
     advancedStoneCost = 24,
     advancedCooldownSeconds = 115,
-    passiveSkill = "화염 피해를 무시해요.",
+    passiveSkill = "화염 피해를 무시합니다.",
     grade = AbilityGrade.A
 )
 final class RaAbility extends BaseAbility {

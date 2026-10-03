@@ -20,12 +20,12 @@ import java.util.List;
 @AbilityInfo(
     id = "reflection",
     name = "반사",
-    description = "공격받으면 일정 확률로 받은 피해를 공격자에게 되돌려요.",
+    description = "공격받으면 일정 확률로 받은 피해를 공격자에게 되돌립니다.",
     normalSkill = "없음",
     normalStoneCost = 0,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "공격받으면 33% 확률로 받은 피해를 공격자에게 반사해요.",
+    passiveSkill = "공격받으면 33% 확률로 받은 피해를 공격자에게 반사합니다.",
     grade = AbilityGrade.A
 )
 final class ReflectionAbility extends BaseAbility {

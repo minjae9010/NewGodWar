@@ -20,13 +20,13 @@ import java.util.List;
 @AbilityInfo(
     id = "midoriya",
     name = "미도리야",
-    description = "원 포 올을 준비한 뒤 맨손 공격으로 큰 피해를 줘요.",
-    normalSkill = "블레이즈 막대기 좌클릭: 원 포 올을 준비해요.",
+    description = "원 포 올을 준비한 뒤 맨손 공격으로 큰 피해를 줍니다.",
+    normalSkill = "블레이즈 막대기 좌클릭: 원 포 올을 준비합니다. 조약돌과 쿨타임은 실제로 적중할 때 소모됩니다.",
     normalStoneCost = 50,
     normalCooldownSeconds = 150,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "준비 후 맨손 공격하면 큰 피해와 자기 디버프를 일으켜요.",
+    passiveSkill = "준비 후 맨손으로 적을 치면 피해 200을 줍니다. 반동으로 자신은 12초 동안 혼란, 허기, 약화, 감속을 받습니다.",
     grade = AbilityGrade.A
 )
 final class MidoriyaAbility extends BaseAbility {

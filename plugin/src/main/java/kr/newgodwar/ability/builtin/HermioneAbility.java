@@ -18,12 +18,12 @@ import java.util.Locale;
 
 @AbilityInfo(
     id = "hermione", name = "헤르미온느",
-    description = "정교한 주문으로 적을 띄우고 장비를 수리하며 보호막으로 아군을 지켜요.",
-    normalSkill = "채팅에 윙가르디움 레비오사(16블록 적 부양 2초), 레파로(자신과 6블록 아군의 주 손 장비·착용 방어구 내구도 40 수리), 피니테(같은 범위의 독·위더·감속·실명 해제)를 입력해요.",
+    description = "정교한 주문으로 적을 띄우고 장비를 수리하며 보호막으로 아군을 지킵니다.",
+    normalSkill = "채팅에 윙가르디움 레비오사(16블록 적 부양 2초), 레파로(자신과 6블록 아군의 주 손 장비·착용 방어구 내구도 40 수리), 피니테(같은 범위의 독·위더·감속·실명 해제)를 입력합니다.",
     normalStoneCost = 10, normalCooldownSeconds = 22,
-    advancedSkill = "채팅에 프로테고를 입력해요. 현재 위치에 6초 동안 반경 5블록 보호 마법진을 만들고 안에 있는 아군에게 저항 II를 갱신해요.",
+    advancedSkill = "채팅에 프로테고를 입력합니다. 현재 위치에 6초 동안 반경 5블록 보호 마법진을 만들고 안에 있는 아군에게 저항 II를 갱신합니다.",
     advancedStoneCost = 26, advancedCooldownSeconds = 90,
-    passiveSkill = "지원 주문서를 지급받아요. 일반 주문은 하나의 쿨타임을 공유해요.",
+    passiveSkill = "지원 주문서를 지급받습니다. 일반 주문은 하나의 쿨타임을 공유합니다.",
     grade = AbilityGrade.A
 )
 final class HermioneAbility extends TransientAbility {
@@ -58,7 +58,11 @@ final class HermioneAbility extends TransientAbility {
             Player target = targetPlayerInSight(context, player, 16, false);
             if (target == null || !useNormal(context, player)) return;
             effect(context, target, "LEVITATION", "LEVITATION", 2, 0);
-            feedback.spiral(context, target.getLocation(), 0.8D);
+            if (!feedback.followObject("levitate:" + target.getUniqueId(), context, AbilityDesigns.LEVITATE, () -> {
+                    if (!target.isOnline() || target.isDead()) return null;
+                    Location at = target.getLocation(); at.setYaw(0); at.setPitch(0); return at;
+                }, () -> feedback.targetViewers(context, target, target.getLocation()), 40, 1))
+                feedback.spiral(context, target.getLocation(), 0.8D);
             feedback.affected(context, target, "부양 주문 · 2초", true);
         } else if ("레파로".equals(spell) || "reparo".equals(spell)) {
             List<Player> recipients = allies(context, player.getLocation(), 6);
@@ -143,7 +147,10 @@ final class HermioneAbility extends TransientAbility {
     }
 
     private void shield(AbilityPlayerContext context, Location center, double radius) {
-        if (center == null || center.getWorld() == null || !feedback.enabled(context, "particles")) return;
+        if (center == null || center.getWorld() == null) return;
+        Location anchor = center.clone(); anchor.setYaw(0); anchor.setPitch(0);
+        if (feedback.object(context, "protego", AbilityDesigns.PROTEGO, anchor, 24, radius)) return;
+        if (!feedback.enabled(context, "particles")) return;
         List<Player> audience = feedback.effectViewers(context, center);
         double size = Math.max(0.5D, Math.min(5, radius));
         for (int layer = 0; layer < 3; layer++) {

@@ -22,7 +22,7 @@
 
 ## 메뉴·능력 리소스팩
 
-[버전별 리소스팩 다운로드와 호환 범위](resource-packs.md)를 확인하세요. 기본값 `url: auto`는 이 저장소의 `master/resoucepack/` 디렉토리에서 서버 버전에 맞는 ZIP을 선택하고 내장된 SHA-1을 적용합니다. 일반 빌드·릴리즈는 게시된 팩 목록만 읽습니다. 팩을 수정할 때만 `./gradlew resourcePack`과 `python scripts/effect-art/stage.py`로 갱신한 뒤 함께 커밋·푸시합니다.
+[리소스팩 다운로드와 호환 범위](resource-packs.md)를 확인하세요. 기본값 `url: auto`는 이 저장소의 `master/resoucepack/` 디렉토리에서 1.14–26.3 공용 통합 ZIP을 사용하고 내장된 SHA-1을 적용합니다. 일반 빌드·릴리즈는 게시된 팩 목록만 읽습니다. 팩을 수정할 때만 `./gradlew resourcePack`과 `python scripts/effect-art/stage.py`로 갱신한 뒤 함께 커밋·푸시합니다.
 
 팩을 수락한 플레이어에게 메뉴·식신 음식·능력 문양을 표시합니다. 메뉴는 다시 열어 주세요. 1.12~1.13은 기본 아이템, Display가 없는 버전은 파티클로 유지합니다. 구버전 단일 팩 API와 다중 클라이언트 버전의 제한은 위 문서에 설명되어 있습니다.
 
@@ -164,7 +164,7 @@
 | `abilities.effects.particles` | `true` | 추가 입자 및 오브젝트 미지원 시의 파티클 폴백 |
 | `abilities.effects.objects` | `true` | Display 오브젝트 우선 사용. 미지원·생성 거부·예산 초과 시 파티클로 전환 |
 | `abilities.effects.object-limit` | `48` | 능력 세션별 오브젝트 조각 예산(0~96). 전체 서버 상한 256개 |
-| `abilities.effects.resource-pack.url` | `auto` | `master/resoucepack/` 경로의 서버 버전별 ZIP 자동 선택. 직접 HTTP(S) 주소로 재정의 가능 |
+| `abilities.effects.resource-pack.url` | `auto` | `master/resoucepack/` 경로의 통합 ZIP(1.14–26.3 공용) 자동 사용. 직접 HTTP(S) 주소로 재정의 가능 |
 | `abilities.effects.resource-pack.sha1` | 빈 문자열 | 배포 ZIP의 40자리 SHA-1. 이 팩의 수신 성공을 확인한 플레이어에게만 전용 ItemDisplay 문양 표시 |
 | `abilities.effects.animations` | `true` | 행동별 짧은 애니메이션, 투사체 궤적과 파티클 비행 잔상. 끄면 행동 디자인은 정지 형태, 묠니르·시간장 등 기술 자체의 전용 장면은 유지 |
 | `abilities.effects.sounds` | `true` | 발동, 실패, 재사용 가능 효과음 |

@@ -20,12 +20,12 @@ import java.util.List;
 @AbilityInfo(
     id = "zet",
     name = "제트기관",
-    description = "화염 피해를 받으면 높은 속도로 가속해요.",
+    description = "화염 피해를 받으면 높은 속도로 가속합니다.",
     normalSkill = "없음",
     normalStoneCost = 0,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "화염 피해를 받으면 확률적으로 더 강한 신속 효과를 얻어요.",
+    passiveSkill = "신속이 없을 때 화염 피해를 받으면 50% 확률로 8초 동안 신속 II를 얻습니다.",
     grade = AbilityGrade.B
 )
 final class ZetAbility extends BaseAbility {

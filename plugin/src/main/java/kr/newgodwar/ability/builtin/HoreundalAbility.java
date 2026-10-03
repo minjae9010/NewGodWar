@@ -20,8 +20,8 @@ import java.util.List;
 @AbilityInfo(
     id = "horeundal",
     name = "호른달",
-    description = "위험한 섬 진입 후 10초 뒤 저장한 위치로 귀환해요.",
-    normalSkill = "블레이즈 막대기 좌클릭: 현재 위치를 저장하고 10초 후 되돌아와요.",
+    description = "위험한 곳에 뛰어들어도 10초 뒤 원래 위치로 돌아옵니다.",
+    normalSkill = "블레이즈 막대기 좌클릭: 현재 위치를 저장하고 10초 뒤 그 위치로 돌아옵니다. 돌아온 뒤 6초 동안 투명화합니다.",
     normalStoneCost = 18,
     normalCooldownSeconds = 100,
     advancedSkill = "없음",

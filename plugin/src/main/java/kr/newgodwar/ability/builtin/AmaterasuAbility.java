@@ -21,14 +21,14 @@ import java.util.List;
 @AbilityInfo(
     id = "amaterasu",
     name = "아마테라스",
-    description = "태양의 빛으로 적을 태우고 화염 피해를 무시해요.",
-    normalSkill = "블레이즈 막대기 좌클릭: 시간을 낮으로 바꾸고 자신을 강화해요.",
+    description = "태양의 빛으로 적을 태우고 화염 피해를 무시합니다.",
+    normalSkill = "블레이즈 막대기 좌클릭: 시간을 낮으로 바꾸고 8초 동안 공격력 증가와 신속을 얻습니다.",
     normalStoneCost = 10,
     normalCooldownSeconds = 55,
-    advancedSkill = "블레이즈 막대기 우클릭: 24블록 안에서 바라보는 적에게 태양 피해와 실명을 줘요.",
+    advancedSkill = "블레이즈 막대기 우클릭: 24블록 안에서 바라보는 적에게 피해 5를 주고 6초 동안 불태우며 7초 실명을 줍니다.",
     advancedStoneCost = 24,
     advancedCooldownSeconds = 120,
-    passiveSkill = "화염 피해를 무시해요.",
+    passiveSkill = "화염 피해를 무시합니다.",
     grade = AbilityGrade.A
 )
 final class AmaterasuAbility extends BaseAbility {

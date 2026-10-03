@@ -16,14 +16,14 @@ import java.util.List;
 @AbilityInfo(
     id = "sus",
     name = "수상한녀석",
-    description = "의심스러운 움직임으로 숨어들고 적을 교란해요.",
-    normalSkill = "블레이즈 막대기 좌클릭: 잠시 투명화하고 신속을 얻어요.",
+    description = "의심스러운 움직임으로 숨어들고 적을 교란합니다.",
+    normalSkill = "블레이즈 막대기 좌클릭: 10초 동안 투명화하고 신속을 얻습니다.",
     normalStoneCost = 16,
     normalCooldownSeconds = 70,
-    advancedSkill = "블레이즈 막대기 우클릭: 반경 10블록 적 하나와 위치를 바꾸고 서로 실명해요.",
+    advancedSkill = "블레이즈 막대기 우클릭: 반경 10블록 적 중 무작위 한 명과 위치를 바꿉니다. 그 적은 8초, 자신은 5초 동안 실명됩니다.",
     advancedStoneCost = 22,
     advancedCooldownSeconds = 105,
-    passiveSkill = "공격받으면 가끔 짧게 투명화해요.",
+    passiveSkill = "공격받으면 20% 확률로 7초 동안 투명화합니다.",
     grade = AbilityGrade.B
 )
 final class SusAbility extends BaseAbility {

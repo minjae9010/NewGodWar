@@ -21,14 +21,14 @@ import java.util.List;
 @AbilityInfo(
     id = "nature",
     name = "자연계",
-    description = "세계수의 자녀로서 주변 식물을 빠르게 자라게 하고 자연의 힘을 나눠요.",
-    normalSkill = "블레이즈 막대기 좌클릭: 무작위 식물을 얻어요.",
+    description = "세계수의 자녀로서 주변 식물을 빠르게 자라게 하고 자연의 힘을 나눕니다.",
+    normalSkill = "블레이즈 막대기 좌클릭: 무작위 식물을 얻습니다.",
     normalStoneCost = 10,
     normalCooldownSeconds = 35,
-    advancedSkill = "블레이즈 막대기 우클릭: 자신과 접속 중인 생존 팀원 전체에게 재생 II 15초와 흡수 I 12초를 줘요. 거리·월드 제한은 없어요.",
+    advancedSkill = "블레이즈 막대기 우클릭: 자신과 접속 중인 생존 팀원 전체에게 재생 II 15초와 흡수 I 12초를 줍니다. 거리·월드 제한은 없습니다.",
     advancedStoneCost = 24,
     advancedCooldownSeconds = 110,
-    passiveSkill = "주변 식물이 빠르게 자라며, 식물을 훼손하면 디버프를 받고 식물 근처에서는 버프를 얻어요.",
+    passiveSkill = "반경 5블록의 작물·사탕수수·선인장·묘목이 빠르게 자랍니다. 반경 4블록에 식물이 있으면 재생과 성급함을 얻지만, 식물을 부수면 9초 동안 약화와 감속을 받습니다.",
     grade = AbilityGrade.A
 )
 final class NatureAbility extends BaseAbility {

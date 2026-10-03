@@ -3,6 +3,7 @@ package kr.newgodwar.ability.builtin;
 import kr.newgodwar.ability.api.*;
 import kr.newgodwar.ability.feedback.AbilityStyle;
 import kr.newgodwar.ability.feedback.AbilityTheme;
+import kr.newgodwar.ability.feedback.EffectCue;
 import kr.newgodwar.game.GodTeam;
 
 import org.bukkit.*;
@@ -19,17 +20,20 @@ import java.util.List;
 @AbilityInfo(
     id = "examinee",
     name = "수험생",
-    description = "수학 문제를 맞히면 무작위 능력으로 바뀌어요.",
-    normalSkill = "블레이즈 막대기 좌클릭: 수학 문제를 출제해요.",
+    description = "수학 문제를 맞히면 무작위 능력으로 바뀝니다.",
+    normalSkill = "블레이즈 막대기 좌클릭: 채팅으로 풀 수학 문제를 받습니다.",
     normalStoneCost = 5,
     normalCooldownSeconds = 60,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "채팅으로 정답을 맞히면 무작위 능력으로 바뀌어요.",
+    passiveSkill = "채팅에 정답 숫자를 입력하면 무작위 능력으로 바뀝니다. 틀리면 문제가 사라지니 다시 출제받으세요.",
     grade = AbilityGrade.C
 )
 final class ExamineeAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.ARCANE)
+        .normal(EffectCue.ARCANE)
+        .effect(EffectCue.ARCANE, AbilityDesigns.EXAM)
+        .effect(EffectCue.SEAL, AbilityDesigns.EXAM_WRONG)
         .build();
 
     @Override
@@ -72,6 +76,7 @@ final class ExamineeAbility extends BaseAbility {
                 context.player().sendMessage(ChatColor.AQUA + "문제를 맞혀 새 능력을 얻었습니다!");
             } else {
                 context.player().sendMessage("아쉽습니다! 정답은 " + pendingAnswer + "입니다.");
+                feedback.cue(context, context.player(), kr.newgodwar.ability.feedback.EffectCue.SEAL);
             }
             pendingAnswer = -1;
             pendingQuestion = null;

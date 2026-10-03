@@ -18,14 +18,14 @@ import java.util.List;
 @AbilityInfo(
     id = "yisunsin",
     name = "이순신",
-    description = "학익진으로 전열을 세우고 거북선 포격으로 적진을 무너뜨려요.",
-    normalSkill = "블레이즈 막대기 좌클릭: 반경 10블록 적을 밀쳐내고 자신에게 저항과 공격력 증가를 줘요.",
+    description = "학익진으로 전열을 세우고 거북선 포격으로 적진을 무너뜨립니다.",
+    normalSkill = "블레이즈 막대기 좌클릭: 반경 10블록 적을 밀쳐내고 저항 11초, 공격력 증가 9초를 얻습니다.",
     normalStoneCost = 48,
     normalCooldownSeconds = 170,
-    advancedSkill = "블레이즈 막대기 우클릭: 32블록 안에서 바라보는 적에게 강한 포격 폭발과 감속, 약화를 줘요.",
+    advancedSkill = "블레이즈 막대기 우클릭: 32블록 안에서 바라보는 적에게 위력 2 포격 폭발과 피해 8을 주고 11초 동안 감속 III와 약화를 줍니다.",
     advancedStoneCost = 64,
     advancedCooldownSeconds = 320,
-    passiveSkill = "폭발 피해를 줄이고, 체력이 낮을수록 공격 피해가 늘어나요.",
+    passiveSkill = "능력을 받으면 철 검을 받습니다. 폭발 피해를 55% 줄입니다. 체력이 10 이하면 공격 피해가 25%, 6 이하면 45% 늘어납니다.",
     grade = AbilityGrade.S
 )
 final class YiSunSinAbility extends BaseAbility {
