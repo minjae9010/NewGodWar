@@ -26,25 +26,14 @@ jobs:
       - name: Build
         run: ./gradlew --no-daemon clean build
 
-      - name: Verify versioned resource packs
-        run: python scripts/effect-art/verify_versions.py
+      - name: Verify published resource pack catalogue
+        run: python scripts/effect-art/verify_catalogue.py --plugin-only
 
       - name: Upload plugin jar
         uses: actions/upload-artifact@v4
         with:
           name: newgodwar-plugin
           path: build/libs/NewGodWar-*.jar
-          if-no-files-found: error
-
-      - name: Upload versioned resource packs
-        uses: actions/upload-artifact@v4
-        with:
-          name: newgodwar-resource-packs
-          compression-level: 0
-          path: |
-            build/libs/NewGodWar-Art-*.zip
-            build/libs/NewGodWar-Art-*.sha1
-            build/libs/NewGodWar-Art-manifest.tsv
           if-no-files-found: error
 
       - name: Upload regression fixtures

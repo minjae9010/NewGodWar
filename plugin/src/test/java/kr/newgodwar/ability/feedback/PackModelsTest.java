@@ -4,6 +4,12 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 public class PackModelsTest {
+    @Test public void downloadAddressIsIndependentOfPluginReleases() {
+        String[] pack = PackModels.pack("26.3");
+        assertEquals("https://raw.githubusercontent.com/minjae9010/NewGodWar/refs/heads/codex/resource-packs/packs/"
+            + pack[1] + "/NewGodWar-Art-26.3.zip", PackModels.downloadUrl(pack));
+        assertFalse(PackModels.downloadUrl(pack).contains("/releases/"));
+    }
     @Test public void selectsExactReleasedVersionAndServerSuffix() {
         assertEquals("NewGodWar-Art-1.21-1.21.1.zip", PackModels.pack("1.21.1-R0.1-SNAPSHOT")[0]);
         assertEquals("legacy", PackModels.pack("1.21.3")[2]);

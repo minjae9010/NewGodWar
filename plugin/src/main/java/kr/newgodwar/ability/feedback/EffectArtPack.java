@@ -30,7 +30,7 @@ public final class EffectArtPack implements Listener {
         if (url.isEmpty() || url.equalsIgnoreCase("auto")) {
             String[] pack = PackModels.currentPack();
             if (pack == null) return;
-            url = "https://github.com/minjae9010/NewGodWar/releases/download/v" + plugin.getDescription().getVersion() + "/" + pack[0];
+            url = PackModels.downloadUrl(pack);
             sha = pack[1];
         }
         try {

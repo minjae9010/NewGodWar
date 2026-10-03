@@ -2,7 +2,15 @@
 
 이 프로젝트는 빌드, 실제 서버 기동, 기능 회귀 검사로 호환성을 확인합니다.
 
-## 버전별 리소스팩 배포 검사 (2026-10-03)
+## 리소스팩 독립 배포 검사
+
+JDK 21 `clean build`와 단위 테스트 77개를 통과했고, 빌드 후 팩 컴파일러·생성 목록·ZIP이 없는 것을 확인했습니다. 전용 GitHub Raw 공간의 ZIP 25종을 직접 다운로드해 SHA-1 및 소스 목록과 일치하는 것도 확인했습니다.
+
+v0.3.7부터 `clean build`에 `compileResourcePack`·`resourcePack` 작업이 포함되지 않습니다. 소스에 기록된 팩 목록을 읽어 JAR만 만들고 `python scripts/effect-art/verify_catalogue.py --plugin-only`로 팩이 생성되지 않았는지와 버전·모델·JAR 목록을 검사합니다. 릴리즈에 팩 업로드/다운로드 단계가 없으며 JAR만 첨부합니다.
+
+팩을 수정할 때만 `./gradlew resourcePack` 후 `python scripts/effect-art/publish.py --publish`를 실행합니다. 기존 버전별 ZIP을 전용 브랜치의 고정 해시 경로에서 재사용합니다. 아래 v0.3.6 당시 전체 팩 생성 검사는 기존 검증 기록입니다.
+
+## 버전별 리소스팩 배포 검사 (2026-10-03, v0.3.6)
 
 JDK 21 빌드와 단위 테스트 76개, `verify_versions.py`의 ZIP 25종·54개 버전·1,583개 모델 ID·텍스처/모델 참조·기본 모델 복귀·SHA-1·배포 JAR 목록 일치 검사를 통과했습니다. 기존 음식·메뉴 팩 검사 및 actionlint도 통과했습니다. Paper 1.12.2·1.21.1·1.21.5·26.3에서 메뉴·인벤토리·코어 회귀 검사를 통과했습니다.
 
@@ -90,7 +98,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\Test-PaperMatrix.ps1
 이미 빌드된 jar를 테스트하려면 다음처럼 실행합니다.
 
 ```powershell
-.\scripts\Test-PaperMatrix.ps1 -SkipBuild -PluginJar .\build\libs\NewGodWar-0.3.6.jar -Versions 26.3
+.\scripts\Test-PaperMatrix.ps1 -SkipBuild -PluginJar .\build\libs\NewGodWar-0.3.7.jar -Versions 26.3
 ```
 
 테스트 서버 파일은 `.paper-smoke/` 아래에 생성되며 git에는 포함되지 않습니다.
@@ -171,7 +179,7 @@ python scripts/Test-Load.py --players 16,32,64 --seconds 60
 1. 플러그인 jar를 빌드합니다.
 2. 최신 지원 Paper 서버 기동 스모크 테스트를 통과해야 합니다.
 3. 최신 지원 Paper의 코어·능력·명령어 검사와 Paper 26.3의 재시작·강제 종료 복구 검사를 모두 통과해야 합니다.
-4. 테스트가 성공하면 해당 태그의 GitHub Release를 만들고 `NewGodWar-*.jar`, 버전별 리소스팩 ZIP 25종·SHA-1·버전 목록을 첨부합니다. 릴리즈 본문은 `docs/releases/<태그>.md`를 사용합니다.
+4. 테스트가 성공하면 해당 태그의 GitHub Release를 만들고 `NewGodWar-*.jar`만 첨부합니다. 리소스팩은 별도 브랜치에 저장하며 릴리즈에서 생성·첨부하지 않습니다. 릴리즈 본문은 `docs/releases/<태그>.md`를 사용합니다.
 
 전체 Paper 매트릭스는 별도 호환성 신호로 계속 실행하지만, 구버전 개별 실패가 릴리즈 생성을 막지는 않습니다.
 

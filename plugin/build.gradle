@@ -35,8 +35,6 @@ tasks.named("runServer") {
 }
 
 tasks.processResources {
-    dependsOn rootProject.tasks.named("resourcePack")
-    from(rootProject.layout.buildDirectory.dir("generated/pack-resources"))
     filteringCharset = "UTF-8"
     filesMatching("plugin.yml") {
         expand(version: pluginVersion)

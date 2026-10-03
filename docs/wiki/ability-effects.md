@@ -22,7 +22,7 @@
 .\gradlew.bat resourcePack --offline
 ```
 
-결과물은 `build/libs/NewGodWar-Art-*.zip` 25종과 같은 이름의 `.sha1` 파일입니다. 일반 `build`에도 포함됩니다. 메뉴 아트 원본은 `scripts/effect-art/GuiArtwork.java`, 아이콘 미리보기는 `build/effect-pack/menu-icons.png`입니다. GitHub Release에서 직접 제공하며 [버전별 다운로드와 호환 범위](resource-packs.md)를 참고하세요.
+결과물은 `build/libs/NewGodWar-Art-*.zip` 25종과 같은 이름의 `.sha1` 파일입니다. 명시적으로 `resourcePack` 작업을 실행할 때만 생성합니다. 메뉴 아트 원본은 `scripts/effect-art/GuiArtwork.java`, 아이콘 미리보기는 `build/effect-pack/menu-icons.png`입니다. 플러그인 릴리즈와 독립된 GitHub Raw 공간에서 제공하며 [버전별 다운로드와 호환 범위](resource-packs.md)를 참고하세요.
 
 ```yaml
 abilities:

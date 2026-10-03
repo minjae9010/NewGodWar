@@ -103,10 +103,10 @@ ui:
 
 abilities:
   effects:
-    # Version-matched packs from this repository GitHub Release. Restart after changing settings.
+    # Version-matched packs from the dedicated GitHub resource-pack branch. Restart after changing settings.
     resource-pack:
       enabled: true
-      # auto (or empty): use the bundled version catalogue and verified GitHub Release SHA-1.
+      # auto (or empty): use the bundled version catalogue and published GitHub Raw SHA-1.
       url: 'auto'
       # Only needed when overriding url with a custom HTTP(S) download URL.
       sha1: ''

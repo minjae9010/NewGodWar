@@ -2,6 +2,7 @@
 import hashlib
 import json
 import re
+import sys
 import zipfile
 from pathlib import Path
 
@@ -89,7 +90,8 @@ supported = set(re.findall(r'"([0-9.]+)"', supported_source.split('function Get-
 assert supported <= covered, supported - covered
 assert covered == set(catalogue)
 version = re.search(r'version = "([^"]+)"', (ROOT / 'build.gradle').read_text()).group(1)
-with zipfile.ZipFile(ROOT / f'build/libs/NewGodWar-{version}.jar') as jar:
-    for resource in ('art-models.properties', 'art-packs.properties'):
-        assert jar.read(resource) == (ROOT / 'build/generated/pack-resources' / resource).read_bytes()
-print(f'PASS {len(rows)} ZIPs, {len(covered)} releases, {len(model_ids)} model IDs; shipped JAR catalogues match')
+if '--skip-jar' not in sys.argv:
+    with zipfile.ZipFile(ROOT / f'build/libs/NewGodWar-{version}.jar') as jar:
+        for resource in ('art-models.properties', 'art-packs.properties'):
+            assert jar.read(resource) == (ROOT / 'build/generated/pack-resources' / resource).read_bytes()
+print(f'PASS {len(rows)} ZIPs, {len(covered)} releases, {len(model_ids)} model IDs')

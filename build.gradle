@@ -4,7 +4,7 @@ plugins {
 
 allprojects {
     group = "kr.newgodwar"
-    version = "0.3.6"
+    version = "0.3.7"
     description = "Modern Gods War minigame plugin with modular compatibility support."
 }
 
@@ -74,6 +74,4 @@ tasks.register("resourcePack", Exec) {
     args "-Djava.awt.headless=true", "-cp", packClasses.get().asFile.absolutePath, "BuildEffectPack", rootDir.absolutePath
 }
 
-tasks.named("build") {
-    dependsOn("resourcePack")
-}
+// resourcePack is an explicit artwork maintenance task, never part of plugin releases.
