@@ -103,7 +103,7 @@ ui:
 
 abilities:
   effects:
-    # Version-matched packs from the dedicated GitHub resource-pack branch. Restart after changing settings.
+    # Version-matched packs from this repository resoucepack/ directory. Restart after changing settings.
     resource-pack:
       enabled: true
       # auto (or empty): use the bundled version catalogue and published GitHub Raw SHA-1.

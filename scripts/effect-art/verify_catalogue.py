@@ -1,6 +1,7 @@
 """Validate the recorded pack catalogue without generating or downloading any ZIP."""
 from pathlib import Path
 import re
+import hashlib
 import sys
 import zipfile
 
@@ -28,6 +29,17 @@ for version, value in packs.items():
     filename, sha, system = value.split('|')
     assert (filename, system) == expected[version]
     assert re.fullmatch('[0-9a-f]{40}', sha), version
+static = ROOT / 'resoucepack'
+files = {value.split('|')[0]: value.split('|')[1] for value in packs.values()}
+assert {p.name for p in static.glob('*.zip')} == set(files), 'Static directory does not match pack catalogue'
+for filename, sha in files.items():
+    assert hashlib.sha1((static / filename).read_bytes()).hexdigest() == sha, filename
+    assert (static / (filename + '.sha1')).read_text().strip() == sha
+manifest = [line.split('\t') for line in (static / 'manifest.tsv').read_text().splitlines()[1:]]
+assert len(manifest) == len(packs)
+for version, filename, sha, url in manifest:
+    assert packs[version].split('|')[:2] == [filename, sha]
+    assert url == 'https://raw.githubusercontent.com/minjae9010/NewGodWar/master/resoucepack/' + filename
 assert len(set(models.values())) == len(models)
 assert all(int(value) >= 74000 for value in models.values())
 source = (ROOT / 'plugin/src/main/java/kr/newgodwar/gui/GuiIcon.java').read_text(encoding='utf-8')
@@ -42,7 +54,8 @@ for line in (resources / 'effect-art.tsv').read_text(encoding='utf-8').splitline
 assert art_keys == {key for key in models if key.startswith('art/')}, 'Publish updated artwork before releasing the plugin'
 version = re.search(r'version = "([^"]+)"', (ROOT / 'build.gradle').read_text()).group(1)
 with zipfile.ZipFile(ROOT / f'build/libs/NewGodWar-{version}.jar') as jar:
+    assert not any(name.endswith('.zip') or name.startswith(('resoucepack/', 'assets/newgodwar/')) for name in jar.namelist()), 'Resource packs must not be bundled in the plugin JAR'
     for resource in ('art-models.properties', 'art-packs.properties'):
         # Git may check text out with CRLF on Windows; compare logical catalogues.
         assert jar.read(resource).decode().splitlines() == (resources / resource).read_text().splitlines()
-print(f'PASS recorded catalogue: {len(packs)} versions, {len(models)} models and JAR metadata; no pack generation')
+print(f'PASS recorded catalogue: {len(packs)} versions, {len(models)} models and static ZIPs; JAR contains metadata only, no pack generation')

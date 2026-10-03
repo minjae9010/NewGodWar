@@ -25,8 +25,8 @@ public final class PackModels {
         return value == null ? null : value.split("\\|");
     }
     public static String downloadUrl(String[] pack) {
-        return "https://raw.githubusercontent.com/minjae9010/NewGodWar/refs/heads/codex/resource-packs/packs/"
-            + pack[1] + "/" + pack[0];
+        return "https://raw.githubusercontent.com/minjae9010/NewGodWar/master/resoucepack/"
+            + pack[0];
     }
     public static boolean modern() {
         String[] pack = currentPack();
