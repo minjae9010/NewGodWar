@@ -117,8 +117,8 @@ final class FeedbackRegressionChecks {
                 "Native lightning acquired a second cast effect");
             require(count(particles, "Far") == 0 && count(sounds, "Far") == 0 && count(particles, "CannotSee") == 0,
                 "Feedback leaked to distant/hidden viewers");
-            require(contains(messages, "제우스 · 고급") && !contains(messages, "연속 번개")
-                && contains(bars, "연속 번개") && titles.size() == 1,
+            require(contains(messages, "제우스 · 고급") && !contains(messages, "번개를 5번")
+                && contains(bars, "번개를 5번") && titles.size() == 1,
                 "Activation chat must stay brief while the action bar identifies the advanced effect");
             int castParticles = count(particles, "Caster");
             messages.clear();
@@ -303,17 +303,37 @@ final class FeedbackRegressionChecks {
         require(animations.isEmpty(), "Design animation survived owner disconnect");
         online = true;
         feedback.clear(); clearOutput();
-        new ProbeAbility().buff(healing, 0); flush();
-        require(count(particles, "Caster") == 3, "New regeneration effect has no healing cue");
+        ProbeAbility buff = new ProbeAbility();
+        buff.buff(healing, 0); flush();
+        require(count(particles, "Caster") > 0 && count(particles, "Caster") <= 64 && animations.size() == 1,
+            "New regeneration effect must use one bounded healing animation");
+        buff.cancelScheduledTasks();
+        require(animations.isEmpty(), "Healing animation survived ability cleanup");
         existingPotion = new org.bukkit.potion.PotionEffect(org.bukkit.potion.PotionEffectType.REGENERATION, 100, 0);
-        clearOutput(); new ProbeAbility().buff(healing, 0);
-        require(tasks.isEmpty() && particles.isEmpty(), "Refreshing a maintained buff replayed its cue");
-        new ProbeAbility().buff(healing, 1); flush();
-        require(count(particles, "Caster") == 3, "A stronger buff was mistaken for a routine refresh");
+        clearOutput(); buff = new ProbeAbility(); buff.buff(healing, 0);
+        require(tasks.isEmpty() && particles.isEmpty() && animations.isEmpty(), "Refreshing a maintained buff replayed its cue");
+        buff.buff(healing, 1); flush();
+        require(count(particles, "Caster") > 0 && count(particles, "Caster") <= 64 && animations.size() == 1,
+            "A stronger buff was mistaken for a routine refresh");
+        buff.cancelScheduledTasks();
         existingPotion = null; clearOutput();
-        yaw = 90; feedback.cue(healing, caster, EffectCue.ITEM); flush();
-        for (Location point : points) require(point.getX() < -0.3D && point.getZ() < -0.2D,
-            "Hand sparks did not rotate with the player's facing/right hand");
+        yaw = 0;
+        feedback.drawCue(healing, caster.getLocation(), EffectCue.ITEM, Collections.singletonList(caster), caster, false);
+        List<Location> itemPoints = new ArrayList<Location>(points);
+        require(!itemPoints.isEmpty() && itemPoints.size() <= 64 && animations.size() == 1,
+            "Item reaction must use one bounded model animation");
+        feedback.clear(); clearOutput();
+        yaw = 90;
+        feedback.drawCue(healing, caster.getLocation(), EffectCue.ITEM, Collections.singletonList(caster), caster, false);
+        require(points.size() == itemPoints.size(), "Item model changed when the player turned");
+        Location anchor = caster.getLocation();
+        for (int i = 0; i < points.size(); i++) {
+            Location reference = itemPoints.get(i);
+            Location rotated = new Location(world, anchor.getX() - (reference.getZ() - anchor.getZ()),
+                reference.getY(), anchor.getZ() + (reference.getX() - anchor.getX()));
+            require(points.get(i).distanceSquared(rotated) < 0.000001,
+                "Item model did not rotate with the player's facing");
+        }
         yaw = 0; feedback.clear(); clearOutput();
         for (EffectCue cue : EffectCue.values()) {
             feedback.cue(healing, target, cue);
