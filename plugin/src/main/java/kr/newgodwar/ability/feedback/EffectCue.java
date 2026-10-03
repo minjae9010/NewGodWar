@@ -10,7 +10,7 @@ public enum EffectCue {
     MUSIC(65, "음표"), CHARGE(40, "주먹의 전하"), WINGS(40, "등의 깃털 날개"),
     SUN(40, "머리 위 태양"), MOON(40, "머리 위 초승달"), FROST(50, "눈 결정"),
     SLEEP(70, "수면 표시"), SEAL(75, "봉인 자물쇠"), WATER(45, "낮은 물보라"),
-    ARCANE(30, "손끝 주문"), BLOOM(45, "새싹"), HUNGER(25, "허기 연기");
+    ARCANE(30, "손끝 주문"), BLOOM(45, "새싹"), HUNGER(25, "허기 연기"), HASTE(30, "손목의 성급함 톱니"), WEAKNESS(25, "약화 파편");
 
     public enum Ink { CRIT, SWEEP, HEART, LIGHT, WITCH, SMOKE, FLAME, CLOUD, SPARK, PORTAL, NOTE, SNOW, WATER, ENCHANT, LEAF, COLOR, ELEMENT }
     public interface PointSink { void point(Ink ink, double x, double y, double z, int rgb); }
@@ -54,6 +54,8 @@ public enum EffectCue {
                 case STEALTH: ink = Ink.SMOKE; x = Math.cos(a) * 0.3D; z = Math.sin(a) * 0.3D; y = 0.4D + t; break;
                 case BLIND: ink = Ink.SMOKE; x = (t - 0.5D) * 0.6D; y = 1.65D; z = 0.4D; break;
                 case WIND: ink = Ink.CLOUD; x = (i % 2 == 0 ? -1 : 1) * 0.25D; y = 0.12D; z = -0.3D - t * 0.7D; break;
+                case HASTE: ink = Ink.SPARK; x = (i % 2 == 0 ? -.4 : .4); y = .95 + Math.sin(a)*.1; z = .22; break;
+                case WEAKNESS: ink = Ink.SMOKE; x = Math.cos(a)*.35; y = 1-t*.5; z = Math.sin(a)*.35; break;
                 case ITEM:
                     ink = Ink.SPARK; x = 0.38D + Math.cos(a) * 0.12D; y = 1.0D + Math.sin(a) * 0.12D; z = 0.4D; break;
                 case FORGE:

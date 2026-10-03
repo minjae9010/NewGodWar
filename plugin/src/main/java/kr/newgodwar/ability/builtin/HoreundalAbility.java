@@ -31,9 +31,9 @@ import java.util.List;
 )
 final class HoreundalAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.TIME)
+        .normal(EffectCue.PORTAL)
         .hit(EffectCue.PORTAL)
         .effect(EffectCue.PORTAL, AbilityDesigns.RETURN_GATE)
-        .effect(EffectCue.STEALTH, AbilityDesigns.RETURN_GATE)
         .build();
 
     @Override
@@ -49,7 +49,8 @@ final class HoreundalAbility extends BaseAbility {
     private void recall(final AbilityPlayerContext context, final Player player) {
         final Location location = player.getLocation();
         later(context, 10, "귀환 발동", "귀환 발동", () -> {
-            player.teleport(location);
+            if (!player.teleport(location)) return;
+            feedback.castCue(context, player, kr.newgodwar.ability.feedback.EffectCue.PORTAL);
             effect(context, player, PotionEffectType.INVISIBILITY, 6, 0);
         });
     }

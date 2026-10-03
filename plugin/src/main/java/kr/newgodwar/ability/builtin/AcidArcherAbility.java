@@ -38,7 +38,7 @@ final class AcidArcherAbility extends BaseAbility {
         .trail(AbilityTheme.SHADOW)
         .effect(EffectCue.CHARGE, AbilityDesigns.VENOM_ARROWS)
         .effect(EffectCue.ITEM, AbilityDesigns.VENOM_BOW)
-        .effect(EffectCue.POISON, AbilityDesigns.VENOM)
+        .received(EffectCue.POISON, AbilityDesigns.VENOM)
         .build();
 
     @Override

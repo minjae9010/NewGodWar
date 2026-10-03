@@ -57,7 +57,7 @@ final class HermioneAbility extends TransientAbility {
         if ("윙가르디움레비오사".equals(spell) || "wingardiumleviosa".equals(spell)) {
             Player target = targetPlayerInSight(context, player, 16, false);
             if (target == null || !useNormal(context, player)) return;
-            effect(context, target, "LEVITATION", "LEVITATION", 2, 0);
+            if (!appliedEffect(context, target, "LEVITATION", "LEVITATION", 2, 0)) return;
             if (!feedback.followObject("levitate:" + target.getUniqueId(), context, AbilityDesigns.LEVITATE, () -> {
                     if (!target.isOnline() || target.isDead()) return null;
                     Location at = target.getLocation(); at.setYaw(0); at.setPitch(0); return at;
@@ -80,12 +80,16 @@ final class HermioneAbility extends TransientAbility {
         } else if ("피니테".equals(spell) || "finite".equals(spell)) {
             if (!useNormal(context, player)) return;
             for (Player ally : allies(context, player.getLocation(), 6)) {
+                boolean changed = ally.hasPotionEffect(PotionEffectType.POISON) || ally.hasPotionEffect(PotionEffectType.WITHER)
+                    || ally.hasPotionEffect(PotionEffectType.BLINDNESS) || ally.hasPotionEffect(effectType("SLOWNESS", "SLOW"));
                 ally.removePotionEffect(PotionEffectType.POISON);
                 ally.removePotionEffect(PotionEffectType.WITHER);
                 ally.removePotionEffect(PotionEffectType.BLINDNESS);
                 removeEffect(ally, "SLOWNESS", "SLOW");
-                feedback.cue(context, ally, kr.newgodwar.ability.feedback.EffectCue.CLEANSE);
-                feedback.affected(context, ally, "피니테 · 상태 이상 해제", false);
+                if (changed) {
+                    feedback.cue(context, ally, kr.newgodwar.ability.feedback.EffectCue.CLEANSE);
+                    feedback.notice(context, ally, "피니테 · 상태 이상 해제", false);
+                }
             }
         } else if ("프로테고".equals(spell) || "protego".equals(spell)) {
             if (shieldActive) {

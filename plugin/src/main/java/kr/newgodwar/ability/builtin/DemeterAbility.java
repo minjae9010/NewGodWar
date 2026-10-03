@@ -59,7 +59,7 @@ final class DemeterAbility extends TransientAbility {
                 if (!active(context) || !player.getWorld().equals(center.getWorld())) return;
                 harvest(context, center, stage);
                 for (Player target : alliesInRange(context, center, 5)) {
-                    restoreHealth(target, 2);
+                    restoreHealth(context, target, 2);
                     target.setFoodLevel(Math.min(20, target.getFoodLevel() + 4));
                     feedback.affected(context, target, "풍성한 수확 · 체력과 허기 회복", false);
                 }

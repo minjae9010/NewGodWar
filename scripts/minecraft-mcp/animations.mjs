@@ -75,10 +75,47 @@ try{
         },advanced||id==='megumin'?4300:2600);
         row.log=readFileSync(logFile,'utf8').slice(offset);row.before=before;
         const success=row.log.includes('✦ '+ability.name+' · '+(advanced?'고급':'일반')+' 사용!')||row.log.includes('✦ ['+ability.name+' ·');
-        if(!success&&row.after.stones>=before.stones)throw new Error('Cast was not confirmed');
+        if(!success&&row.after.stones>=before.stones&&row.after[(advanced?'advanced':'normal')+'Cooldown']<=before[(advanced?'advanced':'normal')+'Cooldown'])throw new Error('Cast was not confirmed');
         if(id==='megumin'&&!row.after.dead)throw new Error('Delayed explosion did not complete');
       }catch(error){row.ok=false;row.error=error.message;process.exitCode=1;}
       save(row);console.log(`${id}: ${row.ok?row.frames.length+' frames / '+row.fps+' fps':row.error}`);
     }
-  }else throw new Error('Use models, casts or advanced');
+  }else if(mode==='flight'){
+    for(const id of ['jujak','hermes']){
+      await fixture(`prepare ${id} enemy`);await action('camera','back');await action('hud','false');
+      await tool('set_view_angle',{yaw:0,pitch:0});await sleep(500);
+      const row={kind:'cast',id,label:catalog.abilities.find(a=>a.id===id).name+' · 실제 공중 비행',view:'airborne',before:await fixture('state')};
+      try{await record(row,async()=>{
+        await command('/tp @s 0.5 -56 0.5 0 0');return action('attack');
+      },4000);}catch(error){row.ok=false;row.error=error.message;process.exitCode=1;}
+      save(row);console.log(`${id} flight: ${row.ok?'PASS':row.error}`);
+    }
+  }else if(mode==='roles'){
+    for(const id of ['asclepius','poseidon']){
+      await fixture(`prepare ${id} ${id==='asclepius'?'ally':'enemy'}`);
+      await action('camera','back');await action('hud','false');
+      await tool('set_view_angle',{yaw:-25,pitch:10});await sleep(500);
+      const ability=catalog.abilities.find(a=>a.id===id);
+      const row={kind:'cast',id,label:ability.name+' · 실제 시전과 대상 반응',view:'recipient',before:await fixture('state')};
+      try{await record(row,()=>action('use'),2600);}catch(error){row.ok=false;row.error=error.message;process.exitCode=1;}
+      save(row);console.log(`${id} recipient: ${row.ok?'PASS':row.error}`);
+    }
+    await fixture('prepare sniper enemy');await action('hud','false');await action('camera','first');
+    await tool('set_view_angle',{yaw:0,pitch:0});await sleep(500);
+    for(const [view,label,duration,trigger] of [
+      ['ready','저격수 · 준비 완료 조준경',5500,()=>fixture('condition normal')],
+      ['shot','저격수 · 실제 강화 화살 발사',2500,()=>fixture('condition advanced')]
+    ]){
+      const row={kind:'cast',id:'sniper',label,view,before:await fixture('state')};
+      try{await record(row,trigger,duration);}catch(error){row.ok=false;row.error=error.message;process.exitCode=1;}
+      save(row);console.log(`sniper ${view}: ${row.ok?'PASS':row.error}`);
+    }
+    await fixture('prepare sniper enemy');await fixture('condition normal');await sleep(4300);
+    await action('camera','first');await tool('set_view_angle',{yaw:90,pitch:0});
+    const miss={kind:'cast',id:'sniper',label:'저격수 · 빗나간 강화 화살',view:'miss',before:await fixture('state')};
+    try{await record(miss,()=>fixture('condition advanced'),2500);
+      if(miss.after.targetHealth<miss.before.targetHealth)throw new Error('Miss unexpectedly damaged target');
+    }catch(error){miss.ok=false;miss.error=error.message;process.exitCode=1;}
+    save(miss);console.log(`sniper miss: ${miss.ok?'PASS':miss.error}`);
+  }else throw new Error('Use models, casts, advanced, flight or roles');
 }finally{await client.close();}

@@ -27,6 +27,8 @@ import java.util.List;
 )
 final class RickrollAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.MUSIC)
+        .normal(EffectCue.MUSIC)
+        .advanced(EffectCue.MUSIC)
         .hit(EffectCue.MUSIC)
         .effect(EffectCue.MUSIC, AbilityDesigns.RECORD)
         .build();
@@ -38,7 +40,7 @@ final class RickrollAbility extends BaseAbility {
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
         List<Player> targets = nearbyPlayers(context, player, 8, false);
         if (targets.isEmpty()) {
-            player.sendMessage("능력을 사용할 수 있는 대상이 없습니다.");
+            sendAbilityMessage(context, player, "failure", "능력을 사용할 수 있는 대상이 없습니다.");
             return;
         }
         if (useNormal(context, player)) {
@@ -64,7 +66,8 @@ final class RickrollAbility extends BaseAbility {
     @Override
     public void onDamageByEntity(AbilityPlayerContext context, org.bukkit.event.entity.EntityDamageByEntityEvent event, Player opponent, boolean attacker) {
         if (!attacker && rollChance(1, 5)) {
-            effect(context, opponent, "NAUSEA", "CONFUSION", 8, 0);
+            if (appliedEffect(context, opponent, "NAUSEA", "CONFUSION", 8, 0))
+                feedback.castCue(context, context.player(), EffectCue.MUSIC);
         }
     }
 }

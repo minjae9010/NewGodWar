@@ -61,7 +61,7 @@ final class MinerAbility extends BaseAbility {
     public void onDamageByEntity(AbilityPlayerContext context, EntityDamageByEntityEvent event, Player opponent, boolean attacker) {
         if (attacker && isPickaxe(context.player().getItemInHand().getType())) {
             event.setDamage(4.0D);
-            feedback.impact(context, opponent);
+            confirmedAttack(context, event, opponent);
         }
     }
 

@@ -31,6 +31,7 @@ import java.util.List;
 )
 final class WitchAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.SHADOW)
+        .normal(EffectCue.POISON)
         .hit(EffectCue.POISON)
         .effect(EffectCue.POISON, AbilityDesigns.CAULDRON)
         .build();
@@ -42,7 +43,7 @@ final class WitchAbility extends BaseAbility {
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
         List<Player> targets = nearbyPlayers(context, player, 10, false);
         if (targets.isEmpty()) {
-            player.sendMessage("능력을 사용할 수 있는 대상이 없습니다.");
+            sendAbilityMessage(context, player, "failure", "능력을 사용할 수 있는 대상이 없습니다.");
             return;
         }
         if (useNormal(context, player)) {
@@ -64,9 +65,10 @@ final class WitchAbility extends BaseAbility {
     }
 
     private void curse(AbilityPlayerContext context, Player player) {
-        effect(context, player, PotionEffectType.HUNGER, 12, 0);
-        effect(context, player, PotionEffectType.POISON, 12, 0);
-        effect(context, player, "SLOWNESS", "SLOW", 12, 0);
-        effect(context, player, "MINING_FATIGUE", "SLOW_DIGGING", 12, 0);
+        boolean applied = appliedEffect(context, player, PotionEffectType.HUNGER, 12, 0);
+        applied |= appliedEffect(context, player, PotionEffectType.POISON, 12, 0);
+        applied |= appliedEffect(context, player, "SLOWNESS", "SLOW", 12, 0);
+        applied |= appliedEffect(context, player, "MINING_FATIGUE", "SLOW_DIGGING", 12, 0);
+        if (applied) feedback.castCue(context, context.player(), EffectCue.POISON);
     }
 }

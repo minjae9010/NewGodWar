@@ -55,7 +55,7 @@ final class FrostAbility extends BaseAbility {
         }
         if (useAdvanced(context, player)) {
             iceSphere(context, target.getLocation(), 5, 8);
-            feedback.affected(context, target, "얼음 감옥 · 8초", true);
+            feedback.affected(context, target, "얼음 감옥 · 8초", true, true);
         }
     }
 

@@ -33,6 +33,8 @@ import java.util.List;
 )
 final class LokiAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.SHADOW)
+        .normal(EffectCue.STEALTH)
+        .advanced(EffectCue.PORTAL)
         .hit(EffectCue.PORTAL)
         .privateCast()
         .effect(EffectCue.PORTAL, AbilityDesigns.TRICK_MASK)
@@ -70,7 +72,8 @@ final class LokiAbility extends BaseAbility {
     @Override
     public void onDamageByEntity(AbilityPlayerContext context, EntityDamageByEntityEvent event, Player opponent, boolean attacker) {
         if (!attacker && rollChance(1, 5)) {
-            effect(context, opponent, "NAUSEA", "CONFUSION", 8, 0);
+            if (appliedEffect(context, opponent, "NAUSEA", "CONFUSION", 8, 0))
+                feedback.castCue(context, context.player(), EffectCue.POISON);
         }
     }
 }

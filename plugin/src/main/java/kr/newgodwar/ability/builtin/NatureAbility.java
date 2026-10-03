@@ -33,11 +33,13 @@ import java.util.List;
 )
 final class NatureAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.NATURE)
+        .advanced(EffectCue.HEAL)
         .normal(EffectCue.ITEM)
         .benefit(EffectCue.HEAL)
         .effect(EffectCue.ITEM, AbilityDesigns.NATURE_LEAVES)
         .effect(EffectCue.HEAL, AbilityDesigns.NATURE_LEAVES)
-        .effect(EffectCue.POISON, AbilityDesigns.VENOM)
+        .received(EffectCue.SLOW, AbilityDesigns.NATURE_RECOIL)
+        .received(EffectCue.WEAKNESS, AbilityDesigns.NATURE_RECOIL)
         .build();
 
     @Override

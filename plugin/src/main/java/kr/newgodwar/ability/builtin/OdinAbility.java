@@ -37,7 +37,7 @@ final class OdinAbility extends TransientAbility {
         Player target = targetPlayerInSight(context, player, 24, false);
         if (target == null || !useNormal(context, player)) return;
         prey = target;
-        feedback.affected(context, target, "후긴과 무닌이 당신을 추적합니다 · 8초", true);
+        feedback.affected(context, target, "후긴과 무닌이 당신을 추적합니다 · 8초", true, true);
         final int[] phase = {0};
         scoutTask = scheduleRepeating(context, () -> {
             if (!validEnemy(context, prey, 24) || phase[0] >= 16) { stopScout(); return; }
@@ -55,7 +55,7 @@ final class OdinAbility extends TransientAbility {
         final Player target = prey;
         stopScout();
         spearPending = true;
-        feedback.affected(context, target, "궁니르가 날아옵니다 · 엄폐하세요", true);
+        feedback.affected(context, target, "궁니르가 날아옵니다 · 엄폐하세요", true, true);
         feedback.sigil(context, target.getLocation(), 1);
         scheduleLater(context, () -> {
             spearPending = false;

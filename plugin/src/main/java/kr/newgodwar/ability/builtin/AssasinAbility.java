@@ -68,7 +68,7 @@ final class AssasinAbility extends BaseAbility {
             if (behind.lengthSquared() < 0.01D) behind.setZ(1);
             Location location = target.getLocation().subtract(behind.normalize());
             if (!location.getBlock().isEmpty() || !location.clone().add(0, 1, 0).getBlock().isEmpty()) continue;
-            if (useAdvanced(context, player) && player.teleport(location)) feedback.impact(context, player);
+            if (useAdvanced(context, player) && player.teleport(location)) feedback.castCue(context, player, kr.newgodwar.ability.feedback.EffectCue.PORTAL);
             return;
         }
         sendAbilityMessage(context, player, "failure", "안전하게 접근할 수 있는 상대가 없습니다.");
@@ -78,6 +78,6 @@ final class AssasinAbility extends BaseAbility {
         Vector vector = player.getEyeLocation().getDirection();
         vector.setY(0.5D);
         player.setVelocity(vector);
-        feedback.cue(context, player, kr.newgodwar.ability.feedback.EffectCue.WIND);
+        feedback.castCue(context, player, kr.newgodwar.ability.feedback.EffectCue.WIND);
     }
 }

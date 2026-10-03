@@ -140,7 +140,7 @@ public final class SettingsGui implements Listener {
     }
 
     private void open(Player player, SettingsView view) {
-        Inventory inventory = Bukkit.createInventory(player, SIZE, view.title);
+        Inventory inventory = Bukkit.createInventory(player, SIZE, GuiTheme.title(player, plugin, view.title, SIZE));
         fill(inventory, view, player);
         // Closing the previous inventory fires synchronously; preserve destination state during it.
         boolean alreadyRefreshing = !refreshingViewers.add(player.getUniqueId());
@@ -232,7 +232,7 @@ public final class SettingsGui implements Listener {
 
     private SettingsView viewOf(String title) {
         for (SettingsView view : SettingsView.values()) {
-            if (view.title.equals(title)) {
+            if (GuiTitle.matches(view.title, title, SIZE)) {
                 return view;
             }
         }
@@ -254,7 +254,7 @@ public final class SettingsGui implements Listener {
             reopen(player, SettingsView.MAIN);
             return;
         }
-        if (slot == HELP_SLOT) {
+        if (slot == (view == SettingsView.MAIN ? 46 : HELP_SLOT)) {
             plugin.messages().send(player, "&b설정 위치: &f" + breadcrumb(view));
             plugin.messages().send(player, "&7" + pageGuide(view));
             plugin.messages().send(player, "&e/gw gui &7뒤에 game, combat, team, world, core, rules, display, gambling, items를 입력하면 바로 열려요.");
@@ -551,6 +551,8 @@ public final class SettingsGui implements Listener {
             toggle("abilities.effects.animations");
         } else if (slot == 21) {
             toggle("abilities.effects.action-bar");
+        } else if (slot == 22) {
+            toggle("abilities.messages.compact");
         }
     }
 
@@ -722,13 +724,21 @@ public final class SettingsGui implements Listener {
             ChatColor.YELLOW + (shortcut == null ? "바꿀 항목에 마우스를 올려 보세요." : "바로 열기: " + shortcut)), GuiIcon.SETTINGS));
         inventory.setItem(HOME_SLOT, GuiTheme.icon(GuiTheme.item("COMPASS", "COMPASS", (short) 0,
             ChatColor.AQUA + "설정 홈", ChatColor.GRAY + "8개 설정 분류와 시작 아이템으로 이동"), GuiIcon.HOME));
-        inventory.setItem(HELP_SLOT, GuiTheme.icon(GuiTheme.item("BOOK", "BOOK", (short) 0,
+        int helpSlot = view == SettingsView.MAIN ? 46 : HELP_SLOT;
+        inventory.setItem(helpSlot, GuiTheme.icon(GuiTheme.item("BOOK", "BOOK", (short) 0,
             ChatColor.YELLOW + "이 설정은 어디에 있나요?", ChatColor.GRAY + pageGuide(view),
             ChatColor.GRAY + "클릭: 채팅에서 설정 경로 안내"), GuiIcon.HELP));
         if (view != SettingsView.MAIN) {
             inventory.setItem(BACK_SLOT, backItem());
         }
         inventory.setItem(CLOSE_SLOT, closeItem());
+        GuiTheme.painted(player, inventory, plugin, 4, HOME_SLOT, helpSlot, CLOSE_SLOT);
+        if (view == SettingsView.MAIN) {
+            GuiTheme.painted(player, inventory, plugin, 48, 50);
+            GuiTheme.captioned(player, inventory, plugin, 10, 12, 14, 16, 28, 30, 32, 34);
+        } else {
+            GuiTheme.painted(player, inventory, plugin, BACK_SLOT);
+        }
         GuiTheme.present(player, inventory, plugin);
     }
 
@@ -1024,7 +1034,7 @@ public final class SettingsGui implements Listener {
 
     private void fillDisplay(Inventory inventory) {
         boolean packConfigured = plugin.getConfig().getBoolean("abilities.effects.resource-pack.enabled", true);
-        inventory.setItem(0, toggleItem("ui.resource-pack.enabled", "메뉴 텍스처 아이콘", "PAINTING",
+        inventory.setItem(0, toggleItem("ui.resource-pack.enabled", "메뉴 배경 / 아이콘", "PAINTING",
             ChatColor.GRAY + "팩을 받은 플레이어의 메뉴에 적용해요."));
         inventory.setItem(1, GuiTheme.icon(item("BOOK", "BOOK", 1, (short) 0,
             ChatColor.AQUA + "텍스처팩 연결 안내",
@@ -1036,7 +1046,7 @@ public final class SettingsGui implements Listener {
         inventory.setItem(3, toggleItem("abilities.effects.particles", "능력 파티클", "BLAZE_POWDER"));
         inventory.setItem(10, toggleItem("scoreboard.enabled", "스코어보드 안내 사용", "ITEM_FRAME"));
         inventory.setItem(11, toggleItem("scoreboard.team-prefixes", "이름 앞에 팀 표시", "NAME_TAG"));
-        inventory.setItem(12, toggleItem("game.ability-roll-message", "능력 배정 타이틀", "PAPER"));
+        inventory.setItem(12, toggleItem("game.ability-roll-message", "능력 배정 안내", "PAPER"));
         inventory.setItem(13, toggleItem("abilities.messages.enabled", "능력 안내 메시지", "BOOK"));
         inventory.setItem(14, toggleItem("abilities.effects.sounds", "능력 효과음", "NOTE_BLOCK"));
         inventory.setItem(15, toggleItem("abilities.messages.success", "능력 사용 완료 문구", "INK_SACK"));
@@ -1046,6 +1056,9 @@ public final class SettingsGui implements Listener {
         inventory.setItem(19, toggleItem("abilities.effects.objects", "능력 입체 오브젝트", "ARMOR_STAND"));
         inventory.setItem(20, toggleItem("abilities.effects.animations", "능력 오브젝트 움직임", "FEATHER"));
         inventory.setItem(21, toggleItem("abilities.effects.action-bar", "능력 액션바 안내", "PAPER"));
+        inventory.setItem(22, toggleItem("abilities.messages.compact", "간결한 전투 안내", "FEATHER",
+            ChatColor.GRAY + "충전·모드·중요 버프·효과 시작과 종료는 유지해요.",
+            ChatColor.GRAY + "반복 발동·패시브·초 단위 카운트다운만 생략해요."));
     }
 
     private void fillCombat(Inventory inventory) {

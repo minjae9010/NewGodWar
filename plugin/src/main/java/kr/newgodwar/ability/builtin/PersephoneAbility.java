@@ -33,9 +33,10 @@ import java.util.List;
 )
 final class PersephoneAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.NATURE)
+        .advanced(EffectCue.HEAL)
         .hit(EffectCue.ROOT)
         .benefit(EffectCue.HEAL)
-        .effect(EffectCue.ROOT, AbilityDesigns.UNDERWORLD_ROOTS)
+        .received(EffectCue.ROOT, AbilityDesigns.UNDERWORLD_ROOTS)
         .effect(EffectCue.HEAL, AbilityDesigns.POMEGRANATE)
         .build();
 
@@ -62,7 +63,7 @@ final class PersephoneAbility extends BaseAbility {
         targets.add(player);
         if (useAdvanced(context, player)) {
             for (Player target : targets) {
-                target.setHealth(Math.min(target.getMaxHealth(), target.getHealth() + 4.0D));
+                restoreHealthApplied(context, target, 4.0D);
                 effect(context, target, PotionEffectType.REGENERATION, 8, 0);
             }
         }

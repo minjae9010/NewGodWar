@@ -34,6 +34,37 @@ with zipfile.ZipFile(pack) as archive:
         assert png[25] == 6, 'Menu sprite must have an alpha channel'
     actual = [name for name in names if name.startswith('assets/newgodwar/items/gui/')]
     assert len(actual) == len(icons), 'Server and resource pack icon catalogues differ'
+    font = json.loads(archive.read('assets/minecraft/font/default.json'))
+    assert font == json.loads(archive.read('assets/minecraft/font/uniform.json'))
+    space, *panels = font['providers']
+    assert space == {'type': 'space', 'advances': {'\ue100': -8, '\ue103': -168, '\ue10a': -176, '\ue10b': -1}}
+    expected = [(0xe101, 5), (0xe102, 6), (0xe104, 6), (0xe105, 4), (0xe106, 4), (0xe107, 6), (0xe108, 6), (0xe109, 5)]
+    assert len(panels) == len(expected) * 4
+    for index, panel in enumerate(panels):
+        group, part = divmod(index, 4)
+        code, rows = expected[group]
+        assert panel['chars'] == [chr(code if part == 0 else 0xe110 + group * 3 + part - 1)]
+        assert panel['height'] == (rows * 18 + 114) // 2
+        assert panel['ascent'] == 13 - (part // 2) * panel['height']
+        namespace, texture = panel['file'].split(':')
+        png = archive.read(f'assets/{namespace}/textures/{texture}')
+        width, height = struct.unpack('>II', png[16:24])
+        assert (width, height) == (176, panel['height'] * 2)
+        assert max(width, height) <= 256, 'Bitmap glyph must fit Minecraft font atlas'
+        assert -8 + 2 * (88 + 1 - 1) - 176 + 2 * (88 + 1 - 1) - 168 == 0
+    import zlib
+    for layer in ('back', 'front'):
+        png = archive.read(f'assets/minecraft/textures/gui/sprites/container/slot_highlight_{layer}.png')
+        assert struct.unpack('>II', png[16:24]) == (24, 24)
+        assert png[24:26] == bytes([8, 6])
+        pos, blocks = 8, []
+        while pos < len(png):
+            length = struct.unpack('>I', png[pos:pos+4])[0]
+            if png[pos+4:pos+8] == b'IDAT': blocks.append(png[pos+8:pos+8+length])
+            pos += length + 12
+        # ImageIO writes a fully zero RGBA raster; no visible pixel may remain.
+        assert not any(zlib.decompress(b''.join(blocks))), 'Hover sprites must be transparent'
+    assert not any('/textures/gui/container/' in name for name in names), 'Never reskin unrelated chests'
 digest = hashlib.sha1(pack.read_bytes()).hexdigest()
 assert pack.with_suffix('.zip.sha1').read_text().strip() == digest
 print(f'PASS {len(icons)} menu item/model/texture chains, formats 4-97, default item atlas, ZIP uniqueness and SHA-1 {digest}')

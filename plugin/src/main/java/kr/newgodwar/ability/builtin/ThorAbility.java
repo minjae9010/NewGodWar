@@ -131,8 +131,9 @@ final class ThorAbility extends TransientAbility {
     }
 
     private void gainCharge(AbilityPlayerContext context) {
+        if (charges >= 3) return;
         charges = Math.min(3, charges + 1);
-        feedback.passive(context, "망치 전하 " + charges + "/3");
+        feedback.progress(context, "망치 전하 " + charges + "/3");
     }
 
     @Override

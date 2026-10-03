@@ -14,7 +14,8 @@ public final class ChestLayoutTest {
             for (int logical = 0; logical < slots.length; logical++) {
                 int slot = slots[logical];
                 if (slot < 0) continue;
-                assertTrue(view + " slot " + slot, slot >= 9 && slot < 54);
+                assertTrue(view + " slot " + slot, (slot >= 9 && slot < 54)
+                    || (view == SettingsView.MAIN && logical == 4 && slot == 7));
                 assertNotEquals(49, slot);
                 assertNotEquals(53, slot);
                 assertNotEquals(45, slot);
@@ -32,6 +33,13 @@ public final class ChestLayoutTest {
         int slot = ChestLayout.settings(SettingsView.COMBAT)[22];
         assertEquals(22, ChestLayout.logicalSlot(SettingsView.COMBAT, slot));
         assertNotEquals(49, slot);
+    }
+
+    @Test
+    public void displayIncludesCompactCombatMessagesWithoutCollidingWithNavigation() {
+        int slot = ChestLayout.settings(SettingsView.DISPLAY)[22];
+        assertTrue(slot >= 9 && slot < 45);
+        assertEquals(22, ChestLayout.logicalSlot(SettingsView.DISPLAY, slot));
     }
 
     @Test
@@ -56,5 +64,15 @@ public final class ChestLayoutTest {
             assertEquals(logical, ChestLayout.logicalSlot(SettingsView.MAIN, slot));
         }
         assertTrue(ChestLayout.settings(SettingsView.MAIN)[23] >= 0);
+    }
+
+    @Test
+    public void homeCaptionsOpenTheSameCategoryAsTheirIcons() {
+        for (int logical = 10; logical <= 17; logical++) {
+            int icon = ChestLayout.settings(SettingsView.MAIN)[logical];
+            assertEquals(logical, ChestLayout.logicalSlot(SettingsView.MAIN, icon + 9));
+        }
+        assertEquals(-1, ChestLayout.logicalSlot(SettingsView.MAIN, 54));
+        assertEquals(-1, ChestLayout.logicalSlot(SettingsView.MAIN, 36));
     }
 }

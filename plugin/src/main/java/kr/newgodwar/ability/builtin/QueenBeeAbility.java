@@ -37,7 +37,7 @@ final class QueenBeeAbility extends TransientAbility {
         final Player target = targetPlayerInSight(context, player, 20, false);
         if (target == null || !useNormal(context, player)) return;
         swarming = true;
-        feedback.affected(context, target, "벌떼가 추적합니다 · 엄폐하거나 거리를 벌리세요", true);
+        feedback.affected(context, target, "벌떼가 추적합니다 · 엄폐하거나 거리를 벌리세요", true, true);
         final int[] phase = {0};
         swarmTask = scheduleRepeating(context, () -> {
             if (!validEnemy(context, target, 20) || !player.hasLineOfSight(target)) { stopSwarm(); return; }
@@ -58,7 +58,7 @@ final class QueenBeeAbility extends TransientAbility {
             if (!active(context) || !player.getWorld().equals(center.getWorld())) return;
             honeycomb(context, center);
             for (Player target : alliesInRange(context, center, 4)) {
-                restoreHealth(target, 1);
+                restoreHealth(context, target, 1);
                 target.setFoodLevel(Math.min(20, target.getFoodLevel() + 2));
             }
         }, i * 20L);

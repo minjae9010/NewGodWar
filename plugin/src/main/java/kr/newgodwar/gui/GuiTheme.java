@@ -15,6 +15,61 @@ import java.util.Arrays;
 
 final class GuiTheme {
     private GuiTheme() { }
+    static String title(Player player, NewGodWarPlugin plugin, String title, int size) {
+        return panelReady(player, plugin) ? GuiTitle.panel(title, size) : title;
+    }
+
+    static String gamblingTitle(Player player, NewGodWarPlugin plugin, int balance, int cost) {
+        return panelReady(player, plugin) ? GuiTitle.gambling(balance, cost)
+            : ChatColor.DARK_GRAY + "보상 뽑기 · " + cost + " 조약돌";
+    }
+
+    /** The canvas already contains these icons and labels; items serve only as click targets. */
+    static void painted(Player player, Inventory inventory, NewGodWarPlugin plugin, int... slots) {
+        if (!panelReady(player, plugin)) return;
+        for (int slot : slots) {
+            ItemStack item = inventory.getItem(slot);
+            if (item != null) inventory.setItem(slot, hideTooltip(icon(item, GuiIcon.FRAME)));
+        }
+    }
+
+    /** Keep help text accessible when its visible icon is already painted on the canvas. */
+    static void paintedInfo(Player player, Inventory inventory, NewGodWarPlugin plugin, int... slots) {
+        if (!panelReady(player, plugin)) return;
+        for (int slot : slots) {
+            ItemStack item = inventory.getItem(slot);
+            if (item != null) inventory.setItem(slot, icon(item, GuiIcon.FRAME));
+        }
+    }
+
+    /** Labelled category buttons do not need a second, floating copy of their names. */
+    static void captioned(Player player, Inventory inventory, NewGodWarPlugin plugin, int... slots) {
+        if (!panelReady(player, plugin)) return;
+        for (int slot : slots) {
+            ItemStack item = inventory.getItem(slot);
+            if (item != null) inventory.setItem(slot, hideTooltip(item));
+        }
+    }
+
+    private static ItemStack hideTooltip(ItemStack item) {
+        ItemMeta meta = item.getItemMeta();
+        if (meta != null) {
+            try {
+                ItemMeta.class.getMethod("setHideTooltip", boolean.class).invoke(meta, true);
+                item.setItemMeta(meta);
+            } catch (ReflectiveOperationException | LinkageError ignored) { }
+        }
+        return item;
+    }
+
+    private static boolean panelReady(Player player, NewGodWarPlugin plugin) {
+        String version = org.bukkit.Bukkit.getBukkitVersion();
+        // Older clients keep labeled vanilla inventories; negative space requires newer fonts.
+        return !version.startsWith("1.12.") && !version.startsWith("1.13.")
+            && !version.startsWith("1.14") && !version.startsWith("1.15")
+            && plugin.getConfig().getBoolean("ui.resource-pack.enabled", true)
+            && plugin.effectArtPack() != null && plugin.effectArtPack().ready(player);
+    }
     private static final java.util.Map<Inventory, java.util.Map<Integer, ItemStack[]>> LEGACY_ICONS =
         new java.util.WeakHashMap<Inventory, java.util.Map<Integer, ItemStack[]>>();
 
@@ -117,6 +172,11 @@ final class GuiTheme {
             if (slot < 9 || slot >= lastRow || slot % 9 == 0 || slot % 9 == 8) inventory.setItem(slot, border);
         }
         for (int slot : new int[] {0,8,lastRow,lastRow + 8}) inventory.setItem(slot, accent);
+        // A blank display name still creates a small black tooltip on modern clients.
+        for (int slot = 0; slot < inventory.getSize(); slot++) {
+            ItemStack item = inventory.getItem(slot);
+            if (item != null) inventory.setItem(slot, hideTooltip(item));
+        }
     }
 
     static ItemStack item(String modern, String legacy, short data, String title, String... lore) {

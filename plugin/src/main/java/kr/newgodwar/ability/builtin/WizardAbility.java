@@ -32,6 +32,8 @@ import java.util.List;
 )
 final class WizardAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.ARCANE)
+        .normal(EffectCue.WIND)
+        .advanced(EffectCue.FIRE)
         .hit(EffectCue.WIND)
         .effect(EffectCue.WIND, AbilityDesigns.WAND_GUST)
         .effect(EffectCue.FIRE, AbilityDesigns.WAND_GUST)
@@ -44,7 +46,7 @@ final class WizardAbility extends BaseAbility {
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
         List<Player> targets = nearbyPlayers(context, player, 10, false);
         if (targets.isEmpty()) {
-            player.sendMessage("능력을 사용할 수 있는 대상이 없습니다.");
+            sendAbilityMessage(context, player, "failure", "능력을 사용할 수 있는 대상이 없습니다.");
             return;
         }
         if (useNormal(context, player)) {
@@ -55,7 +57,7 @@ final class WizardAbility extends BaseAbility {
     @Override
     protected void onStaffRight(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
         if (nearbyPlayers(context, player, 5, false).isEmpty()) {
-            player.sendMessage("능력을 사용할 수 있는 대상이 없습니다.");
+            sendAbilityMessage(context, player, "failure", "능력을 사용할 수 있는 대상이 없습니다.");
             return;
         }
         if (useAdvanced(context, player)) {
@@ -66,7 +68,7 @@ final class WizardAbility extends BaseAbility {
     private void judgment(AbilityPlayerContext context, final Player player) {
         final List<Player> targets = nearbyPlayers(context, player, 5, false);
         if (targets.isEmpty()) {
-            player.sendMessage("능력을 사용할 수 있는 대상이 없습니다.");
+            sendAbilityMessage(context, player, "failure", "능력을 사용할 수 있는 대상이 없습니다.");
             return;
         }
         player.setHealth(Math.max(1.0D, player.getHealth() / 2.0D));
@@ -78,7 +80,7 @@ final class WizardAbility extends BaseAbility {
             for (Player target : targets) {
                 if (!player.getWorld().equals(target.getWorld()) || !canAffectEnemy(context, player, target)) continue;
                 strikeLightning(context, player, target.getLocation());
-                target.setFireTicks(100);
+                ignite(context, target, 100);
             }
         }, 4L);
     }

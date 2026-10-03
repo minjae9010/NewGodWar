@@ -29,6 +29,8 @@ import java.util.List;
 )
 final class SejongAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.RUNE)
+        .normal(EffectCue.HEAL)
+        .advanced(EffectCue.SEAL)
         .hit(EffectCue.SEAL)
         .benefit(EffectCue.HEAL)
         .effect(EffectCue.SEAL, AbilityDesigns.ROYAL_DECREE)
@@ -69,7 +71,8 @@ final class SejongAbility extends BaseAbility {
             return;
         }
         if (context.plugin().abilities().session(target) != null) {
-            context.plugin().abilities().suppressAbility(target, 10);
+            if (context.plugin().abilities().suppressAbility(target, 10))
+                feedback.cue(context, target, EffectCue.SEAL);
         }
         effect(context, target, PotionEffectType.BLINDNESS, 8, 0);
         effect(context, target, PotionEffectType.WEAKNESS, 12, 0);
@@ -81,7 +84,7 @@ final class SejongAbility extends BaseAbility {
     public void onDamageByEntity(AbilityPlayerContext context, EntityDamageByEntityEvent event, Player opponent, boolean attacker) {
         if (attacker && holding(context.player(), Material.BOOK)) {
             event.setDamage(event.getDamage() * 1.35D);
-            feedback.cue(context, opponent, kr.newgodwar.ability.feedback.EffectCue.HIT);
+            confirmedDamageImpact(context, event, opponent, kr.newgodwar.ability.feedback.EffectCue.HIT);
         }
     }
 }

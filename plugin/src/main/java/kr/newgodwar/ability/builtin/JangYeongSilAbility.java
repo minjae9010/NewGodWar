@@ -28,7 +28,7 @@ import java.util.List;
 )
 final class JangYeongSilAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.CRAFT)
-        // Each part shows its count; the advanced device outranks the allies' buff marks on the caster.
+        // Assembly and the advanced device use source scenes; allies receive separate buff marks.
         .advanced(EffectCue.CLEANSE)
         .hit(EffectCue.HIT)
         .benefit(EffectCue.GUARD)
@@ -36,10 +36,9 @@ final class JangYeongSilAbility extends BaseAbility {
         .effect(EffectCue.ARCANE, AbilityDesigns.PART_TWO)
         .effect(EffectCue.CHARGE, AbilityDesigns.PICKAXE_CRAFT)
         .effect(EffectCue.CLEANSE, AbilityDesigns.DEVICE_FIELD)
-        .effect(EffectCue.GUARD, AbilityDesigns.GEAR_MARK)
-        .effect(EffectCue.WIND, AbilityDesigns.GEAR_MARK)
+        .received(EffectCue.GUARD, AbilityDesigns.GEAR_MARK)
+        .received(EffectCue.WIND, AbilityDesigns.GEAR_MARK)
         .effect(EffectCue.HIT, AbilityDesigns.PICKAXE_STRIKE)
-        .effect(EffectCue.SLOW, AbilityDesigns.PICKAXE_STRIKE)
         .build();
 
     @Override
@@ -56,7 +55,7 @@ final class JangYeongSilAbility extends BaseAbility {
         }
         pickaxeParts++;
         effect(context, player, "HASTE", "FAST_DIGGING", 12, 1);
-        feedback.cue(context, player, pickaxeParts >= PICKAXE_PARTS_REQUIRED ? EffectCue.CHARGE
+        feedback.castCue(context, player, pickaxeParts >= PICKAXE_PARTS_REQUIRED ? EffectCue.CHARGE
             : pickaxeParts == 1 ? EffectCue.FORGE : EffectCue.ARCANE);
         if (pickaxeParts >= PICKAXE_PARTS_REQUIRED) {
             pickaxeParts = 0;
@@ -87,7 +86,7 @@ final class JangYeongSilAbility extends BaseAbility {
     public void onDamageByEntity(AbilityPlayerContext context, org.bukkit.event.entity.EntityDamageByEntityEvent event, Player opponent, boolean attacker) {
         if (attacker && isPickaxe(context.player().getItemInHand().getType()) && oneIn(4)) {
             event.setDamage(event.getDamage() + 2.0D);
-            feedback.cue(context, opponent, EffectCue.HIT);
+            confirmedAttack(context, event, opponent);
             effect(context, opponent, "SLOWNESS", "SLOW", 6, 0);
         }
     }

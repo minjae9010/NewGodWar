@@ -18,7 +18,7 @@ public final class AbilityDesigns {
     public static final DesignedEffect MEDICINE = serpent("치유 지팡이를 타고 오르는 금빛 뱀", GOLD, true);
     public static final DesignedEffect WIND_HEAL = feather("순풍의 세 깃털이 위로 피어남", WHITE, 3);
     public static final DesignedEffect GALE = stream("진행 방향으로 휘어지는 세 바람 날", WHITE, 3, false);
-    public static final DesignedEffect BULLET = impact("탄두 뒤로 벌어지는 세 탄착 파편", "IRON_BLOCK", 3, false);
+    public static final DesignedEffect BULLET = impact("발사 위치에서 짧게 번지는 총구 섬광", "IRON_BLOCK", 3, false);
     public static final DesignedEffect CHAMBER = gear("장전되며 맞물리는 탄창 톱니", "IRON_BLOCK", 6);
     public static final DesignedEffect AKASHIC_BOOK = book("펼쳐지는 기록서와 상승하는 책갈피", "ENCHANTED_BOOK", "PURPLE_CONCRETE", false);
     public static final DesignedEffect AKASHIC_CURSE = book("기록서의 세 글자가 바깥으로 흩어짐", "ENCHANTED_BOOK", "PURPLE_CONCRETE", true);
@@ -61,6 +61,11 @@ public final class AbilityDesigns {
     public static final DesignedEffect ROCKET = rocket();
     public static final DesignedEffect STOCK_SPLIT = coins("두 갈래로 나뉘어 복제되는 금화", 4);
     public static final DesignedEffect NATURE_LEAVES = sprout("손에서 자라나 펼쳐지는 네 잎", "GREEN_CONCRETE", false);
+    public static final DesignedEffect ONE_PUNCH_READY = readyFists("양손에 모이는 원펀치 준비의 빛", WHITE);
+    public static final DesignedEffect GREEN_READY = readyFists("손에만 차오르는 원 포 올 준비 전하", "LIME_CONCRETE");
+    public static final DesignedEffect STATUS_HASTE = readyFists("손목에서 빠르게 도는 성급함 톱니", GOLD);
+    public static final DesignedEffect STATUS_WEAKNESS = impact("몸 주변에서 힘없이 내려가는 약화 조각", "GRAY_CONCRETE", 4, false);
+    public static final DesignedEffect NATURE_RECOIL = flower("몸 주변에서 시들며 떨어지는 식물 반동의 잎", "GREEN_CONCRETE", 4, false);
     public static final DesignedEffect ONE_PUNCH = fist("단일 주먹을 따라 터지는 흰 충격 쐐기", WHITE, false);
     public static final DesignedEffect UNDERWORLD_ROOTS = roots("어두운 덩굴 끝에 피는 붉은 석류", true);
     public static final DesignedEffect POMEGRANATE = flower("검붉은 석류 조각이 열리는 치유", "RED_CONCRETE", 5, false);
@@ -142,7 +147,7 @@ public final class AbilityDesigns {
     public static final DesignedEffect STATUS_SUN = sun("하늘로 떠오르는 해", 8, false);
     public static final DesignedEffect STATUS_MOON = moons("하늘로 떠오르는 달", 2);
     public static final DesignedEffect STATUS_ITEM = coins("손에서 빛나며 생겨나는 물건", 3);
-    public static final DesignedEffect STATUS_REPAIR = forge("모루 위에서 장비를 두드려 고침", false);
+    public static final DesignedEffect STATUS_REPAIR = forge("수리된 장비 곁에서 반짝이는 작은 손 불빛", false);
     public static final DesignedEffect STATUS_CLEANSE = cross();
     public static final DesignedEffect STATUS_HIT = impact("타격 지점에서 튀는 파편", "IRON_BLOCK", 3, false);
     public static final DesignedEffect STATUS_STEALTH = veil("몸을 감싸며 사라지는 연기", DARK, 5);
@@ -154,10 +159,10 @@ public final class AbilityDesigns {
     public static final DesignedEffect STATUS_MUSIC = record();
     public static final DesignedEffect STATUS_SLEEP = dream();
     public static final DesignedEffect STATUS_BLOOM = sprout("발밑에서 돋는 새싹", "LIME_CONCRETE", false);
-    public static final DesignedEffect STATUS_ARCANE = book("손끝에서 펼쳐지는 주문서", "BOOK", "LIGHT_BLUE_CONCRETE", false);
+    public static final DesignedEffect STATUS_ARCANE = impact("주문을 받은 부위에서 흩어지는 빛 조각", "LIGHT_BLUE_CONCRETE", 5, false);
     public static final DesignedEffect STATUS_HUNGER = feast();
     public static final DesignedEffect STATUS_PORTAL = gate("몸을 감싸는 이동 관문", "CYAN_CONCRETE", false);
-    public static final DesignedEffect STATUS_SLASH = blades("한 번 그어지는 검격", "IRON_BLOCK", 1);
+    public static final DesignedEffect STATUS_SLASH = impact("맞은 부위에 남는 짧은 검흔과 파편", "IRON_BLOCK", 3, false);
 
     private static final java.util.Map<kr.newgodwar.ability.feedback.EffectCue, DesignedEffect> STATUS = statusTable();
     private static java.util.Map<kr.newgodwar.ability.feedback.EffectCue, DesignedEffect> statusTable() {
@@ -168,7 +173,8 @@ public final class AbilityDesigns {
             {"FORGE", STATUS_REPAIR}, {"CLEANSE", STATUS_CLEANSE}, {"HIT", STATUS_HIT}, {"STEALTH", STATUS_STEALTH},
             {"SEAL", STATUS_SEAL}, {"ROOT", STATUS_ROOT}, {"FIRE", STATUS_FIRE}, {"FROST", STATUS_FROST}, {"WATER", STATUS_WATER},
             {"MUSIC", STATUS_MUSIC}, {"SLEEP", STATUS_SLEEP}, {"BLOOM", STATUS_BLOOM}, {"ARCANE", STATUS_ARCANE},
-            {"HUNGER", STATUS_HUNGER}, {"PORTAL", STATUS_PORTAL}, {"SLASH", STATUS_SLASH}};
+            {"HUNGER", STATUS_HUNGER}, {"PORTAL", STATUS_PORTAL}, {"SLASH", STATUS_SLASH},
+            {"HASTE", STATUS_HASTE}, {"WEAKNESS", STATUS_WEAKNESS}};
         for (Object[] pair : pairs) map.put(kr.newgodwar.ability.feedback.EffectCue.valueOf((String) pair[0]), (DesignedEffect) pair[1]);
         return java.util.Collections.unmodifiableMap(map);
     }
@@ -333,6 +339,16 @@ public final class AbilityDesigns {
                 box(o,m,x,y,-0.4,0.16,0.55,0.05,-x*0.6,0);
             } return o; });
     }
+    private static DesignedEffect readyFists(String name, String material) {
+        return effect(name,(t,d)->{ List<ObjectModel.Part> o=parts();
+            for(int side:new int[]{-1,1}) {
+                double pulse=.10+.025*Math.sin(t*.7);
+                box(o,material,side*.4,.95,.22,pulse,pulse,pulse,0,0);
+            }
+            return o;
+        });
+    }
+
     private static DesignedEffect impact(String name,String m,int n,boolean crystal) {
         return effect(name,(t,d)->{ List<ObjectModel.Part> o=parts();
             for(int i=0;i<n;i++) { double a=i*Math.PI*2/n, r=0.18+t*0.025;
@@ -380,7 +396,8 @@ public final class AbilityDesigns {
             box(o,"IRON_BLOCK",0.4,0.85,0.6,0.58,0.12,0.3,0,0);
             box(o,"IRON_BLOCK",0.4,0.71,0.6,0.2,0.2,0.22,0,0);
             box(o,"IRON_BLOCK",0.4,0.59,0.6,0.46,0.06,0.3,0,0);
-            double y=1.03+Math.abs(Math.cos(t*0.25))*0.5;
+            double lift=t<7?Math.abs(Math.sin(Math.PI*(t-1)/3)):0;
+            double y=1.03+lift*0.5;
             box(o,quench?"ORANGE_CONCRETE":"IRON_BLOCK",0.4,y,0.6,0.25,0.18,0.2,0,0);
             line(o,"DARK_OAK_PLANKS",0.5,y,0.85,y+0.3,0.6,0.05);
             for(int i=0;i<4;i++) cube(o,quench?WHITE:GOLD,0.4+(i-1.5)*0.2,1+(t%8)*0.025,0.6,0.045); return o; });
@@ -533,7 +550,7 @@ public final class AbilityDesigns {
             for(int i=0;i<3;i++) item(o,food[i],0.05+i*0.3,1.12+Math.sin(t*0.18+i)*0.08,0.65,0.24,0); return o; });
     }
     private static DesignedEffect scope() {
-        return effect("안으로 조여지는 네 조준 쇠와 중앙 탄흔",(t,d)->{ List<ObjectModel.Part> o=parts(); double r=0.25+Math.max(0,10-t)*0.018;
+        return effect("준비 완료를 알리는 네 조준 쇠와 중앙 조준점",(t,d)->{ List<ObjectModel.Part> o=parts(); double r=0.25+Math.max(0,10-t)*0.018;
             for(int i=0;i<4;i++) { double a=i*Math.PI/2;
                 line(o,"IRON_BLOCK",Math.cos(a)*r,1.3+Math.sin(a)*r,Math.cos(a)*(r+0.2),1.3+Math.sin(a)*(r+0.2),0.65,0.04); }
             cube(o,"RED_CONCRETE",0,1.3,0.65,0.06); return o; });

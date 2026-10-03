@@ -120,8 +120,11 @@ abilities:
     animations: true
     sounds: true
     action-bar: true
-    titles: true
   messages:
+    # 기본: 실패·재사용·충전/모드·중요 버프·효과 시작/종료는 짧게 표시합니다.
+    # 반복 발동/패시브/초 단위 카운트다운은 생략합니다. false면 상세 안내를 표시합니다.
+    # 능력 발동 타이틀은 사용하지 않습니다.
+    compact: true
     enabled: true
     success: true
     failure: true

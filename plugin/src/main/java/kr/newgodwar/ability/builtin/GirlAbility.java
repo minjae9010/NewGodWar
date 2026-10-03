@@ -32,8 +32,8 @@ import java.util.List;
 final class GirlAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.HEALING)
         .hit(EffectCue.SLOW)
-        .effect(EffectCue.SLOW, AbilityDesigns.HEART_BIND)
-        .effect(EffectCue.ROOT, AbilityDesigns.HEART_BIND)
+        .received(EffectCue.SLOW, AbilityDesigns.HEART_BIND)
+        .received(EffectCue.ROOT, AbilityDesigns.HEART_BIND)
         .build();
 
     @Override

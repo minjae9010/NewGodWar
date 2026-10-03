@@ -24,12 +24,18 @@ import java.util.function.Supplier;
 /** Cosmetic feedback owned by one ability session; never changes combat state. */
 public final class AbilityFeedback {
     private static final double VIEW_DISTANCE_SQUARED = 32.0D * 32.0D;
+    // Shared across casters so area combat cannot flood a recipient's action bar.
+    private static final Map<Player, Long> TARGET_NOTICES = new java.util.WeakHashMap<Player, Long>();
     private final Map<String, Long> notices = new LinkedHashMap<String, Long>();
-    private final Map<UUID, Reaction> reactions = new LinkedHashMap<UUID, Reaction>();
+    private final Map<String, Reaction> reactions = new LinkedHashMap<String, Reaction>();
     private int reactionTask = -1;
     private final Map<String, DesignedScene> designedScenes = new LinkedHashMap<String, DesignedScene>();
     private int designTask = -1;
     private final ObjectEffects objects = new ObjectEffects();
+    private final List<Integer> soundTasks = new ArrayList<Integer>();
+    private long castSoundAt;
+    private boolean flightAudible;
+    private long flightStarted;
     private final AbilityVisuals visualPolicy;
 
     public AbilityFeedback() { this(new AbilityVisuals() { }); }
@@ -60,6 +66,8 @@ public final class AbilityFeedback {
     }
 
     public void clear() {
+        for (Integer task : soundTasks) Bukkit.getScheduler().cancelTask(task);
+        soundTasks.clear(); castSoundAt = 0; flightAudible = false; flightStarted = 0;
         notices.clear(); reactions.clear(); objects.clear();
         designedScenes.clear();
         if (designTask >= 0) Bukkit.getScheduler().cancelTask(designTask);
@@ -89,29 +97,41 @@ public final class AbilityFeedback {
     }
 
     public void activated(AbilityPlayerContext context, Player player, boolean advanced) {
+        castSoundAt = System.nanoTime();
+        playVoice(context, player.getLocation(), effectViewers(context, player.getLocation()), AbilitySounds.cast(style(), advanced));
         AbilityTheme theme = style().theme();
         String label = label(context.ability(), advanced);
-        String summary = summary(context.ability(), advanced);
-        chat(context, player, "success", theme.color() + "✦ " + label + ChatColor.WHITE + " 사용!");
-        actionBar(context, player, theme.color() + "✦ " + label + " 발동 " + ChatColor.WHITE + shorten(summary));
-        if (advanced && enabled(context, "titles")) {
-            context.plugin().nms().sendTitle(player, theme.color() + context.ability().name(),
-                ChatColor.GOLD + "고급 능력 발동", 2, 18, 8);
+        if (!compact(context)) {
+            chat(context, player, "success", theme.color() + "✦ " + label + ChatColor.WHITE + " 사용!");
+            actionBar(context, player, theme.color() + "✦ " + label + " 발동");
         }
-        cue(context, player, style().cast(advanced));
+        queueCue(context, player, style().cast(advanced), false, null);
     }
 
     /** Merge all reactions produced by one skill invocation, then render just the main action. */
     public void cue(AbilityPlayerContext context, Player target, EffectCue cue) {
-        if (cue == EffectCue.NONE || target == null || !target.isOnline() || !visuals(context)) return;
-        UUID id = target.getUniqueId();
+        queueCue(context,target,cue,true,null);
+    }
+
+    /** Authored action at its source, separate from an effect received by a target. */
+    public void castCue(AbilityPlayerContext context, Player source, EffectCue cue) {
+        queueCue(context, source, cue, false, null);
+    }
+
+    private void queueCue(AbilityPlayerContext context, Player target, EffectCue cue, boolean received, Location source) {
+        if (cue == EffectCue.NONE || target == null || !target.isOnline()
+                || (!visuals(context) && !enabled(context, "sounds"))) return;
+        String id = (received ? "received:" : "source:") + target.getUniqueId();
         Reaction pending = reactions.get(id);
         if (pending != null) {
-            if (cue.priority() > pending.cue.priority()) pending.cue = cue;
+            if (cue.priority() > pending.cue.priority()) {
+                pending.cue = cue; pending.received = received;
+                pending.source = source == null ? context.player().getLocation() : source.clone();
+            }
             return;
         }
-        if (reactions.size() >= 64 || !allow("reaction:" + id, 700L)) return;
-        reactions.put(id, new Reaction(context, target, cue));
+        if (reactions.size() >= 64 || !allow("reaction:" + id, 200L)) return;
+        reactions.put(id, new Reaction(context, target, cue, received, source));
         if (reactionTask >= 0) return;
         reactionTask = Bukkit.getScheduler().scheduleSyncDelayedTask(context.plugin(), () -> {
             reactionTask = -1;
@@ -121,7 +141,11 @@ public final class AbilityFeedback {
                 if (!owner.isOnline() || owner.isDead() || !recipient.isOnline() || recipient.isDead()
                     || !reaction.world.equals(recipient.getWorld()) || !reaction.ownerWorld.equals(owner.getWorld())) continue;
                 Location center = recipient.getLocation();
-                drawCue(reaction.context, center, reaction.cue, targetViewers(reaction.context, recipient, center), recipient, true);
+                if(reaction.received && center.getWorld().equals(reaction.source.getWorld())) {
+                    org.bukkit.util.Vector incoming=reaction.source.toVector().subtract(center.toVector()).setY(0);
+                    if(incoming.lengthSquared()>.001) center.setDirection(incoming);
+                }
+                drawCue(reaction.context, center, reaction.cue, targetViewers(reaction.context, recipient, center), recipient, true, reaction.received);
             }
         }, 1L);
     }
@@ -131,8 +155,11 @@ public final class AbilityFeedback {
         final Player target;
         final org.bukkit.World world, ownerWorld;
         EffectCue cue;
-        Reaction(AbilityPlayerContext context, Player target, EffectCue cue) {
+        boolean received;
+        Location source;
+        Reaction(AbilityPlayerContext context, Player target, EffectCue cue, boolean received, Location source) {
             this.context = context; this.target = target; this.cue = cue;
+            this.received=received;this.source=source==null?context.player().getLocation():source.clone();
             world = target.getWorld(); ownerWorld = context.player().getWorld();
         }
     }
@@ -144,14 +171,20 @@ public final class AbilityFeedback {
     public boolean visuals(AbilityPlayerContext context) { return enabled(context, "particles") || objects.enabled(context); }
 
     public void drawCue(AbilityPlayerContext context, Location center, EffectCue cue, List<Player> audience, Player subject, boolean useObjects) {
-        if (center == null || center.getWorld() == null || !visuals(context)) return;
-        DesignedEffect design = style().effect(cue);
+        drawCue(context,center,cue,audience,subject,useObjects,false);
+    }
+
+    private void drawCue(AbilityPlayerContext context, Location center, EffectCue cue, List<Player> audience,
+                         Player subject, boolean useObjects, boolean received) {
+        if (center == null || center.getWorld() == null || cue == EffectCue.NONE) return;
+        DesignedEffect design = received ? style().receivedEffect(cue) : style().effect(cue);
+        cueSound(context, center, cue, audience, subject, design);
+        if (!visuals(context)) return;
         // An undecorated reaction still gets its shared animated design; shields and wings keep their shared models.
         if (design == null && cue != EffectCue.GUARD && cue != EffectCue.WINGS)
             design = kr.newgodwar.ability.builtin.AbilityDesigns.status(cue);
         if (design != null) {
-            designed(context, center, cue, design, audience, subject, useObjects);
-            cueSound(context, center, cue, audience);
+            designed(context, center, cue, design, audience, subject, useObjects, received);
             return;
         }
         ObjectModel model = cue == EffectCue.GUARD ? SharedModels.SHIELD : cue == EffectCue.WINGS
@@ -160,7 +193,13 @@ public final class AbilityFeedback {
             String key = "cue:" + cue + ":" + (subject == null ? positionKey(center) : subject.getUniqueId());
             Location fixed = upright(center);
             if (useObjects && objects.show(key, context, model,
-                () -> subject == null ? fixed.clone() : subject.isOnline() && !subject.isDead() ? upright(subject.getLocation()) : null,
+                () -> {
+                    if (subject == null) return fixed.clone();
+                    if (!subject.isOnline() || subject.isDead()) return null;
+                    Location anchor = upright(subject.getLocation());
+                    if (received) anchor.setYaw(fixed.getYaw());
+                    return anchor;
+                },
                 () -> subject == null ? effectViewers(context, fixed) : targetViewers(context, subject, subject.getLocation()),
                 cue == EffectCue.GUARD || style().flightModel() != null ? 22 : 16, 1)) return;
             modelOutline(context, fixed, model, 0, 1, audience);
@@ -182,22 +221,63 @@ public final class AbilityFeedback {
                 particle(context, point, kind, audience, 1, 0);
             }
         });
-        cueSound(context, center, cue, audience);
     }
 
-    private void cueSound(AbilityPlayerContext context, Location center, EffectCue cue, List<Player> audience) {
-        if (cue == EffectCue.FORGE || cue == EffectCue.ITEM)
-            sound(context, center, audience, cue == EffectCue.FORGE ? AbilityTheme.CRAFT.sound()
-                : AbilityTheme.sound("ENTITY_EXPERIENCE_ORB_PICKUP"), 0.25F, 1.5F);
+    private void cueSound(AbilityPlayerContext context, Location center, EffectCue cue, List<Player> audience, Player subject, DesignedEffect design) {
+        if (!enabled(context, "sounds")) return;
+        if (AbilitySounds.forge(design) || (design == null && cue == EffectCue.FORGE)) {
+            if (!allow("audio:forge:" + (subject == null ? positionKey(center) : subject.getUniqueId()), 900L)) return;
+            for (int beat : new int[] {1,4,7}) scheduleVoice(context, center, audience, subject,
+                AbilitySounds.reaction(style(), EffectCue.FORGE), beat);
+            return;
+        }
+        // The caster already heard the cast acknowledgement. Its coalesced body reaction is not a second hit.
+        if (context.player().equals(subject) && System.nanoTime() - castSoundAt < 150000000L) return;
+        // An area spell may apply the same reaction to many recipients in one server tick.
+        // Coalesce per listener, so every recipient still hears it even when the caster heard another target.
+        List<Player> audible=new ArrayList<Player>();
+        for(Player viewer:audience) if(near(viewer,center)&&allow("audio:"+cue+":"+viewer.getUniqueId(),100L)) audible.add(viewer);
+        playVoice(context, center, audible, AbilitySounds.reaction(style(), cue));
+    }
+
+    private void playVoice(AbilityPlayerContext context, Location at, List<Player> audience, AbilitySounds.Voice voice) {
+        if (voice != null) sound(context, at, audience, voice.sound, voice.volume, voice.pitch);
+    }
+
+    private void scheduleVoice(AbilityPlayerContext context, Location origin, List<Player> allowed, Player subject,
+                               AbilitySounds.Voice voice, int delay) {
+        if (soundTasks.size() >= 24) return;
+        final Location fixed=origin.clone();
+        final org.bukkit.World ownerWorld=context.player().getWorld();
+        final List<Player> permitted=new ArrayList<Player>(allowed);
+        final int[] handle={-1};
+        handle[0]=Bukkit.getScheduler().scheduleSyncDelayedTask(context.plugin(),()->{
+            soundTasks.remove(Integer.valueOf(handle[0]));
+            Player owner=context.player();
+            if(!owner.isOnline()||owner.isDead()||!ownerWorld.equals(owner.getWorld()))return;
+            if(subject!=null&&(!subject.isOnline()||subject.isDead()||!fixed.getWorld().equals(subject.getWorld())))return;
+            Location at=subject==null?fixed:subject.getLocation();
+            List<Player> fresh=new ArrayList<Player>(subject==null?effectViewers(context,at):targetViewers(context,subject,at));
+            fresh.retainAll(permitted);
+            playVoice(context,at,fresh,voice);
+        },delay);
+        soundTasks.add(handle[0]);
+    }
+
+    /** Called by actual gameplay expiration, not by a cosmetic scene disappearing. */
+    public void finished(AbilityPlayerContext context) {
+        Player owner=context.player();
+        if(owner.isOnline()&&!owner.isDead()) playVoice(context,owner.getLocation(),
+            effectViewers(context,owner.getLocation()),AbilitySounds.finish(style()));
     }
 
     /** Every frame revalidates ownership, target visibility and world before showing anything. */
     private void designed(AbilityPlayerContext context, Location center, EffectCue cue, DesignedEffect effect,
-                          List<Player> audience, Player subject, boolean useObjects) {
-        String key = "design:" + cue + ":" + (subject == null ? positionKey(center) : subject.getUniqueId());
+                          List<Player> audience, Player subject, boolean useObjects, boolean received) {
+        String key = "design:" + (received ? "received:" : "cast:") + cue + ":" + (subject == null ? positionKey(center) : subject.getUniqueId());
         if (designedScenes.containsKey(key) || designedScenes.size() >= 8) return;
         boolean animate = enabled(context, "animations");
-        DesignedScene scene = new DesignedScene(context, center, subject, audience, effect.model(animate), useObjects, animate);
+        DesignedScene scene = new DesignedScene(context, center, subject, audience, effect.model(animate), useObjects, animate, received);
         if (!renderDesign(key, scene)) return;
         // Static mode retains the readable pose; ObjectEffects owns its expiration.
         if (!animate) return;
@@ -241,19 +321,23 @@ public final class AbilityFeedback {
         final List<Player> permitted;
         final ObjectModel model;
         final boolean animate;
+        final boolean received;
         boolean particlesOnly;
         int age;
         DesignedScene(AbilityPlayerContext context, Location origin, Player subject, List<Player> permitted,
-                      ObjectModel model, boolean useObjects, boolean animate) {
+                      ObjectModel model, boolean useObjects, boolean animate, boolean received) {
             this.context = context; this.origin = origin.clone(); this.subject = subject;
             this.ownerWorld = context.player().getWorld(); this.permitted = new ArrayList<Player>(permitted);
             this.model = model; this.particlesOnly = !useObjects; this.animate = animate;
+            this.received=received;
         }
         Location anchor() {
             Player owner = context.player();
             if (!owner.isOnline() || owner.isDead() || !ownerWorld.equals(owner.getWorld())) return null;
             if (subject != null && (!subject.isOnline() || subject.isDead() || !origin.getWorld().equals(subject.getWorld()))) return null;
-            return upright(subject == null ? origin : subject.getLocation());
+            Location at=upright(subject == null ? origin : subject.getLocation());
+            if(received)at.setYaw(origin.getYaw());
+            return at;
         }
         List<Player> audience(AbilityFeedback feedback) {
             Location at = anchor();
@@ -271,6 +355,14 @@ public final class AbilityFeedback {
 
     public void impact(AbilityPlayerContext context, Player target) {
         cue(context, target, style().hit());
+    }
+
+    public void receivedCue(AbilityPlayerContext context, Player target, EffectCue cue, Location source) {
+        queueCue(context, target, cue, true, source);
+    }
+
+    public void impact(AbilityPlayerContext context, Player target, Location source) {
+        queueCue(context,target,style().hit(),true,source);
     }
 
     public void departure(AbilityPlayerContext context, Location origin) {
@@ -291,10 +383,25 @@ public final class AbilityFeedback {
     public void flight(AbilityPlayerContext context) {
         Player player = context.player();
         ObjectModel model = style().flightModel();
-        if (model == null || !player.isFlying()) return;
-        objects.show("cue:WINGS:" + player.getUniqueId(), context, model,
+        if (model == null) return;
+        if (!player.isFlying()) {
+            objects.remove("cue:WINGS:" + player.getUniqueId());
+            if (flightAudible) finished(context);
+            flightAudible = false;
+            flightStarted = 0;
+            return;
+        }
+        if (flightStarted == 0) flightStarted = System.nanoTime();
+        flightAudible = true;
+        if (allow("audio:wing-loop", 1100L))
+            sound(context, player.getLocation(), targetViewers(context, player, player.getLocation()),
+                AbilityTheme.WIND.sound(), .16F, style().theme() == AbilityTheme.FIRE ? .85F : 1.25F);
+        boolean rendered = objects.show("cue:WINGS:" + player.getUniqueId(), context, model,
             () -> player.isOnline() && !player.isDead() && player.isFlying() ? upright(player.getLocation()) : null,
             () -> targetViewers(context, player, player.getLocation()), 22, 1);
+        if (!rendered && allow("flight-outline", 100L)) modelOutline(context, upright(player.getLocation()), model,
+            enabled(context,"animations") ? (System.nanoTime()-flightStarted)/50000000.0 : 8, 1,
+            targetViewers(context,player,player.getLocation()),64);
     }
 
     public void trail(AbilityPlayerContext context, Location center) {
@@ -313,9 +420,8 @@ public final class AbilityFeedback {
     }
 
     public void ready(AbilityPlayerContext context, boolean advanced) {
-        String message = ChatColor.GREEN + "✓ " + label(context.ability(), advanced) + " 다시 사용 가능";
-        chat(context, context.player(), "timer", message);
-        actionBar(context, context.player(), message);
+        String message = ChatColor.GREEN + "✓ " + (advanced ? "고급" : "일반") + " 능력 준비됨";
+        important(context, context.player(), message);
         sound(context, context.player().getLocation(), Collections.singletonList(context.player()),
             AbilityTheme.sound("ENTITY_EXPERIENCE_ORB_PICKUP"), 0.45F, advanced ? 1.6F : 1.3F);
     }
@@ -323,23 +429,61 @@ public final class AbilityFeedback {
     public void timer(AbilityPlayerContext context, String text) {
         if (!allow("timer:" + text, 750L)) return;
         String message = style().theme().color() + "[" + context.ability().name() + "] " + text;
-        chat(context, context.player(), "timer", message);
-        actionBar(context, context.player(), message);
+        important(context, context.player(), message);
     }
 
     public void affected(AbilityPlayerContext context, Player target, String effect, boolean harmful) {
+        notice(context, target, effect, harmful);
+        cue(context, target, harmful ? style().hit() : style().benefit());
+    }
+
+    /** Tactical instructions and buff results must survive compact mode and incidental hit notices. */
+    public void affected(AbilityPlayerContext context, Player target, String effect, boolean harmful, boolean important) {
+        notice(context, target, effect, harmful, important);
+        cue(context, target, harmful ? style().hit() : style().benefit());
+    }
+
+    /** A notification alone is never evidence that damage or a status was applied. */
+    public void notice(AbilityPlayerContext context, Player target, String effect, boolean harmful) {
+        notice(context, target, effect, harmful, false);
+    }
+
+    public void notice(AbilityPlayerContext context, Player target, String effect, boolean harmful, boolean important) {
+        if (important) {
+            if (target != null && allow("important:" + target.getUniqueId() + ":" + effect, 1500L))
+                important(context, target, (harmful ? ChatColor.RED : ChatColor.GREEN) + effect);
+            return;
+        }
         if (target == null || !target.isOnline() || !allow("target:" + target.getUniqueId(), 900L)) return;
         String message = (harmful ? ChatColor.RED : ChatColor.GREEN) + "[" + context.ability().name() + "] " + effect;
-        actionBar(context, target, message);
-        AbilityStyle style = style();
-        cue(context, target, harmful ? style.hit() : style.benefit());
+        if (!compact(context)) {
+            actionBar(context, target, message);
+        } else if (harmful) {
+            long now = System.nanoTime();
+            Long last = TARGET_NOTICES.get(target);
+            if (last == null || now - last >= 2000000000L) actionBar(context, target, message);
+        }
     }
 
     public void passive(AbilityPlayerContext context, String text) {
         if (!allow("passive", 1500L)) return;
-        actionBar(context, context.player(), style().theme().color()
+        if (!compact(context)) actionBar(context, context.player(), style().theme().color()
             + "◆ " + context.ability().name() + " · " + text);
-        cue(context, context.player(), style().passive());
+        queueCue(context, context.player(), style().passive(), false, null);
+    }
+
+    /** Stack counts, selected modes and charge readiness are gameplay state, not passive decoration. */
+    public void progress(AbilityPlayerContext context, String text) {
+        important(context, context.player(), style().theme().color() + text);
+        if (allow("passive", 1500L)) queueCue(context, context.player(), style().passive(), false, null);
+    }
+
+    private void important(AbilityPlayerContext context, Player target, String message) {
+        if (!target.isOnline() || target.isDead()) return;
+        boolean shown = actionBar(context, target, message);
+        if ((!shown || !compact(context))
+            && context.plugin().getConfig().getBoolean("abilities.messages.enabled", true)
+            && context.plugin().getConfig().getBoolean("abilities.messages.timer", true)) target.sendMessage(message);
     }
 
     public void pulse(AbilityPlayerContext context, Location center, double radius) {
@@ -484,6 +628,8 @@ public final class AbilityFeedback {
                 double u = edge == 0 ? -0.5 + t : edge == 1 ? 0.5 : edge == 2 ? 0.5 - t : -0.5;
                 double v = edge == 0 ? -0.5 : edge == 1 ? -0.5 + t : edge == 2 ? 0.5 : 0.5 - t;
                 double x = u * part.sx, y = top ? part.sy / 2 : v * part.sy, z = top ? v * part.sz : part.sz / 2;
+                double localY = y * Math.cos(part.pitch) - z * Math.sin(part.pitch);
+                z = y * Math.sin(part.pitch) + z * Math.cos(part.pitch); y = localY;
                 double rx = x * Math.cos(part.turn) + z * Math.sin(part.turn);
                 double rz = -x * Math.sin(part.turn) + z * Math.cos(part.turn);
                 x = part.x + rx * Math.cos(part.roll) - y * Math.sin(part.roll);
@@ -561,11 +707,16 @@ public final class AbilityFeedback {
 
     public boolean hidden(Player player) { return player.hasPotionEffect(PotionEffectType.INVISIBILITY); }
 
-    private void actionBar(AbilityPlayerContext context, Player player, String message) {
-        if (enabled(context, "action-bar") && player.isOnline()) context.plugin().nms().sendActionBar(player, message);
+    private boolean actionBar(AbilityPlayerContext context, Player player, String message) {
+        if (!enabled(context, "action-bar") || !player.isOnline()) return false;
+        context.plugin().nms().sendActionBar(player, message);
+        // Reserve reading time for failures/readiness as well as incoming effects.
+        TARGET_NOTICES.put(player, System.nanoTime());
+        return true;
     }
 
     private void chat(AbilityPlayerContext context, Player player, String type, String text) {
+        if (compact(context)) return;
         if (context.plugin().getConfig().getBoolean("abilities.messages.enabled", true)
             && context.plugin().getConfig().getBoolean("abilities.messages." + type, true)) player.sendMessage(text);
     }
@@ -575,7 +726,10 @@ public final class AbilityFeedback {
             && context.plugin().getConfig().getBoolean("abilities.effects." + feature, true);
     }
 
-    private String shorten(String text) { return text.length() > 55 ? text.substring(0, 54) + "…" : text; }
+    /** Defaults to compact even on existing installations with all legacy message flags enabled. */
+    public boolean compact(AbilityPlayerContext context) {
+        return context.plugin().getConfig().getBoolean("abilities.messages.compact", true);
+    }
 
     /** Track a moving model in this ability session, using a freshly evaluated audience each frame. */
     public boolean followObject(String key, AbilityPlayerContext context, ObjectModel model,

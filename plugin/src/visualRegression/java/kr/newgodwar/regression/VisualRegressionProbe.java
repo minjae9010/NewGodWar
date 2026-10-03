@@ -226,6 +226,7 @@ public final class VisualRegressionProbe extends JavaPlugin {
         if(kind.equals("advanced") && current.equals("anubis"))
             core.abilities().handleDamage(target,player,new EntityDamageByEntityEvent(target,player,EntityDamageEvent.DamageCause.ENTITY_ATTACK,4));
         if(kind.equals("advanced") && current.equals("runesmith")) target.teleport(player.getLocation().clone().add(0,0,2));
+        if(kind.equals("advanced") && current.equals("thor")) target.teleport(player.getLocation().clone().add(0,0,2));
         if(kind.equals("normal") && current.equals("voodoo")) {
             org.bukkit.block.Block block=player.getLocation().clone().add(1,0,1).getBlock();block.setType(Material.SIGN_POST);
             core.abilities().handleSignChange(player,new SignChangeEvent(block,player,new String[]{target.getName(),"","",""}));

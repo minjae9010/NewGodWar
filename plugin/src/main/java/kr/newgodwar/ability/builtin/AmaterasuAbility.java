@@ -33,6 +33,7 @@ import java.util.List;
 )
 final class AmaterasuAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.FIRE)
+        .advanced(EffectCue.FIRE)
         .hit(EffectCue.FIRE)
         .effect(EffectCue.SUN, AbilityDesigns.SUN_MIRROR)
         .effect(EffectCue.FIRE, AbilityDesigns.SUN_MIRROR)
@@ -56,7 +57,7 @@ final class AmaterasuAbility extends BaseAbility {
             return;
         }
         if (useAdvanced(context, player)) {
-            target.setFireTicks(120);
+            ignite(context, target, 120);
             effect(context, target, PotionEffectType.BLINDNESS, 7, 0);
             damage(context, target, 5.0D, player);
         }

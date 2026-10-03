@@ -32,8 +32,9 @@ import java.util.List;
 final class SniperAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.HUNT)
         .hit(EffectCue.HIT)
+        .advanced(EffectCue.ARCANE)
         .passive(EffectCue.ITEM)
-        .effect(EffectCue.HIT, AbilityDesigns.SCOPE)
+        .effect(EffectCue.ARCANE, AbilityDesigns.BULLET)
         .effect(EffectCue.ITEM, AbilityDesigns.SCOPE)
         .build();
 
@@ -42,12 +43,14 @@ final class SniperAbility extends BaseAbility {
 
     private boolean ready;
     private boolean preparing;
+    private final java.util.Map<java.util.UUID,Long> empoweredArrows = new java.util.LinkedHashMap<java.util.UUID,Long>();
 
     @Override
     public void cancelScheduledTasks() {
         super.cancelScheduledTasks();
         ready = false;
         preparing = false;
+        empoweredArrows.clear();
     }
 
     @Override
@@ -91,11 +94,18 @@ final class SniperAbility extends BaseAbility {
         if (ready && event.getEntity() instanceof Arrow && useAdvanced(context, context.player(), 0)) {
             ready = false;
             event.getEntity().setVelocity(context.player().getEyeLocation().getDirection().multiply(20));
+            long now=System.currentTimeMillis();
+            empoweredArrows.values().removeIf(expires -> expires <= now);
+            if(empoweredArrows.size()>=64) empoweredArrows.remove(empoweredArrows.keySet().iterator().next());
+            empoweredArrows.put(event.getEntity().getUniqueId(),now+30000L);
         }
     }
 
     @Override
     public void onProjectileHit(AbilityPlayerContext context, EntityDamageByEntityEvent event, Player victim) {
-        if (!event.isCancelled()) feedback.impact(context, victim);
+        if (!(event.getDamager() instanceof Arrow)) return;
+        Long expires=empoweredArrows.remove(event.getDamager().getUniqueId());
+        if(expires==null || expires<=System.currentTimeMillis() || event.isCancelled()) return;
+        confirmedDamageImpact(context,event,victim);
     }
 }

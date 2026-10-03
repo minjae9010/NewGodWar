@@ -30,6 +30,8 @@ import java.util.List;
 )
 final class YiSunSinAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.WATER)
+        .normal(EffectCue.GUARD)
+        .advanced(EffectCue.GUARD)
         .benefit(EffectCue.GUARD)
         .effect(EffectCue.GUARD, AbilityDesigns.TURTLE_SHIP)
         .build();
@@ -46,7 +48,7 @@ final class YiSunSinAbility extends BaseAbility {
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
         List<Player> targets = nearbyPlayers(context, player, 10, false);
         if (targets.isEmpty()) {
-            player.sendMessage("능력을 사용할 수 있는 대상이 없습니다.");
+            sendAbilityMessage(context, player, "failure", "능력을 사용할 수 있는 대상이 없습니다.");
             return;
         }
         if (!useNormal(context, player)) {

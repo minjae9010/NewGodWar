@@ -27,9 +27,11 @@ import org.bukkit.util.Vector;
 )
 final class OnePunchAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.COMBAT)
+        .advanced(EffectCue.WIND)
         .normal(EffectCue.CHARGE)
         .hit(EffectCue.HIT)
-        .effect(EffectCue.CHARGE, AbilityDesigns.ONE_PUNCH)
+        .effect(EffectCue.CHARGE, AbilityDesigns.ONE_PUNCH_READY)
+        .effect(EffectCue.WIND, AbilityDesigns.GALE)
         .effect(EffectCue.HIT, AbilityDesigns.ONE_PUNCH)
         .build();
 
@@ -80,7 +82,8 @@ final class OnePunchAbility extends BaseAbility {
             effect(context, player, PotionEffectType.WEAKNESS, 8, 0);
             player.sendMessage(ChatColor.RED + "원펀치!");
             feedback.passive(context, "원펀치 적중!");
-            feedback.affected(context, opponent, "원펀치 · 강화 타격 / 밀쳐내기", true);
+            confirmedAttack(context, event, opponent);
+            feedback.notice(context, opponent, "원펀치 · 강화 타격 / 밀쳐내기", true);
         } else {
             opponent.setVelocity(vector.normalize().multiply(0.7D));
         }

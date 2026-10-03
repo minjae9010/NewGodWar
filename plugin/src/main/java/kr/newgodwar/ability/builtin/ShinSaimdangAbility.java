@@ -30,6 +30,7 @@ import java.util.List;
 )
 final class ShinSaimdangAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.NATURE)
+        .advanced(EffectCue.HEAL)
         .normal(EffectCue.ITEM)
         .benefit(EffectCue.HEAL)
         .effect(EffectCue.ITEM, AbilityDesigns.INK_ORCHID)
@@ -57,7 +58,7 @@ final class ShinSaimdangAbility extends BaseAbility {
             return;
         }
         for (Player target : targets) {
-            target.setHealth(Math.min(target.getMaxHealth(), target.getHealth() + 5.0D));
+            restoreHealthApplied(context, target, 5.0D);
             effect(context, target, PotionEffectType.REGENERATION, 8, 0);
         }
     }

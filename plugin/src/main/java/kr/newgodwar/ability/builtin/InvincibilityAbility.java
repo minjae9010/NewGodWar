@@ -32,6 +32,9 @@ import java.util.List;
 )
 final class InvincibilityAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.GUARD)
+        .normal(EffectCue.GUARD)
+        .advanced(EffectCue.HEAL)
+        .passive(EffectCue.GUARD)
         .hit(EffectCue.GUARD)
         .benefit(EffectCue.HEAL)
         .effect(EffectCue.GUARD, AbilityDesigns.AEGIS_PLATES)
@@ -46,14 +49,14 @@ final class InvincibilityAbility extends BaseAbility {
     @Override
     public void onCountdownTick(AbilityPlayerContext context) {
         super.onCountdownTick(context);
-        if (invincible) feedback.cue(context, context.player(), kr.newgodwar.ability.feedback.EffectCue.GUARD);
+        if (invincible) feedback.castCue(context, context.player(), kr.newgodwar.ability.feedback.EffectCue.GUARD);
     }
 
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
         if (useNormal(context, player)) {
             invincible = true;
-            feedback.cue(context, player, kr.newgodwar.ability.feedback.EffectCue.GUARD);
+            feedback.castCue(context, player, kr.newgodwar.ability.feedback.EffectCue.GUARD);
             laterCleanup(context, 7, "무적 종료", "무적 종료", () -> invincible = false);
         }
     }

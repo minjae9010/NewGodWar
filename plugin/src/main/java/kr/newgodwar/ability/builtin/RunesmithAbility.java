@@ -44,7 +44,7 @@ final class RunesmithAbility extends TransientAbility {
         if (player.isSneaking()) {
             if (!feedback.allow("rune-mode", 250L)) return;
             frost = !frost;
-            feedback.passive(context, "다음 룬: " + (frost ? "서리" : "화염"));
+            feedback.progress(context, "다음 룬: " + (frost ? "서리" : "화염"));
             return;
         }
         if (runes.size() >= 3) {

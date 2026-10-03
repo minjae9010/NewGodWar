@@ -42,6 +42,14 @@ public class BuildEffectPack {
     static void glyph(String motif) {
         switch(motif) {
         case "feather": feather();break;
+        case "wingfeather": leaf(128,128,108,0);break;
+        case "page":
+            line(48,38,208,38,208,218,48,218,48,38);
+            for(int i=0;i<5;i++)line(72,70+i*26,184,70+i*26);break;
+        case "rune": line(104,38,104,218);line(104,38,161,88,104,128,162,179,104,218);break;
+        case "string": line(180,25,65,128,180,231);break;
+        case "arrow": line(128,228,128,32);line(97,66,128,22,159,66);line(105,195,128,217,151,195);break;
+        case "pin": line(128,210,128,62);circle(128,49,17);break;
         case "bow": curve(90,38,192,80,192,177,90,218);line(90,38,90,218);line(55,128,210,128);line(190,109,210,128,190,147);circle(90,128,7);break;
         case "swords": rotate(-.45,BuildEffectPack::sword);rotate(.45,BuildEffectPack::sword);break;
         case "spear": case "dagger": sword();break;
@@ -270,7 +278,8 @@ public class BuildEffectPack {
             // Each ability owns its emblem; the surrounding light, waves and debris come from its palette.
             String key=p[0].toLowerCase(Locale.ROOT).replace('.','/');Color color=new Color(Integer.parseInt(p[2],16));
             ink.clear();glyph(p[1]);
-            BufferedImage emblem=VfxPainter.emblem(new ArrayList<>(ink),color,VfxPainter.FAMILIES.get(p[4]),p[1].equals("rainbow"));
+            BufferedImage emblem=p[1].equals("wingfeather")?FeatherArtwork.paint(p[4].equals("fire"))
+                :VfxPainter.emblem(new ArrayList<>(ink),color,VfxPainter.FAMILIES.get(p[4]),p[1].equals("rainbow"));
             sprite(root,"art/"+key+"/glyph",emblem);
             List<BufferedImage> traced=new ArrayList<>();
             for(int i=0;i<VfxAnimator.TRACE;i++)traced.add(VfxAnimator.trace(new ArrayList<>(ink),VfxPainter.FAMILIES.get(p[4]),.4+.4*i));
@@ -313,6 +322,7 @@ public class BuildEffectPack {
         }
         a.dispose();ImageIO.write(frameSheet,"png",repo.resolve("build/effect-pack/animation-frames.png").toFile());
         int menuIcons=GuiArtwork.writePack(root,repo.resolve("build/effect-pack/menu-icons.png"));
+        GuiPanels.writePack(root, repo.resolve("build/effect-pack"));
         foods(repo,root);
         VersionedPacks.build(repo,root);
         System.out.println(index+" emblems + "+families.size()+" palettes + "+menuIcons+" menu icons; versioned packs complete.");

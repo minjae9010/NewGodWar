@@ -3,6 +3,8 @@ package kr.newgodwar.game;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.ArmorStand;
+import org.bukkit.util.Vector;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
@@ -26,6 +28,13 @@ public final class TrainingDummyEntity {
     private final Player player;
     private final String legacy;
     private boolean removed;
+    private final Method playerTick;
+    private ArmorStand healthDisplay;
+    private GodTeam team;
+    private Location fixedLocation;
+    private double lastDamage;
+    private double totalDamage;
+    private int idleTicks;
 
     private TrainingDummyEntity(Object handle, Object level, Object channel, Map<Object, Object> byId,
                                 Map<Object, Object> byName, String legacy) throws ReflectiveOperationException {
@@ -38,6 +47,10 @@ public final class TrainingDummyEntity {
         this.byName = byName;
         this.legacy = legacy;
         this.player = (Player) call(handle, new String[] {"getBukkitEntity"});
+        Method tick;
+        try { tick = handle.getClass().getMethod("doTick"); }
+        catch (NoSuchMethodException ignored) { tick = handle.getClass().getMethod("playerTick"); }
+        this.playerTick = tick;
     }
 
     public static TrainingDummyEntity spawn(Location location, String name) throws ReflectiveOperationException {
@@ -107,10 +120,18 @@ public final class TrainingDummyEntity {
             if (!result.player.isValid()) throw new IllegalStateException("서버에서 더미 소환을 허용하지 않았습니다.");
             result.player.setGameMode(org.bukkit.GameMode.SURVIVAL);
             result.player.setNoDamageTicks(0);
-            result.player.setCustomName("§e테스트 더미 §7(" + name + ")");
+            result.player.setCustomName("§e" + name);
             result.player.setCustomNameVisible(true);
             result.player.setRemoveWhenFarAway(false);
             result.player.setCanPickupItems(false);
+            result.healthDisplay = location.getWorld().spawn(location.clone().add(0, 2.5, 0), ArmorStand.class);
+            result.healthDisplay.setVisible(false);
+            result.healthDisplay.setGravity(false);
+            result.healthDisplay.setMarker(true);
+            result.healthDisplay.setInvulnerable(true);
+            result.healthDisplay.setCustomNameVisible(true);
+            result.healthDisplay.setRemoveWhenFarAway(false);
+            result.updateDisplay();
             return result;
         } catch (ReflectiveOperationException | RuntimeException error) {
             if (result != null) result.remove();
@@ -120,6 +141,37 @@ public final class TrainingDummyEntity {
     }
 
     public Player player() { return player; }
+    public GodTeam team() { return team; }
+    public void team(GodTeam team) { this.team = team; updateDisplay(); }
+    public void movable(boolean movable) {
+        fixedLocation = movable ? null : player.getLocation();
+        player.setVelocity(new Vector());
+        updateDisplay();
+    }
+    public double totalDamage() { return totalDamage; }
+    public void recordDamage(double damage) {
+        if (damage <= 0) return;
+        lastDamage = damage;
+        totalDamage += damage;
+        idleTicks = 0;
+    }
+    public void reset() {
+        for (org.bukkit.potion.PotionEffect effect : player.getActivePotionEffects()) player.removePotionEffect(effect.getType());
+        player.setFireTicks(0);
+        player.setHealth(player.getMaxHealth());
+        player.setNoDamageTicks(0);
+        lastDamage = totalDamage = 0;
+        idleTicks = 0;
+        updateDisplay();
+    }
+
+    private void updateDisplay() {
+        if (healthDisplay == null) return;
+        healthDisplay.teleport(player.getLocation().add(0, 2.5, 0));
+        String side = team == null ? "§c적" : team.coloredName();
+        healthDisplay.setCustomName(String.format(Locale.ROOT, "%s §c♥ %.1f/%.0f §f피해 %.1f §7누적 %.1f%s",
+            side, player.getHealth(), player.getMaxHealth(), lastDamage, totalDamage, fixedLocation == null ? "" : " §8[고정]"));
+    }
 
     public void show(Player viewer) throws ReflectiveOperationException {
         if (removed || viewer.equals(player)) return;
@@ -136,6 +188,17 @@ public final class TrainingDummyEntity {
     }
 
     public void tick() throws ReflectiveOperationException {
+        // The real connection normally calls this; an EmbeddedChannel never does.
+        // Run vanilla living-player updates for potion duration/damage and movement.
+        if (fixedLocation != null) player.setVelocity(new Vector());
+        playerTick.invoke(handle);
+        if (fixedLocation != null) {
+            if (!player.getLocation().equals(fixedLocation)) player.teleport(fixedLocation);
+            player.setVelocity(new Vector());
+        }
+        player.setFoodLevel(20);
+        if (++idleTicks >= 100 || player.getHealth() <= 1) player.setHealth(player.getMaxHealth());
+        updateDisplay();
         // There is no socket. Drain packets generated by effects/inventory updates each tick.
         runPendingTasks.invoke(channel);
         while (readOutbound.invoke(channel) != null) { }
@@ -144,6 +207,7 @@ public final class TrainingDummyEntity {
     public void remove() throws ReflectiveOperationException {
         if (removed) return;
         removed = true;
+        if (healthDisplay != null) healthDisplay.remove();
         try {
             try { call(handle, new String[] {"discard"}); }
             catch (NoSuchMethodException ignored) { call(level, new String[] {"removeEntity"}, handle); }

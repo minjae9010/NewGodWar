@@ -29,6 +29,8 @@ import java.util.List;
 )
 final class HeoJunAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.HEALING)
+        .normal(EffectCue.HEAL)
+        .advanced(EffectCue.HEAL)
         .benefit(EffectCue.HEAL)
         .effect(EffectCue.HEAL, AbilityDesigns.HERBS)
         .build();
@@ -41,9 +43,9 @@ final class HeoJunAbility extends BaseAbility {
         if (!useNormal(context, player)) {
             return;
         }
-        heal(player);
+        heal(context, player);
         cleanse(player);
-        feedback.affected(context, player, "동의보감 · 완전 회복 / 해로운 효과 해제", false);
+        feedback.notice(context, player, "동의보감 · 완전 회복 / 해로운 효과 해제", false, true);
         player.sendMessage(ChatColor.GREEN + "동의보감의 처방으로 몸을 회복했습니다.");
     }
 
@@ -55,12 +57,12 @@ final class HeoJunAbility extends BaseAbility {
             return;
         }
         for (Player target : targets) {
-            heal(target);
+            heal(context, target);
             cleanse(target);
             effect(context, target, "ABSORPTION", "ABSORPTION", 12, 1);
             effect(context, target, PotionEffectType.REGENERATION, 12, 1);
             effect(context, target, "RESISTANCE", "DAMAGE_RESISTANCE", 10, 0);
-            feedback.affected(context, target, "대처방 · 완전 회복 / 정화 / 보호", false);
+            feedback.notice(context, target, "대처방 · 완전 회복 / 정화 / 보호", false, true);
         }
         player.sendMessage(ChatColor.GREEN + "동의보감의 대처방이 아군을 살렸습니다.");
     }

@@ -76,7 +76,7 @@ final class ExamineeAbility extends BaseAbility {
                 context.player().sendMessage(ChatColor.AQUA + "문제를 맞혀 새 능력을 얻었습니다!");
             } else {
                 context.player().sendMessage("아쉽습니다! 정답은 " + pendingAnswer + "입니다.");
-                feedback.cue(context, context.player(), kr.newgodwar.ability.feedback.EffectCue.SEAL);
+                feedback.castCue(context, context.player(), kr.newgodwar.ability.feedback.EffectCue.SEAL);
             }
             pendingAnswer = -1;
             pendingQuestion = null;

@@ -30,10 +30,11 @@ import java.util.List;
 )
 final class GigachadAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.GUARD)
+        .normal(EffectCue.GUARD)
+        .advanced(EffectCue.CHARGE)
         .hit(EffectCue.HIT)
         .benefit(EffectCue.GUARD)
         .passive(EffectCue.GUARD)
-        .effect(EffectCue.HIT, AbilityDesigns.MUSCLE)
         .effect(EffectCue.GUARD, AbilityDesigns.MUSCLE)
         .effect(EffectCue.CHARGE, AbilityDesigns.MUSCLE)
         .build();
@@ -45,7 +46,7 @@ final class GigachadAbility extends BaseAbility {
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
         List<Player> targets = nearbyPlayers(context, player, 6, false);
         if (targets.isEmpty()) {
-            player.sendMessage("능력을 사용할 수 있는 대상이 없습니다.");
+            sendAbilityMessage(context, player, "failure", "능력을 사용할 수 있는 대상이 없습니다.");
             return;
         }
         if (useNormal(context, player)) {

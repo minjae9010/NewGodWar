@@ -26,6 +26,7 @@ import java.util.List;
 )
 final class NikeAbility extends TransientAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.WIND)
+        .advanced(EffectCue.HEAL)
         .dedicated()
         .effect(EffectCue.HEAL, AbilityDesigns.VICTORY)
         .build();
@@ -62,9 +63,11 @@ final class NikeAbility extends TransientAbility {
         AbilityPlayerContext playerContext = new AbilityPlayerContext(context.plugin(), context.killer(), context.ability());
         GodTeam victimTeam = context.plugin().game().teamOf(context.victim());
         if (!active(playerContext) || victimTeam == null || victimTeam == context.plugin().game().teamOf(context.killer())) return;
-        laurels = Math.min(3, laurels + 1);
-        feedback.passive(playerContext, "승리의 월계관 · " + laurels + "/3");
-        wings(playerContext, context.killer().getLocation(), laurels);
+        if (laurels < 3) {
+            laurels++;
+            feedback.progress(playerContext, "승리의 월계관 · " + laurels + "/3");
+        }
+        laurel(playerContext, context.killer().getLocation(), laurels);
     }
 
     @Override
@@ -77,9 +80,8 @@ final class NikeAbility extends TransientAbility {
         int victory = laurels;
         laurels = 0;
         for (Player target : alliesInRange(context, player.getLocation(), 8)) {
-            restoreHealth(target, 2 + victory);
+            restoreHealth(context, target, 2 + victory);
             effect(context, target, "SPEED", "SPEED", 4 + victory * 2, 0);
-            feedback.cue(context, target, kr.newgodwar.ability.feedback.EffectCue.HEAL);
         }
     }
 
@@ -97,7 +99,13 @@ final class NikeAbility extends TransientAbility {
         if (center == null || center.getWorld() == null) return;
         List<Player> audience = feedback.effectViewers(context, center);
         feedback.drawCue(context, center, EffectCue.WINGS, audience, context.player(), true);
-        if (laurels > 0 && feedback.object(context, "laurel", AbilityDesigns.LAUREL,
+        laurel(context, center, laurels);
+    }
+
+    private void laurel(AbilityPlayerContext context, Location center, int laurels) {
+        if (center == null || center.getWorld() == null || laurels <= 0) return;
+        List<Player> audience = feedback.effectViewers(context, center);
+        if (feedback.object(context, "laurel", AbilityDesigns.LAUREL,
                 kr.newgodwar.ability.feedback.AbilityFeedback.upright(center), 18, laurels)) return;
         for (int i = 0; i < Math.min(3, laurels); i++)
             feedback.particle(context, center.clone().add((i - 1) * 0.3D, 2.4D, 0), AbilityTheme.NATURE.particle(), audience, 2, 0);

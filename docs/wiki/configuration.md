@@ -18,7 +18,7 @@
 | 뽑기 가격·허용, 상품·확률 | 도박 · `/gmenu gambling`, 상품 직접 편집 `/gmenu rewards` |
 | 시작할 때 나눠 줄 아이템 | 시작 아이템 편집 · `/gmenu items` |
 
-월드 게임룰은 저장 후 **지금 모든 월드에 적용**을 누르거나 다음 게임 시작 때 적용됩니다. 도박 상품 편집은 21개씩 표시하며 이전·다음 버튼으로 나머지 상품도 수정할 수 있습니다. 플레이어의 `/도박` 화면은 보상 미리보기이며, 설정 변경은 관리자 메뉴에서 합니다.
+월드 게임룰은 저장 후 **지금 모든 월드에 적용**을 누르거나 다음 게임 시작 때 적용됩니다. 도박 상품 편집은 21개씩 표시하며 이전·다음 버튼으로 나머지 상품도 수정할 수 있습니다. 플레이어의 `/도박` 화면에서는 큰 버튼을 눌러 한 번 뽑습니다. 상품 수량과 확률은 별도 **보상 보기**에서 확인하고, 설정 변경은 관리자 메뉴에서 합니다.
 
 ## 메뉴·능력 리소스팩
 
@@ -28,7 +28,7 @@
 
 | 키 | 기본값 | 설명 |
 | --- | --- | --- |
-| `ui.resource-pack.enabled` | `true` | 전용 메뉴 아이콘 표시. `false`면 메뉴만 일반 아이템으로 표시 |
+| `ui.resource-pack.enabled` | `true` | 전용 메뉴 배경·아이콘 표시. `false`면 메뉴만 일반 아이템으로 표시 |
 | `abilities.effects.resource-pack.enabled` | `true` | 팩 자동 제안. 완전히 끄려면 `false` |
 | `abilities.effects.resource-pack.url` | `auto` | GitHub 버전 자동 선택. 빈 값도 자동 선택. 직접 HTTP(S) ZIP 주소로 변경 가능 |
 | `abilities.effects.resource-pack.sha1` | 빈 문자열 | 직접 URL 사용 시 해당 ZIP의 40자리 SHA-1. 자동 선택에서는 내장 해시 사용 |
@@ -60,7 +60,7 @@
 | `game.ability-reroll-count` | `1` | 플레이어별 재추첨 가능 횟수 |
 | `game.reveal-abilities-on-end` | `true` | 게임 종료 시 플레이어별 능력 공개 여부 |
 | `game.announce-radius` | `0` | 공지 반경용 예약 설정 |
-| `game.ability-roll-message` | `true` | 능력 배정 타이틀 표시 여부 |
+| `game.ability-roll-message` | `true` | 능력 배정·재추첨 액션바 표시 여부 |
 | `game.ability-tick-interval-seconds` | `1` | 능력 반복 처리 주기 |
 | `game.killtime-bossbar` | `false` | 게임 시작 후 킬타임을 상단 보스바로 표시할지 여부 |
 | `game.killtime-seconds` | `300` | 게임 시작 후 킬타임 보호가 유지되는 시간 |
@@ -168,8 +168,8 @@
 | `abilities.effects.resource-pack.sha1` | 빈 문자열 | 배포 ZIP의 40자리 SHA-1. 이 팩의 수신 성공을 확인한 플레이어에게만 전용 ItemDisplay 문양 표시 |
 | `abilities.effects.animations` | `true` | 행동별 짧은 애니메이션, 투사체 궤적과 파티클 비행 잔상. 끄면 행동 디자인은 정지 형태, 묠니르·시간장 등 기술 자체의 전용 장면은 유지 |
 | `abilities.effects.sounds` | `true` | 발동, 실패, 재사용 가능 효과음 |
-| `abilities.effects.action-bar` | `true` | 발동 내용, 피격·지원 효과, 종료와 재사용 가능 안내 |
-| `abilities.effects.titles` | `true` | 고급 능력 발동 시 짧은 중앙 타이틀 |
+| `abilities.effects.action-bar` | `true` | 실패·피격·재사용 가능 안내. 상세 모드에서는 발동·지원·타이머도 표시 |
+| `abilities.messages.compact` | `true` | 필수 상태 안내는 유지하고 반복 발동·패시브·초 단위 카운트다운과 채팅 중복을 생략. `/gw gui display`의 간결한 전투 안내에서 변경 |
 | `abilities.messages.enabled` | `true` | 능력 메시지 전체 사용 여부 |
 | `abilities.messages.success` | `true` | 능력 성공 메시지 |
 | `abilities.messages.failure` | `true` | 능력 실패 메시지 |
@@ -184,9 +184,9 @@
 
 오브젝트와 입자는 별도로 제어합니다. 파티클 전용 모드는 `objects: false`, 지원 서버의 오브젝트 전용 모드는 `particles: false`입니다. 전체 연출은 `enabled: false`로 끕니다. Display와 개별 가시성 API를 지원하지 않는 서버는 파티클을 사용합니다. 오브젝트 목록과 회수 규칙은 [능력 이펙트 안내](ability-effects.md)를 참고하세요.
 
-내장 능력은 일반/고급 발동 시 능력명과 사용한 효과를 안내하고, 번개·화염·물·얼음·바람·치유 등 속성에 맞는 파티클과 소리를 재생합니다. 주요 치유·속박·봉인 능력은 대상에게도 적용 내용을 표시합니다. 사제의 축복은 실제로 뽑힌 버프를 표시하며, 무적은 유지 중 전방 방패, 메구밍은 폭발 위치의 예고 원을 표시합니다. 원형 파티클은 시각 연출이며 정확한 피격 판정 경계를 뜻하지 않습니다.
+내장 능력은 일반/고급 발동 시 속성에 맞는 효과와 소리를 재생합니다. 기본 간결 모드에서는 발동 설명·중앙 타이틀·성공 채팅·패시브·타이머 카운트다운을 생략하고, 실패 이유·재사용 가능·충전 수치·선택 모드·중요 버프 결과·위험 예고·효과 시작/종료는 짧은 액션바로 유지합니다. 일회용 능력 소진과 아이템 획득 결과도 유지합니다. 일반 피격 문구는 수신자별 2초 간격으로 제한하지만, 봉인·회피 지침·랜덤 축복 등 중요한 변화는 그 제한에 묻히지 않도록 표시합니다. 같은 중요 알림의 연타는 제한합니다. 액션바를 끄면 실패 이유와 필수 상태 안내는 채팅 설정에 따라 채팅으로 전달됩니다. 쿨타임과 진행 중인 타이머는 스코어보드에서 확인할 수 있습니다. 무적의 전방 방패와 메구밍의 폭발 예고 원 등 전투 연출은 유지합니다. 원형 파티클은 정확한 피격 판정 경계를 뜻하지 않습니다.
 
-주변 연출은 같은 월드의 32블록 안에서만 전송합니다. 은신 계열의 발동과 이미 투명한 사용자의 연출은 본인에게만 보이고 들립니다. 실패 연타와 반복 대상 알림에는 표시 간격을 두며, 고급 타이틀만 끄려면 `abilities.effects.titles: false`로 설정합니다. 기존 설정 파일에 위 항목이 없어도 기본으로 활성화됩니다. `abilities.messages.*`는 채팅 안내를 별도로 제어합니다.
+주변 연출은 같은 월드의 32블록 안에서만 전송합니다. 은신 계열의 발동과 이미 투명한 사용자의 연출은 본인에게만 보이고 들립니다. 기존 설정 파일에도 간결 모드가 기본 적용됩니다. `abilities.messages.compact: false`로 설정하면 사용·패시브·타이머 상세 안내를 다시 표시하며, 채팅은 기존 `abilities.messages.enabled/success/failure/timer` 설정을 따릅니다. 능력 발동 타이틀은 상세 모드에서도 표시하지 않으며 기존 `abilities.effects.titles` 설정은 더 이상 사용하지 않습니다. 능력 배정·중간 참여·관전 전환·코어/곡괭이 해제 안내도 짧은 액션바를 사용하고, 경기 종료의 승리 타이틀만 유지합니다.
 
 ## gambling
 

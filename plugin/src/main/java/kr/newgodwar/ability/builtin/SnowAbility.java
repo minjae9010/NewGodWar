@@ -34,7 +34,6 @@ final class SnowAbility extends BaseAbility {
         .normal(EffectCue.ITEM)
         .hit(EffectCue.FROST)
         .effect(EffectCue.ITEM, AbilityDesigns.SNOWFLAKE)
-        .effect(EffectCue.FROST, AbilityDesigns.SNOWFLAKE)
         .build();
 
     @Override

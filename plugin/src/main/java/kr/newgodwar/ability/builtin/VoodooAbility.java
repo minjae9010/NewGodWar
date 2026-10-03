@@ -36,7 +36,7 @@ import java.util.UUID;
 final class VoodooAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.SHADOW)
         .hit(EffectCue.POISON)
-        .effect(EffectCue.POISON, AbilityDesigns.VOODOO_DOLL)
+        .received(EffectCue.POISON, AbilityDesigns.VOODOO_DOLL)
         .build();
 
     @Override
@@ -56,7 +56,6 @@ final class VoodooAbility extends BaseAbility {
             Player target = linkedTarget == null ? null : Bukkit.getPlayer(linkedTarget);
             if (target != null && target.getWorld().equals(context.player().getWorld())
                 && canAffectEnemy(context, context.player(), target) && readyPulse(context)) {
-                feedback.impact(context, target);
                 damage(context, target, damagePerPulse(context), context.player());
             }
             return;

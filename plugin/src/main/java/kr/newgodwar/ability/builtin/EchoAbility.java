@@ -55,7 +55,7 @@ final class EchoAbility extends TransientAbility {
         double amount = Math.min(4, event.getDamage() * 0.5D);
         Location strike = recorded.clone();
         echoSlash(context, strike, 2);
-        feedback.affected(context, opponent, "메아리 예고 · 0.75초 안에 거리를 벌리세요!", true);
+        feedback.affected(context, opponent, "메아리 예고 · 0.75초 안에 거리를 벌리세요!", true, true);
         scheduleLater(context, () -> {
             if (!validEnemy(context, opponent, 24) || opponent.getLocation().distanceSquared(strike) > 4
                 || event.isCancelled() || !context.player().hasLineOfSight(opponent)) return;

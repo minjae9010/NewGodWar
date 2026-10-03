@@ -33,7 +33,6 @@ final class ReflectionAbility extends BaseAbility {
         .hit(EffectCue.HIT)
         .passive(EffectCue.GUARD)
         .effect(EffectCue.GUARD, AbilityDesigns.MIRROR)
-        .effect(EffectCue.HIT, AbilityDesigns.MIRROR)
         .build();
 
     @Override

@@ -52,7 +52,7 @@ public final class AbilityStyleTest {
         assertEquals(EffectCue.SLEEP, style("morpious").status("BLINDNESS"));
         assertEquals(EffectCue.BLIND, style("blinder").status("BLINDNESS"));
         assertEquals(EffectCue.STEALTH, style("clocking").status("INVISIBILITY"));
-        assertEquals(EffectCue.SEAL, style("sejong").status("BLINDNESS"));
+        assertEquals(EffectCue.BLIND, style("sejong").status("BLINDNESS"));
         assertEquals(EffectCue.POISON, style("acidarcher").status("POISON"));
         assertEquals(EffectCue.HEAL, style("asclepius").benefit());
         assertEquals(EffectCue.FORGE, style("blacksmith").cast(false));

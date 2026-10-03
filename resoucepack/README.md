@@ -8,7 +8,7 @@
 
 | Minecraft | ZIP | SHA-1 |
 | --- | --- | --- |
-| 1.14 – 26.3 | [NewGodWar-Art-28ac15d7.zip](https://raw.githubusercontent.com/minjae9010/NewGodWar/master/resoucepack/NewGodWar-Art-28ac15d7.zip) | `28ac15d7f1f16bd91c3a9a0d9eeca8d69ef601ec` |
+| 1.14 – 26.3 | [NewGodWar-Art-d36217f4.zip](https://raw.githubusercontent.com/minjae9010/NewGodWar/master/resoucepack/NewGodWar-Art-d36217f4.zip) | `d36217f436eeaaeb6b1bd51a3ff3b4a4c830e96b` |
 
 플러그인은 `abilities.effects.resource-pack.url: auto`에서 이 파일명과 SHA-1을 자동으로 사용합니다. [버전별 주소·SHA-1 목록](manifest.tsv)도 같은 파일을 가리킵니다.
 

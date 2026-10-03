@@ -119,9 +119,11 @@ try {
             throw new Error('Abyss destination was not below the modern world floor');
           const log=readFileSync(logPath,'utf8').slice(offset);
           const confirmed=log.includes('✦ '+ability.name+' · '+(kind==='normal'?'일반':'고급')+' 사용!')
-            || log.includes('✦ ['+ability.name+' ·') || after.stones<before.stones;
+            || log.includes('✦ ['+ability.name+' ·') || after.stones<before.stones
+            || after[kind+'Cooldown']>before[kind+'Cooldown']
+            || (ability.id==='bomber'&&kind==='normal'&&after.displays>0);
           const infoOnly=ability.id==='snow'&&kind==='advanced';
-          const prepared=ability.id==='midoriya'&&kind==='normal'&&log.includes('준비');
+          const prepared=['midoriya','sniper'].includes(ability.id)&&kind==='normal'&&log.includes('준비');
           row.attempts.push({kind,status:confirmed?'activated':prepared?'prepared':infoOnly?'informational':'needs-review',before,after,log,picture});
           if(ability.id==='sniper'&&kind==='normal')await sleep(4500);
           if(kind==='normal'&&['thor','pan'].includes(ability.id))await sleep(1500);

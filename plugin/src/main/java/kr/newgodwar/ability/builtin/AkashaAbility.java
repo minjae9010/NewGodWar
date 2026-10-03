@@ -32,6 +32,8 @@ import java.util.List;
 )
 final class AkashaAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.ARCANE)
+        .normal(EffectCue.HEAL)
+        .advanced(EffectCue.POISON)
         .hit(EffectCue.POISON)
         .benefit(EffectCue.HEAL)
         .effect(EffectCue.HEAL, AbilityDesigns.AKASHIC_BOOK)
@@ -61,7 +63,7 @@ final class AkashaAbility extends BaseAbility {
     protected void onStaffRight(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
         List<Player> targets = nearbyPlayers(context, player, 10, false);
         if (targets.isEmpty()) {
-            player.sendMessage("능력을 사용할 수 있는 대상이 없습니다.");
+            sendAbilityMessage(context, player, "failure", "능력을 사용할 수 있는 대상이 없습니다.");
             return;
         }
         if (useAdvanced(context, player)) {

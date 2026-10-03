@@ -78,6 +78,12 @@ abstract class TransientAbility extends BaseAbility {
             && event.getDamager().equals(context.player()) && validEnemy(context, target, 5);
     }
 
+    protected void restoreHealth(AbilityPlayerContext context, Player player, double amount) {
+        double before=player.getHealth();
+        restoreHealth(player, amount);
+        if(player.getHealth()>before) feedback.cue(context, player, kr.newgodwar.ability.feedback.EffectCue.HEAL);
+    }
+
     protected void restoreHealth(Player player, double amount) {
         if (player.isOnline() && !player.isDead() && amount > 0)
             player.setHealth(Math.min(player.getMaxHealth(), player.getHealth() + amount));

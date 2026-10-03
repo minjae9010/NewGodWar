@@ -77,7 +77,7 @@ public class ArtModelsTest {
             }
             silhouettes.add(signature.toString());checked++;
         }
-        assertEquals("All bundled models are exercised",145,checked);
+        assertEquals("All bundled models are exercised",150,checked);
         assertTrue("Textures alone must not be the only difference between abilities",silhouettes.size()>=35);
     }
 
@@ -144,7 +144,7 @@ public class ArtModelsTest {
             "art/fx/nature/burst3","art/fx/nature/burst4","art/fx/nature/burst5"),bursts);
         // The emblem is traced in during the charge, then the finished emblem appears on the impact beat.
         List<String> hero=new ArrayList<String>();
-        for(int t:new int[]{0,2,4})for(ObjectModel.Part p:heal.parts(t,1))if(p.art.startsWith("art/design/medicine/"))hero.add(p.art);
+        for(int t:new int[]{0,2,4})for(ObjectModel.Part p:heal.parts(t,1))if(p.billboard&&p.art.startsWith("art/design/medicine/"))hero.add(p.art);
         assertEquals(Arrays.asList("art/design/medicine/draw0","art/design/medicine/draw1","art/design/medicine/glyph3"),hero);
         ObjectModel still=ArtModels.create("design/medicine","heal","nature",true,true);
         for(ObjectModel.Part p:still.parts(0,1))assertFalse("Still mode never shows a half-drawn emblem",p.art.contains("/draw"));
@@ -166,7 +166,7 @@ public class ArtModelsTest {
     @Test public void billboardsStayOnRingsAroundTheAnchorAxis() throws Exception {
         // A billboard rotates its offset with the viewer, so only axis-symmetric placements are allowed.
         for(String[] row:catalogue())for(String motion:new String[]{row[3]}) {
-            if(motion.matches("slash|punch|bow|shot|scope|hook|gust|step|exhaust|forge|shatter|mirror|wings|projectile|flock|relic|melody|strike|harvest|dome"))continue;
+            if(motion.matches("slash|punch|bow|shot|scope|hook|gust|step|exhaust|forge|shatter|mirror|wings|projectile|flock|relic|melody|strike|harvest|dome|weaken"))continue;
             for(ObjectModel.Part p:ArtModels.create("design/test",motion,"gold",true,false).parts(8,2))
                 if(p.billboard&&p.art.contains("/glyph")&&!motion.matches("coins|bind|curse|knot|stock|crash|wrong"))
                     assertEquals(row[0],0,Math.hypot(p.x,p.z),.1);

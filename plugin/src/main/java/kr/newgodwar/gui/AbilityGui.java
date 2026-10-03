@@ -79,8 +79,9 @@ public final class AbilityGui implements Listener {
             return;
         }
         searches.remove(viewer.getUniqueId());
-        Inventory inventory = Bukkit.createInventory(viewer, CURRENT_SIZE, CURRENT_TITLE);
+        Inventory inventory = Bukkit.createInventory(viewer, CURRENT_SIZE, GuiTheme.title(viewer, plugin, CURRENT_TITLE, CURRENT_SIZE));
         fillCurrent(inventory, viewer, target);
+        GuiTheme.painted(viewer, inventory, plugin, 4, 36, CURRENT_CLOSE_SLOT, 44);
         GuiTheme.present(viewer, inventory, plugin);
         viewer.openInventory(inventory);
         openViewers.add(viewer.getUniqueId());
@@ -101,8 +102,10 @@ public final class AbilityGui implements Listener {
 
     private void openList(Player viewer, int page, String query) {
         searches.remove(viewer.getUniqueId());
-        Inventory inventory = Bukkit.createInventory(viewer, LIST_SIZE, LIST_TITLE);
+        Inventory inventory = Bukkit.createInventory(viewer, LIST_SIZE, GuiTheme.title(viewer, plugin, LIST_TITLE, LIST_SIZE));
         int currentPage = fillList(inventory, viewer, page, query);
+        GuiTheme.painted(viewer, inventory, plugin, 4, 47, LIST_CLOSE_SLOT);
+        GuiTheme.paintedInfo(viewer, inventory, plugin, 45);
         GuiTheme.present(viewer, inventory, plugin);
         viewer.openInventory(inventory);
         openViewers.add(viewer.getUniqueId());
@@ -127,13 +130,13 @@ public final class AbilityGui implements Listener {
         Bukkit.getScheduler().runTask(plugin, () -> {
             if (!player.isOnline() || !openViewers.contains(player.getUniqueId())
                 || player.getOpenInventory().getTopInventory() != clickedInventory) return;
-            if ((LIST_TITLE.equals(title) && slot == LIST_CLOSE_SLOT)
-                || (!LIST_TITLE.equals(title) && slot == CURRENT_CLOSE_SLOT)) {
+            if ((GuiTitle.matches(LIST_TITLE, title, LIST_SIZE) && slot == LIST_CLOSE_SLOT)
+                || (!GuiTitle.matches(LIST_TITLE, title, LIST_SIZE) && slot == CURRENT_CLOSE_SLOT)) {
                 player.closeInventory();
                 return;
             }
 
-            if (CURRENT_TITLE.equals(title)) {
+            if (GuiTitle.matches(CURRENT_TITLE, title, CURRENT_SIZE)) {
                 if (slot == 36) openList(player);
                 if (slot == 44) {
                     UUID targetId = currentTargets.get(player.getUniqueId());
@@ -142,7 +145,7 @@ public final class AbilityGui implements Listener {
                 }
                 return;
             }
-            if (DETAIL_TITLE.equals(title)) {
+            if (GuiTitle.matches(DETAIL_TITLE, title, CURRENT_SIZE)) {
                 if (slot == 36) openList(player, listPage(player));
                 return;
             }
@@ -205,7 +208,7 @@ public final class AbilityGui implements Listener {
     }
 
     private void openDetail(Player player, AbilityDefinition ability) {
-        Inventory inventory = Bukkit.createInventory(player, CURRENT_SIZE, DETAIL_TITLE);
+        Inventory inventory = Bukkit.createInventory(player, CURRENT_SIZE, GuiTheme.title(player, plugin, DETAIL_TITLE, CURRENT_SIZE));
         GuiTheme.frame(inventory);
         inventory.setItem(4, GuiTheme.heading(ability.name(), "도감에는 기본 비용과 쿨타임이 표시돼요."));
         inventory.setItem(22, currentAbilityItem(ability));
@@ -225,6 +228,7 @@ public final class AbilityGui implements Listener {
         inventory.setItem(CURRENT_CLOSE_SLOT, closeItem());
         inventory.setItem(4, GuiTheme.icon(inventory.getItem(4), GuiIcon.ABILITY));
         inventory.setItem(36, GuiTheme.icon(inventory.getItem(36), GuiIcon.BACK));
+        GuiTheme.painted(player, inventory, plugin, 4, 36, CURRENT_CLOSE_SLOT);
         GuiTheme.present(player, inventory, plugin);
         navigating.add(player.getUniqueId());
         try { player.openInventory(inventory); }
@@ -251,13 +255,13 @@ public final class AbilityGui implements Listener {
     private boolean isAbilityInventory(InventoryClickEvent event) {
         return openViewers.contains(event.getWhoClicked().getUniqueId())
             && event.getView() != null
-            && (CURRENT_TITLE.equals(event.getView().getTitle()) || DETAIL_TITLE.equals(event.getView().getTitle()) || LIST_TITLE.equals(event.getView().getTitle()));
+            && (GuiTitle.matches(CURRENT_TITLE, event.getView().getTitle(), CURRENT_SIZE) || GuiTitle.matches(DETAIL_TITLE, event.getView().getTitle(), CURRENT_SIZE) || GuiTitle.matches(LIST_TITLE, event.getView().getTitle(), LIST_SIZE));
     }
 
     private boolean isAbilityInventory(InventoryDragEvent event) {
         return openViewers.contains(event.getWhoClicked().getUniqueId())
             && event.getView() != null
-            && (CURRENT_TITLE.equals(event.getView().getTitle()) || DETAIL_TITLE.equals(event.getView().getTitle()) || LIST_TITLE.equals(event.getView().getTitle()));
+            && (GuiTitle.matches(CURRENT_TITLE, event.getView().getTitle(), CURRENT_SIZE) || GuiTitle.matches(DETAIL_TITLE, event.getView().getTitle(), CURRENT_SIZE) || GuiTitle.matches(LIST_TITLE, event.getView().getTitle(), LIST_SIZE));
     }
 
     private void fillCurrent(Inventory inventory, Player viewer, Player target) {

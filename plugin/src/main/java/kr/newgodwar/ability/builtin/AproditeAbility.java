@@ -31,6 +31,7 @@ import java.util.List;
 )
 final class AproditeAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.HEALING)
+        .normal(EffectCue.PORTAL)
         .hit(EffectCue.PORTAL)
         .effect(EffectCue.PORTAL, AbilityDesigns.ROSE_GATE)
         .build();
@@ -46,7 +47,7 @@ final class AproditeAbility extends BaseAbility {
         }
         List<Player> targets = nearbyPlayers(context, player, 20, false);
         if (targets.isEmpty()) {
-            player.sendMessage(ChatColor.RED + "능력을 사용할 수 있는 대상이 없습니다.");
+            sendAbilityMessage(context, player, "failure", ChatColor.RED + "능력을 사용할 수 있는 대상이 없습니다.");
             return;
         }
         if (useNormal(context, player)) {

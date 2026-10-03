@@ -147,19 +147,10 @@ final class GuiArtwork {
         Graphics2D g=image.createGraphics();g.setRenderingHint(RenderingHints.KEY_ANTIALIASING,RenderingHints.VALUE_ANTIALIAS_ON);g.scale(2,2);
         boolean filler=id.equals("frame")||id.equals("accent");
         if(filler) {
-            fill(g,new Color(20,35,49),new Rectangle2D.Double(0,0,64,64));
-            stroke(g,new Color(27,45,60),1,new Rectangle2D.Double(.5,.5,63,63));
-            if(id.equals("accent")) {
-                line(g,new Color(49,125,127),2,0,3,64,3);line(g,new Color(49,125,127),2,0,61,64,61);
-                diamond(g,GOLD,32,32,3);
-            }
+            // The title glyph paints one continuous surface, including the gaps between slots.
+            // These items only reserve non-interactive positions; they must not paint tiles.
             g.dispose();return image;
         }
-        box(g,new Color(4,11,22,180),2,5,60,57,12);
-        g.setPaint(new GradientPaint(0,3,new Color(40,66,85),0,59,new Color(19,34,50)));
-        g.fill(new RoundRectangle2D.Double(2,2,60,57,11,11));
-        stroke(g,new Color(104,133,144),1.2f,new RoundRectangle2D.Double(3,3,58,55,10,10));
-        line(g,new Color(244,195,104,170),1.5f,18,58,46,58);
         icon(g,id);
         g.dispose();return image;
     }

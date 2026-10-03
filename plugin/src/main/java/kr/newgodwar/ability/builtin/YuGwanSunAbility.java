@@ -28,10 +28,11 @@ import java.util.List;
 )
 final class YuGwanSunAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.GUARD)
+        .normal(EffectCue.GUARD)
+        .advanced(EffectCue.GUARD)
         .hit(EffectCue.FIRE)
         .benefit(EffectCue.GUARD)
         .effect(EffectCue.GUARD, AbilityDesigns.RESOLVE)
-        .effect(EffectCue.FIRE, AbilityDesigns.RESOLVE)
         .build();
 
     @Override
@@ -64,7 +65,7 @@ final class YuGwanSunAbility extends BaseAbility {
         List<Player> allies = nearbyPlayers(context, player, 14, true);
         List<Player> enemies = enemyPlayers(context, player);
         if (enemies.isEmpty()) {
-            player.sendMessage("능력을 사용할 수 있는 대상이 없습니다.");
+            sendAbilityMessage(context, player, "failure", "능력을 사용할 수 있는 대상이 없습니다.");
             return;
         }
         allies.add(player);
@@ -77,7 +78,7 @@ final class YuGwanSunAbility extends BaseAbility {
             effect(context, ally, "RESISTANCE", "DAMAGE_RESISTANCE", 10, 0);
         }
         for (Player enemy : enemies) {
-            enemy.setFireTicks(120);
+            ignite(context, enemy, 120);
             effect(context, enemy, PotionEffectType.BLINDNESS, 8, 0);
             effect(context, enemy, PotionEffectType.CONFUSION, 9, 0);
             effect(context, enemy, PotionEffectType.WEAKNESS, 9, 0);

@@ -32,7 +32,6 @@ final class ZetAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.FIRE)
         .hit(EffectCue.FIRE)
         .passive(EffectCue.WIND)
-        .effect(EffectCue.FIRE, AbilityDesigns.JET_EXHAUST)
         .effect(EffectCue.WIND, AbilityDesigns.JET_EXHAUST)
         .build();
 
@@ -42,7 +41,8 @@ final class ZetAbility extends BaseAbility {
     @Override
     public void onGenericDamage(AbilityPlayerContext context, EntityDamageEvent event) {
         if (fire(event.getCause()) && !context.player().hasPotionEffect(PotionEffectType.SPEED) && RANDOM.nextBoolean()) {
-            effect(context, context.player(), PotionEffectType.SPEED, 8, 1);
+            if (appliedEffect(context, context.player(), PotionEffectType.SPEED, 8, 1))
+                feedback.passive(context, "제트 추진 · 신속 II");
         }
     }
 }

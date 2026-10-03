@@ -66,7 +66,7 @@ final class HephaestusAbility extends TransientAbility {
         if (!isSword(context.player().getItemInHand().getType()) && !weapon.endsWith("_AXE")) return;
         heat--;
         event.setDamage(event.getDamage() + 2);
-        feedback.cue(context, opponent, kr.newgodwar.ability.feedback.EffectCue.FIRE);
+        confirmedAttack(context, event, opponent, kr.newgodwar.ability.feedback.EffectCue.FIRE);
         if (heat == 0) { cancelScheduledTask(heatTask); heatTask = -1; }
     }
 

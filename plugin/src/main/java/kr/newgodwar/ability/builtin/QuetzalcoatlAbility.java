@@ -33,6 +33,7 @@ import java.util.List;
 )
 final class QuetzalcoatlAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.WIND)
+        .advanced(EffectCue.WIND)
         .normal(EffectCue.WINGS)
         .hit(EffectCue.WIND)
         .effect(EffectCue.WINGS, AbilityDesigns.SERPENT_FEATHERS)
@@ -55,7 +56,7 @@ final class QuetzalcoatlAbility extends BaseAbility {
     protected void onStaffRight(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
         List<Player> targets = nearbyPlayers(context, player, 9, false);
         if (targets.isEmpty()) {
-            player.sendMessage("능력을 사용할 수 있는 대상이 없습니다.");
+            sendAbilityMessage(context, player, "failure", "능력을 사용할 수 있는 대상이 없습니다.");
             return;
         }
         if (useAdvanced(context, player)) {

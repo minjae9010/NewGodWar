@@ -18,7 +18,7 @@ final class ChestLayout {
         Arrays.fill(slots, -1);
         switch (view) {
             case MAIN:
-                put(slots, 4,13, 10,19, 11,21, 12,23, 13,25, 14,28, 15,30, 16,32, 17,34, 23,39, 24,41); break;
+                put(slots, 4,7, 10,10, 11,12, 12,14, 13,16, 14,28, 15,30, 16,32, 17,34, 23,48, 24,50); break;
             case STOP_CONFIRM:
                 put(slots, 10,20, 16,24); break;
             case GAME:
@@ -42,7 +42,7 @@ final class ChestLayout {
                 put(slots, 4,13, 10,20, 11,21, 12,23, 13,24, 16,31); break;
             case DISPLAY:
                 put(slots, 0,10, 1,12, 2,14, 3,16, 10,19, 11,21, 12,23, 13,25,
-                    14,28, 15,30, 16,32, 17,34, 18,37, 19,39, 20,41, 21,43); break;
+                    14,28, 15,30, 16,32, 17,34, 18,37, 19,39, 20,41, 21,43, 22,40); break;
             case COMBAT:
                 put(slots, 10,20, 11,22, 12,24, 14,13, 19,29, 20,30, 21,31, 22,33, 23,40); break;
             case GAMBLING:
@@ -57,6 +57,11 @@ final class ChestLayout {
 
     static int logicalSlot(SettingsView view, int displaySlot) {
         if (displaySlot < 0) return -1;
+        // The caption beneath a home icon belongs to the same button.
+        if (view == SettingsView.MAIN && (displaySlot / 9 == 2 || displaySlot / 9 == 4)
+            && displaySlot % 9 >= 1 && displaySlot % 9 <= 7 && (displaySlot % 9) % 2 == 1) {
+            displaySlot -= 9;
+        }
         int[] slots = settings(view);
         for (int i = 0; i < slots.length; i++) if (slots[i] == displaySlot) return i;
         return -1;

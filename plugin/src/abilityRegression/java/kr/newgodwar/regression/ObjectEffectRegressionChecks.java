@@ -38,7 +38,7 @@ final class ObjectEffectRegressionChecks {
     private Location location;
     private boolean online = true, invisible, flying, dead;
     private double viewerOffset;
-    private int particles, shown, hidden;
+    private int particles, shown, hidden, sounds;
     private final List<Location> emittedPoints = new ArrayList<Location>();
 
     ObjectEffectRegressionChecks(NewGodWarPlugin core) { this.core = core; this.visuals = new VisualProbe(core); }
@@ -48,7 +48,7 @@ final class ObjectEffectRegressionChecks {
         boolean supported = ObjectEffects.supported();
         if (Bukkit.getBukkitVersion().startsWith("26.")) require(supported, "Modern server failed Display capability discovery");
         Map<String, Object> saved = new HashMap<String, Object>();
-        for (String key : Arrays.asList("enabled", "particles", "objects", "object-limit", "animations")) {
+        for (String key : Arrays.asList("enabled", "particles", "objects", "object-limit", "animations", "sounds", "titles", "action-bar")) {
             saved.put(key, core.getConfig().get("abilities.effects." + key));
         }
         world = Bukkit.getWorlds().get(0); world.getChunkAt(0, 0).load();
@@ -58,6 +58,7 @@ final class ObjectEffectRegressionChecks {
         ObjectEffects renderer = new ObjectEffects();
         AbilityFeedback feedback = visuals.feedback("thor");
         try {
+            checkAudio(player);
             for (String key : Arrays.asList("enabled", "particles", "objects")) core.getConfig().set("abilities.effects." + key, true);
             core.getConfig().set("abilities.effects.object-limit", 48);
             visuals.effect("hammer", context, location);
@@ -117,7 +118,7 @@ final class ObjectEffectRegressionChecks {
             AbilityPlayerContext flight = new AbilityPlayerContext(core, player, core.abilities().registry().get("hermes"));
             feedback = visuals.feedback("hermes");
             flying = true; feedback.flight(flight);
-            require(displays().size() == 10, "Flight did not create its feather wings");
+            require(displays().size() == kr.newgodwar.ability.feedback.SharedModels.WINGS.parts(0,1).size(), "Flight did not create its feather wings");
             Set<UUID> wings = ids(displays());
             location.add(0.1, 0.2, 0); feedback.flight(flight);
             require(wings.equals(ids(displays())), "Flight renewals stacked wings");
@@ -174,6 +175,33 @@ final class ObjectEffectRegressionChecks {
             visuals.clear(); renderer.clear(); ObjectEffects.clearAll();
             for (Map.Entry<String, Object> entry : saved.entrySet()) core.getConfig().set("abilities.effects." + entry.getKey(), entry.getValue());
         }
+    }
+
+    private void checkAudio(Player player) {
+        core.getConfig().set("abilities.effects.enabled",true);
+        core.getConfig().set("abilities.effects.sounds",true);
+        core.getConfig().set("abilities.effects.titles",false);
+        core.getConfig().set("abilities.effects.action-bar",false);
+        for(String id:core.abilities().registry().ids()) {
+            AbilityPlayerContext context=new AbilityPlayerContext(core,player,core.abilities().registry().get(id));
+            AbilityFeedback audio=new AbilityFeedback(core.abilities().registry().get(id).create());
+            try {
+                for(boolean objects:new boolean[]{true,false})for(boolean particles:new boolean[]{true,false}) {
+                    core.getConfig().set("abilities.effects.objects",objects);
+                    core.getConfig().set("abilities.effects.particles",particles);
+                    int before=sounds;
+                    for(int repeat=0;repeat<3;repeat++) {
+                        audio.activated(context,player,false);audio.activated(context,player,true);
+                    }
+                    require(sounds==before+6,id+": repeat casts must each sound with every renderer setting");
+                }
+                core.getConfig().set("abilities.effects.sounds",false);
+                int before=sounds;audio.activated(context,player,false);audio.finished(context);
+                require(sounds==before,id+": sounds:false was ignored");
+                core.getConfig().set("abilities.effects.sounds",true);
+            } finally {audio.clear();}
+        }
+        core.getLogger().info("PASS audio: all 93 abilities, repeated normal/advanced casts, all renderer settings and mute");
     }
 
     private void checkRenderScenarios(AbilityPlayerContext context, Player player, ObjectEffects renderer) throws Exception {
@@ -286,6 +314,7 @@ final class ObjectEffectRegressionChecks {
                 case "spawnParticle": particles++; emittedPoints.add(((Location)args[1]).clone()); return null;
                 case "showEntity": shown++; return null;
                 case "hideEntity": hidden++; return null;
+                case "playSound": sounds++; return null;
                 case "equals": return proxy == args[0];
                 case "hashCode": return id.hashCode();
                 case "toString": return "ObjectViewer";

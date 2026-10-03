@@ -34,7 +34,7 @@ final class MidoriyaAbility extends BaseAbility {
         .hit(EffectCue.HIT)
         .passive(EffectCue.CHARGE)
         .effect(EffectCue.HIT, AbilityDesigns.GREEN_SMASH)
-        .effect(EffectCue.CHARGE, AbilityDesigns.GREEN_SMASH)
+        .effect(EffectCue.CHARGE, AbilityDesigns.GREEN_READY)
         .build();
 
     @Override
@@ -46,7 +46,7 @@ final class MidoriyaAbility extends BaseAbility {
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
         if (hasNormalCost(context, player) && readyNormal(context, player, 1)) {
             ready = true;
-            feedback.cue(context, player, kr.newgodwar.ability.feedback.EffectCue.CHARGE);
+            feedback.castCue(context, player, kr.newgodwar.ability.feedback.EffectCue.CHARGE);
             player.sendMessage(ChatColor.YELLOW + "원" + ChatColor.GREEN + " 포 " + ChatColor.AQUA + "올" + ChatColor.WHITE + "이 준비되었습니다!");
         }
     }
@@ -56,6 +56,7 @@ final class MidoriyaAbility extends BaseAbility {
         Player player = context.player();
         if (attacker && ready && player.getItemInHand().getType() == Material.AIR && useNormal(context, player)) {
             ready = false;
+            confirmedAttack(context, event, opponent);
             event.setDamage(200.0D);
             effect(context, player, "NAUSEA", "CONFUSION", 12, 0);
             effect(context, player, PotionEffectType.HUNGER, 12, 0);

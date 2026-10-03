@@ -30,6 +30,8 @@ import org.bukkit.potion.PotionEffectType;
 )
 final class HongGildongAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.SHADOW)
+        .normal(EffectCue.STEALTH)
+        .advanced(EffectCue.STEALTH)
         .hit(EffectCue.STEALTH)
         .privateCast()
         .effect(EffectCue.STEALTH, AbilityDesigns.CLOUD_STEP)
@@ -69,7 +71,8 @@ final class HongGildongAbility extends BaseAbility {
     @Override
     public void onDamageByEntity(AbilityPlayerContext context, EntityDamageByEntityEvent event, Player opponent, boolean attacker) {
         if (!attacker && oneIn(4)) {
-            effect(context, context.player(), PotionEffectType.SPEED, 8, 1);
+            if (appliedEffect(context, context.player(), PotionEffectType.SPEED, 8, 1))
+                feedback.castCue(context, context.player(), EffectCue.WIND);
         }
     }
 

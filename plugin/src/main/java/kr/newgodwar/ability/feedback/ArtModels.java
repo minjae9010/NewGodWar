@@ -58,9 +58,10 @@ public final class ArtModels {
     }
 
     public static ObjectModel create(String key,String motion,String palette,boolean shortAction,boolean still) {
+        if (motion.equals("wings")) return WingModels.create(palette.equals("fire"), true, still);
         return ObjectModel.animated((phase,detail)->{
             Frame f=new Frame(key,palette,still?8:phase,shortAction,still);
-            compose(f,motion,detail);
+            if (!AbilityChoreography.compose(f, motion)) compose(f,motion,detail);
             if(f.parts.size()>MAX_PARTS)throw new IllegalStateException(key+" exceeds the display budget");
             return f.parts;
         });
@@ -77,13 +78,6 @@ public final class ArtModels {
                 f.fx("wave",.55+.35*Math.sin(t*.12+i),Math.sin(angle)*4.5,1.15,Math.cos(angle)*4.5-.05,2.6,2.6,0,-angle,0,false);
             }
             f.boundary(4.5,t*.01,.8);
-            break;
-        case "wings":
-            for(int side:new int[]{-1,1})for(int i=0;i<5;i++) {
-                double flap=Math.sin(t*.22+i*.2)*.16;
-                f.emblem(f.in(0,4)*f.out(),side*(.42+i*.26)*f.grow(),1.45-i*.05+flap,-.34-i*.05,.82,1.6,side*(.45+i*.12),side*flap,0,false);
-            }
-            f.trail(4,0,1.2,-.6,"shard",.2);
             break;
         case "clock": {
             double r=Math.max(.5,detail);
@@ -801,7 +795,7 @@ public final class ArtModels {
         }
         /** The impact explosion: a six-frame burst whose shock ring tears outward on its own. */
         void flash(double y,double size) {
-            sequence("burst",4,0,y,0,size*1.5,size*1.5,0,0,0,true);
+            sequence("burst",4,0,y,0,size*.85,size*.85,0,0,0,true);
         }
         /** An impact flash in front of the body: two crossed faces, visible head-on and from the side. */
         void frontFlash(double y,double z,double size) {
@@ -814,7 +808,7 @@ public final class ArtModels {
             double rise=in(2,6),fade=1-in(8,16);
             // Tall enough to rise past the emblem above the head, so it is not hidden by the body.
             double h=(height+.8)*(.3+.7*rise);
-            fx("beam",rise*fade,0,h/2,0,width*1.4*(1-.45*in(6,16)),h,0,0,0,true);
+            fx("beam",rise*fade*.55,0,h/2,0,width*.6*(1-.45*in(6,16)),h,0,0,0,true);
         }
         /** Arrow-like light streak along the facing direction. */
         void tracer(double y,double tip,double alpha) {

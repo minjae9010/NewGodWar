@@ -5,6 +5,7 @@
 build/
 target/
 out/
+output/
 
 # Gradle subproject output
 **/build/

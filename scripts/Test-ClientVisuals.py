@@ -325,7 +325,7 @@ def run(args):
     client_command = hidden_command(plan) if args.hidden else plan['client']
     prepare_client_actions(plan)
     plugin_version = re.search(r'version\s*=\s*"([^"]+)"', (ROOT / 'build.gradle').read_text()).group(1)
-    built_plugin = ROOT / 'build/libs' / f'NewGodWar-{plugin_version}.jar'
+    built_plugin = Path(args.plugin_jar).resolve() if args.plugin_jar else ROOT / 'build/libs' / f'NewGodWar-{plugin_version}.jar'
     deployed_plugin = Path(plan['serverDir']) / 'plugins/NewGodWar.jar'
     shutil.copy2(built_plugin, deployed_plugin)
     visual_probe = Path(plan['serverDir']) / 'plugins/VisualRegressionProbe.jar'
@@ -430,6 +430,7 @@ if __name__ == '__main__':
     parser.add_argument('--allow-client-window', action='store_true')
     parser.add_argument('--hidden', action='store_true', help='Verify and use a hidden, non-focusable SDL test window.')
     parser.add_argument('--visual-probe', action='store_true', help='Install the separately built local visual regression fixture.')
+    parser.add_argument('--plugin-jar', help='Test an explicitly selected build without replacing the shared workspace JAR.')
     parser.add_argument('--art-pack', action='store_true', help='Offer the built effect pack from an isolated loopback-only HTTP server.')
     arguments = parser.parse_args()
     if arguments.action == 'prepare':

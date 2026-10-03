@@ -33,6 +33,7 @@ import java.util.List;
 )
 final class IrisAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.ARCANE)
+        .advanced(EffectCue.HEAL)
         .hit(EffectCue.PORTAL)
         .benefit(EffectCue.HEAL)
         .effect(EffectCue.PORTAL, AbilityDesigns.RAINBOW)
@@ -57,7 +58,7 @@ final class IrisAbility extends BaseAbility {
             for (Player target : targets) {
                 effect(context, target, PotionEffectType.SPEED, 8, 0);
                 effect(context, target, PotionEffectType.REGENERATION, 7, 0);
-                feedback.affected(context, target, "무지개 축복 · 신속 8초 / 재생 7초", false);
+                feedback.notice(context, target, "무지개 축복 · 신속 8초 / 재생 7초", false, true);
             }
         }
     }

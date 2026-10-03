@@ -59,7 +59,7 @@ final class PanAbility extends TransientAbility {
             for (Player target : alliesInRange(context, stage, radius)) {
                 effect(context, target, "SPEED", "SPEED", 4, 0);
                 effect(context, target, "JUMP_BOOST", "JUMP", 4, 0);
-                if (note == 2) restoreHealth(target, 2);
+                if (note == 2) restoreHealth(context, target, 2);
             }
         } else {
             for (Player target : enemies(context, stage, radius)) {

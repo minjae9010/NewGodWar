@@ -14,6 +14,7 @@ public final class AbilityStyle {
     private final boolean dedicated, privateCast;
     private final ObjectModel flightModel;
     private final Map<EffectCue, DesignedEffect> effects;
+    private final Map<EffectCue, DesignedEffect> receivedEffects;
 
     private AbilityStyle(Builder builder) {
         theme = builder.theme;
@@ -23,6 +24,7 @@ public final class AbilityStyle {
         dedicated = builder.dedicated; privateCast = builder.privateCast;
         flightModel = builder.flightModel;
         effects = Collections.unmodifiableMap(new EnumMap<EffectCue, DesignedEffect>(builder.effects));
+        receivedEffects = Collections.unmodifiableMap(new EnumMap<EffectCue, DesignedEffect>(builder.receivedEffects));
     }
 
     public static Builder builder(AbilityTheme theme) { return new Builder(theme); }
@@ -36,6 +38,11 @@ public final class AbilityStyle {
     public boolean privateCast() { return privateCast; }
     public ObjectModel flightModel() { return flightModel; }
     public DesignedEffect effect(EffectCue cue) { return effects.get(cue); }
+    /** Recipients never inherit a caster's weapon, aiming reticle, crafting table or spellbook. */
+    public DesignedEffect receivedEffect(EffectCue cue) {
+        DesignedEffect effect=receivedEffects.get(cue);
+        return effect!=null?effect:kr.newgodwar.ability.builtin.AbilityDesigns.status(cue);
+    }
     public Map<EffectCue, DesignedEffect> effects() { return effects; }
 
     public static final class Builder {
@@ -46,6 +53,7 @@ public final class AbilityStyle {
         private boolean dedicated, privateCast;
         private ObjectModel flightModel;
         private final Map<EffectCue, DesignedEffect> effects = new EnumMap<EffectCue, DesignedEffect>(EffectCue.class);
+        private final Map<EffectCue, DesignedEffect> receivedEffects = new EnumMap<EffectCue, DesignedEffect>(EffectCue.class);
 
         private Builder(AbilityTheme theme) { this.theme = Objects.requireNonNull(theme, "theme"); }
         public Builder normal(EffectCue cue) { normal = Objects.requireNonNull(cue, "cue"); return this; }
@@ -60,6 +68,9 @@ public final class AbilityStyle {
         public Builder effect(EffectCue cue, DesignedEffect effect) {
             effects.put(Objects.requireNonNull(cue, "cue"), Objects.requireNonNull(effect, "effect")); return this;
         }
+        public Builder received(EffectCue cue, DesignedEffect effect) {
+            receivedEffects.put(Objects.requireNonNull(cue,"cue"),Objects.requireNonNull(effect,"effect"));return this;
+        }
         public AbilityStyle build() { return new AbilityStyle(this); }
     }
 
@@ -69,9 +80,11 @@ public final class AbilityStyle {
         if (hit == EffectCue.SLEEP || hit == EffectCue.MUSIC) return hit;
         switch (potion) {
             case "POISON": case "WITHER": case "CONFUSION": case "NAUSEA": return EffectCue.POISON;
-            case "BLINDNESS": return hit == EffectCue.SEAL || hit == EffectCue.FIRE ? hit : EffectCue.BLIND;
-            case "SLOW": case "SLOWNESS": return hit == EffectCue.ROOT || hit == EffectCue.SEAL ? hit : EffectCue.SLOW;
+            case "BLINDNESS": return EffectCue.BLIND;
+            case "SLOW": case "SLOWNESS": return hit == EffectCue.ROOT ? hit : EffectCue.SLOW;
             case "REGENERATION": case "HEAL": case "INSTANT_HEALTH": return EffectCue.HEAL;
+            case "HASTE": case "FAST_DIGGING": return EffectCue.HASTE;
+            case "WEAKNESS": return EffectCue.WEAKNESS;
             case "ABSORPTION": case "DAMAGE_RESISTANCE": case "RESISTANCE": return EffectCue.GUARD;
             case "SPEED": case "JUMP": case "JUMP_BOOST": case "LEVITATION": return EffectCue.WIND;
             case "INCREASE_DAMAGE": case "STRENGTH": return EffectCue.CHARGE;

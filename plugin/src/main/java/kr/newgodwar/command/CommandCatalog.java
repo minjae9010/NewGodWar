@@ -30,7 +30,7 @@ final class CommandCatalog {
         add("start", "game", true, "", "게임 시작 및 능력 배정", "gstart", "go", "시작");
         add("stop", "game", true, "", "게임 종료", "gstop", "end", "종료");
         add("test", "game", true, "[ability]", "혼자 능력 테스트 시작", null, "테스트");
-        add("dummy", "game", true, "[spawn|remove]", "플레이어형 타깃 더미 소환 / 제거", null, "더미");
+        add("dummy", "game", true, "[spawn|remove|team|move|reset]", "더미 소환·제거 / team <ally|enemy|팀> / move <on|off> / reset", null, "더미");
         add("skip", "game", true, "[초]", "능력 선택을 마치고 시작 대기 시간 정하기", "gskip", "스킵");
         add("autoteam", "team", true, "", "온라인 플레이어 자동 팀 배정", "gautoteam", "at", "자동팀");
         add("join", "team", true, "<team> <player>", "플레이어 팀 수동 배정", "gjoin", "j", "team", "t", "배정");

@@ -28,6 +28,8 @@ import java.util.List;
 )
 final class SusAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.SHADOW)
+        .normal(EffectCue.STEALTH)
+        .advanced(EffectCue.PORTAL)
         .hit(EffectCue.PORTAL)
         .privateCast()
         .effect(EffectCue.PORTAL, AbilityDesigns.FALSE_FACE)
@@ -49,7 +51,7 @@ final class SusAbility extends BaseAbility {
     protected void onStaffRight(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
         List<Player> targets = nearbyPlayers(context, player, 10, false);
         if (targets.isEmpty()) {
-            player.sendMessage("능력을 사용할 수 있는 대상이 없습니다.");
+            sendAbilityMessage(context, player, "failure", "능력을 사용할 수 있는 대상이 없습니다.");
             return;
         }
         if (useAdvanced(context, player)) {

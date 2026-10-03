@@ -33,10 +33,9 @@ import java.util.List;
 )
 final class PriestAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.HEALING)
-        .effect(EffectCue.HEAL, AbilityDesigns.BLESSING)
+        .normal(EffectCue.GUARD)
+        .advanced(EffectCue.GUARD)
         .effect(EffectCue.GUARD, AbilityDesigns.BLESSING)
-        .effect(EffectCue.CHARGE, AbilityDesigns.BLESSING)
-        .effect(EffectCue.WIND, AbilityDesigns.BLESSING)
         .build();
 
     @Override
@@ -89,6 +88,6 @@ final class PriestAbility extends BaseAbility {
             effect(context, player, PotionEffectType.REGENERATION, 30, 0);
             blessings.add("재생");
         }
-        feedback.affected(context, player, "축복 · " + String.join(" / ", blessings) + " 30초", false);
+        feedback.notice(context, player, "축복 · " + String.join(" / ", blessings) + " 30초", false, true);
     }
 }

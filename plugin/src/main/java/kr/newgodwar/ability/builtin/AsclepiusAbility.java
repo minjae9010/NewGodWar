@@ -32,6 +32,8 @@ import java.util.List;
 )
 final class AsclepiusAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.HEALING)
+        .normal(EffectCue.HEAL)
+        .advanced(EffectCue.HEAL)
         .benefit(EffectCue.HEAL)
         .effect(EffectCue.HEAL, AbilityDesigns.MEDICINE)
         .build();
@@ -42,8 +44,8 @@ final class AsclepiusAbility extends BaseAbility {
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
         if (useNormal(context, player)) {
-            heal(player);
-            feedback.affected(context, player, "완전 회복", false);
+            heal(context, player);
+            feedback.notice(context, player, "완전 회복", false);
         }
     }
 
@@ -51,13 +53,13 @@ final class AsclepiusAbility extends BaseAbility {
     protected void onStaffRight(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
         List<Player> targets = nearbyPlayers(context, player, 5, true);
         if (targets.isEmpty()) {
-            player.sendMessage("사용 가능한 대상이 없습니다.");
+            sendAbilityMessage(context, player, "failure", "사용 가능한 대상이 없습니다.");
             return;
         }
         if (useAdvanced(context, player)) {
             for (Player target : targets) {
-                heal(target);
-                feedback.affected(context, target, "완전 회복", false);
+                heal(context, target);
+                feedback.notice(context, target, "완전 회복", false);
             }
         }
     }

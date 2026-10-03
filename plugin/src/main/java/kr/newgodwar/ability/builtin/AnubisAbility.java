@@ -43,7 +43,7 @@ final class AnubisAbility extends TransientAbility {
         Player target = targetPlayerInSight(context, player, 20, false);
         if (target == null || !useNormal(context, player)) return;
         judged = target; burden = 0;
-        feedback.affected(context, target, "심장의 저울 · 아누비스에게 준 피해가 심판에 더해집니다", true);
+        feedback.affected(context, target, "심장의 저울 · 아누비스에게 준 피해가 심판에 더해집니다", true, true);
         final int[] remaining = {16};
         scaleTask = scheduleRepeating(context, () -> {
             if (!validEnemy(context, judged, 24) || remaining[0]-- <= 0) { endJudgment(); return; }
@@ -70,7 +70,7 @@ final class AnubisAbility extends TransientAbility {
         endJudgment();
         double before = target.getHealth();
         damage(context, target, amount, player);
-        if (active(context)) restoreHealth(player, Math.min(3, Math.max(0, before - target.getHealth())));
+        if (active(context)) restoreHealth(context, player, Math.min(3, Math.max(0, before - target.getHealth())));
     }
 
     private void endJudgment() { cancelScheduledTask(scaleTask); scaleTask = -1; judged = null; burden = 0; }

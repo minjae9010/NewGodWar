@@ -137,7 +137,9 @@ public final class CommandRoutingTest {
         assertTrue(complete(false, "help", "").contains("player"));
         assertTrue(complete(true, "").contains("dummy"));
         assertFalse(complete(false, "").contains("dummy"));
-        assertTrue(complete(true, "game", "dummy", "").containsAll(Arrays.asList("spawn", "remove")));
+        assertTrue(complete(true, "game", "dummy", "").containsAll(Arrays.asList("spawn", "remove", "team", "move", "reset")));
+        assertTrue(complete(true, "dummy", "team", "").containsAll(Arrays.asList("ally", "enemy", "red", "blue")));
+        assertTrue(complete(true, "game", "dummy", "move", "").containsAll(Arrays.asList("on", "off")));
         assertTrue(complete(false, "dummy", "").isEmpty());
         assertTrue(CommandCatalog.requiresAdmin("더미"));
     }

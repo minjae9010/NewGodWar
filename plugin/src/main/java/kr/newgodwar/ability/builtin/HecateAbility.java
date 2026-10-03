@@ -33,6 +33,8 @@ import java.util.List;
 )
 final class HecateAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.SHADOW)
+        .normal(EffectCue.STEALTH)
+        .advanced(EffectCue.POISON)
         .hit(EffectCue.STEALTH)
         .privateCast()
         .effect(EffectCue.STEALTH, AbilityDesigns.WITCH_MOONS)

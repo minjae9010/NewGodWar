@@ -37,11 +37,9 @@ final class SiksinAbility extends BaseAbility {
         .normal(EffectCue.ITEM)
         .advanced(EffectCue.ITEM)
         .effect(EffectCue.ITEM, AbilityDesigns.FEAST)
-        .effect(EffectCue.HEAL, AbilityDesigns.HERBS)
-        .effect(EffectCue.CHARGE, AbilityDesigns.MUSCLE)
-        .effect(EffectCue.WIND, AbilityDesigns.CLOUD_STEP)
-        .effect(EffectCue.FORGE, AbilityDesigns.ANVIL)
-        .effect(EffectCue.GUARD, AbilityDesigns.AEGIS_PLATES)
+        .received(EffectCue.CHARGE, AbilityDesigns.MUSCLE)
+        .received(EffectCue.WIND, AbilityDesigns.CLOUD_STEP)
+        .received(EffectCue.GUARD, AbilityDesigns.AEGIS_PLATES)
         .build();
 
     @Override
@@ -255,7 +253,7 @@ final class SiksinAbility extends BaseAbility {
         PotionEffect after = player.getPotionEffect(type);
         boolean applied = after != null && (before == null || after.getAmplifier() > before.getAmplifier()
             || (after.getAmplifier() == before.getAmplifier() && after.getDuration() > before.getDuration()));
-        if (applied && buff == BuffKind.HASTE) feedback.cue(context, player, EffectCue.FORGE);
+        if (applied && buff == BuffKind.HASTE) feedback.cue(context, player, EffectCue.HASTE);
         player.sendMessage((applied ? ChatColor.GOLD + "✦ " : ChatColor.GRAY + "• ") + buff.foodName + ChatColor.WHITE
             + (applied ? " · " + buff.label + " I " + buff.seconds + "초"
                 : after != null ? " · 기존 " + buff.label + " 효과 유지" : " · " + buff.label + " 효과가 적용되지 않았어요."));

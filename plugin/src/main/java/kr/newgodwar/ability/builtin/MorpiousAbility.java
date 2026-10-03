@@ -32,7 +32,7 @@ import java.util.List;
 final class MorpiousAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.SHADOW)
         .hit(EffectCue.SLEEP)
-        .effect(EffectCue.SLEEP, AbilityDesigns.DREAM)
+        .received(EffectCue.SLEEP, AbilityDesigns.DREAM)
         .build();
 
     @Override

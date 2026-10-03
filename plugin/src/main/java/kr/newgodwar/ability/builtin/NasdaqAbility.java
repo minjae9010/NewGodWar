@@ -58,11 +58,11 @@ final class NasdaqAbility extends BaseAbility {
         feedback.activated(context, player, false);
         if (rollPercent(successPercent)) {
             give(player, item);
-            feedback.cue(context, player, kr.newgodwar.ability.feedback.EffectCue.ITEM);
+            feedback.castCue(context, player, kr.newgodwar.ability.feedback.EffectCue.ITEM);
             sendAbilityMessage(context, player, "success", ChatColor.GREEN + "복사에 성공했습니다. 확률 " + successPercent + "%");
         } else {
             player.getInventory().removeItem(item.clone());
-            feedback.cue(context, player, kr.newgodwar.ability.feedback.EffectCue.HUNGER);
+            feedback.castCue(context, player, kr.newgodwar.ability.feedback.EffectCue.HUNGER);
             sendAbilityMessage(context, player, "failure", ChatColor.RED + "복사에 실패해 들고 있던 자원을 잃었습니다. 확률 " + successPercent + "%");
         }
     }

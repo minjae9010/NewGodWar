@@ -11,6 +11,7 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.entity.EntityRegainHealthEvent;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
@@ -24,7 +25,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.logging.Level;
 
-/** One reusable enemy dummy per administrator; never part of teams, selection, kills or recovery. */
+/** One reusable combat dummy per administrator, excluded from participation and recovery. */
 public final class TrainingDummyManager implements Listener {
     private final NewGodWarPlugin plugin;
     private final Map<UUID, TrainingDummyEntity> byOwner = new LinkedHashMap<UUID, TrainingDummyEntity>();
@@ -37,9 +38,9 @@ public final class TrainingDummyManager implements Listener {
 
     public Player spawn(Player owner) throws ReflectiveOperationException {
         Location location = spawnLocation(owner);
-        String name;
-        do { name = "GW_D_" + UUID.randomUUID().toString().replace("-", "").substring(0, 10); }
-        while (Bukkit.getPlayerExact(name) != null);
+        int index = 1;
+        while (Bukkit.getPlayerExact("Dummy" + index) != null) index++;
+        String name = "Dummy" + index;
         TrainingDummyEntity dummy = TrainingDummyEntity.spawn(location, name);
         remove(owner.getUniqueId());
         byOwner.put(owner.getUniqueId(), dummy);
@@ -63,6 +64,9 @@ public final class TrainingDummyManager implements Listener {
     }
 
     public boolean isDummy(Entity entity) { return entity != null && byId.containsKey(entity.getUniqueId()); }
+    public GodTeam teamOf(Player player) { return byId.get(player.getUniqueId()).team(); }
+    public void setTeam(Player player, GodTeam team) { byId.get(player.getUniqueId()).team(team); }
+    public TrainingDummyEntity ownedBy(Player owner) { return byOwner.get(owner.getUniqueId()); }
 
     public List<Player> players() {
         List<Player> result = new ArrayList<Player>();
@@ -76,7 +80,6 @@ public final class TrainingDummyManager implements Listener {
         try {
             // Clean up state assigned manually through commands using the dummy's exact name.
             if (plugin.abilities().session(dummy.player()) != null) plugin.abilities().remove(dummy.player());
-            if (plugin.game().teamOf(dummy.player()) != null) plugin.game().leave(dummy.player());
         } catch (RuntimeException ex) {
             plugin.getLogger().log(Level.WARNING, "Could not clear training dummy combat state", ex);
         } finally {
@@ -99,8 +102,6 @@ public final class TrainingDummyManager implements Listener {
                 remove(entry.getKey());
                 continue;
             }
-            dummy.setFoodLevel(20);
-            if (dummy.getHealth() < dummy.getMaxHealth()) dummy.setHealth(dummy.getMaxHealth());
         }
     }
 
@@ -110,6 +111,17 @@ public final class TrainingDummyManager implements Listener {
         Player dummy = (Player) event.getEntity();
         // Keep an ordinary damage event (and hit passives), but prevent a lethal hit from recording a kill.
         if (event.getFinalDamage() >= dummy.getHealth()) event.setDamage(Math.max(0, dummy.getHealth() - 1));
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onDamageRecorded(EntityDamageEvent event) {
+        TrainingDummyEntity dummy = byId.get(event.getEntity().getUniqueId());
+        if (dummy != null) dummy.recordDamage(event.getFinalDamage());
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onNaturalHeal(EntityRegainHealthEvent event) {
+        if (isDummy(event.getEntity()) && event.getRegainReason() == EntityRegainHealthEvent.RegainReason.SATIATED) event.setCancelled(true);
     }
 
     @EventHandler

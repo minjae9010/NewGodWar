@@ -31,7 +31,7 @@ import java.util.List;
 final class CounterAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.RUNE)
         .hit(EffectCue.SEAL)
-        .effect(EffectCue.SEAL, AbilityDesigns.COUNTER_LOCK)
+        .received(EffectCue.SEAL, AbilityDesigns.COUNTER_LOCK)
         .build();
 
     @Override
@@ -76,7 +76,7 @@ final class CounterAbility extends BaseAbility {
             return;
         }
         if (context.plugin().abilities().suppressAbility(target, NORMAL_SUPPRESS_SECONDS)) {
-            feedback.affected(context, target, "능력 봉인 · 12초", true);
+            feedback.affected(context, target, "능력 봉인 · 12초", true, true);
         }
         player.sendMessage(ChatColor.DARK_PURPLE + target.getName() + "의 능력을 봉인했습니다.");
     }
@@ -93,7 +93,7 @@ final class CounterAbility extends BaseAbility {
         }
         for (Player target : targets) {
             if (context.plugin().abilities().suppressAbility(target, ADVANCED_SUPPRESS_SECONDS)) {
-                feedback.affected(context, target, "능력 봉인 · 6초", true);
+                feedback.affected(context, target, "능력 봉인 · 6초", true, true);
             }
         }
         effect(context, player, "HASTE", "FAST_DIGGING", 10, 1);

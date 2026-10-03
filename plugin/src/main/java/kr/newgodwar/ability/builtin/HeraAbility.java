@@ -24,6 +24,7 @@ import java.util.List;
 )
 final class HeraAbility extends TransientAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.GUARD)
+        .advanced(EffectCue.HEAL)
         .dedicated()
         .effect(EffectCue.HEAL, AbilityDesigns.OATH_KNOT)
         .build();
@@ -40,7 +41,7 @@ final class HeraAbility extends TransientAbility {
         Player target = targetPlayerInSight(context, player, 8, true);
         if (target == null || target.isDead() || !useNormal(context, player)) return;
         partner = target;
-        feedback.affected(context, target, "헤라와 수호의 서약 · 서로 8블록 이내를 유지하세요", false);
+        feedback.affected(context, target, "헤라와 수호의 서약 · 서로 8블록 이내를 유지하세요", false, true);
         final int[] remaining = {8};
         bondTask = scheduleRepeating(context, () -> {
             if (!bondValid(context) || remaining[0]-- <= 0) { endBond(); return; }
@@ -64,12 +65,10 @@ final class HeraAbility extends TransientAbility {
         if (!useAdvanced(context, player)) return;
         Player target = partner;
         endBond();
-        restoreHealth(player, 4); restoreHealth(target, 4);
+        restoreHealth(context, player, 4); restoreHealth(context, target, 4);
         effect(context, player, "ABSORPTION", "ABSORPTION", 4, 0);
         effect(context, target, "ABSORPTION", "ABSORPTION", 4, 0);
-        feedback.cue(context, player, kr.newgodwar.ability.feedback.EffectCue.HEAL);
-        feedback.cue(context, target, kr.newgodwar.ability.feedback.EffectCue.HEAL);
-        feedback.affected(context, target, "서약 완성 · 회복과 흡수", false);
+        feedback.notice(context, target, "서약 완성 · 회복과 흡수", false, true);
     }
 
     private void endBond() { cancelScheduledTask(bondTask); bondTask = -1; partner = null; }

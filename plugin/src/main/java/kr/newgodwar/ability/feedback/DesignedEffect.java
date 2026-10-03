@@ -22,7 +22,7 @@ public final class DesignedEffect {
             for (ObjectModel.Part p : model.parts(age, detail)) {
                 // Each component grows in place; roots stay at the feet and crowns above the head.
                 out.add(new ObjectModel.Part(p.material, p.item, p.x, p.y, p.z,
-                    p.sx * scale, p.sy * scale, p.sz * scale, p.roll, p.turn));
+                    p.sx * scale, p.sy * scale, p.sz * scale, p.roll, p.turn, p.pitch, p.art, p.billboard));
             }
             return out;
         });

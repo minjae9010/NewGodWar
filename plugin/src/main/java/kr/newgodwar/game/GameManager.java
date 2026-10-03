@@ -407,6 +407,7 @@ public final class GameManager {
     }
 
     public GodTeam teamOf(Player player) {
+        if (plugin.trainingDummies() != null && plugin.trainingDummies().isDummy(player)) return plugin.trainingDummies().teamOf(player);
         return teams.get(player.getUniqueId());
     }
 
@@ -519,6 +520,10 @@ public final class GameManager {
         if (!isTeamEnabled(team)) {
             throw new IllegalStateException("비활성화된 팀에는 배정할 수 없습니다.");
         }
+        if (plugin.trainingDummies() != null && plugin.trainingDummies().isDummy(player)) {
+            plugin.trainingDummies().setTeam(player, team);
+            return;
+        }
         completePendingPlayerCleanup(player);
         teams.put(player.getUniqueId(), team);
         requestCheckpoint();
@@ -527,6 +532,10 @@ public final class GameManager {
     }
 
     public void changeTeam(Player player, GodTeam team) {
+        if (plugin.trainingDummies() != null && plugin.trainingDummies().isDummy(player)) {
+            assign(player, team);
+            return;
+        }
         if (!isTeamEnabled(team)) {
             throw new IllegalStateException("비활성화된 팀에는 변경할 수 없습니다.");
         }
@@ -547,6 +556,10 @@ public final class GameManager {
     }
 
     public void leave(Player player) {
+        if (plugin.trainingDummies() != null && plugin.trainingDummies().isDummy(player)) {
+            plugin.trainingDummies().setTeam(player, null);
+            return;
+        }
         requestCheckpoint();
         boolean removedPendingSelection = pendingSelection.remove(player.getUniqueId()) != null;
         teams.remove(player.getUniqueId());
@@ -651,7 +664,11 @@ public final class GameManager {
     public boolean canDamage(Player attacker, Player victim) {
         if (plugin.trainingDummies() != null) {
             if (plugin.trainingDummies().isDummy(attacker)) return false;
-            if (plugin.trainingDummies().isDummy(victim)) return true;
+            if (plugin.trainingDummies().isDummy(victim)) {
+                GodTeam attackerTeam = teamOf(attacker);
+                return plugin.getConfig().getBoolean("game.friendly-fire", false)
+                    || attackerTeam == null || !attackerTeam.equals(teamOf(victim));
+            }
         }
         if (activeMode != null) return activeMode.canDamage(attacker, victim);
         if (isPlayerCombatProtectedByKilltime()) {
@@ -774,7 +791,7 @@ public final class GameManager {
                 pendingSelection.put(player.getUniqueId(), rerollCount);
             }
             if (plugin.getConfig().getBoolean("game.ability-roll-message", true)) {
-                nmsAdapter.sendTitle(player, ability.name(), ability.description(), 10, 70, 20);
+                nmsAdapter.sendActionBar(player, ChatColor.GOLD + "능력 배정 · " + ability.name());
             }
         }
         refreshAllPlayerDisplays();
@@ -827,7 +844,7 @@ public final class GameManager {
         BukkitCompat.setSurvival(player);
         player.setHealth(player.getMaxHealth());
         player.setFoodLevel(20);
-        nmsAdapter.sendTitle(player, ChatColor.GOLD + "능력 테스트", ability.name(), 10, 60, 10);
+        nmsAdapter.sendActionBar(player, ChatColor.GOLD + "능력 테스트 · " + ability.name());
         startGameTimerTask();
         startPickaxeUnlockNoticeTask();
         refreshAllPlayerDisplays();
@@ -878,7 +895,7 @@ public final class GameManager {
         BukkitCompat.setSurvival(player);
         player.setHealth(player.getMaxHealth());
         player.setFoodLevel(20);
-        nmsAdapter.sendTitle(player, ChatColor.GREEN + "중간 참여", ability.name(), 10, 60, 10);
+        nmsAdapter.sendActionBar(player, ChatColor.GREEN + "중간 참여 · " + ability.name());
         Bukkit.broadcastMessage(plugin.messages().prefix() + teamColoredName(team) + ChatColor.YELLOW
             + " 팀에 " + player.getName() + " 님이 중간 참여했습니다.");
         refreshAllPlayerDisplays();
@@ -905,7 +922,7 @@ public final class GameManager {
             abilityManager.reapply(player);
         }
         BukkitCompat.setSurvival(player);
-        nmsAdapter.sendTitle(player, ChatColor.GREEN + "중간 참여", ability.name(), 10, 60, 10);
+        nmsAdapter.sendActionBar(player, ChatColor.GREEN + "중간 참여 · " + ability.name());
         Bukkit.broadcastMessage(plugin.messages().prefix() + teamColoredName(team) + ChatColor.YELLOW
             + " 팀에 " + player.getName() + " 님이 중간 참여했습니다.");
         refreshAllPlayerDisplays();
@@ -1081,7 +1098,7 @@ public final class GameManager {
     public void setSpectator(Player player) {
         abilityManager.deactivate(player);
         BukkitCompat.setSpectatorOrAdventure(player);
-        nmsAdapter.sendTitle(player, ChatColor.GRAY + "관전 모드", "팀이 탈락했거나 관리자가 관전으로 전환했습니다.", 10, 50, 10);
+        nmsAdapter.sendActionBar(player, ChatColor.GRAY + "관전 모드로 전환되었습니다.");
     }
 
     public void unsetSpectator(Player player) {
@@ -1129,7 +1146,8 @@ public final class GameManager {
         } else {
             pendingSelection.remove(player.getUniqueId());
         }
-        nmsAdapter.sendTitle(player, ability.name(), ability.description(), 10, 70, 20);
+        if (plugin.getConfig().getBoolean("game.ability-roll-message", true))
+            nmsAdapter.sendActionBar(player, ChatColor.GOLD + "능력 재추첨 · " + ability.name());
         refreshPlayerDisplay(player);
         return ability;
     }
@@ -2585,22 +2603,20 @@ public final class GameManager {
 
     private void announceCoreExplosionUnlocked() {
         String title = ChatColor.RED + "코어 폭파 허용";
-        String subtitle = ChatColor.WHITE + "이제 폭발로 코어를 파괴할 수 있습니다.";
         Bukkit.broadcastMessage(plugin.messages().prefix() + title + ChatColor.WHITE
             + " - 이제 폭발로 코어를 파괴할 수 있습니다.");
         for (Player player : BukkitCompat.onlinePlayers()) {
-            nmsAdapter.sendTitle(player, title, subtitle, 10, 60, 10);
+            nmsAdapter.sendActionBar(player, title);
             BukkitCompat.playLevelUp(player);
         }
     }
 
     private void announcePickaxeUnlocked(PickaxeUnlockNotice notice) {
         String title = ChatColor.GREEN + notice.name + " 곡괭이 해제";
-        String subtitle = ChatColor.WHITE + "이제 코어 파괴에 사용할 수 있습니다.";
         Bukkit.broadcastMessage(plugin.messages().prefix() + title + ChatColor.WHITE
             + " - 이제 코어 파괴에 사용할 수 있습니다.");
         for (Player player : BukkitCompat.onlinePlayers()) {
-            nmsAdapter.sendTitle(player, title, subtitle, 10, 60, 10);
+            nmsAdapter.sendActionBar(player, title);
             BukkitCompat.playLevelUp(player);
         }
     }

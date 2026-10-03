@@ -32,7 +32,7 @@ import java.util.List;
 final class BlinderAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.SHADOW)
         .hit(EffectCue.BLIND)
-        .effect(EffectCue.BLIND, AbilityDesigns.SHUT_EYE)
+        .received(EffectCue.BLIND, AbilityDesigns.SHUT_EYE)
         .build();
 
     @Override
@@ -42,7 +42,7 @@ final class BlinderAbility extends BaseAbility {
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
         List<Player> targets = nearbyPlayers(context, player, 5, false);
         if (targets.isEmpty()) {
-            player.sendMessage("능력을 사용할 수 있는 대상이 없습니다.");
+            sendAbilityMessage(context, player, "failure", "능력을 사용할 수 있는 대상이 없습니다.");
             return;
         }
         if (useNormal(context, player)) {

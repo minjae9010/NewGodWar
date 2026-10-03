@@ -34,7 +34,6 @@ final class ApollonAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.FIRE)
         .hit(EffectCue.FIRE)
         .effect(EffectCue.SUN, AbilityDesigns.SOLAR_ARROW)
-        .effect(EffectCue.FIRE, AbilityDesigns.SOLAR_ARROW)
         .build();
 
     @Override
@@ -73,8 +72,7 @@ final class ApollonAbility extends BaseAbility {
             if (count[0] > 0) {
                 for (Player target : enemyPlayers(context, caster)) {
                     if (target.getWorld().equals(caster.getWorld()) && target.getLocation().getBlock().getLightLevel() == 15) {
-                        target.setFireTicks(100);
-                        feedback.cue(context, target, kr.newgodwar.ability.feedback.EffectCue.FIRE);
+                        ignite(context, target, 100);
                     }
                 }
             } else {

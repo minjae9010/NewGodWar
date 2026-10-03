@@ -28,6 +28,8 @@ import java.util.List;
 )
 final class ThisIsFineAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.FIRE)
+        .normal(EffectCue.FIRE)
+        .advanced(EffectCue.HEAL)
         .hit(EffectCue.FIRE)
         .benefit(EffectCue.HEAL)
         .effect(EffectCue.FIRE, AbilityDesigns.EMBERS)
@@ -41,13 +43,13 @@ final class ThisIsFineAbility extends BaseAbility {
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
         List<Player> targets = nearbyPlayers(context, player, 7, false);
         if (targets.isEmpty()) {
-            player.sendMessage("능력을 사용할 수 있는 대상이 없습니다.");
+            sendAbilityMessage(context, player, "failure", "능력을 사용할 수 있는 대상이 없습니다.");
             return;
         }
         if (useNormal(context, player)) {
             effect(context, player, PotionEffectType.FIRE_RESISTANCE, 12, 0);
             for (Player target : targets) {
-                target.setFireTicks(100);
+                ignite(context, target, 100);
             }
             player.sendMessage(ChatColor.GOLD + "괜찮아. 다 괜찮아.");
         }
@@ -57,8 +59,7 @@ final class ThisIsFineAbility extends BaseAbility {
     protected void onStaffRight(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
         if (useAdvanced(context, player)) {
             player.setFireTicks(0);
-            player.setHealth(Math.min(player.getMaxHealth(), player.getHealth() + 6.0D));
-            feedback.cue(context, player, kr.newgodwar.ability.feedback.EffectCue.HEAL);
+            restoreHealthApplied(context, player, 6.0D);
             effect(context, player, "RESISTANCE", "DAMAGE_RESISTANCE", 8, 0);
         }
     }

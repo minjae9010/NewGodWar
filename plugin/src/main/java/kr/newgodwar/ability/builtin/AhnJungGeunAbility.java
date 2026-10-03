@@ -27,11 +27,13 @@ import org.bukkit.potion.PotionEffectType;
 )
 final class AhnJungGeunAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.COMBAT)
+        .normal(EffectCue.HIT)
+        .advanced(EffectCue.HIT)
         .hit(EffectCue.HIT)
         .passive(EffectCue.CHARGE)
         .effect(EffectCue.HIT, AbilityDesigns.BULLET)
         .effect(EffectCue.CHARGE, AbilityDesigns.CHAMBER)
-        .effect(EffectCue.SEAL, AbilityDesigns.COUNTER_LOCK)
+        .received(EffectCue.SEAL, AbilityDesigns.COUNTER_LOCK)
         .build();
 
     @Override
@@ -70,8 +72,8 @@ final class AhnJungGeunAbility extends BaseAbility {
         effect(context, target, PotionEffectType.BLINDNESS, 7, 0);
         effect(context, target, "SLOWNESS", "SLOW", 9, 2);
         if (context.plugin().abilities().session(target) != null) {
-            context.plugin().abilities().suppressAbility(target, 5);
-            feedback.cue(context, target, kr.newgodwar.ability.feedback.EffectCue.SEAL);
+            if (context.plugin().abilities().suppressAbility(target, 5))
+                feedback.cue(context, target, kr.newgodwar.ability.feedback.EffectCue.SEAL);
         }
         target.sendMessage(ChatColor.DARK_PURPLE + "결의의 일격이 능력을 흔들었습니다.");
     }
@@ -79,7 +81,8 @@ final class AhnJungGeunAbility extends BaseAbility {
     @Override
     public void onDamageByEntity(AbilityPlayerContext context, EntityDamageByEntityEvent event, Player opponent, boolean attacker) {
         if (attacker && isSword(context.player().getItemInHand().getType()) && oneIn(5)) {
-            effect(context, context.player(), "STRENGTH", "INCREASE_DAMAGE", 7, 0);
+            if (appliedEffect(context, context.player(), "STRENGTH", "INCREASE_DAMAGE", 7, 0))
+                feedback.passive(context, "장전의 전하 · 공격력 증가");
         }
     }
 }

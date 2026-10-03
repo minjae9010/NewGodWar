@@ -43,7 +43,7 @@ final class ChronosAbility extends TransientAbility {
             }
             Location destination = anchor.clone();
             if (!player.teleport(destination)) return;
-            restoreHealth(player, Math.min(4, Math.max(0, recordedHealth - player.getHealth())));
+            restoreHealth(context, player, Math.min(4, Math.max(0, recordedHealth - player.getHealth())));
             player.setFallDistance(0);
             cancelScheduledTask(anchorTask);
             anchorTask = -1;
@@ -60,6 +60,7 @@ final class ChronosAbility extends TransientAbility {
         if (!useNormal(context, player)) return;
         anchor = location;
         recordedHealth = player.getHealth();
+        feedback.timer(context, "시간 좌표 기록 · 5초 내 좌클릭으로 귀환");
         clockFace(context, anchor, 1.2D, 0);
         anchorTask = scheduleLater(context, () -> {
             anchor = null; anchorTask = -1;

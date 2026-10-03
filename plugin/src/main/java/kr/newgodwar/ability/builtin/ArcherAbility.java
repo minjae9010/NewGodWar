@@ -37,7 +37,6 @@ final class ArcherAbility extends BaseAbility {
         .hit(EffectCue.HIT)
         .effect(EffectCue.CHARGE, AbilityDesigns.ARROW_BUNDLE)
         .effect(EffectCue.ITEM, AbilityDesigns.ARCHER_BOW)
-        .effect(EffectCue.HIT, AbilityDesigns.BULLET)
         .build();
 
     @Override
@@ -60,6 +59,6 @@ final class ArcherAbility extends BaseAbility {
     @Override
     public void onProjectileHit(AbilityPlayerContext context, EntityDamageByEntityEvent event, Player victim) {
         event.setDamage(event.getDamage() * 1.3D);
-        feedback.impact(context, victim);
+        confirmedDamageImpact(context, event, victim);
     }
 }

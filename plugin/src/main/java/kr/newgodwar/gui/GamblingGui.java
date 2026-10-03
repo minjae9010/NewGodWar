@@ -17,6 +17,7 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
@@ -31,15 +32,12 @@ import java.util.concurrent.ThreadLocalRandom;
 
 public final class GamblingGui implements Listener, CommandExecutor {
 
-    private static final String TITLE = ChatColor.DARK_GRAY + "신들의 전쟁 · 보상 뽑기";
-    private static final int DRAW_SLOT = 13;
-    private static final int CLOSE_SLOT = 49;
-    private static final int PREVIOUS_SLOT = 45;
-    private static final int NEXT_SLOT = 53;
+    private static final String REWARDS_TITLE = ChatColor.DARK_GRAY + "보상과 확률";
+    private static final int PREVIOUS_SLOT = 45, NEXT_SLOT = 53, GALLERY_CLOSE_SLOT = 51;
     private static final int[] REWARD_SLOTS = {
+        10, 11, 12, 13, 14, 15, 16,
         19, 20, 21, 22, 23, 24, 25,
-        28, 29, 30, 31, 32, 33, 34,
-        37, 38, 39, 40, 41, 42, 43
+        28, 29, 30, 31, 32, 33, 34
     };
     private final NewGodWarPlugin plugin;
     private final Map<UUID, ViewState> openViewers = new HashMap<UUID, ViewState>();
@@ -63,90 +61,83 @@ public final class GamblingGui implements Listener, CommandExecutor {
             player.sendMessage(ChatColor.RED + "지금은 보상 뽑기가 꺼져 있어요.");
             return;
         }
-        Inventory inventory = Bukkit.createInventory(player, 54, TITLE);
-        ViewState state = new ViewState();
-        render(player, inventory, state);
-        player.openInventory(inventory);
-        openViewers.put(player.getUniqueId(), state);
+        show(player, new ViewState());
     }
 
-    private void render(Player player, Inventory inventory, ViewState state) {
-        GuiTheme.frame(inventory);
-        int cost = gambleCost();
+    private void show(Player player, ViewState state) {
         int balance = InventoryItems.count(player.getInventory(), Material.COBBLESTONE);
-        boolean affordable = balance >= cost;
-        List<Reward> rewards = rewards("gambling.rewards.normal");
-        int pages = (rewards.size() - 1) / REWARD_SLOTS.length + 1;
-        state.page = Math.max(0, Math.min(state.page, pages - 1));
-
-        inventory.setItem(4, GuiTheme.icon(GuiTheme.heading("조약돌 보상 뽑기",
-            "아래 보상과 확률을 확인한 뒤 가운데 버튼을 눌러요."), GuiIcon.GAMBLING));
-        inventory.setItem(7, GuiTheme.icon(item("BOOK", "BOOK", ChatColor.AQUA + "이용 안내",
-            ChatColor.WHITE + "1. 아래 아이템에 마우스를 올려 보상과 확률 확인",
-            ChatColor.WHITE + "2. 조약돌 비용과 보유량 확인",
-            ChatColor.WHITE + "3. 가운데 [1회 뽑기]를 좌클릭",
-            "",
-            ChatColor.GRAY + "클릭할 때마다 비용을 지불하고 결과를 1개 뽑아요.",
-            ChatColor.GRAY + "각 뽑기는 독립적이며 같은 결과도 연속으로 나와요.",
-            ChatColor.GRAY + "가방이 가득 차면 보상은 발밑에 떨어져요."), GuiIcon.HELP));
-        inventory.setItem(10, GuiTheme.icon(item("COBBLESTONE", "COBBLESTONE",
-            ChatColor.WHITE + "내 조약돌 · " + balance + "개",
-            ChatColor.GRAY + "1회 비용  " + ChatColor.WHITE + cost + "개",
-            ChatColor.GRAY + "뽑을 수 있는 횟수  " + ChatColor.AQUA + (balance / cost) + "회",
-            "",
-            ChatColor.GRAY + "가방 안의 조약돌을 사용해요.",
-            ChatColor.GRAY + "보조 손에 든 조약돌은 세지 않아요."), GuiIcon.COIN));
-        inventory.setItem(DRAW_SLOT, GuiTheme.icon(item(affordable ? "GOLD_INGOT" : "GRAY_DYE",
-            affordable ? "GOLD_INGOT" : "INK_SACK",
-            (affordable ? ChatColor.GOLD : ChatColor.GRAY) + "" + ChatColor.BOLD
-                + (affordable ? "1회 뽑기 · 조약돌 " + cost + "개" : "조약돌이 부족해요"),
-            ChatColor.WHITE + "보유 " + balance + "개 / 비용 " + cost + "개",
-            affordable ? ChatColor.GRAY + "비용을 낸 뒤 남는 조약돌  " + (balance - cost) + "개"
-                : ChatColor.RED + "조약돌 " + (cost - balance) + "개가 더 필요해요.",
-            "",
-            affordable ? ChatColor.YELLOW + "좌클릭 · 비용을 내고 1회 뽑기"
-                : ChatColor.GRAY + "조약돌을 모은 뒤 다시 열어 주세요."), affordable ? GuiIcon.GAMBLING : GuiIcon.CANCEL));
-        inventory.setItem(16, resultItem(state));
-
-        long total = totalWeight(rewards);
-        for (int index = 0; index < REWARD_SLOTS.length; index++) {
-            int rewardIndex = state.page * REWARD_SLOTS.length + index;
-            if (rewardIndex >= rewards.size()) break;
-            inventory.setItem(REWARD_SLOTS[index], rewardPreview(rewards.get(rewardIndex), total));
-        }
-        inventory.setItem(48, GuiTheme.icon(item("CHEST", "CHEST", ChatColor.AQUA + "보상 목록",
-            ChatColor.WHITE + "총 " + rewards.size() + "가지 결과 · " + (state.page + 1) + " / " + pages + "페이지",
-            ChatColor.GRAY + "아이템에 마우스를 올리면 수량과 확률을 볼 수 있어요.",
-            ChatColor.GRAY + "목록의 아이템은 미리보기예요."), GuiIcon.REWARDS));
-        if (state.page > 0) {
-            inventory.setItem(PREVIOUS_SLOT, GuiTheme.icon(item("ARROW", "ARROW",
-                ChatColor.WHITE + "이전 보상", ChatColor.YELLOW + "클릭 · 이전 페이지"), GuiIcon.PREVIOUS));
-        }
-        if (state.page + 1 < pages) {
-            inventory.setItem(NEXT_SLOT, GuiTheme.icon(item("ARROW", "ARROW",
-                ChatColor.WHITE + "다음 보상", ChatColor.YELLOW + "클릭 · 다음 페이지"), GuiIcon.NEXT));
-        }
-        inventory.setItem(CLOSE_SLOT, GuiTheme.close());
+        String title = state.catalog ? GuiTheme.title(player, plugin, REWARDS_TITLE, 54)
+            : GuiTheme.gamblingTitle(player, plugin, balance, gambleCost());
+        Inventory inventory = Bukkit.createInventory(state, state.catalog ? 54 : GamblingLayout.SIZE, title);
+        GuiTheme.frame(inventory);
+        if (state.catalog) renderRewards(player, inventory, state);
+        else renderDraw(player, inventory, state, balance);
         GuiTheme.present(player, inventory, plugin);
+        // Closing the previous screen is synchronous. Its close must not discard the new screen's state.
+        state.inventory = inventory;
+        openViewers.put(player.getUniqueId(), state);
+        player.openInventory(inventory);
+    }
+
+    private void renderDraw(Player player, Inventory inventory, ViewState state, int balance) {
+        int cost = gambleCost();
+        boolean affordable = balance >= cost;
+        inventory.setItem(10, GuiTheme.icon(item("COBBLESTONE", "COBBLESTONE",
+            ChatColor.WHITE + "조약돌 " + balance + "개",
+            ChatColor.GRAY + "1회 " + cost + "개 · " + (balance / cost) + "회 가능"), GuiIcon.COIN));
+        ItemStack draw = GuiTheme.icon(item(affordable ? "GOLD_INGOT" : "BARRIER",
+            affordable ? "GOLD_INGOT" : "BARRIER",
+            (affordable ? ChatColor.GOLD : ChatColor.RED) + "1회 뽑기 · " + cost + " 조약돌",
+            affordable ? ChatColor.GRAY + "클릭하면 한 번 뽑아요."
+                : ChatColor.GRAY + "조약돌 " + (cost - balance) + "개가 더 필요해요."),
+            affordable ? GuiIcon.GAMBLING : GuiIcon.CANCEL);
+        for (int slot = 0; slot < GamblingLayout.SIZE; slot++) {
+            if (GamblingLayout.draw(slot)) inventory.setItem(slot, draw.clone());
+        }
+        inventory.setItem(16, resultItem(state));
+        inventory.setItem(GamblingLayout.REWARDS, GuiTheme.icon(item("CHEST", "CHEST",
+            ChatColor.AQUA + "보상과 확률 보기", ChatColor.GRAY + "비용 없이 목록을 확인해요."), GuiIcon.REWARDS));
+        inventory.setItem(GamblingLayout.CLOSE, GuiTheme.close());
+        GuiTheme.painted(player, inventory, plugin, 12, 13, 14, 21, 22, 23,
+            GamblingLayout.REWARDS, GamblingLayout.CLOSE);
+        GuiTheme.captioned(player, inventory, plugin, 10);
+    }
+
+    private void renderRewards(Player player, Inventory inventory, ViewState state) {
+        List<Reward> rewards = rewards("gambling.rewards.normal");
+        int pages = GamblingLayout.pages(rewards.size(), REWARD_SLOTS.length);
+        state.page = Math.max(0, Math.min(state.page, pages - 1));
+        long total = totalWeight(rewards);
+        for (int i = 0; i < REWARD_SLOTS.length; i++) {
+            int index = state.page * REWARD_SLOTS.length + i;
+            if (index >= rewards.size()) break;
+            inventory.setItem(REWARD_SLOTS[i], rewardPreview(rewards.get(index), total));
+        }
+        inventory.setItem(40, item("PAPER", "PAPER", ChatColor.WHITE + "보상 " + (state.page + 1) + " / " + pages,
+            ChatColor.GRAY + "총 " + rewards.size() + "종 · 수량과 확률을 확인하세요."));
+        inventory.setItem(GamblingLayout.GALLERY_BACK, GuiTheme.icon(item("ARROW", "ARROW",
+            ChatColor.AQUA + "뽑기로 돌아가기"), GuiIcon.BACK));
+        inventory.setItem(GALLERY_CLOSE_SLOT, GuiTheme.close());
+        if (state.page > 0) inventory.setItem(PREVIOUS_SLOT, GuiTheme.icon(item("ARROW", "ARROW",
+            ChatColor.WHITE + "이전 보상"), GuiIcon.PREVIOUS));
+        if (state.page + 1 < pages) inventory.setItem(NEXT_SLOT, GuiTheme.icon(item("ARROW", "ARROW",
+            ChatColor.WHITE + "다음 보상"), GuiIcon.NEXT));
+        GuiTheme.painted(player, inventory, plugin, GamblingLayout.GALLERY_BACK, GALLERY_CLOSE_SLOT);
     }
 
     private ItemStack resultItem(ViewState state) {
-        if (state.lastReward == null) {
-            return GuiTheme.icon(item("CHEST", "CHEST", ChatColor.WHITE + "최근 뽑기 결과",
-                ChatColor.GRAY + "뽑기를 하면 이곳에 결과가 표시돼요.",
-                ChatColor.GRAY + "아래 목록에서 받을 수 있는 보상을 확인하세요."), GuiIcon.REWARDS);
+        if (state.lastReward == null) return GuiTheme.icon(item("CHEST", "CHEST",
+            ChatColor.GRAY + "아직 뽑지 않았어요"), GuiIcon.REWARDS);
+        Reward reward = state.lastReward;
+        ItemStack result = reward.item == null ? new ItemStack(Material.PAPER) : reward.item.clone();
+        result.setAmount(Math.max(1, Math.min(result.getMaxStackSize(), result.getAmount())));
+        ItemMeta meta = result.getItemMeta();
+        if (meta != null) {
+            meta.setDisplayName(ChatColor.GREEN + "받은 보상");
+            meta.setLore(GuiText.wrap(reward.messages));
+            result.setItemMeta(meta);
         }
-        List<String> lore = new ArrayList<String>();
-        lore.add(ChatColor.GRAY + "방금 받은 결과");
-        lore.addAll(state.lastReward.messages);
-        if (state.lastReward.item != null) {
-            lore.add(ChatColor.GRAY + "지급 수량  " + ChatColor.WHITE + state.lastReward.item.getAmount() + "개");
-        }
-        lore.add("");
-        lore.add(ChatColor.GRAY + (state.lastReward.item == null
-            ? "아이템 지급이 없는 결과예요." : "보상은 가방 또는 발밑을 확인하세요."));
-        return GuiTheme.icon(item("CHEST", "CHEST", ChatColor.GREEN + "뽑기 완료!",
-            lore.toArray(new String[lore.size()])), GuiIcon.REWARDS);
+        return result;
     }
 
     private ItemStack rewardPreview(Reward reward, long total) {
@@ -154,20 +145,10 @@ public final class GamblingGui implements Listener, CommandExecutor {
         preview.setAmount(Math.max(1, Math.min(preview.getMaxStackSize(), preview.getAmount())));
         ItemMeta meta = preview.getItemMeta();
         if (meta != null) {
-            List<String> lore = new ArrayList<String>();
-            lore.add(ChatColor.AQUA + "뽑기 확률  " + ChatColor.WHITE + chanceText(reward.chance, total));
-            lore.add(reward.item == null ? ChatColor.GRAY + "아이템 지급이 없는 결과예요."
-                : ChatColor.GRAY + "당첨 수량  " + ChatColor.WHITE + reward.item.getAmount() + "개");
-            lore.add("");
-            lore.addAll(reward.messages);
-            if (meta.hasLore()) {
-                lore.add("");
-                lore.addAll(meta.getLore());
-            }
-            lore.add("");
-            lore.add(ChatColor.DARK_GRAY + "미리보기 · 뽑기는 위쪽 가운데 버튼");
-            if (reward.item == null) meta.setDisplayName(ChatColor.WHITE + "메시지 결과");
-            meta.setLore(GuiText.wrap(lore));
+            if (reward.item == null) meta.setDisplayName(ChatColor.WHITE + "아이템 없음");
+            meta.setLore(GuiText.wrap(Arrays.asList(
+                ChatColor.GRAY + "수량  " + ChatColor.WHITE + (reward.item == null ? "없음" : reward.item.getAmount() + "개"),
+                ChatColor.GRAY + "확률  " + ChatColor.AQUA + chanceText(reward.chance, total))));
             preview.setItemMeta(meta);
         }
         return preview;
@@ -188,73 +169,64 @@ public final class GamblingGui implements Listener, CommandExecutor {
 
     @EventHandler
     public void onClick(InventoryClickEvent event) {
-        if (!(event.getWhoClicked() instanceof Player) || !isGamblingInventory(event)) {
-            return;
-        }
+        if (!(event.getWhoClicked() instanceof Player)) return;
+        final Player player = (Player) event.getWhoClicked();
+        final ViewState state = current(player, event.getView().getTopInventory());
+        if (state == null) return;
         event.setCancelled(true);
-        if (event.getRawSlot() == CLOSE_SLOT) {
-            event.getWhoClicked().closeInventory();
-            return;
-        }
-        Player player = (Player) event.getWhoClicked();
-        if (event.getRawSlot() == DRAW_SLOT && event.getClick() == ClickType.LEFT) {
-            gamble(player);
-            return;
-        }
+        final int slot = event.getRawSlot();
+        if (slot < 0 || slot >= state.inventory.getSize() || event.getClick() != ClickType.LEFT) return;
+        final Inventory clicked = state.inventory;
+        // Reopening with a new balance/title is deferred until after the click transaction.
+        Bukkit.getScheduler().runTask(plugin, () -> {
+            if (!player.isOnline() || current(player, clicked) != state
+                || player.getOpenInventory().getTopInventory() != clicked) return;
+            if (slot == (state.catalog ? GALLERY_CLOSE_SLOT : GamblingLayout.CLOSE)) {
+                player.closeInventory(); return;
+            }
+            if (!state.catalog) {
+                if (GamblingLayout.draw(slot)) gamble(player, state);
+                else if (GamblingLayout.rewards(slot)) { state.catalog = true; show(player, state); }
+            } else if (slot == GamblingLayout.GALLERY_BACK) {
+                state.catalog = false; show(player, state);
+            } else {
+                int pages = GamblingLayout.pages(rewards("gambling.rewards.normal").size(), REWARD_SLOTS.length);
+                if (slot == PREVIOUS_SLOT && state.page > 0) { state.page--; show(player, state); }
+                else if (slot == NEXT_SLOT && state.page + 1 < pages) { state.page++; show(player, state); }
+            }
+        });
+    }
+
+    private ViewState current(Player player, Inventory inventory) {
         ViewState state = openViewers.get(player.getUniqueId());
-        int pages = (rewards("gambling.rewards.normal").size() - 1) / REWARD_SLOTS.length + 1;
-        if (event.getRawSlot() == PREVIOUS_SLOT && state.page > 0) {
-            state.page--;
-            render(player, event.getInventory(), state);
-        } else if (event.getRawSlot() == NEXT_SLOT && state.page + 1 < pages) {
-            state.page++;
-            render(player, event.getInventory(), state);
-        }
+        return state != null && state.inventory == inventory && inventory.getHolder() == state ? state : null;
     }
 
     @EventHandler
     public void onDrag(InventoryDragEvent event) {
-        if (openViewers.containsKey(event.getWhoClicked().getUniqueId())
-            && event.getView() != null
-            && TITLE.equals(event.getView().getTitle())) {
-            event.setCancelled(true);
-        }
+        if (event.getWhoClicked() instanceof Player
+            && current((Player) event.getWhoClicked(), event.getView().getTopInventory()) != null) event.setCancelled(true);
     }
 
     @EventHandler
     public void onClose(InventoryCloseEvent event) {
-        openViewers.remove(event.getPlayer().getUniqueId());
+        ViewState state = openViewers.get(event.getPlayer().getUniqueId());
+        if (state != null && state.inventory == event.getInventory()) openViewers.remove(event.getPlayer().getUniqueId());
     }
 
-    private boolean isGamblingInventory(InventoryClickEvent event) {
-        return openViewers.containsKey(event.getWhoClicked().getUniqueId())
-            && event.getView() != null
-            && TITLE.equals(event.getView().getTitle());
-    }
-
-    private void gamble(Player player) {
+    private void gamble(Player player, ViewState state) {
         if (!plugin.getConfig().getBoolean("gambling.enabled", true)) {
-            player.sendMessage(ChatColor.RED + "지금은 보상 뽑기가 꺼져 있어요.");
-            return;
+            player.sendMessage(ChatColor.RED + "지금은 보상 뽑기가 꺼져 있어요."); return;
         }
         int cost = gambleCost();
         if (!InventoryItems.take(player.getInventory(), Material.COBBLESTONE, cost)) {
-            player.sendMessage(ChatColor.RED + "조약돌이 부족해요. 한 번 뽑으려면 " + cost + "개가 필요해요.");
-            refresh(player);
-            return;
+            player.sendMessage(ChatColor.RED + "조약돌이 부족해요. 1회 비용은 " + cost + "개예요.");
+            show(player, state); return;
         }
         Reward reward = chooseReward();
         reward.give(player);
-        ViewState state = openViewers.get(player.getUniqueId());
-        if (state != null) state.lastReward = reward;
-        refresh(player);
-    }
-
-    private void refresh(Player player) {
-        ViewState state = openViewers.get(player.getUniqueId());
-        if (state != null && TITLE.equals(player.getOpenInventory().getTitle())) {
-            render(player, player.getOpenInventory().getTopInventory(), state);
-        }
+        state.lastReward = reward;
+        show(player, state);
     }
 
     private int gambleCost() {
@@ -383,7 +355,10 @@ public final class GamblingGui implements Listener, CommandExecutor {
         return ChatColor.translateAlternateColorCodes('&', message);
     }
 
-    private static final class ViewState {
+    private static final class ViewState implements InventoryHolder {
+        private Inventory inventory;
+        private boolean catalog;
+        @Override public Inventory getInventory() { return inventory; }
         private int page;
         private Reward lastReward;
     }

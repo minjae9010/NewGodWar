@@ -126,6 +126,7 @@ final class AbilityVarietyChecks {
             checkPan();
             checkNamedKitCleanup();
             checkReviewedAbilities();
+            checkConfirmedAttackRoles();
             checkSingleUseSkill();
             core.getLogger().info("PASS ability variety: sixteen kits, rewind safety, parry/riposte, oath, judgment, swarms, laurels, harvest, interrupted music, team/killtime protection, cosmetics and cleanup");
         } finally {
@@ -627,8 +628,11 @@ final class AbilityVarietyChecks {
         reset("sniper"); caster.held = new ItemStack(Material.BOW); caster.sneaking = true;
         ability.onInteract(context, new PlayerInteractEvent(caster.player, Action.LEFT_CLICK_AIR, caster.held, null, BlockFace.SELF));
         final double[] speed = {0};
+        final UUID arrowId=UUID.randomUUID();
         Arrow projectile = proxy(Arrow.class, (p, m, a) -> {
             if (m.getName().equals("setVelocity")) { speed[0] = ((org.bukkit.util.Vector) a[0]).length(); return null; }
+            if (m.getName().equals("getUniqueId")) return arrowId;
+            if (m.getName().equals("getLocation")) return caster.location.clone();
             return defaultValue(m.getReturnType());
         });
         ability.onProjectileLaunch(context, new ProjectileLaunchEvent(projectile));
@@ -643,7 +647,98 @@ final class AbilityVarietyChecks {
         ability.cancelScheduledTasks();
         require(tasks.isEmpty() && !field(ability.getClass(), "ready").getBoolean(ability)
             && !field(ability.getClass(), "preparing").getBoolean(ability), "Sniper preparation survived removal");
+        checkSniperImpacts();
         core.getLogger().info("PASS reviewed abilities: no-target/no-sword costs, exact sword consumption, sniper preparation/cancel/removal");
+    }
+
+    private void checkSniperImpacts() throws Exception {
+        // The preparation/cost path above is real; each case isolates a different final hit verdict.
+        Object previousObjects=core.getConfig().get("abilities.effects.objects");
+        Object previousParticles=core.getConfig().get("abilities.effects.particles");
+        Object previousEnabled=core.getConfig().get("abilities.effects.enabled");
+        try {
+        for(int scenario=0;scenario<6;scenario++) {
+            reset("sniper");
+            core.getConfig().set("abilities.effects.enabled",true);
+            core.getConfig().set("abilities.effects.objects",false);
+            core.getConfig().set("abilities.effects.particles",true);
+            final UUID arrowId=UUID.randomUUID();
+            Arrow arrow=proxy(Arrow.class,(p,m,a)->{
+                if(m.getName().equals("getUniqueId"))return arrowId;
+                if(m.getName().equals("getLocation"))return caster.location.clone();
+                return defaultValue(m.getReturnType());
+            });
+            if(scenario!=0) {
+                field(ability.getClass(),"ready").setBoolean(ability,true);
+                ability.onProjectileLaunch(context,new ProjectileLaunchEvent(arrow));
+                advance(24); // Finish the shooter's cast before observing recipient feedback.
+            }
+            caster.particles=enemy.particles=0;
+            EntityDamageByEntityEvent hit=new EntityDamageByEntityEvent(arrow,enemy.player,
+                EntityDamageEvent.DamageCause.PROJECTILE,scenario==2?0:6);
+            if(scenario==1)hit.setCancelled(true);
+            ability.onProjectileHit(context,hit,enemy.player);
+            if(scenario==3)hit.setCancelled(true); // Defender or later-priority plugin cancels it.
+            if(scenario==5)ability.cancelScheduledTasks();
+            advance(3);
+            require((enemy.particles>0)==(scenario==4),"Sniper false/missing confirmed impact in scenario "+scenario);
+            ability.cancelScheduledTasks();
+        }
+        } finally {
+            core.getConfig().set("abilities.effects.objects",previousObjects);
+            core.getConfig().set("abilities.effects.particles",previousParticles);
+            core.getConfig().set("abilities.effects.enabled",previousEnabled);
+        }
+        core.getLogger().info("PASS sniper impact: ordinary arrow, cancelled hit, zero damage, later cancellation, confirmed shot and session removal");
+    }
+
+    private void checkConfirmedAttackRoles() throws Exception {
+        Map<String,Object> previous=new LinkedHashMap<String,Object>();
+        for(String key:Arrays.asList("enabled","objects","particles","animations"))
+            previous.put(key,core.getConfig().get("abilities.effects."+key));
+        try {
+            for(String id:Arrays.asList("ares","miner","tajja","onepunch","clocking","midoriya","jangyeongsil","hephaestus")) {
+                for(int verdict=0;verdict<3;verdict++) {
+                    reset(id);
+                    core.getConfig().set("abilities.effects.enabled",true);
+                    core.getConfig().set("abilities.effects.objects",false);
+                    core.getConfig().set("abilities.effects.particles",true);
+                    core.getConfig().set("abilities.effects.animations",true);
+                    caster.held=new ItemStack(id.equals("miner")||id.equals("jangyeongsil")?Material.IRON_PICKAXE:
+                        id.equals("hephaestus")?Material.IRON_SWORD:Material.AIR);
+                    if(id.equals("tajja")) {field(ability.getClass(),"tajjaDamage").setInt(ability,6);field(ability.getClass(),"tajjaUses").setInt(ability,10);}
+                    if(id.equals("onepunch"))field(ability.getClass(),"punchReady").setBoolean(ability,true);
+                    if(id.equals("clocking"))field(ability.getClass(),"invisible").setBoolean(ability,true);
+                    if(id.equals("midoriya"))field(ability.getClass(),"ready").setBoolean(ability,true);
+                    if(id.equals("hephaestus"))field(ability.getClass(),"heat").setInt(ability,3);
+                    if(id.equals("jangyeongsil")) {
+                        long seed=0;while(new Random(seed).nextInt(4)!=0)seed++;
+                        ((Random)field(BaseAbility.class,"RANDOM").get(null)).setSeed(seed);
+                    }
+                    EntityDamageByEntityEvent event=attackEvent(caster.player,enemy.player,4);
+                    ability.onDamageByEntity(context,event,enemy.player,true);
+                    if(verdict==1)event.setCancelled(true);
+                    if(verdict==2)event.setDamage(0);
+                    advance(3);
+                    Object renderer=field(BaseAbility.class,"feedback").get(ability);
+                    Map<?,?> scenes=(Map<?,?>)field(renderer.getClass(),"designedScenes").get(renderer);
+                    String cue=id.equals("ares")||id.equals("tajja")||id.equals("clocking")?"SLASH":id.equals("hephaestus")?"FIRE":"HIT";
+                    boolean source=false,received=false,slow=false;
+                    for(Object key:scenes.keySet()) {
+                        source|=key.toString().startsWith("design:cast:"+cue+":");
+                        received|=key.toString().startsWith("design:received:"+cue+":");
+                        slow|=key.toString().startsWith("design:received:SLOW:");
+                    }
+                    // A Jang hit applies a real slow before the final hit verdict; it can coalesce the victim's hit flash.
+                    require(source==(verdict==0) && (verdict==0 ? received || (id.equals("jangyeongsil")&&slow) : !received),
+                        "Source/recipient attack scene disagrees with final verdict: "+id+" / "+verdict);
+                    ability.cancelScheduledTasks();
+                }
+            }
+        } finally {
+            for(Map.Entry<String,Object> entry:previous.entrySet())core.getConfig().set("abilities.effects."+entry.getKey(),entry.getValue());
+        }
+        core.getLogger().info("PASS confirmed attack roles: eight actual handlers, valid hits, later cancellation and zero final damage");
     }
 
     private void checkSingleUseSkill() throws Exception {
@@ -855,7 +950,7 @@ final class AbilityVarietyChecks {
                     case "removePotionEffect": effects.remove(a[0]); return null;
                     case "hasPotionEffect": return effects.containsKey(a[0]);
                     case "setVelocity": velocities++; lastVelocity = ((org.bukkit.util.Vector) a[0]).clone(); return null;
-                    case "spawnParticle": particles += ((Number) a[2]).intValue(); return null;
+                    case "spawnParticle": particles += Math.max(1, ((Number) a[2]).intValue()); return null;
                     case "damage":
                         require(a.length == 2 && a[1] == caster.player, "Lost damage attribution");
                         EntityDamageByEntityEvent event = attackEvent(caster.player, (Player) p, ((Number) a[0]).doubleValue());

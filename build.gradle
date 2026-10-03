@@ -4,7 +4,7 @@ plugins {
 
 allprojects {
     group = "kr.newgodwar"
-    version = "0.3.9"
+    version = "0.3.10"
     description = "Modern Gods War minigame plugin with modular compatibility support."
 }
 
@@ -64,6 +64,7 @@ tasks.register("resourcePack", Exec) {
     inputs.dir(packClasses)
     inputs.file("plugin/src/main/resources/effect-art.tsv")
     inputs.file("scripts/effect-art/pack-versions.tsv")
+    inputs.files("scripts/effect-art/menu-labels.png", "scripts/effect-art/menu-labels.tsv")
     outputs.dir(layout.buildDirectory.dir("effect-pack"))
     outputs.dir(layout.buildDirectory.dir("generated/pack-resources"))
     executable new File(System.getProperty("java.home"), "bin/java").absolutePath

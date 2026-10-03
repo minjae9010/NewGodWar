@@ -31,6 +31,7 @@ import java.util.List;
 )
 final class TajjaAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.SHADOW)
+        .normal(EffectCue.SLASH)
         .hit(EffectCue.SLASH)
         .privateCast()
         .effect(EffectCue.SLASH, AbilityDesigns.HIDDEN_CARDS)
@@ -61,7 +62,7 @@ final class TajjaAbility extends BaseAbility {
     public void onDamageByEntity(AbilityPlayerContext context, EntityDamageByEntityEvent event, Player opponent, boolean attacker) {
         if (attacker && context.player().getItemInHand().getType() == Material.AIR && tajjaDamage > 0) {
             event.setDamage(tajjaDamage);
-            feedback.impact(context, opponent);
+            confirmedAttack(context, event, opponent);
             tajjaUses--;
             if (tajjaUses <= 0) {
                 tajjaDamage = 0;

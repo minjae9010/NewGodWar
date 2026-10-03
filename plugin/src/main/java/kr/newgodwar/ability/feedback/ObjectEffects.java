@@ -104,7 +104,9 @@ public final class ObjectEffects {
     private void render(Scene scene) throws ReflectiveOperationException {
         Location location = scene.anchor.get();
         if (!validLocation(location) || !scene.world.equals(location.getWorld())) throw new IllegalStateException("Scene anchor left its world");
-        List<ObjectModel.Part> parts = scene.model.parts(tick - scene.started, scene.detail);
+        double phase = scene.context.plugin().getConfig().getBoolean("abilities.effects.animations", true)
+            ? tick - scene.started : 8;
+        List<ObjectModel.Part> parts = scene.model.parts(phase, scene.detail);
         Set<Player> audience = new LinkedHashSet<Player>(scene.audience.get());
         audience.removeIf(player -> !player.isOnline() || !scene.world.equals(player.getWorld())
             || player.getLocation().distanceSquared(location) > 32 * 32);

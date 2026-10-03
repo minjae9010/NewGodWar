@@ -33,11 +33,10 @@ import java.util.List;
 )
 final class SeleneAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.SHADOW)
+        .advanced(EffectCue.MOON)
         .hit(EffectCue.STEALTH)
         .privateCast()
-        .effect(EffectCue.STEALTH, AbilityDesigns.LUNAR_VEIL)
         .effect(EffectCue.MOON, AbilityDesigns.LUNAR_VEIL)
-        .effect(EffectCue.BLIND, AbilityDesigns.LUNAR_VEIL)
         .build();
 
     @Override

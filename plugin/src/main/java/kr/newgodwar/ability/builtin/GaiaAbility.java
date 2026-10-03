@@ -33,9 +33,10 @@ import java.util.List;
 )
 final class GaiaAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.NATURE)
+        .normal(EffectCue.HEAL)
         .hit(EffectCue.ROOT)
         .benefit(EffectCue.HEAL)
-        .effect(EffectCue.ROOT, AbilityDesigns.EARTH_ROOTS)
+        .received(EffectCue.ROOT, AbilityDesigns.EARTH_ROOTS)
         .effect(EffectCue.HEAL, AbilityDesigns.EARTH_FLOWER)
         .build();
 
@@ -48,9 +49,9 @@ final class GaiaAbility extends BaseAbility {
         targets.add(player);
         if (useNormal(context, player)) {
             for (Player target : targets) {
-                target.setHealth(Math.min(target.getMaxHealth(), target.getHealth() + 6.0D));
+                restoreHealthApplied(context, target, 6.0D);
                 effect(context, target, PotionEffectType.REGENERATION, 8, 0);
-                feedback.affected(context, target, "대지의 치유 · 회복 / 재생 8초", false);
+                feedback.notice(context, target, "대지의 치유 · 회복 / 재생 8초", false, true);
             }
         }
     }
@@ -59,14 +60,14 @@ final class GaiaAbility extends BaseAbility {
     protected void onStaffRight(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
         List<Player> targets = nearbyPlayers(context, player, 9, false);
         if (targets.isEmpty()) {
-            player.sendMessage("능력을 사용할 수 있는 대상이 없습니다.");
+            sendAbilityMessage(context, player, "failure", "능력을 사용할 수 있는 대상이 없습니다.");
             return;
         }
         if (useAdvanced(context, player)) {
             for (Player target : targets) {
                 effect(context, target, "SLOWNESS", "SLOW", 8, 4);
                 effect(context, target, PotionEffectType.WEAKNESS, 8, 0);
-                feedback.affected(context, target, "대지의 속박 · 감속 / 약화 8초", true);
+                feedback.notice(context, target, "대지의 속박 · 감속 / 약화 8초", true, true);
             }
         }
     }

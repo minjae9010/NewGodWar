@@ -7,6 +7,7 @@ import kr.newgodwar.ability.builtin.BaseAbility;
 import kr.newgodwar.ability.feedback.AbilityFeedback;
 import kr.newgodwar.ability.feedback.AbilityTheme;
 import kr.newgodwar.ability.feedback.AbilityStyle;
+import kr.newgodwar.ability.feedback.AbilitySounds;
 import kr.newgodwar.ability.feedback.EffectCue;
 import kr.newgodwar.nms.NmsAdapter;
 import org.bukkit.*;
@@ -106,6 +107,11 @@ final class FeedbackRegressionChecks {
             }));
             core.getConfig().set("game.urf.enabled", false);
             core.getConfig().set("abilities.messages.enabled", true);
+            // Legacy configs may enable every channel; compact presentation still wins by default.
+            core.getConfig().set("abilities.messages.compact", null);
+            core.getConfig().set("abilities.messages.success", true);
+            core.getConfig().set("abilities.messages.failure", true);
+            core.getConfig().set("abilities.messages.timer", true);
             for (String key : Arrays.asList("enabled", "particles", "sounds", "action-bar", "titles"))
                 core.getConfig().set("abilities.effects." + key, true);
             core.getConfig().set("abilities.effects.animations", false);
@@ -113,29 +119,34 @@ final class FeedbackRegressionChecks {
 
             require(ability.cast(context, true), "Advanced activation failed");
             require(stones == 75 && ability.cooldownRemainingMillis(0) > 0, "Feedback changed resource/cooldown accounting");
-            require(particles.isEmpty() && sounds.isEmpty() && tasks.isEmpty(),
-                "Native lightning acquired a second cast effect");
+            require(particles.isEmpty() && count(sounds,"Caster") == 1 && tasks.isEmpty(),
+                "Dedicated lightning must acknowledge the cast once without adding particles or a second thunder strike");
             require(count(particles, "Far") == 0 && count(sounds, "Far") == 0 && count(particles, "CannotSee") == 0,
                 "Feedback leaked to distant/hidden viewers");
-            require(contains(messages, "제우스 · 고급") && !contains(messages, "번개를 5번")
-                && contains(bars, "번개를 5번") && titles.size() == 1,
-                "Activation chat must stay brief while the action bar identifies the advanced effect");
+            require(messages.isEmpty() && bars.isEmpty() && titles.isEmpty(),
+                "Default activation must not cover combat with titles, descriptions or duplicate chat");
             int castParticles = count(particles, "Caster");
             messages.clear();
             require(!ability.cast(context, true) && !ability.cast(context, true), "Cooldown was bypassed");
-            require(stones == 75 && count(particles, "Caster") == castParticles && messages.size() == 1,
-                "Failed casts emitted success particles, charged resources, or spammed chat");
+            require(stones == 75 && count(particles, "Caster") == castParticles && messages.isEmpty()
+                && bars.size() == 1 && contains(bars, "재사용까지"),
+                "Failed casts must show one concise notice without duplicate chat or charging resources");
 
             @SuppressWarnings("unchecked") Map<Integer, Long> cooldowns = (Map<Integer, Long>) field(BaseAbility.class, "cooldowns").get(ability);
             cooldowns.put(0, 0L);
             clearOutput();
             ability.onCountdownTick(context);
             ability.onCountdownTick(context);
-            require(messages.size() == 1 && contains(messages, "고급 다시 사용 가능"), "Ready notification missing or duplicated");
+            require(messages.isEmpty() && bars.size() == 1 && contains(bars, "고급 능력 준비됨"), "Ready notification missing or duplicated");
 
             clearOutput(); stones = 0;
             require(!new ProbeAbility().cast(context, false), "Missing resources were accepted");
-            require(particles.isEmpty() && titles.isEmpty() && contains(messages, "부족"), "Resource failure looked like activation");
+            require(particles.isEmpty() && titles.isEmpty() && messages.isEmpty() && contains(bars, "부족"), "Resource failure looked like activation");
+            clearOutput();
+            core.getConfig().set("abilities.effects.action-bar", false);
+            require(!new ProbeAbility().cast(context, false), "Missing resources were accepted with the action bar disabled");
+            require(bars.isEmpty() && contains(messages, "부족"), "Disabling the action bar lost the failure reason");
+            core.getConfig().set("abilities.effects.action-bar", true);
             stones = 100;
             clearOutput();
             require(new ProbeAbility().cast(context("clocking"), false), "Stealth cast failed");
@@ -154,6 +165,55 @@ final class FeedbackRegressionChecks {
             feedback.affected(context("gaia"), viewers.get(1), "대지 속박 · 7초", true);
             flush();
             require(bars.size() == 1 && count(particles, "Near") > 0 && count(particles, "Near") <= 64, "Target feedback missing or unthrottled");
+            clearOutput();
+            AbilityFeedback otherCaster = new AbilityFeedback(visuals.ability("gaia"));
+            otherCaster.affected(context("gaia"), viewers.get(1), "속박", true);
+            otherCaster.passive(context("gaia"), "반복 회복");
+            feedback.affected(context, viewers.get(4), "회복", false);
+            require(bars.isEmpty() && messages.isEmpty(), "Compact mode spammed passive/benefit or multi-caster text");
+            feedback.affected(context, viewers.get(1), "축복 · 신속 30초", false, true);
+            feedback.affected(context, viewers.get(1), "축복 · 신속 30초", false, true);
+            feedback.notice(context, viewers.get(1), "능력 봉인 · 12초", true, true);
+            require(bars.size() == 2 && contains(bars, "축복") && contains(bars, "봉인") && messages.isEmpty(),
+                "Important buff/status information was hidden by incidental notices or duplicated");
+            clearOutput();
+            feedback.progress(context, "망치 전하 1/3");
+            feedback.progress(context, "망치 전하 2/3");
+            require(bars.size() == 2 && bars.get(1).contains("2/3") && messages.isEmpty(),
+                "Rapid progress changes left the player with stale charge information");
+            clearOutput();
+            feedback.timer(context, "이동으로 연주 중단");
+            require(bars.size() == 1 && contains(bars, "연주 중단") && messages.isEmpty(),
+                "Compact mode hid the reason a channelled ability stopped");
+            clearOutput();
+            ProbeAbility quietTimer = new ProbeAbility();
+            quietTimer.timer(context);
+            require(bars.size() == 1 && contains(bars, "3초 후") && messages.isEmpty(), "Effect duration was hidden");
+            clearOutput();
+            quietTimer.onCountdownTick(context);
+            require(bars.isEmpty() && messages.isEmpty(), "Compact mode spammed timer countdowns");
+            quietTimer.cancelScheduledTasks();
+            clearOutput();
+            // A new timer session must still report actual expiration once, without repeating countdowns.
+            quietTimer = new ProbeAbility(); quietTimer.timer(context);
+            clearOutput(); flush();
+            require(contains(bars, "보호 종료") && messages.isEmpty(), "Compact mode hid effect expiration");
+            quietTimer.cancelScheduledTasks();
+            clearOutput();
+            core.getConfig().set("abilities.effects.action-bar", false);
+            feedback.progress(context, "다음 룬: 서리");
+            feedback.ready(context, true);
+            require(bars.isEmpty() && contains(messages, "다음 룬: 서리") && contains(messages, "준비됨"),
+                "Disabling the action bar lost essential gameplay state");
+            core.getConfig().set("abilities.effects.action-bar", true);
+            otherCaster.clear(); feedback.clear();
+            core.getConfig().set("abilities.messages.compact", false);
+            clearOutput();
+            feedback.activated(context, caster, true);
+            require(titles.isEmpty() && bars.size() == 1 && contains(bars, "제우스 · 고급")
+                && !contains(bars, "번개를 5번") && !messages.isEmpty(),
+                "Detailed mode must honor chat settings without restoring titles or long descriptions");
+            feedback.clear();
             Location from = new Location(world, 0, 65, 0), to = new Location(world, 20, 65, 0);
             clearOutput(); feedback.link(context, from, to);
             require(count(particles, "Near") <= 25 && from.getX() == 0 && to.getX() == 20,
@@ -208,7 +268,7 @@ final class FeedbackRegressionChecks {
             clearOutput();
             List<Runnable> pending = new ArrayList<Runnable>(tasks.values()); tasks.clear();
             for (Runnable task : pending) task.run();
-            require(timed.cleaned == 2 && contains(bars, "보호 종료 완료"), "Timer completion feedback missing");
+            require(timed.cleaned == 2 && contains(bars, "보호 종료"), "Timer completion feedback missing");
             checkAllStylesAndReactions();
             checkFallbackFacing();
             core.getLogger().info("PASS feedback: server particle/sound aliases, cast/failure/ready, resource accounting, visibility, range, toggles, throttle and cleanup");
@@ -264,8 +324,13 @@ final class FeedbackRegressionChecks {
                 final int[] expected = {0}; cue.draw((ink, x, y, z, rgb) -> expected[0]++);
                 boolean designed = visuals.ability(id).style().effect(cue) != null;
                 boolean modelCue = cue == EffectCue.WINGS || cue == EffectCue.GUARD;
+                boolean forge = AbilitySounds.forge(visuals.ability(id).style().effect(cue)) || (!designed && cue == EffectCue.FORGE);
                 require((designed || modelCue ? count(particles, "Caster") > 0 && count(particles, "Caster") <= 64
-                    : count(particles, "Caster") == expected[0]) && tasks.isEmpty(), "Cast duplicated: " + id);
+                    : count(particles, "Caster") == expected[0]) && tasks.size() == (forge ? 3 : 0), "Cast duplicated: " + id);
+                if(forge) {
+                    int soundBefore=count(sounds,"Caster");flush();
+                    require(count(sounds,"Caster")==soundBefore+3 && tasks.isEmpty(),"Three hammer contacts lost their sound: "+id);
+                }
                 require(animations.size() == (designed ? 1 : 0), "Unexpected design animation count: " + id);
                 require(count(particles, "CannotSee") == 0 && count(particles, "Far") == 0, "Cast visibility leaked: " + id);
                 if (visuals.ability(id).style().privateCast()) require(count(particles, "Near") == 0 && count(sounds, "Near") == 0,
@@ -284,6 +349,11 @@ final class FeedbackRegressionChecks {
         feedback.impact(healing, target);
         require(tasks.size() == 1 && particles.isEmpty(), "Reactions did not merge before rendering");
         flush();
+        require(animations.size() == 1 && count(particles,"Caster") <= 128,
+            "Cast and received roles must share one bounded scheduler");
+        // Isolate the recipient scene when checking its anchor and changing recipient visibility.
+        feedback.clear(); clearOutput();
+        feedback.status(healing, target, "REGENERATION"); flush();
         require(count(particles, "Near") > 0 && count(particles, "Near") <= 64 && animations.size() == 1, "Healing stacked status and impact decoration");
         for (int i = 0; i < points.size(); i++) {
             Location point = points.get(i);
@@ -334,6 +404,21 @@ final class FeedbackRegressionChecks {
             require(points.get(i).distanceSquared(rotated) < 0.000001,
                 "Item model did not rotate with the player's facing");
         }
+        feedback.clear(); clearOutput();
+        feedback = new AbilityFeedback(visuals.ability("sniper"));
+        yaw = 0;
+        feedback.impact(context("sniper"),target,caster.getLocation()); flush();
+        List<Location> incomingPoints = new ArrayList<Location>(points);
+        require(!incomingPoints.isEmpty(),"Confirmed recipient impact was missing");
+        feedback.clear(); clearOutput(); yaw = 135;
+        feedback.impact(context("sniper"),target,caster.getLocation()); flush();
+        require(points.size()==incomingPoints.size(),"Victim heading changed impact parts");
+        for(int i=0;i<points.size();i++) require(points.get(i).distanceSquared(incomingPoints.get(i))<.000001,
+            "Victim heading rotated the incoming impact; it must face the attack source");
+        feedback.clear(); clearOutput();
+        feedback = new AbilityFeedback(visuals.ability("gaia"));
+        feedback.notice(healing,target,"application was blocked",true); flush();
+        require(points.isEmpty() && tasks.isEmpty() && animations.isEmpty(),"Notification invented an applied effect");
         yaw = 0; feedback.clear(); clearOutput();
         for (EffectCue cue : EffectCue.values()) {
             feedback.cue(healing, target, cue);
@@ -392,7 +477,18 @@ final class FeedbackRegressionChecks {
         feedback.clear(); clearOutput();
         core.getConfig().set("abilities.effects.particles", false);
         feedback.cue(healing, target, EffectCue.HEAL);
-        require(tasks.isEmpty(), "Disabled reactions scheduled work");
+        require(tasks.size()==1, "Sound-only reactions must still be coalesced");
+        flush();
+        require(particles.isEmpty() && count(sounds,"Near")==1 && animations.isEmpty(),"Disabling visuals also disabled reaction audio");
+        feedback.clear();clearOutput();
+        core.getConfig().set("abilities.effects.sounds",false);
+        feedback.cue(healing,target,EffectCue.HEAL);
+        require(tasks.isEmpty(),"Fully disabled reactions scheduled work");
+        core.getConfig().set("abilities.effects.sounds",true);
+        feedback.drawCue(healing,caster.getLocation(),EffectCue.FORGE,Collections.singletonList(caster),caster,false);
+        require(tasks.size()==3,"Forge must schedule exactly three contacts");
+        feedback.clear();
+        require(tasks.isEmpty(),"Cancelled ability left queued hammer sounds");
         core.getConfig().set("abilities.effects.particles", true);
         core.getConfig().set("abilities.effects.animations", false);
         core.getLogger().info("PASS 93 ability styles: 186 casts, native action cues, coalescing, dedicated effects, target anchors, cancellation and stealth");
@@ -470,7 +566,10 @@ final class FeedbackRegressionChecks {
 
     private static final class ProbeAbility extends BaseAbility {
         int cleaned;
+        private AbilityStyle appearance=AbilityStyle.DEFAULT;
+        @Override public AbilityStyle style() { return appearance; }
         boolean cast(AbilityPlayerContext context, boolean advanced) {
+            appearance=context.ability().create().style();
             return advanced ? useAdvanced(context, context.player(), 0) : useNormal(context, context.player());
         }
         void timer(AbilityPlayerContext context) { laterCleanup(context, 3, "보호 종료", "보호 종료", () -> cleaned++); }

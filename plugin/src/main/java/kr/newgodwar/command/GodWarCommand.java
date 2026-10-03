@@ -744,12 +744,17 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             return;
         }
         String action = args.length == 1 ? "spawn" : args[1].toLowerCase(Locale.ROOT);
+        Player player = (Player) sender;
+        if ((action.equals("team") || action.equals("팀") || action.equals("move") || action.equals("이동")
+            || action.equals("reset") || action.equals("초기화")) && configureDummy(player, action, args)) return;
         if (args.length > 2 || !(action.equals("spawn") || action.equals("소환") || action.equals("remove") || action.equals("제거"))) {
             sender.sendMessage("§e/gw dummy §7— 내 앞에 타깃 더미 소환 (기존 더미 교체)");
+            sender.sendMessage("§e/gw dummy team <ally|enemy|팀> §7— 아군 / 적군 / 지정 팀");
+            sender.sendMessage("§e/gw dummy move <on|off> §7— 끌어당김·밀치기 허용 / 고정");
+            sender.sendMessage("§e/gw dummy reset §7— 체력·피해 기록·상태 효과 초기화");
             sender.sendMessage("§e/gw dummy remove §7— 내가 소환한 더미 제거");
             return;
         }
-        Player player = (Player) sender;
         if (action.equals("remove") || action.equals("제거")) {
             sender.sendMessage(plugin.trainingDummies().remove(player.getUniqueId()) ? "§a내 테스트 더미를 제거했습니다." : "§e소환한 테스트 더미가 없습니다.");
             return;
@@ -758,13 +763,53 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             Player target = plugin.trainingDummies().spawn(player);
             sender.sendMessage("§a플레이어형 테스트 더미를 소환했습니다. §f" + target.getName());
             HelpChat.send(sender, "§b/x " + target.getName() + " §7— 더미를 능력 타깃으로 지정", "/x " + target.getName(), "클릭하면 타깃 지정 명령을 입력합니다.", false);
-            sender.sendMessage("§7능력 테스트: /gw test <능력> · 제거: /gw dummy remove");
+            sender.sendMessage("§7체력·피해는 머리 위에 표시됩니다. 5초간 피해가 없으면 체력이 회복됩니다.");
+            sender.sendMessage("§7팀: /gw dummy team ally|enemy · 이동: /gw dummy move on|off · 초기화: /gw dummy reset");
         } catch (IllegalStateException ex) {
             sender.sendMessage("§c" + ex.getMessage());
         } catch (ReflectiveOperationException | RuntimeException ex) {
             plugin.getLogger().log(java.util.logging.Level.WARNING, "Could not spawn a training dummy", ex);
             sender.sendMessage("§c이 서버에서 플레이어형 더미를 생성하지 못했습니다. 서버 로그를 확인해주세요.");
         }
+    }
+
+    private boolean configureDummy(Player player, String action, String[] args) {
+        boolean reset = action.equals("reset") || action.equals("초기화");
+        if (args.length != (reset ? 2 : 3)) return false;
+        kr.newgodwar.game.TrainingDummyEntity dummy = plugin.trainingDummies().ownedBy(player);
+        if (dummy == null) {
+            player.sendMessage("§e먼저 /gw dummy로 더미를 소환해주세요.");
+            return true;
+        }
+        if (reset) {
+            dummy.reset();
+            player.sendMessage("§a더미의 체력·피해 기록·상태 효과를 초기화했습니다.");
+        } else if (action.equals("move") || action.equals("이동")) {
+            String value = args[2].toLowerCase(Locale.ROOT);
+            if (!(value.equals("on") || value.equals("off"))) return false;
+            dummy.movable(value.equals("on"));
+            player.sendMessage(value.equals("on") ? "§a더미가 끌어당김·밀치기에 반응합니다." : "§a더미를 현재 위치에 고정했습니다.");
+        } else {
+            String value = args[2].toLowerCase(Locale.ROOT);
+            GodTeam team;
+            if (value.equals("enemy") || value.equals("적군")) team = null;
+            else if (value.equals("ally") || value.equals("아군")) {
+                team = plugin.game().teamOf(player);
+                if (team == null) {
+                    player.sendMessage("§e내 팀을 먼저 배정하거나 /gw dummy team <팀>으로 지정해주세요.");
+                    return true;
+                }
+            } else {
+                team = GodTeam.parse(value);
+                if (team == null || !plugin.game().isTeamEnabled(team)) {
+                    player.sendMessage("§c활성화된 팀 이름 또는 ally / enemy를 입력해주세요.");
+                    return true;
+                }
+            }
+            dummy.team(team);
+            player.sendMessage("§a더미의 팀 판정: " + (team == null ? "§c모두의 적" : team.coloredName()));
+        }
+        return true;
     }
 
     private void test(CommandSender sender, String[] args) {
@@ -1045,7 +1090,7 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             return;
         }
         abilityManager.set(target, ability);
-        plugin.nms().sendTitle(target, ability.name(), ability.description(), 10, 60, 10);
+        plugin.nms().sendActionBar(target, ChatColor.GOLD + "능력 변경 · " + ability.name());
         plugin.messages().send(sender, "&a능력을 지정했습니다.");
     }
 
@@ -2480,7 +2525,14 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             return Collections.emptyList();
         }
         if (sub.equals("dummy")) {
-            return args.length == 2 ? startsWith(Arrays.asList("spawn", "remove", "소환", "제거"), args[1]) : Collections.<String>emptyList();
+            if (args.length == 2) return startsWith(Arrays.asList("spawn", "remove", "team", "move", "reset", "소환", "제거", "팀", "이동", "초기화"), args[1]);
+            if (args.length == 3 && (args[1].equalsIgnoreCase("team") || args[1].equals("팀"))) {
+                List<String> values = new ArrayList<String>(GodTeam.ids());
+                values.addAll(Arrays.asList("ally", "enemy", "아군", "적군"));
+                return startsWith(values, args[2]);
+            }
+            if (args.length == 3 && (args[1].equalsIgnoreCase("move") || args[1].equals("이동"))) return startsWith(Arrays.asList("on", "off"), args[2]);
+            return Collections.emptyList();
         }
         if (args.length == 3 && (sub.equals("world") || sub.equals("map")) && isHelpToken(args[1])) {
             return startsWith(CommandHelp.complete(new String[] {sub, args[2]}, admin), args[2]);

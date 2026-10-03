@@ -18,6 +18,7 @@ import org.bukkit.entity.LightningStrike;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.ProjectileLaunchEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
@@ -280,14 +281,14 @@ public abstract class BaseAbility implements GodAbility {
     protected boolean readyCooldown(AbilityPlayerContext context, Player player, int slot, int cooldownSeconds) {
         if (isSkillConsumed(slot)) {
             sendAbilityMessage(context, player, "failure", ChatColor.RED
-                + "이미 사용한 일회용 능력입니다. 이 게임에서는 다시 사용할 수 없습니다.");
+                + "이미 사용한 일회용 능력입니다.");
             return false;
         }
         Long until = cooldowns.get(slot);
         long now = System.currentTimeMillis();
         if (until != null && until > now) {
-            sendAbilityMessage(context, player, "failure", ChatColor.YELLOW + "아직 능력을 사용할 수 없습니다. 쿨타임 "
-                + ((until - now + 999L) / 1000L) + "초 남았습니다.");
+            sendAbilityMessage(context, player, "failure", ChatColor.YELLOW + "재사용까지 "
+                + ((until - now + 999L) / 1000L) + "초");
             return false;
         }
         return true;
@@ -308,7 +309,11 @@ public abstract class BaseAbility implements GodAbility {
     protected void sendAbilityMessage(AbilityPlayerContext context, Player player, String type, String message) {
         if ("failure".equals(type)) {
             if (!feedback.allow("failure", 700L)) return;
+            boolean displayed = feedback.enabled(context, "action-bar") && player.isOnline();
             feedback.failure(context, player, message);
+            if (displayed && feedback.compact(context)) return;
+        } else if ("timer".equals(type) && feedback.compact(context)) {
+            return;
         }
         if (!context.plugin().getConfig().getBoolean("abilities.messages.enabled", true)) {
             return;
@@ -395,10 +400,19 @@ public abstract class BaseAbility implements GodAbility {
     }
 
     protected void effect(AbilityPlayerContext context, Player player, PotionEffectType type, int seconds, int amplifier) {
+        appliedEffect(context, player, type, seconds, amplifier);
+    }
+
+    protected boolean appliedEffect(AbilityPlayerContext context, Player player, PotionEffectType type, int seconds, int amplifier) {
         org.bukkit.potion.PotionEffect previous = type == null ? null : player.getPotionEffect(type);
-        if (applyStatus(player, type, seconds * 20, amplifier)
-            && seconds < 3600 && (previous == null || previous.getAmplifier() != amplifier))
+        boolean applied = applyStatus(player, type, seconds * 20, amplifier);
+        if (applied && seconds < 3600 && (previous == null || previous.getAmplifier() != amplifier))
             feedback.status(context, player, type.getName());
+        return applied;
+    }
+
+    protected boolean appliedEffect(AbilityPlayerContext context, Player player, String modernName, String legacyName, int seconds, int amplifier) {
+        return appliedEffect(context, player, effectType(modernName, legacyName), seconds, amplifier);
     }
 
     /** A weaker aura or shorter refresh must not erase an existing buff/debuff. */
@@ -480,6 +494,26 @@ public abstract class BaseAbility implements GodAbility {
         player.setHealth(player.getMaxHealth());
     }
 
+    protected void restoreHealthApplied(AbilityPlayerContext context, Player player, double amount) {
+        if (!player.isOnline() || player.isDead() || amount<=0) return;
+        double before=player.getHealth();
+        player.setHealth(Math.min(player.getMaxHealth(),before+amount));
+        if(player.getHealth()>before) feedback.cue(context,player,kr.newgodwar.ability.feedback.EffectCue.HEAL);
+    }
+
+    protected void ignite(AbilityPlayerContext context, Player target, int ticks) {
+        int before=target.getFireTicks();
+        target.setFireTicks(ticks);
+        if(target.getFireTicks()>before && !target.hasPotionEffect(PotionEffectType.FIRE_RESISTANCE))
+            feedback.cue(context,target,kr.newgodwar.ability.feedback.EffectCue.FIRE);
+    }
+
+    protected void heal(AbilityPlayerContext context, Player player) {
+        double before=player.getHealth();
+        heal(player);
+        if(player.getHealth()>before) feedback.cue(context,player,kr.newgodwar.ability.feedback.EffectCue.HEAL);
+    }
+
     protected void damage(AbilityPlayerContext context, Player target, double amount, Player source) {
         if (target == null || source == null || target.isDead() || source.isDead() || amount <= 0.0D) {
             return;
@@ -502,6 +536,48 @@ public abstract class BaseAbility implements GodAbility {
         damage(context, target, 2048.0D, source);
     }
 
+    /** Damage listeners (including the defender) may still cancel or absorb this hit. */
+    protected void confirmedDamageImpact(AbilityPlayerContext context, EntityDamageByEntityEvent event, Player victim) {
+        confirmedDamageImpact(context, event, victim, style().hit());
+    }
+
+    protected void confirmedDamageImpact(AbilityPlayerContext context, EntityDamageByEntityEvent event, Player victim,
+                                         kr.newgodwar.ability.feedback.EffectCue cue) {
+        confirmedDamageImpact(context, event, victim, cue, false);
+    }
+
+    protected void confirmedAttack(AbilityPlayerContext context, EntityDamageByEntityEvent event, Player victim) {
+        confirmedAttack(context, event, victim, style().hit());
+    }
+
+    protected void confirmedAttack(AbilityPlayerContext context, EntityDamageByEntityEvent event, Player victim,
+                                   kr.newgodwar.ability.feedback.EffectCue cue) {
+        confirmedDamageImpact(context, event, victim, cue, true);
+    }
+
+    private void confirmedDamageImpact(AbilityPlayerContext context, EntityDamageByEntityEvent event, Player victim,
+                                      kr.newgodwar.ability.feedback.EffectCue cue, boolean animateSource) {
+        if (!feedback.visuals(context) && !feedback.enabled(context,"sounds")) return;
+        Location incoming=event.getDamager().getLocation().clone();
+        if (event.getDamager() instanceof Projectile) {
+            Vector velocity=event.getDamager().getVelocity();
+            if (velocity != null && velocity.lengthSquared() > .001)
+                incoming=victim.getLocation().subtract(velocity.clone().normalize().multiply(2));
+        }
+        final Location source=incoming;
+        boolean permittedAtHit=canAffectEnemy(context,context.player(),victim);
+        org.bukkit.World world=victim.getWorld();
+        scheduleLater(context,()->{
+            if(!event.isCancelled() && event.getFinalDamage()>0 && victim.isOnline()
+                && world.equals(victim.getWorld()) && context.player().isOnline() && !context.player().isDead()
+                && world.equals(context.player().getWorld())
+                && (victim.isDead() ? permittedAtHit : canAffectEnemy(context,context.player(),victim))) {
+                if (animateSource) feedback.castCue(context,context.player(),cue);
+                if (!victim.isDead()) feedback.receivedCue(context,victim,cue,source);
+            }
+        },1L);
+    }
+
     protected void createExplosion(final AbilityPlayerContext context, final Player source, final Location location,
                                    final float power, final boolean setFire, final boolean breakBlocks) {
         context.plugin().abilities().runAttributedDamage(source, () ->
@@ -519,7 +595,7 @@ public abstract class BaseAbility implements GodAbility {
     protected boolean setWorldTime(AbilityPlayerContext context, Player player, long time) {
         try {
             player.getWorld().setTime(time);
-            feedback.cue(context, player, time < 12000 ? kr.newgodwar.ability.feedback.EffectCue.SUN
+            feedback.castCue(context, player, time < 12000 ? kr.newgodwar.ability.feedback.EffectCue.SUN
                 : kr.newgodwar.ability.feedback.EffectCue.MOON);
             return true;
         } catch (IllegalArgumentException ex) {
@@ -563,7 +639,7 @@ public abstract class BaseAbility implements GodAbility {
             return false;
         }
         feedback.departure(context, origin);
-        feedback.cue(context, player, kr.newgodwar.ability.feedback.EffectCue.PORTAL);
+        feedback.castCue(context, player, kr.newgodwar.ability.feedback.EffectCue.PORTAL);
         return true;
     }
 
@@ -693,7 +769,7 @@ public abstract class BaseAbility implements GodAbility {
             }
         }
         if (target == null) {
-            player.sendMessage(ChatColor.RED + "타깃이 해당 구역에 없습니다.");
+            sendAbilityMessage(context, player, "failure", ChatColor.RED + "타깃이 해당 구역에 없습니다.");
         }
         return target;
     }
@@ -704,7 +780,7 @@ public abstract class BaseAbility implements GodAbility {
             return null;
         }
         if (!lookingAt(player, target, range)) {
-            player.sendMessage(ChatColor.RED + "타깃이 해당 구역에 없습니다.");
+            sendAbilityMessage(context, player, "failure", ChatColor.RED + "타깃이 해당 구역에 없습니다.");
             return null;
         }
         return target;
@@ -716,7 +792,7 @@ public abstract class BaseAbility implements GodAbility {
             return null;
         }
         if (player.getLocation().distanceSquared(target.getLocation()) > range * range) {
-            player.sendMessage(ChatColor.RED + "타깃이 해당 구역에 없습니다.");
+            sendAbilityMessage(context, player, "failure", ChatColor.RED + "타깃이 해당 구역에 없습니다.");
             return null;
         }
         return target;
@@ -729,7 +805,7 @@ public abstract class BaseAbility implements GodAbility {
         }
         Player target = targetPlayer();
         if (target == null || !target.isOnline() || target.getWorld() != player.getWorld()) {
-            player.sendMessage(ChatColor.RED + "타깃이 해당 구역에 없습니다.");
+            sendAbilityMessage(context, player, "failure", ChatColor.RED + "타깃이 해당 구역에 없습니다.");
             return null;
         }
         if (!canTarget(context, player, target, sameTeam)) {
@@ -789,15 +865,20 @@ public abstract class BaseAbility implements GodAbility {
         final String text = triggerText == null || triggerText.trim().length() == 0 ? "능력 효과" : triggerText;
         timers.put(name, System.currentTimeMillis() + seconds * 1000L);
         timerAnnouncements.remove(name);
-        sendAbilityMessage(context, context.player(), "timer", ChatColor.YELLOW + text + ChatColor.WHITE + " : "
-            + ChatColor.AQUA + seconds + "초 후");
+        if (feedback.compact(context)) {
+            feedback.timer(context, text + " · " + seconds + "초 후");
+        } else {
+            sendAbilityMessage(context, context.player(), "timer", ChatColor.YELLOW + text + ChatColor.WHITE + " : "
+                + ChatColor.AQUA + seconds + "초 후");
+        }
         refreshDisplay(context);
         scheduleLater(context, () -> {
             timers.remove(name);
             timerAnnouncements.remove(name);
             refreshDisplay(context);
             runnable.run();
-            feedback.timer(context, text + " 완료");
+            if (runOnCancel && style().flightModel() == null) feedback.finished(context);
+            feedback.timer(context, text);
             refreshDisplay(context);
         }, seconds * 20L, runOnCancel ? runnable : null);
     }

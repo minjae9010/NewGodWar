@@ -31,6 +31,7 @@ import java.util.List;
 )
 final class ClockingAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.SHADOW)
+        .normal(EffectCue.STEALTH)
         .hit(EffectCue.SLASH)
         .privateCast()
         .effect(EffectCue.STEALTH, AbilityDesigns.CLOAK)
@@ -61,6 +62,7 @@ final class ClockingAbility extends BaseAbility {
         if (attacker && invisible) {
             context.player().removePotionEffect(PotionEffectType.INVISIBILITY);
             invisible = false;
+            confirmedAttack(context, event, opponent);
             if (oneIn(5)) {
                 event.setDamage(100.0D);
             }

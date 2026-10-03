@@ -35,6 +35,7 @@ import java.util.Map;
 )
 final class PoseidonAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.WATER)
+        .advanced(EffectCue.WATER)
         .hit(EffectCue.WATER)
         .dedicated()
         .effect(EffectCue.WATER, AbilityDesigns.TRIDENT)
@@ -77,7 +78,7 @@ final class PoseidonAbility extends BaseAbility {
     protected void onStaffRight(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
         List<Player> targets = nearbyPlayers(context, player, TIDAL_RANGE, false);
         if (targets.isEmpty()) {
-            player.sendMessage("능력을 사용할 수 있는 대상이 없습니다.");
+            sendAbilityMessage(context, player, "failure", "능력을 사용할 수 있는 대상이 없습니다.");
             return;
         }
         if (useAdvanced(context, player)) {
