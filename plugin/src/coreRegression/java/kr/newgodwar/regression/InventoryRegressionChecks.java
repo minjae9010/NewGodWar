@@ -191,7 +191,11 @@ final class InventoryRegressionChecks {
         require(count(Material.DIAMOND) == 7, "Cleanup ignored the inventory-preservation policy recorded at stop");
     }
 
-    private void gamble(GamblingGui gui) throws Exception { invoke(gui, "gamble", new Class<?>[] {Player.class}, player); }
+    private void gamble(GamblingGui gui) throws Exception {
+        gui.open(player);
+        Object state = player.getOpenInventory().getTopInventory().getHolder();
+        invoke(gui, "gamble", new Class<?>[] {Player.class, state.getClass()}, player, state);
+    }
     private int count(Material material) { return InventoryItems.count(player.getInventory(), material); }
     private int dropped(ItemStack expected) {
         int total = 0;

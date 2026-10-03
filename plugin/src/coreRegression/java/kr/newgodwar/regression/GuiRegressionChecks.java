@@ -32,7 +32,7 @@ import java.util.UUID;
 /** Real inventory views and events, using the inventory fixture's connected CraftPlayer. */
 final class GuiRegressionChecks {
     private static final int[] REWARD_SLOTS = {
-        19, 20, 21, 22, 23, 24, 25, 28, 29, 30, 31, 32, 33, 34, 37, 38, 39, 40, 41, 42, 43
+        10, 11, 12, 13, 14, 15, 16, 19, 20, 21, 22, 23, 24, 25, 28, 29, 30, 31, 32, 33, 34
     };
     private final NewGodWarPlugin core;
     private final Player player;
@@ -74,22 +74,19 @@ final class GuiRegressionChecks {
         player.getInventory().setItem(0, new ItemStack(Material.COBBLESTONE, 64));
         gui.open(player);
         Inventory inventory = top();
-        require(inventory.getSize() == 54, "Gambling menu is not six rows");
+        require(inventory.getSize() == 36, "Draw menu is not four rows");
         require(name(inventory.getItem(10)).contains("64"), "Opening balance does not show 64 cobblestone");
         require(name(inventory.getItem(13)).contains("32"), "Draw button does not explain the price");
-        require(name(inventory.getItem(19)).equals("GUI regression reward"), "First reward is not visible");
-        require(lore(inventory.getItem(19)).contains("100.00%"), "Reward preview omits its actual chance");
-        ItemStack preview = inventory.getItem(19).clone();
-
         click(13, ClickType.LEFT, InventoryAction.PICKUP_ALL);
+        inventory = top();
         require(count(Material.COBBLESTONE) == 32 && count(Material.DIAMOND) == 2,
             "Left-click draw did not charge 32 and grant exactly one reward");
-        require(name(inventory.getItem(10)).contains("32") && lore(inventory.getItem(13)).contains("32"),
+        require(name(inventory.getItem(10)).contains("32") && name(inventory.getItem(13)).contains("32"),
             "Draw did not refresh the balance and affordability");
-        require(name(inventory.getItem(16)).contains("완료")
+        require(name(inventory.getItem(16)).contains("받은 보상")
                 && lore(inventory.getItem(16)).contains("GUI regression result"),
             "Recent result did not update after the draw");
-        require(preview.equals(inventory.getItem(19)), "Drawing modified the reward preview");
+        ItemStack result = inventory.getItem(16).clone();
 
         for (ClickType type : Arrays.asList(ClickType.RIGHT, ClickType.SHIFT_LEFT, ClickType.SHIFT_RIGHT,
                 ClickType.NUMBER_KEY, ClickType.DOUBLE_CLICK, ClickType.DROP)) {
@@ -100,30 +97,44 @@ final class GuiRegressionChecks {
             click(13, type, action);
             require(count(Material.COBBLESTONE) == 32 && count(Material.DIAMOND) == 2,
                 "Non-left draw click spent resources or granted a reward: " + type);
-            click(19, type, action);
-            require(preview.equals(inventory.getItem(19)), "Preview changed after " + type);
+            require(result.equals(top().getItem(16)), "Result changed after " + type);
         }
-        click(19, ClickType.LEFT, InventoryAction.PICKUP_ALL);
+        click(29, ClickType.LEFT, InventoryAction.PICKUP_ALL);
+        inventory = top();
+        require(inventory.getSize() == 54, "Reward catalogue is not six rows");
+        require(name(inventory.getItem(10)).equals("GUI regression reward"), "First reward is not visible");
+        require(lore(inventory.getItem(10)).contains("100.00%"), "Reward preview omits its actual chance");
+        ItemStack preview = inventory.getItem(10).clone();
+        for (ClickType type : Arrays.asList(ClickType.LEFT, ClickType.RIGHT, ClickType.SHIFT_LEFT,
+                ClickType.SHIFT_RIGHT, ClickType.NUMBER_KEY, ClickType.DOUBLE_CLICK, ClickType.DROP)) {
+            click(10, type, InventoryAction.PICKUP_ALL);
+            require(preview.equals(inventory.getItem(10)), "Preview changed after " + type);
+        }
         click(54, ClickType.SHIFT_LEFT, InventoryAction.MOVE_TO_OTHER_INVENTORY);
         ItemStack[] before = player.getInventory().getContents();
         InventoryDragEvent drag = new InventoryDragEvent(player.getOpenInventory(),
             new ItemStack(Material.DIAMOND, 1), new ItemStack(Material.DIAMOND, 2), false,
-            Collections.singletonMap(19, new ItemStack(Material.DIAMOND, 1)));
+            Collections.singletonMap(10, new ItemStack(Material.DIAMOND, 1)));
         gui.onDrag(drag);
-        require(drag.isCancelled() && preview.equals(inventory.getItem(19))
+        require(drag.isCancelled() && preview.equals(inventory.getItem(10))
                 && Arrays.equals(before, player.getInventory().getContents()),
             "Dragging into a preview was not cancelled without changing inventory");
         require(count(Material.COBBLESTONE) == 32 && count(Material.DIAMOND) == 2,
             "Preview interactions changed the player's items");
 
-        click(13, ClickType.LEFT, InventoryAction.PICKUP_ALL);
+        click(49, ClickType.LEFT, InventoryAction.PICKUP_ALL);
+        require(result.equals(top().getItem(16)), "Returning from rewards lost the last draw result");
+        click(23, ClickType.LEFT, InventoryAction.PICKUP_ALL);
+        inventory = top();
         require(count(Material.COBBLESTONE) == 0 && count(Material.DIAMOND) == 4,
             "Second left-click did not charge the remaining cobblestone exactly once");
-        require(name(inventory.getItem(13)).contains("부족"), "Exhausted balance did not disable the draw affordance");
+        require(inventory.getItem(13).getType() == Material.BARRIER
+                && lore(inventory.getItem(13)).contains("더 필요"), "Exhausted balance did not disable the draw affordance");
         click(13, ClickType.LEFT, InventoryAction.PICKUP_ALL);
         require(count(Material.COBBLESTONE) == 0 && count(Material.DIAMOND) == 4,
             "Unaffordable draw granted another reward");
-        click(49, ClickType.LEFT, InventoryAction.PICKUP_ALL);
+        inventory = top();
+        click(35, ClickType.LEFT, InventoryAction.PICKUP_ALL);
         require(player.getOpenInventory().getTopInventory() != inventory, "Close button did not close the menu");
     }
 
@@ -132,26 +143,29 @@ final class GuiRegressionChecks {
         for (int index = 1; index <= 23; index++) rewards.add(reward(namedReward("Page reward " + index, 1)));
         core.getConfig().set("gambling.rewards.normal", rewards);
         gui.open(player);
+        click(29, ClickType.LEFT, InventoryAction.PICKUP_ALL);
         Inventory inventory = top();
         for (int index = 0; index < REWARD_SLOTS.length; index++) {
             require(name(inventory.getItem(REWARD_SLOTS[index])).equals("Page reward " + (index + 1)),
                 "First reward page skipped/reordered reward " + (index + 1));
         }
-        require(lore(inventory.getItem(48)).contains("1 / 2"), "First-page indicator is incorrect");
-        require(lore(inventory.getItem(19)).contains("4.35%"), "Chance was calculated per page instead of all rewards");
+        require(name(inventory.getItem(40)).contains("1 / 2"), "First-page indicator is incorrect");
+        require(lore(inventory.getItem(10)).contains("4.35%"), "Chance was calculated per page instead of all rewards");
         click(53, ClickType.LEFT, InventoryAction.PICKUP_ALL);
-        require(name(inventory.getItem(19)).equals("Page reward 22")
-                && name(inventory.getItem(20)).equals("Page reward 23")
-                && inventory.getItem(21) == null && inventory.getItem(43) == null,
+        inventory = top();
+        require(name(inventory.getItem(10)).equals("Page reward 22")
+                && name(inventory.getItem(11)).equals("Page reward 23")
+                && inventory.getItem(12) == null && inventory.getItem(34) == null,
             "Second reward page is missing rewards or retained stale previews");
-        require(lore(inventory.getItem(48)).contains("2 / 2"), "Second-page indicator is incorrect");
+        require(name(inventory.getItem(40)).contains("2 / 2"), "Second-page indicator is incorrect");
         click(53, ClickType.LEFT, InventoryAction.PICKUP_ALL);
-        require(name(inventory.getItem(19)).equals("Page reward 22"), "Next moved past the last page");
+        require(name(top().getItem(10)).equals("Page reward 22"), "Next moved past the last page");
         click(45, ClickType.LEFT, InventoryAction.PICKUP_ALL);
-        require(name(inventory.getItem(19)).equals("Page reward 1")
-                && name(inventory.getItem(43)).equals("Page reward 21"), "Previous page did not restore every preview");
+        inventory = top();
+        require(name(inventory.getItem(10)).equals("Page reward 1")
+                && name(inventory.getItem(34)).equals("Page reward 21"), "Previous page did not restore every preview");
         click(45, ClickType.LEFT, InventoryAction.PICKUP_ALL);
-        require(name(inventory.getItem(19)).equals("Page reward 1"), "Previous moved before the first page");
+        require(name(top().getItem(10)).equals("Page reward 1"), "Previous moved before the first page");
         require(count(Material.DIAMOND) == 4 && count(Material.COBBLESTONE) == 0,
             "Pagination awarded preview items or charged resources");
         close();
@@ -226,10 +240,19 @@ final class GuiRegressionChecks {
     }
 
     private void click(int rawSlot, ClickType type, InventoryAction action) {
+        Set<Integer> existingTasks = new java.util.HashSet<Integer>();
+        for (org.bukkit.scheduler.BukkitTask task : Bukkit.getScheduler().getPendingTasks()) existingTasks.add(task.getTaskId());
         InventoryClickEvent event = new InventoryClickEvent(player.getOpenInventory(), InventoryType.SlotType.CONTAINER,
             rawSlot, type, action, type == ClickType.NUMBER_KEY ? 0 : -1);
         gui.onClick(event);
         require(event.isCancelled(), "Menu did not cancel inventory action at " + rawSlot + ": " + type);
+        // Complete only this click's deferred transaction; do not advance unrelated game tasks.
+        for (org.bukkit.scheduler.BukkitTask task : Bukkit.getScheduler().getPendingTasks()) {
+            if (task.getOwner() != core || existingTasks.contains(task.getTaskId())) continue;
+            require(task.isSync() && task instanceof Runnable, "Unexpected click task implementation");
+            try { ((Runnable) task).run(); }
+            finally { task.cancel(); }
+        }
     }
 
     private void close() {
