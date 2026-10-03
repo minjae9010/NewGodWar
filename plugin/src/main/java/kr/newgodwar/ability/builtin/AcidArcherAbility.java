@@ -20,14 +20,14 @@ import java.util.List;
 @AbilityInfo(
     id = "acidarcher",
     name = "독화살아처",
-    description = "활 피해 대신 독을 부여합니다.",
-    normalSkill = "블레이즈 막대기 좌클릭: 화살 2개를 생성합니다.",
+    description = "활 피해 대신 독을 줘요.",
+    normalSkill = "블레이즈 막대기 좌클릭: 화살 2개를 만들어요.",
     normalStoneCost = 5,
     normalCooldownSeconds = 20,
-    advancedSkill = "블레이즈 막대기 우클릭: 활을 생성합니다.",
+    advancedSkill = "블레이즈 막대기 우클릭: 활을 만들어요.",
     advancedStoneCost = 15,
     advancedCooldownSeconds = 60,
-    passiveSkill = "화살 피해 대신 독을 부여합니다.",
+    passiveSkill = "화살 피해 대신 독을 줘요.",
     grade = AbilityGrade.A
 )
 final class AcidArcherAbility extends BaseAbility {
@@ -36,6 +36,8 @@ final class AcidArcherAbility extends BaseAbility {
         .advanced(EffectCue.ITEM)
         .hit(EffectCue.POISON)
         .trail(AbilityTheme.SHADOW)
+        .effect(EffectCue.ITEM, AbilityDesigns.VENOM_BOW)
+        .effect(EffectCue.POISON, AbilityDesigns.VENOM)
         .build();
 
     @Override

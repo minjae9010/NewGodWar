@@ -20,19 +20,21 @@ import java.util.List;
 @AbilityInfo(
     id = "sniper",
     name = "저격수",
-    description = "웅크려 저격 자세를 잡은 뒤 다음 화살을 초고속으로 발사합니다.",
-    normalSkill = "활을 들고 웅크린 채 좌클릭해 다음 화살의 저격을 준비합니다.",
+    description = "웅크려 저격 자세를 잡은 뒤 다음 화살을 초고속으로 발사해요.",
+    normalSkill = "활을 들고 웅크린 채 좌클릭해 다음 화살의 저격을 준비해요.",
     normalStoneCost = 0,
-    advancedSkill = "저격 준비 후 활 우클릭을 놓아 발사한 다음 화살의 속도를 크게 높입니다.",
+    advancedSkill = "저격 준비 후 활 우클릭을 놓아 발사한 다음 화살의 속도를 크게 높여요.",
     advancedStoneCost = 6,
     advancedCooldownSeconds = 18,
-    passiveSkill = "배정 시 활과 화살 10개를 받고 리스폰 시 화살 2개를 받습니다.",
+    passiveSkill = "능력을 받으면 활과 화살 10개를 받고 리스폰 시 화살 2개를 받아요.",
     grade = AbilityGrade.A
 )
 final class SniperAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.HUNT)
         .hit(EffectCue.HIT)
         .passive(EffectCue.ITEM)
+        .effect(EffectCue.HIT, AbilityDesigns.SCOPE)
+        .effect(EffectCue.ITEM, AbilityDesigns.SCOPE)
         .build();
 
     @Override

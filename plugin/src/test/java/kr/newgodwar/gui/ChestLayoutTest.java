@@ -17,6 +17,8 @@ public final class ChestLayoutTest {
                 assertTrue(view + " slot " + slot, slot >= 9 && slot < 54);
                 assertNotEquals(49, slot);
                 assertNotEquals(53, slot);
+                assertNotEquals(45, slot);
+                assertNotEquals(47, slot);
                 assertTrue(view + " overlap " + slot, occupied.add(slot));
                 assertEquals(logical, ChestLayout.logicalSlot(view, slot));
             }
@@ -27,8 +29,8 @@ public final class ChestLayoutTest {
 
     @Test
     public void killtimeModeRemainsAccessibleBesideBackButton() {
-        int slot = ChestLayout.settings(SettingsView.DISPLAY)[22];
-        assertEquals(22, ChestLayout.logicalSlot(SettingsView.DISPLAY, slot));
+        int slot = ChestLayout.settings(SettingsView.COMBAT)[22];
+        assertEquals(22, ChestLayout.logicalSlot(SettingsView.COMBAT, slot));
         assertNotEquals(49, slot);
     }
 
@@ -44,5 +46,15 @@ public final class ChestLayoutTest {
                 assertEquals(slot, ChestLayout.CATALOG[index]);
             }
         }
+    }
+
+    @Test
+    public void mainContainsAllEightCategoriesAndTheItemShortcut() {
+        for (int logical = 10; logical <= 17; logical++) {
+            int slot = ChestLayout.settings(SettingsView.MAIN)[logical];
+            assertTrue(slot >= 0);
+            assertEquals(logical, ChestLayout.logicalSlot(SettingsView.MAIN, slot));
+        }
+        assertTrue(ChestLayout.settings(SettingsView.MAIN)[23] >= 0);
     }
 }

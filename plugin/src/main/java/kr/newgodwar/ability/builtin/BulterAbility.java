@@ -20,18 +20,19 @@ import java.util.List;
 @AbilityInfo(
     id = "bulter",
     name = "집사",
-    description = "폭발을 안정시켜 막습니다.",
+    description = "블록에서 일어나는 폭발을 막아요.",
     normalSkill = "없음",
     normalStoneCost = 0,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "블록 폭발 이벤트를 취소합니다.",
+    passiveSkill = "블록에서 시작된 폭발을 막아요.",
     grade = AbilityGrade.C
 )
 final class BulterAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.GUARD)
         .hit(EffectCue.GUARD)
         .passive(EffectCue.GUARD)
+        .effect(EffectCue.GUARD, AbilityDesigns.SERVANT_WALL)
         .build();
 
     @Override

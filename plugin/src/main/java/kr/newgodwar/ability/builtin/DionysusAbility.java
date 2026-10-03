@@ -20,17 +20,18 @@ import java.util.List;
 @AbilityInfo(
     id = "dionysus",
     name = "디오니소스",
-    description = "피격 시 확률로 공격자를 취하게 합니다.",
+    description = "공격받으면 확률로 공격자를 취하게 해요.",
     normalSkill = "없음",
     normalStoneCost = 0,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "피격 시 확률로 공격자에게 감속, 약화, 혼란을 부여합니다.",
+    passiveSkill = "공격받으면 확률로 공격자에게 감속, 약화, 혼란을 줘요.",
     grade = AbilityGrade.B
 )
 final class DionysusAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.ARCANE)
         .hit(EffectCue.POISON)
+        .effect(EffectCue.POISON, AbilityDesigns.WINE)
         .build();
 
     @Override

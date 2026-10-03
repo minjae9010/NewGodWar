@@ -20,11 +20,11 @@ import java.util.List;
 @AbilityInfo(
     id = "wizard",
     name = "마법사",
-    description = "주변 플레이어를 밀쳐내거나 공중에 띄운 뒤 번개 심판을 내립니다.",
-    normalSkill = "블레이즈 막대기 좌클릭: 반경 10블록 플레이어를 강하게 밀쳐냅니다.",
+    description = "주변 플레이어를 밀쳐내거나 공중에 띄운 뒤 번개 심판을 내려요.",
+    normalSkill = "블레이즈 막대기 좌클릭: 반경 10블록 적을 강하게 밀쳐내요.",
     normalStoneCost = 12,
     normalCooldownSeconds = 110,
-    advancedSkill = "블레이즈 막대기 우클릭: 반경 5블록 플레이어를 띄운 뒤 번개와 화염을 발생시킵니다.",
+    advancedSkill = "블레이즈 막대기 우클릭: 반경 5블록 적을 띄운 뒤 번개와 화염을 일으켜요.",
     advancedStoneCost = 24,
     advancedCooldownSeconds = 210,
     passiveSkill = "없음",
@@ -33,6 +33,8 @@ import java.util.List;
 final class WizardAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.ARCANE)
         .hit(EffectCue.WIND)
+        .effect(EffectCue.WIND, AbilityDesigns.WAND_GUST)
+        .effect(EffectCue.FIRE, AbilityDesigns.WAND_GUST)
         .build();
 
     @Override
@@ -72,7 +74,9 @@ final class WizardAbility extends BaseAbility {
             target.setVelocity(new Vector(0, 1.6D, 0));
         }
         scheduleLater(context, () -> {
+            if (!player.isOnline() || player.isDead() || !context.plugin().game().canUseAbility(player)) return;
             for (Player target : targets) {
+                if (!player.getWorld().equals(target.getWorld()) || !canAffectEnemy(context, player, target)) continue;
                 strikeLightning(context, player, target.getLocation());
                 target.setFireTicks(100);
             }

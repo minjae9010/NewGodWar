@@ -15,17 +15,20 @@ import java.util.List;
 
 @AbilityInfo(
     id = "hephaestus", name = "헤파이토스",
-    description = "대장간의 열기로 무기를 달구고 남은 열기를 방어구에 담금질합니다.",
-    normalSkill = "블레이즈 막대기 좌클릭: 8초 동안 검과 도끼의 다음 3회 근접 공격에 피해 2를 추가하는 화로 열기를 얻습니다.",
+    description = "열기로 무기를 강화하거나, 남은 열기로 몸을 지켜요.",
+    normalSkill = "블레이즈 막대기 좌클릭: 8초 동안 검과 도끼의 다음 3회 근접 공격에 피해 2를 추가하는 화로 열기를 얻어요.",
     normalStoneCost = 10, normalCooldownSeconds = 30,
-    advancedSkill = "블레이즈 막대기 우클릭: 남은 열기를 모두 소비해 6초간 흡수를 얻습니다. 열기 1개마다 추가 체력 4를 얻습니다.",
+    advancedSkill = "블레이즈 막대기 우클릭: 남은 열기를 모두 소비해 6초간 흡수를 얻어요. 열기 1개마다 추가 체력 4를 얻어요.",
     advancedStoneCost = 16, advancedCooldownSeconds = 60,
-    passiveSkill = "화염 피해를 무시하지만 익사 피해를 2배로 받습니다. 열기는 공격 강화와 방어구 담금질 중 선택해 사용합니다.",
+    passiveSkill = "화염 피해를 무시하지만 익사 피해를 2배로 받아요. 열기는 공격 강화와 방어구 담금질 중 선택해 사용해요.",
     grade = AbilityGrade.A
 )
 final class HephaestusAbility extends TransientAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.CRAFT)
         .dedicated()
+        .effect(EffectCue.FORGE, AbilityDesigns.ANVIL)
+        .effect(EffectCue.CLEANSE, AbilityDesigns.QUENCH)
+        .effect(EffectCue.FIRE, AbilityDesigns.EMBERS)
         .build();
 
     @Override
@@ -91,6 +94,7 @@ final class HephaestusAbility extends TransientAbility {
         if (center == null || center.getWorld() == null) return;
         List<Player> audience = feedback.effectViewers(context, center);
         if (quenched) {
+            feedback.drawCue(context, center, EffectCue.CLEANSE, audience);
             double yaw = Math.toRadians(center.getYaw());
             Location hand = center.clone().add(-0.38D * Math.cos(yaw) - 0.4D * Math.sin(yaw), 1.1D,
                 -0.38D * Math.sin(yaw) + 0.4D * Math.cos(yaw));

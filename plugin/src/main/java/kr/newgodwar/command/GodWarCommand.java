@@ -178,7 +178,16 @@ public final class GodWarCommand implements CommandExecutor, TabCompleter {
             return true;
         }
         if (sub.equals("tips")) {
-            GameTips.send(sender, plugin);
+            int page = 1;
+            try {
+                if (args.length > 2) throw new NumberFormatException();
+                if (args.length == 2) page = Integer.parseInt(args[1]);
+                if (page < 1) throw new NumberFormatException();
+            } catch (NumberFormatException ex) {
+                plugin.messages().send(sender, "&e/gw tips [페이지] &7처럼 입력하세요. 페이지는 1부터 시작해요.");
+                return true;
+            }
+            GameTips.send(sender, plugin, page);
             return true;
         }
         if (sub.equals("urf")) {

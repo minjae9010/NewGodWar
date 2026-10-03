@@ -20,18 +20,19 @@ import java.util.List;
 @AbilityInfo(
     id = "nasdaq",
     name = "나스닥",
-    description = "철괴나 다이아몬드를 걸고 확률적으로 자원 복사를 시도합니다.",
-    normalSkill = "철괴나 다이아몬드를 든 채 좌클릭하면 확률적으로 들고 있는 수량을 복사합니다.",
+    description = "철괴나 다이아몬드를 걸고 확률적으로 자원 복사를 시도해요.",
+    normalSkill = "철괴나 다이아몬드를 든 채 좌클릭하면 확률적으로 들고 있는 수량을 복사해요.",
     normalStoneCost = 16,
     normalCooldownSeconds = 45,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "성공 시 들고 있던 수량만큼 얻고 실패 시 들고 있던 수량을 잃습니다.",
+    passiveSkill = "성공 시 들고 있던 수량만큼 얻고 실패 시 들고 있던 수량을 잃어요.",
     grade = AbilityGrade.B
 )
 final class NasdaqAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.CRAFT)
         .hit(EffectCue.ITEM)
+        .effect(EffectCue.ITEM, AbilityDesigns.STOCK_SPLIT)
         .build();
 
     @Override

@@ -20,14 +20,14 @@ import java.util.List;
 @AbilityInfo(
     id = "archer",
     name = "아처",
-    description = "화살/활을 만들고 활 피해가 증가합니다.",
-    normalSkill = "블레이즈 막대기 좌클릭: 화살 4개를 생성합니다.",
+    description = "화살과 활을 만들고 활 피해가 늘어나요.",
+    normalSkill = "블레이즈 막대기 좌클릭: 화살 4개를 만들어요.",
     normalStoneCost = 5,
     normalCooldownSeconds = 20,
-    advancedSkill = "블레이즈 막대기 우클릭: 활을 생성합니다.",
+    advancedSkill = "블레이즈 막대기 우클릭: 활을 만들어요.",
     advancedStoneCost = 15,
     advancedCooldownSeconds = 60,
-    passiveSkill = "활 피해가 증가합니다.",
+    passiveSkill = "활 피해가 늘어나요.",
     grade = AbilityGrade.B
 )
 final class ArcherAbility extends BaseAbility {
@@ -35,6 +35,8 @@ final class ArcherAbility extends BaseAbility {
         .normal(EffectCue.ITEM)
         .advanced(EffectCue.ITEM)
         .hit(EffectCue.HIT)
+        .effect(EffectCue.ITEM, AbilityDesigns.ARCHER_BOW)
+        .effect(EffectCue.HIT, AbilityDesigns.BULLET)
         .build();
 
     @Override

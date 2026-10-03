@@ -13,12 +13,12 @@ import java.util.List;
 
 @AbilityInfo(
     id = "chronos", name = "크로노스",
-    description = "자신의 시간을 기록해 되감고 전장에 느리게 흐르는 시간대를 만듭니다.",
-    normalSkill = "블레이즈 막대기 좌클릭: 안전한 발밑에 5초간 시간 좌표를 기록합니다. 다시 좌클릭하면 돌아가며 기록 후 잃은 체력을 최대 4 회복합니다.",
+    description = "시간을 되감아 돌아오고, 주변 적을 느리게 만들어요.",
+    normalSkill = "블레이즈 막대기 좌클릭: 안전한 발밑에 돌아올 위치를 5초간 기록해요. 다시 좌클릭하면 돌아오고, 잃은 체력을 최대 4 회복해요.",
     normalStoneCost = 14, normalCooldownSeconds = 45,
-    advancedSkill = "블레이즈 막대기 우클릭: 현재 위치에 반경 6블록 시간장을 3초 동안 만듭니다. 안에 있는 적의 이동과 채굴을 늦춥니다.",
+    advancedSkill = "블레이즈 막대기 우클릭: 현재 위치에 반경 6블록 시간장을 3초간 만들어요. 안에 있는 적의 이동과 채굴이 느려져요.",
     advancedStoneCost = 26, advancedCooldownSeconds = 90,
-    passiveSkill = "되감기는 재료와 재사용 시간을 되돌리지 않으며, 위험해진 좌표로는 돌아갈 수 없습니다.",
+    passiveSkill = "되감아도 쓴 재료와 쿨타임은 돌아오지 않아요. 기록한 위치가 위험해지면 돌아갈 수 없어요.",
     grade = AbilityGrade.S
 )
 final class ChronosAbility extends TransientAbility {
@@ -113,6 +113,11 @@ final class ChronosAbility extends TransientAbility {
         if (center == null || center.getWorld() == null) return;
         List<Player> audience = feedback.effectViewers(context, center);
         double size = Math.max(0.5D, Math.min(6, radius));
+        Location dial = center.clone(); dial.setYaw(0); dial.setPitch(0);
+        if (feedback.object(context, "clock:" + feedback.positionKey(dial), AbilityDesigns.CLOCK, dial, 12, size)) {
+            feedback.sound(context, center, audience, AbilityTheme.TIME.sound(), 0.3F, 1.4F);
+            return;
+        }
         for (int i = 0; i < 12; i++) {
             double angle = i * Math.PI / 6;
             feedback.particle(context, center.clone().add(Math.cos(angle) * size, 0.15D, Math.sin(angle) * size),

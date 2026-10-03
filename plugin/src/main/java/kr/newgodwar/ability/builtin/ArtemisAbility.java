@@ -22,12 +22,12 @@ import java.util.UUID;
 
 @AbilityInfo(
     id = "artemis", name = "아르테미스",
-    description = "사냥의 여신의 은빛 활로 달빛 표식을 새기고 세 번째 화살로 사냥을 완성합니다.",
-    normalSkill = "블레이즈 막대기 좌클릭: 화살 6개를 만들고 5초 동안 신속을 얻습니다.",
+    description = "활로 표식을 쌓고, 세 번째 화살로 큰 피해를 줘요.",
+    normalSkill = "블레이즈 막대기 좌클릭: 화살 6개를 만들고 5초 동안 신속을 얻어요.",
     normalStoneCost = 8, normalCooldownSeconds = 25,
-    advancedSkill = "블레이즈 막대기 우클릭: 바라보는 30블록 안의 적에게 달빛 사냥 표식 2개를 남깁니다. 표식은 대상을 따라가며 8초 안에 화살을 맞히면 사냥이 완성됩니다.",
+    advancedSkill = "블레이즈 막대기 우클릭: 바라보는 30블록 안의 적에게 표식 2개를 남겨요. 8초 안에 화살을 맞히면 사냥이 완성돼요.",
     advancedStoneCost = 20, advancedCooldownSeconds = 65,
-    passiveSkill = "은빛 사냥활과 화살 12개를 지급받습니다. 같은 적에게 8초 안에 화살을 3번 적중하면 추가 피해 4와 감속 3초를 줍니다. 다른 적을 맞히면 표식이 옮겨갑니다.",
+    passiveSkill = "능력을 받으면 은빛 사냥활과 화살 12개를 얻어요. 같은 적에게 8초 안에 화살 3발을 맞히면 추가 피해 4와 감속 3초를 줘요. 다른 적을 맞히면 표식이 옮겨가요.",
     grade = AbilityGrade.A
 )
 final class ArtemisAbility extends TransientAbility {
@@ -35,6 +35,7 @@ final class ArtemisAbility extends TransientAbility {
         .normal(EffectCue.ITEM)
         .dedicated()
         .trail(AbilityTheme.LIGHTNING)
+        .effect(EffectCue.ITEM, AbilityDesigns.MOON_BOW)
         .build();
 
     @Override

@@ -19,10 +19,10 @@ import java.util.List;
 @AbilityInfo(
     id = "bomber",
     name = "봄버",
-    description = "짧은 거리의 위치에 폭탄을 숨겨 설치하고 원격으로 폭발시킵니다.",
-    normalSkill = "블레이즈 막대기 좌클릭: 5블록 안의 바라보는 위치 위에 폭탄을 설치합니다.",
+    description = "짧은 거리의 위치에 폭탄을 숨겨 설치하고 원격으로 터뜨려요.",
+    normalSkill = "블레이즈 막대기 좌클릭: 5블록 안의 바라보는 위치 위에 폭탄을 설치해요.",
     normalStoneCost = 0,
-    advancedSkill = "블레이즈 막대기 우클릭: 설치한 폭탄을 폭발력 2로 폭발시킵니다.",
+    advancedSkill = "블레이즈 막대기 우클릭: 설치한 폭탄을 폭발력 2로 터뜨려요.",
     advancedStoneCost = 30,
     advancedCooldownSeconds = 50,
     passiveSkill = "없음",
@@ -44,7 +44,8 @@ final class BomberAbility extends BaseAbility {
         bombLocation = targetLocation(player, 5).add(0, 1, 0);
         if (feedback.allow("bomb-placement", 700L)) {
             feedback.activated(context, player, false);
-            feedback.pulse(context, bombLocation, 0.7D);
+            if (!feedback.object(context, "hidden-bomb", AbilityDesigns.BOMB, bombLocation, 18, 1))
+                feedback.modelOutline(context, bombLocation, AbilityDesigns.BOMB, 0, 1, feedback.effectViewers(context, bombLocation));
         }
         player.sendMessage("해당 블럭에 폭탄이 설치되었습니다.");
     }

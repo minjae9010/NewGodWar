@@ -2,6 +2,7 @@ package kr.newgodwar.ability.builtin;
 
 import kr.newgodwar.ability.api.*;
 import kr.newgodwar.ability.feedback.AbilityStyle;
+import kr.newgodwar.ability.feedback.EffectCue;
 import kr.newgodwar.ability.feedback.AbilityTheme;
 import kr.newgodwar.game.GodTeam;
 
@@ -19,19 +20,20 @@ import java.util.List;
 @AbilityInfo(
     id = "zeus",
     name = "제우스",
-    description = "번개를 내리고 번개/폭발 피해를 무시합니다.",
-    normalSkill = "블레이즈 막대기 좌클릭: 바라보는 위치에 번개를 내립니다.",
+    description = "번개를 내리고 번개/폭발 피해를 무시해요.",
+    normalSkill = "블레이즈 막대기 좌클릭: 바라보는 위치에 번개를 내려요.",
     normalStoneCost = 15,
     normalCooldownSeconds = 90,
-    advancedSkill = "블레이즈 막대기 우클릭: 지정 위치 주변에 연속 번개를 내립니다.",
+    advancedSkill = "블레이즈 막대기 우클릭: 지정 위치 주변에 연속 번개를 내려요.",
     advancedStoneCost = 25,
     advancedCooldownSeconds = 150,
-    passiveSkill = "번개와 폭발 피해를 무시합니다.",
+    passiveSkill = "번개와 폭발 피해를 무시해요.",
     grade = AbilityGrade.S
 )
 final class ZeusAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.LIGHTNING)
         .dedicated()
+        .effect(EffectCue.CHARGE, AbilityDesigns.THUNDER_FORK)
         .build();
 
     @Override
@@ -40,7 +42,9 @@ final class ZeusAbility extends BaseAbility {
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
         if (useNormal(context, player)) {
-            strikeLightning(context, player, targetLocation(player, 50));
+            Location target = targetLocation(player, 50);
+            strikeLightning(context, player, target);
+            feedback.drawCue(context, target, EffectCue.CHARGE, feedback.effectViewers(context, target));
         }
     }
 
@@ -49,7 +53,9 @@ final class ZeusAbility extends BaseAbility {
         if (useAdvanced(context, player)) {
             Location center = targetLocation(player, 30);
             for (int i = 0; i < 5; i++) {
-                strikeLightning(context, player, center.clone().add(RANDOM.nextInt(11) - 5, 0, RANDOM.nextInt(11) - 5));
+                Location target = center.clone().add(RANDOM.nextInt(11) - 5, 0, RANDOM.nextInt(11) - 5);
+                strikeLightning(context, player, target);
+                feedback.drawCue(context, target, EffectCue.CHARGE, feedback.effectViewers(context, target));
             }
         }
     }

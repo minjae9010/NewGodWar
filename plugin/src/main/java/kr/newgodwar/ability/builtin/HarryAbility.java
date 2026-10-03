@@ -21,19 +21,23 @@ import java.util.List;
 @AbilityInfo(
     id = "harry",
     name = "해리포터",
-    description = "채팅 주문으로 시간 변경, 폭발, 보호, 무장 해제, 즉사 주문을 사용합니다.",
-    normalSkill = "채팅으로 루모스, 녹스, 봄바르다를 시전합니다.",
+    description = "채팅 주문으로 시간 변경, 폭발, 보호, 무장 해제, 즉사 주문을 사용해요.",
+    normalSkill = "채팅으로 루모스, 녹스, 봄바르다를 시전해요.",
     normalStoneCost = 6,
     normalCooldownSeconds = 8,
-    advancedSkill = "채팅에 스투페파이(감속), 익스펙토 패트로눔(보호), 엑스펠리아무스(무장 해제), 아바다 케다브라(즉사)를 입력합니다. 주문은 확률적으로 성공하며 실패해도 비용과 쿨타임이 적용됩니다.",
+    advancedSkill = "채팅에 스투페파이(감속), 익스펙토 패트로눔(보호), 엑스펠리아무스(무장 해제), 아바다 케다브라(즉사)를 입력해요. 주문은 확률적으로 성공하며 실패해도 비용과 쿨타임이 적용돼요.",
     advancedStoneCost = 20,
     advancedCooldownSeconds = 60,
-    passiveSkill = "배정 시 주문서를 받고 보호 주문 중 모든 피해를 무시합니다.",
+    passiveSkill = "능력을 받으면 주문서를 받고 보호 주문 중 모든 피해를 무시해요.",
     grade = AbilityGrade.S
 )
 final class HarryAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.ARCANE)
         .hit(EffectCue.POISON)
+        .effect(EffectCue.ARCANE, AbilityDesigns.SPELL_PAGES)
+        .effect(EffectCue.POISON, AbilityDesigns.SPELL_PAGES)
+        .effect(EffectCue.SEAL, AbilityDesigns.SPELL_PAGES)
+        .effect(EffectCue.GUARD, AbilityDesigns.SPELL_PAGES)
         .build();
 
     @Override

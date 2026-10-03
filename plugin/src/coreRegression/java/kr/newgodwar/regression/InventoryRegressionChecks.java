@@ -51,6 +51,7 @@ final class InventoryRegressionChecks {
             for (Entity entity : player.getWorld().getEntities()) if (entity instanceof Item) originalItems.add(entity.getUniqueId());
             resources();
             rewards();
+            GuiRegressionChecks.run(core, player);
             deathDrops();
             offlineCleanup();
             core.getLogger().info("PASS inventory lifecycle: metadata costs, atomic insufficient costs, exact starter grants, gambling overflow, death drops and offline cleanup");

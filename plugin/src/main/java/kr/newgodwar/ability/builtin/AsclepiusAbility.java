@@ -20,11 +20,11 @@ import java.util.List;
 @AbilityInfo(
     id = "asclepius",
     name = "아스클리피어스",
-    description = "자신 또는 주변 아군을 완전히 회복합니다.",
-    normalSkill = "블레이즈 막대기 좌클릭: 자신을 완전히 회복합니다.",
+    description = "자신 또는 주변 아군을 완전히 회복해요.",
+    normalSkill = "블레이즈 막대기 좌클릭: 자신을 완전히 회복해요.",
     normalStoneCost = 10,
     normalCooldownSeconds = 60,
-    advancedSkill = "블레이즈 막대기 우클릭: 주변 아군을 완전히 회복합니다.",
+    advancedSkill = "블레이즈 막대기 우클릭: 반경 5블록 아군을 완전히 회복해요.",
     advancedStoneCost = 15,
     advancedCooldownSeconds = 120,
     passiveSkill = "없음",
@@ -33,6 +33,7 @@ import java.util.List;
 final class AsclepiusAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.HEALING)
         .benefit(EffectCue.HEAL)
+        .effect(EffectCue.HEAL, AbilityDesigns.MEDICINE)
         .build();
 
     @Override

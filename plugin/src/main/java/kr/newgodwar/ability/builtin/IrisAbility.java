@@ -21,20 +21,22 @@ import java.util.List;
 @AbilityInfo(
     id = "iris",
     name = "이리스",
-    description = "안전한 위치로 짧게 건너가고 아군에게 이동 보조를 제공합니다.",
-    normalSkill = "블레이즈 막대기 좌클릭: 25블록 안의 바라보는 안전한 위치로 이동합니다.",
+    description = "안전한 위치로 짧게 건너가고 아군에게 이동 보조를 제공해요.",
+    normalSkill = "블레이즈 막대기 좌클릭: 25블록 안의 바라보는 안전한 위치로 이동해요.",
     normalStoneCost = 14,
     normalCooldownSeconds = 55,
-    advancedSkill = "블레이즈 막대기 우클릭: 반경 8블록 아군에게 신속과 재생을 부여합니다.",
+    advancedSkill = "블레이즈 막대기 우클릭: 자신과 반경 8블록 아군에게 신속과 재생을 줘요.",
     advancedStoneCost = 18,
     advancedCooldownSeconds = 95,
-    passiveSkill = "이동 후 짧은 신속을 얻습니다.",
+    passiveSkill = "이동 후 짧은 신속을 얻어요.",
     grade = AbilityGrade.A
 )
 final class IrisAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.ARCANE)
         .hit(EffectCue.PORTAL)
         .benefit(EffectCue.HEAL)
+        .effect(EffectCue.PORTAL, AbilityDesigns.RAINBOW)
+        .effect(EffectCue.HEAL, AbilityDesigns.RAINBOW)
         .build();
 
     @Override

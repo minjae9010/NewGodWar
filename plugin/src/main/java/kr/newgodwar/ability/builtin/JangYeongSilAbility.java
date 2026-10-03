@@ -16,14 +16,14 @@ import java.util.List;
 @AbilityInfo(
     id = "jangyeongsil",
     name = "장영실",
-    description = "실용적인 부품과 전투 보조 장치로 아군의 채굴과 진입을 돕습니다.",
-    normalSkill = "블레이즈 막대기 좌클릭: 부품을 쌓고 3스택이 되면 철 곡괭이를 제작합니다.",
+    description = "실용적인 부품과 전투 보조 장치로 아군의 채굴과 진입을 도와요.",
+    normalSkill = "블레이즈 막대기 좌클릭: 부품을 쌓고 3스택이 되면 철 곡괭이를 제작해요.",
     normalStoneCost = 12,
     normalCooldownSeconds = 60,
-    advancedSkill = "블레이즈 막대기 우클릭: 주변 아군에게 성급함, 신속, 저항을 부여합니다.",
+    advancedSkill = "블레이즈 막대기 우클릭: 자신과 반경 10블록 아군에게 성급함, 신속, 저항을 줘요.",
     advancedStoneCost = 30,
     advancedCooldownSeconds = 145,
-    passiveSkill = "곡괭이를 들고 공격하면 가끔 추가 피해와 감속을 부여합니다.",
+    passiveSkill = "곡괭이를 들고 공격하면 가끔 추가 피해와 감속을 줘요.",
     grade = AbilityGrade.A
 )
 final class JangYeongSilAbility extends BaseAbility {
@@ -31,6 +31,9 @@ final class JangYeongSilAbility extends BaseAbility {
         .normal(EffectCue.FORGE)
         .hit(EffectCue.HIT)
         .benefit(EffectCue.GUARD)
+        .effect(EffectCue.FORGE, AbilityDesigns.ARMILLARY)
+        .effect(EffectCue.GUARD, AbilityDesigns.ARMILLARY)
+        .effect(EffectCue.HIT, AbilityDesigns.ARMILLARY)
         .build();
 
     @Override

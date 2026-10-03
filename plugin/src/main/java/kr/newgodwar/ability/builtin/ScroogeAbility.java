@@ -19,12 +19,12 @@ import java.util.List;
 @AbilityInfo(
     id = "scrooge",
     name = "스크루지",
-    description = "팀원의 능력 코블스톤 비용을 절반으로 낮춥니다.",
+    description = "팀원의 능력 조약돌 비용을 절반으로 낮춰요.",
     normalSkill = "없음",
     normalStoneCost = 0,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "같은 팀의 코블스톤 능력 비용을 절반으로 줄입니다.",
+    passiveSkill = "같은 팀의 조약돌 능력 비용을 절반으로 줄여요.",
     grade = AbilityGrade.S
 )
 final class ScroogeAbility extends BaseAbility {

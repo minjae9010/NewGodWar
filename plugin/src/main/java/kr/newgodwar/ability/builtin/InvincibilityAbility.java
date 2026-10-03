@@ -20,20 +20,22 @@ import java.util.List;
 @AbilityInfo(
     id = "invincibility",
     name = "무적",
-    description = "짧은 완전 무적과 긴 재생으로 위기 상황을 버팁니다.",
-    normalSkill = "블레이즈 막대기 좌클릭: 7초 동안 모든 피해를 무시합니다.",
+    description = "짧은 완전 무적과 긴 재생으로 위기 상황을 버텨요.",
+    normalSkill = "블레이즈 막대기 좌클릭: 7초 동안 모든 피해를 무시해요.",
     normalStoneCost = 35,
     normalCooldownSeconds = 75,
-    advancedSkill = "블레이즈 막대기 우클릭: 25초 동안 재생 효과를 얻습니다.",
+    advancedSkill = "블레이즈 막대기 우클릭: 25초 동안 재생 효과를 얻어요.",
     advancedStoneCost = 40,
     advancedCooldownSeconds = 100,
-    passiveSkill = "무적 상태일 때 피해와 화염을 취소합니다.",
+    passiveSkill = "무적 상태일 때 피해와 화염을 취소해요.",
     grade = AbilityGrade.S
 )
 final class InvincibilityAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.GUARD)
         .hit(EffectCue.GUARD)
         .benefit(EffectCue.HEAL)
+        .effect(EffectCue.GUARD, AbilityDesigns.AEGIS_PLATES)
+        .effect(EffectCue.HEAL, AbilityDesigns.BLESSING)
         .build();
 
     @Override

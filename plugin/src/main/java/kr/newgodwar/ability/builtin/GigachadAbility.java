@@ -18,14 +18,14 @@ import java.util.List;
 @AbilityInfo(
     id = "gigachad",
     name = "기가채드",
-    description = "압도적인 자신감으로 적을 밀쳐내고 위기에서 버팁니다.",
-    normalSkill = "블레이즈 막대기 좌클릭: 주변 적을 밀쳐내고 자신에게 저항과 흡수를 부여합니다.",
+    description = "압도적인 자신감으로 적을 밀쳐내고 위기에서 버텨요.",
+    normalSkill = "블레이즈 막대기 좌클릭: 반경 6블록 적을 밀쳐내고 자신에게 저항과 흡수를 줘요.",
     normalStoneCost = 16,
     normalCooldownSeconds = 70,
-    advancedSkill = "블레이즈 막대기 우클릭: 짧게 신속, 공격력 증가, 저항을 얻습니다.",
+    advancedSkill = "블레이즈 막대기 우클릭: 짧게 신속, 공격력 증가, 저항을 얻어요.",
     advancedStoneCost = 28,
     advancedCooldownSeconds = 135,
-    passiveSkill = "치명적인 피해를 받을 때 가끔 흡수와 저항을 얻습니다.",
+    passiveSkill = "치명적인 피해를 받을 때 가끔 흡수와 저항을 얻어요.",
     grade = AbilityGrade.A
 )
 final class GigachadAbility extends BaseAbility {
@@ -33,6 +33,9 @@ final class GigachadAbility extends BaseAbility {
         .hit(EffectCue.HIT)
         .benefit(EffectCue.GUARD)
         .passive(EffectCue.GUARD)
+        .effect(EffectCue.HIT, AbilityDesigns.MUSCLE)
+        .effect(EffectCue.GUARD, AbilityDesigns.MUSCLE)
+        .effect(EffectCue.CHARGE, AbilityDesigns.MUSCLE)
         .build();
 
     @Override

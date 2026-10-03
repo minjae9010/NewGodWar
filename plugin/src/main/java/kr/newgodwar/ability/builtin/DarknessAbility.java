@@ -20,17 +20,18 @@ import java.util.List;
 @AbilityInfo(
     id = "darkness",
     name = "다크니스",
-    description = "받는 피해를 줄이고 자신 공격은 피해가 없습니다.",
+    description = "받는 피해가 크게 줄지만, 공격으로 피해를 줄 수 없어요.",
     normalSkill = "없음",
     normalStoneCost = 0,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "받는 피해가 크게 줄고 자신이 주는 피해는 0이 됩니다.",
+    passiveSkill = "받는 피해가 크게 줄고 자신이 주는 피해는 0이 돼요.",
     grade = AbilityGrade.A
 )
 final class DarknessAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.GUARD)
         .passive(EffectCue.GUARD)
+        .effect(EffectCue.GUARD, AbilityDesigns.BLACK_ARMOR)
         .build();
 
     @Override

@@ -49,6 +49,7 @@ public final class NewGodWarPlugin extends JavaPlugin {
     private GamblingGui gamblingGui;
     private WorldBackupManager worldBackupManager;
     private TrainingDummyManager trainingDummies;
+    private kr.newgodwar.ability.feedback.EffectArtPack effectArtPack;
 
     @Override
     public void onEnable() {
@@ -67,6 +68,7 @@ public final class NewGodWarPlugin extends JavaPlugin {
         metrics.addCustomChart(new SimplePie("paper_download_target", () -> versionSupport.supported() ? "supported" : "unsupported"));
 
         this.nmsAdapter = NmsAdapters.create(this);
+        this.effectArtPack = new kr.newgodwar.ability.feedback.EffectArtPack(this);
         this.abilityManager = new AbilityManager(this);
         this.worldBackupManager = new WorldBackupManager(this);
         loadManagedWorlds();
@@ -145,6 +147,8 @@ public final class NewGodWarPlugin extends JavaPlugin {
     public Messages messages() {
         return messages;
     }
+
+    public kr.newgodwar.ability.feedback.EffectArtPack effectArtPack() { return effectArtPack; }
 
     public NmsAdapter nms() {
         return nmsAdapter;

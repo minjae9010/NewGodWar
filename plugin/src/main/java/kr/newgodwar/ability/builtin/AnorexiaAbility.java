@@ -19,12 +19,12 @@ import java.util.List;
 @AbilityInfo(
     id = "anorexia",
     name = "거식증",
-    description = "허기가 절반으로 유지됩니다.",
+    description = "허기가 절반으로 유지돼요.",
     normalSkill = "없음",
     normalStoneCost = 0,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "허기가 항상 절반으로 유지됩니다.",
+    passiveSkill = "허기가 항상 절반으로 유지돼요.",
     grade = AbilityGrade.C
 )
 final class AnorexiaAbility extends BaseAbility {

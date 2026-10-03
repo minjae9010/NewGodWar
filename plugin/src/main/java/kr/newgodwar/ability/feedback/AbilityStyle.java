@@ -1,6 +1,9 @@
 package kr.newgodwar.ability.feedback;
 
 import java.util.Objects;
+import java.util.Collections;
+import java.util.EnumMap;
+import java.util.Map;
 
 /** Immutable visual choices declared in an ability file; the renderer only executes them. */
 public final class AbilityStyle {
@@ -10,6 +13,7 @@ public final class AbilityStyle {
     private final EffectCue normal, advanced, hit, benefit, passive;
     private final boolean dedicated, privateCast;
     private final ObjectModel flightModel;
+    private final Map<EffectCue, DesignedEffect> effects;
 
     private AbilityStyle(Builder builder) {
         theme = builder.theme;
@@ -18,6 +22,7 @@ public final class AbilityStyle {
         benefit = builder.benefit; passive = builder.passive;
         dedicated = builder.dedicated; privateCast = builder.privateCast;
         flightModel = builder.flightModel;
+        effects = Collections.unmodifiableMap(new EnumMap<EffectCue, DesignedEffect>(builder.effects));
     }
 
     public static Builder builder(AbilityTheme theme) { return new Builder(theme); }
@@ -30,6 +35,8 @@ public final class AbilityStyle {
     public boolean dedicated() { return dedicated; }
     public boolean privateCast() { return privateCast; }
     public ObjectModel flightModel() { return flightModel; }
+    public DesignedEffect effect(EffectCue cue) { return effects.get(cue); }
+    public Map<EffectCue, DesignedEffect> effects() { return effects; }
 
     public static final class Builder {
         private final AbilityTheme theme;
@@ -38,6 +45,7 @@ public final class AbilityStyle {
         private EffectCue benefit = EffectCue.NONE, passive = EffectCue.NONE;
         private boolean dedicated, privateCast;
         private ObjectModel flightModel;
+        private final Map<EffectCue, DesignedEffect> effects = new EnumMap<EffectCue, DesignedEffect>(EffectCue.class);
 
         private Builder(AbilityTheme theme) { this.theme = Objects.requireNonNull(theme, "theme"); }
         public Builder normal(EffectCue cue) { normal = Objects.requireNonNull(cue, "cue"); return this; }
@@ -49,6 +57,9 @@ public final class AbilityStyle {
         public Builder privateCast() { privateCast = true; return this; }
         public Builder trail(AbilityTheme theme) { trailTheme = Objects.requireNonNull(theme, "theme"); return this; }
         public Builder flight(ObjectModel model) { flightModel = Objects.requireNonNull(model, "model"); return this; }
+        public Builder effect(EffectCue cue, DesignedEffect effect) {
+            effects.put(Objects.requireNonNull(cue, "cue"), Objects.requireNonNull(effect, "effect")); return this;
+        }
         public AbilityStyle build() { return new AbilityStyle(this); }
     }
 

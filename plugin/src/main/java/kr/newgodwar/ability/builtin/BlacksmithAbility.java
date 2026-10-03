@@ -20,11 +20,11 @@ import java.util.List;
 @AbilityInfo(
     id = "blacksmith",
     name = "대장장이",
-    description = "조약돌을 철로, 철괴를 다이아몬드로 바꿔 장비 성장을 돕습니다.",
-    normalSkill = "블레이즈 막대기 좌클릭: 조약돌을 소모해 철괴 3개를 생성합니다.",
+    description = "조약돌을 철로, 철괴를 다이아몬드로 바꿔 장비 성장을 도와요.",
+    normalSkill = "블레이즈 막대기 좌클릭: 조약돌을 소모해 철괴 3개를 만들어요.",
     normalStoneCost = 64,
     normalCooldownSeconds = 40,
-    advancedSkill = "블레이즈 막대기 우클릭: 철괴 15개를 소모해 다이아몬드 1개를 생성합니다.",
+    advancedSkill = "블레이즈 막대기 우클릭: 철괴 15개를 소모해 다이아몬드 1개를 만들어요.",
     advancedStoneCost = 0,
     advancedCooldownSeconds = 180,
     passiveSkill = "없음",
@@ -34,6 +34,7 @@ final class BlacksmithAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.CRAFT)
         .normal(EffectCue.FORGE)
         .advanced(EffectCue.FORGE)
+        .effect(EffectCue.FORGE, AbilityDesigns.ANVIL)
         .build();
 
     @Override

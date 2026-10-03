@@ -16,18 +16,19 @@ import java.util.List;
 
 @AbilityInfo(
     id = "demeter", name = "데메테르",
-    description = "곡식과 빵을 나누고 수확의 계절로 아군을 먹이고 회복시킵니다.",
-    normalSkill = "블레이즈 막대기 좌클릭: 나눠 먹을 수 있는 빵 10개를 생성합니다.",
+    description = "곡식과 빵을 나누고 수확의 계절로 아군을 먹이고 회복해요.",
+    normalSkill = "블레이즈 막대기 좌클릭: 나눠 먹을 수 있는 빵 10개를 만들어요.",
     normalStoneCost = 12, normalCooldownSeconds = 25,
-    advancedSkill = "블레이즈 막대기 우클릭: 발밑에 반경 5블록 수확 영역을 6초간 만듭니다. 2초마다 영역 안 아군의 체력 2와 허기 4를 회복합니다.",
+    advancedSkill = "블레이즈 막대기 우클릭: 발밑에 반경 5블록 수확 영역을 6초간 만들어요. 2초마다 영역 안 아군의 체력 2와 허기 4를 회복해요.",
     advancedStoneCost = 22, advancedCooldownSeconds = 70,
-    passiveSkill = "허기가 항상 20으로 유지됩니다. 수확 영역은 처음 2초간 자란 뒤 세 번 수확되며 실제 지형은 바꾸지 않습니다.",
+    passiveSkill = "허기가 항상 20으로 유지돼요. 수확 영역은 처음 2초간 자란 뒤 세 번 수확되며 실제 지형은 바꾸지 않아요.",
     grade = AbilityGrade.A
 )
 final class DemeterAbility extends TransientAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.NATURE)
         .normal(EffectCue.ITEM)
         .dedicated()
+        .effect(EffectCue.ITEM, AbilityDesigns.WHEAT)
         .build();
 
     @Override

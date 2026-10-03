@@ -21,20 +21,23 @@ import java.util.List;
 @AbilityInfo(
     id = "loki",
     name = "로키",
-    description = "은신과 위치 교란으로 적을 속입니다.",
-    normalSkill = "블레이즈 막대기 좌클릭: 잠시 투명화하고 신속을 얻습니다.",
+    description = "은신과 위치 교란으로 적을 속여요.",
+    normalSkill = "블레이즈 막대기 좌클릭: 잠시 투명화하고 신속을 얻어요.",
     normalStoneCost = 12,
     normalCooldownSeconds = 55,
-    advancedSkill = "블레이즈 막대기 우클릭: 바라보는 적과 위치를 바꾸고 시야를 흐립니다.",
+    advancedSkill = "블레이즈 막대기 우클릭: 20블록 안에서 바라보는 적과 위치를 바꾸고 시야를 흐려요.",
     advancedStoneCost = 22,
     advancedCooldownSeconds = 105,
-    passiveSkill = "피격 시 가끔 공격자에게 혼란을 부여합니다.",
+    passiveSkill = "공격받으면 가끔 공격자에게 혼란을 줘요.",
     grade = AbilityGrade.A
 )
 final class LokiAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.SHADOW)
         .hit(EffectCue.PORTAL)
         .privateCast()
+        .effect(EffectCue.PORTAL, AbilityDesigns.TRICK_MASK)
+        .effect(EffectCue.STEALTH, AbilityDesigns.TRICK_MASK)
+        .effect(EffectCue.POISON, AbilityDesigns.TRICK_MASK)
         .build();
 
     @Override

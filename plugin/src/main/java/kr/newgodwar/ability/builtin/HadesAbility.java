@@ -19,14 +19,14 @@ import java.util.List;
 @AbilityInfo(
     id = "hades",
     name = "하데스",
-    description = "공중 섬 아래 나락으로 적을 떨어뜨리고 사망 시 낮은 확률로 장비를 보존합니다.",
-    normalSkill = "블레이즈 막대기 좌클릭: 반경 2블록 생물과 자신을 나락으로 떨어뜨립니다.",
+    description = "공중 섬 아래 나락으로 적을 떨어뜨리고 죽으면 낮은 확률로 장비를 보존해요.",
+    normalSkill = "블레이즈 막대기 좌클릭: 반경 2블록의 적·몹과 자신을 나락으로 떨어뜨려요. 아군은 제외해요.",
     normalStoneCost = 30,
     normalCooldownSeconds = 150,
-    advancedSkill = "블레이즈 막대기 우클릭: 반경 4블록 생물을 나락으로 떨어뜨립니다.",
+    advancedSkill = "블레이즈 막대기 우클릭: 반경 4블록의 적·몹을 나락으로 떨어뜨려요. 자신과 아군은 제외해요.",
     advancedStoneCost = 52,
     advancedCooldownSeconds = 240,
-    passiveSkill = "사망 시 25% 확률로 인벤토리와 방어구를 보존합니다.",
+    passiveSkill = "죽으면 25% 확률로 인벤토리와 방어구를 보존해요.",
     grade = AbilityGrade.S
 )
 final class HadesAbility extends BaseAbility {
@@ -55,11 +55,14 @@ final class HadesAbility extends BaseAbility {
     }
 
     private void abyss(AbilityPlayerContext context, Player player, int radius, boolean includeSelf) {
-        feedback.pulse(context, player.getLocation(), radius);
+        Location origin = player.getLocation(); origin.setPitch(0); origin.setYaw(0);
+        if (!feedback.object(context, "abyss", AbilityDesigns.ABYSS, origin, 18, radius))
+            feedback.modelOutline(context, origin, AbilityDesigns.ABYSS, 0, radius, feedback.effectViewers(context, origin));
         Location destination = player.getLocation().clone();
-        destination.setY(-2.0D);
+        destination.setY(abyssY(player.getWorld()));
         for (Entity entity : player.getNearbyEntities(radius, radius, radius)) {
-            if (!(entity instanceof LivingEntity)) {
+            if (!(entity instanceof LivingEntity) || entity.isDead()
+                || origin.distanceSquared(entity.getLocation()) > (double) radius * radius) {
                 continue;
             }
             if (entity instanceof Player) {
@@ -73,6 +76,16 @@ final class HadesAbility extends BaseAbility {
         }
         if (includeSelf) {
             player.teleport(destination);
+        }
+    }
+
+    static double abyssY(World world) {
+        try {
+            return ((Number) world.getClass().getMethod("getMinHeight").invoke(world)).doubleValue() - 2.0D;
+        } catch (NoSuchMethodException legacyWorld) {
+            return -2.0D;
+        } catch (ReflectiveOperationException error) {
+            throw new IllegalStateException("Cannot determine the world's abyss height", error);
         }
     }
 

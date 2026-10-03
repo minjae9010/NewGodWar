@@ -40,7 +40,6 @@ final class HelpChat {
         sender.sendMessage("");
         sender.sendMessage(ChatColor.GOLD + "§l NewGodWar §r§8› §f" + title
             + (count < 0 ? "" : " §8| §e" + page + "/" + pages + " §7· " + count + "개"));
-        sender.sendMessage(ChatColor.DARK_GRAY + " ──────────────────────────────");
     }
 
     static void section(CommandSender sender, String title, boolean admin) {
@@ -71,7 +70,6 @@ final class HelpChat {
         String previous = "§b[이전]";
         String next = "§b[다음]";
         if (!(sender instanceof Player)) {
-            sender.sendMessage("§8 ──────────────────────────────");
             sender.sendMessage("§7 기본 명령: /gw" + (page > 1 ? " | 이전: " + prefix + " " + (page - 1) : "")
                 + (page < pages ? " | 다음: " + prefix + " " + (page + 1) : ""));
             return;

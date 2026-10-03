@@ -49,6 +49,10 @@ Wiki 배포 전 저장소 Settings > Features에서 Wiki 기능을 켜야 합니
 
 설정 화면은 `/gw gui game`, `/gw gui team red`, `/gw gui protection`, `/gw gui display`처럼 바로 열 수 있습니다. `/gmenu <화면>`과 `/gw settings open <화면>`도 지원하며 `/gw gui help`에서 전체 화면을 찾을 수 있습니다.
 
+설정 홈은 게임 준비·전투와 능력·팀·월드·심장 보호·화면과 알림·도박을 목적별로 안내합니다. 우르프·킬타임·팀킬은 `/gmenu combat`, 월드 게임룰은 `/gmenu rules`에 있습니다. 도박 화면에서는 보유 조약돌, 1회 비용, 보상별 실제 확률과 최근 결과를 확인할 수 있습니다.
+
+버전별 메뉴·능력 리소스팩 25종을 [GitHub Release](https://github.com/minjae9010/NewGodWar/releases/tag/v0.3.6)에서 제공합니다. 기본 설정 `url: auto`로 서버 버전에 맞는 GitHub ZIP 주소와 SHA-1을 자동 적용합니다. [다운로드와 호환 범위](docs/wiki/resource-packs.md)를 확인하세요. 리소스팩을 받지 않은 플레이어에게는 일반 아이템과 한글 안내가 표시됩니다.
+
 쿨타임 초기화는 관리자 전용이며 본인·특정 플레이어·전체를 구분합니다. 콘솔은 `/gcd <player|all>`처럼 대상을 지정해야 합니다. 잘못된 플레이어 이름이 전체 초기화로 처리되지 않습니다.
 
 전체 동작, 별칭과 호환 명령은 [명령어 문서](docs/wiki/commands.md)를 확인하세요.
@@ -59,7 +63,7 @@ Wiki 배포 전 저장소 Settings > Features에서 Wiki 기능을 켜야 합니
 
 내장 능력 목록은 [능력 목록](docs/wiki/abilities.md)을 확인하세요.
 
-93종의 능력을 실제 동작에 맞는 연출로 구분합니다. 지원 서버에서는 묠니르·궁니르·방패·날개·룬·저울·중력핵을 Display 오브젝트로 표현하고, 미지원 서버에서는 형태를 살린 파티클로 자동 전환합니다. 회복 하트, 발목의 뿌리, 수면 표시, 방패, 날개 등을 사용하며 전용 연출에 공통 문양이 겹치지 않습니다. 적중·상태 효과·투사체 궤적·비행 잔상 등은 [능력 이펙트 안내](docs/wiki/ability-effects.md)에서 확인하세요.
+93종의 능력을 실제 동작에 맞는 연출로 구분합니다. 72개 능력에 의술 지팡이·약초·조준 쇠·화투·삼지창 등 행동별 디자인과 짧은 등장·동작·소멸 애니메이션을 연결했습니다. 묠니르·궁니르·방패·날개·룬·저울·중력핵과 함께 시계·까마귀·벌떼·폭렬핵도 지원 서버에서 Display 오브젝트로 표현합니다. 리소스팩 없이 작동하며 구버전에서는 파티클로 전환합니다. [능력 이펙트 안내](docs/wiki/ability-effects.md)에서 능력별 디자인을 확인하세요.
 
 총 93개 능력을 지원합니다. 중력술사·메아리 검사·룬 세공사를 추가하고, 토르·아르테미스·헤르미온느를 전하 축적·표식 사냥·지원 주문 중심으로 개편했습니다. 각 능력의 범위와 발동 예고를 전용 입자 연출로 표시합니다.
 
@@ -135,7 +139,7 @@ Windows PowerShell에서는 다음처럼 실행할 수 있습니다.
 .\gradlew.bat clean build
 ```
 
-빌드 결과물은 `build/libs/NewGodWar-0.3.5.jar`에 복사되며, 모듈 산출물은 `plugin/build/libs/NewGodWar-0.3.5.jar`에서도 확인할 수 있습니다.
+빌드 결과물은 `build/libs/NewGodWar-0.3.6.jar`에 복사되며, 모듈 산출물은 `plugin/build/libs/NewGodWar-0.3.6.jar`에서도 확인할 수 있습니다.
 
 ## 라이선스
 
@@ -149,7 +153,7 @@ Copyright (c) 2026 minjae9010
 `build`는 배포 플러그인과 별도로 `plugin/build/core-regression/CoreRegressionProbe.jar`를 생성합니다. 이 파일은 테스트 전용이며 운영 서버에 설치하면 안 됩니다.
 
 ```powershell
-./scripts/Test-PaperMatrix.ps1 -SkipBuild -LatestVersion -PluginJar build/libs/NewGodWar-0.3.5.jar -ProbeJar plugin/build/core-regression/CoreRegressionProbe.jar -WorkDir .paper-smoke/core-regression
+./scripts/Test-PaperMatrix.ps1 -SkipBuild -LatestVersion -PluginJar build/libs/NewGodWar-0.3.6.jar -ProbeJar plugin/build/core-regression/CoreRegressionProbe.jar -WorkDir .paper-smoke/core-regression
 ```
 
 격리된 Paper 서버에서 비참가자·관전자 등의 심장 파괴 차단, 정상 파괴, 중복 위치, 동시 폭발의 일괄 탈락, 종료 후 이벤트 차단, 준비 인원 재검사와 타이머 정리를 검사합니다. 일반 게임과 능력 테스트에서 설치·저장한 상자가 종료 후 제거되고 다음 게임에 남지 않는지도 검사합니다. 릴리즈는 이 검사를 통과해야 게시됩니다.
@@ -159,7 +163,7 @@ Copyright (c) 2026 minjae9010
 `build`는 `plugin/build/command-regression/CommandRegressionProbe.jar`도 생성합니다. 테스트 전용으로 격리된 Paper 서버에서만 사용합니다.
 
 ```powershell
-./scripts/Test-PaperMatrix.ps1 -SkipBuild -LatestVersion -PluginJar build/libs/NewGodWar-0.3.5.jar -ProbeJar plugin/build/command-regression/CommandRegressionProbe.jar -ProbeSuccessMarker "COMMAND REGRESSION PASS" -WorkDir .paper-smoke/command-regression
+./scripts/Test-PaperMatrix.ps1 -SkipBuild -LatestVersion -PluginJar build/libs/NewGodWar-0.3.6.jar -ProbeJar plugin/build/command-regression/CommandRegressionProbe.jar -ProbeSuccessMarker "COMMAND REGRESSION PASS" -WorkDir .paper-smoke/command-regression
 ```
 
 단계형·한글·간편 명령의 권한, 자동완성, 실제 등록 상태와 쿨타임 초기화 범위를 확인합니다. 없는 대상·콘솔 대상 생략·추가 인수·능력 조회가 전체 초기화로 이어지지 않는지도 검사합니다.

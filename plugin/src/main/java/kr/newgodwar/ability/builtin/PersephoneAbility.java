@@ -21,20 +21,22 @@ import java.util.List;
 @AbilityInfo(
     id = "persephone",
     name = "페르세포네",
-    description = "봄의 회복과 저승의 뿌리로 전장을 보조합니다.",
-    normalSkill = "블레이즈 막대기 좌클릭: 바라보는 적을 짧게 속박합니다.",
+    description = "봄의 회복과 저승의 뿌리로 전장을 보조해요.",
+    normalSkill = "블레이즈 막대기 좌클릭: 18블록 안에서 바라보는 적을 짧게 속박해요.",
     normalStoneCost = 12,
     normalCooldownSeconds = 55,
-    advancedSkill = "블레이즈 막대기 우클릭: 주변 아군을 조금 회복시키고 재생을 부여합니다.",
+    advancedSkill = "블레이즈 막대기 우클릭: 자신과 반경 7블록 아군을 조금 회복시키고 재생을 줘요.",
     advancedStoneCost = 22,
     advancedCooldownSeconds = 115,
-    passiveSkill = "치명상을 입으면 가끔 짧은 재생을 얻습니다.",
+    passiveSkill = "치명상을 입으면 가끔 짧은 재생을 얻어요.",
     grade = AbilityGrade.A
 )
 final class PersephoneAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.NATURE)
         .hit(EffectCue.ROOT)
         .benefit(EffectCue.HEAL)
+        .effect(EffectCue.ROOT, AbilityDesigns.UNDERWORLD_ROOTS)
+        .effect(EffectCue.HEAL, AbilityDesigns.POMEGRANATE)
         .build();
 
     @Override

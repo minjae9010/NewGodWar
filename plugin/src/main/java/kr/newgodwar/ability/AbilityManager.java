@@ -378,56 +378,25 @@ public final class AbilityManager {
     }
 
     private void sendAbilityInfo(Player player, AbilityDefinition definition) {
-        player.sendMessage("");
-        player.sendMessage(ChatColor.GOLD + "" + ChatColor.BOLD + "능력이 배정되었습니다: "
-            + ChatColor.WHITE + definition.name() + ChatColor.DARK_GRAY + " (" + definition.id() + ")");
-        player.sendMessage(ChatColor.GRAY + "설명: " + ChatColor.YELLOW + definition.description());
-        player.sendMessage(ChatColor.GRAY + "등급: " + ChatColor.YELLOW + definition.gradeText());
-        if (hasSkill(definition.normalSkill())) {
-            player.sendMessage(ChatColor.GRAY + "일반: " + ChatColor.WHITE + skillLine(definition.normalSkill(), definition.normalStoneCost(), definition.normalCooldown()));
-        }
-        if (hasSkill(definition.advancedSkill())) {
-            player.sendMessage(ChatColor.GRAY + "고급: " + ChatColor.WHITE + skillLine(definition.advancedSkill(), definition.advancedStoneCost(), definition.advancedCooldown()));
-        }
-        player.sendMessage(ChatColor.GRAY + "패시브: " + ChatColor.WHITE + emptySkill(definition.passiveSkill()));
-        player.sendMessage(ChatColor.DARK_GRAY + "/a 로 다시 확인할 수 있습니다.");
+        player.sendMessage(ChatColor.GOLD + "새 능력: " + ChatColor.WHITE + definition.name());
+        player.sendMessage(ChatColor.GRAY + definition.description());
+        player.sendMessage(ChatColor.YELLOW + "/a" + ChatColor.GRAY + "에서 사용법과 필요한 재료를 확인하세요.");
     }
 
     private void sendTargetGuide(Player player) {
-        player.sendMessage(ChatColor.AQUA + "이 능력은 타깃 지정이 필요합니다.");
         player.sendMessage(ChatColor.GRAY + "사용 전 " + ChatColor.YELLOW + "/x <플레이어>"
-            + ChatColor.GRAY + " 또는 " + ChatColor.YELLOW + "/gw target <플레이어>"
-            + ChatColor.GRAY + " 로 대상을 지정하세요.");
-    }
-
-    private String skillLine(String skill, int stoneCost, String cooldown) {
-        return emptySkill(skill) + ChatColor.DARK_GRAY + " / 조약돌 " + stoneCost(stoneCost)
-            + ChatColor.DARK_GRAY + " / 쿨타임 " + cooldown(cooldown);
-    }
-
-    private String emptySkill(String skill) {
-        return skill == null || skill.trim().length() == 0 ? "없음" : skill;
-    }
-
-    private boolean hasSkill(String skill) {
-        return skill != null && skill.trim().length() > 0 && !"없음".equals(skill.trim());
-    }
-
-    private String stoneCost(int cost) {
-        return cost <= 0 ? "없음" : cost + "개";
-    }
-
-    private String cooldown(String cooldown) {
-        return cooldown == null || cooldown.trim().length() == 0 ? "없음" : cooldown;
+            + ChatColor.GRAY + "로 대상을 지정하세요.");
     }
 
     public void handleDamage(Player damager, Player victim, EntityDamageByEntityEvent event) {
+        if (event.isCancelled() || !livingParticipant(damager) || !livingParticipant(victim)) return;
         AbilitySession session = activeSession(damager);
         if (session != null) {
             session.ability().onDamage(new AbilityDamageContext(plugin, damager, victim, session.definition(), event));
+            if (event.isCancelled()) return;
             session.ability().onDamageByEntity(playerContext(damager, session.definition()), event, victim, true);
         }
-
+        if (event.isCancelled()) return;
         AbilitySession victimSession = activeSession(victim);
         if (victimSession != null) {
             victimSession.ability().onDamageByEntity(playerContext(victim, victimSession.definition()), event, damager, false);
@@ -498,6 +467,7 @@ public final class AbilityManager {
     }
 
     public void handleInteract(Player player, PlayerInteractEvent event) {
+        if (!livingParticipant(player)) return;
         if (BukkitCompat.hasOpenContainer(player)) {
             return;
         }
@@ -518,6 +488,7 @@ public final class AbilityManager {
     }
 
     public void handleGenericDamage(Player player, EntityDamageEvent event) {
+        if (event.isCancelled() || !livingParticipant(player)) return;
         AbilitySession session = activeSession(player);
         if (session != null) {
             session.ability().onGenericDamage(playerContext(player, session.definition()), event);
@@ -525,6 +496,7 @@ public final class AbilityManager {
     }
 
     public void handleProjectileHit(Player shooter, Player victim, EntityDamageByEntityEvent event) {
+        if (event.isCancelled() || !livingParticipant(shooter) || !livingParticipant(victim)) return;
         AbilitySession session = activeSession(shooter);
         if (session != null) {
             session.ability().onProjectileHit(playerContext(shooter, session.definition()), event, victim);
@@ -663,14 +635,16 @@ public final class AbilityManager {
     }
 
     public void handleItemConsume(Player consumer, PlayerItemConsumeEvent event) {
+        if (event.isCancelled() || !livingParticipant(consumer)) return;
         for (Map.Entry<UUID, AbilitySession> entry : assignments.entrySet()) {
             Player owner = plugin.getServer().getPlayer(entry.getKey());
-            if (owner == null) {
+            if (!livingParticipant(owner)) {
                 continue;
             }
             AbilitySession session = activeSession(owner);
             if (session != null) {
                 session.ability().onItemConsume(playerContext(owner, session.definition()), event);
+                if (event.isCancelled()) return;
             }
         }
     }
@@ -729,6 +703,12 @@ public final class AbilityManager {
 
     private AbilityPlayerContext playerContext(Player player, AbilityDefinition definition) {
         return new AbilityPlayerContext(plugin, player, definition);
+    }
+
+    // Death/respawn callbacks intentionally still resolve activeSession; actions may not.
+    private boolean livingParticipant(Player player) {
+        return player != null && player.isOnline() && !player.isDead()
+            && (plugin.game() == null || plugin.game().canUseAbility(player));
     }
 
     private AbilitySession activeSession(Player player) {

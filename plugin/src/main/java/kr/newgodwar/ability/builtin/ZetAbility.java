@@ -20,18 +20,20 @@ import java.util.List;
 @AbilityInfo(
     id = "zet",
     name = "제트기관",
-    description = "화염 피해를 받으면 높은 속도로 가속합니다.",
+    description = "화염 피해를 받으면 높은 속도로 가속해요.",
     normalSkill = "없음",
     normalStoneCost = 0,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "화염 피해를 받으면 확률적으로 더 강한 신속 효과를 얻습니다.",
+    passiveSkill = "화염 피해를 받으면 확률적으로 더 강한 신속 효과를 얻어요.",
     grade = AbilityGrade.B
 )
 final class ZetAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.FIRE)
         .hit(EffectCue.FIRE)
         .passive(EffectCue.WIND)
+        .effect(EffectCue.FIRE, AbilityDesigns.JET_EXHAUST)
+        .effect(EffectCue.WIND, AbilityDesigns.JET_EXHAUST)
         .build();
 
     @Override

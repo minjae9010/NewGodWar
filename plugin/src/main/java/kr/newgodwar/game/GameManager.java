@@ -1870,14 +1870,14 @@ public final class GameManager {
         List<String> lines = new ArrayList<String>();
         lines.add("게임 상태: " + (state == GameState.RUNNING ? "진행 중" : state == GameState.READY ? "시작 준비 중" : "대기"));
         if (plugin.api().configuredGameMode() != null) {
-            lines.add("애드온 게임 모드: 시작 조건은 해당 모드가 검사합니다.");
-            lines.add("기본 팀전의 스폰·심장 조건은 적용되지 않습니다.");
+            lines.add("애드온 모드의 시작 규칙을 따라요.");
+            lines.add("기본 팀전의 스폰·심장은 필요 없어요.");
             return lines;
         }
         int required = plugin.getConfig().getInt("game.min-players", 2);
-        lines.add("팀 배정 인원: " + participants().size() + " / 최소 " + required + "명");
+        lines.add("참가자: " + participants().size() + " / 최소 " + required + "명");
         if (plugin.getConfig().getBoolean("game.auto-balance-teams", true) && teams.isEmpty()) {
-            lines.add("시작 시 온라인 플레이어를 자동 팀 배정합니다.");
+            lines.add("시작하면 접속 중인 플레이어를 팀에 나눠요.");
         }
         List<GodTeam> active = activeTeams();
         int spawnCount = 0, templeCount = 0;
@@ -1887,9 +1887,8 @@ public final class GameManager {
             if (spawn != null && spawn.toLocation() != null) spawnCount++;
             if (temple != null && temple.toLocation() != null) templeCount++;
         }
-        lines.add("활성 팀: " + active.size() + "개");
-        lines.add("스폰 위치 준비: " + spawnCount + " / " + active.size() + "팀");
-        lines.add("심장 위치 준비: " + templeCount + " / " + active.size() + "팀 (시작 시 블록 복원)");
+        lines.add("스폰 준비: " + spawnCount + " / " + active.size() + "팀");
+        lines.add("심장 준비: " + templeCount + " / " + active.size() + "팀");
         String worldName = configuredGameWorldName();
         lines.add("게임 월드: " + (worldName == null ? "미지정 · 월드 메뉴에서 확인" : worldName
             + (Bukkit.getWorld(worldName) == null ? " (로드 필요)" : " (로드됨)")));
@@ -1899,7 +1898,7 @@ public final class GameManager {
             && activeGameWorldName != null && activeGameWorldSnapshotName != null)
             lines.add("이전 월드 초기화가 남아 있습니다. 게임 종료로 정리하세요.");
         lines.addAll(duplicateTempleSettings());
-        lines.add("최종 시작 검사와 월드 백업은 시작 버튼을 누를 때 실행됩니다.");
+        lines.add("시작 버튼을 누르면 최종 확인과 백업을 해요.");
         return lines;
     }
 

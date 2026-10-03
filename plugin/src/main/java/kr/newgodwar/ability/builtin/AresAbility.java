@@ -20,18 +20,20 @@ import java.util.List;
 @AbilityInfo(
     id = "ares",
     name = "아레스",
-    description = "공격 피해가 크게 증가하고 일정 확률로 받은 공격을 회피합니다.",
+    description = "공격 피해가 크게 증가하고 일정 확률로 받은 공격을 회피해요.",
     normalSkill = "없음",
     normalStoneCost = 0,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "공격 피해가 40% 증가하고 피격 시 10% 확률로 회피합니다.",
+    passiveSkill = "공격 피해가 40% 증가하고 공격받으면 10% 확률로 회피해요.",
     grade = AbilityGrade.S
 )
 final class AresAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.COMBAT)
         .hit(EffectCue.SLASH)
         .passive(EffectCue.WIND)
+        .effect(EffectCue.SLASH, AbilityDesigns.WAR_BLADES)
+        .effect(EffectCue.WIND, AbilityDesigns.GALE)
         .build();
 
     @Override

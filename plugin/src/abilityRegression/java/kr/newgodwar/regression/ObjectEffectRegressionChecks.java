@@ -5,6 +5,8 @@ import kr.newgodwar.ability.api.AbilityPlayerContext;
 import kr.newgodwar.ability.feedback.AbilityFeedback;
 import kr.newgodwar.ability.feedback.ObjectEffects;
 import kr.newgodwar.ability.feedback.ObjectModel;
+import kr.newgodwar.ability.feedback.EffectCue;
+import kr.newgodwar.ability.feedback.SharedModels;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -34,8 +36,10 @@ final class ObjectEffectRegressionChecks {
     private final VisualProbe visuals;
     private World world;
     private Location location;
-    private boolean online = true, invisible, flying;
+    private boolean online = true, invisible, flying, dead;
+    private double viewerOffset;
     private int particles, shown, hidden;
+    private final List<Location> emittedPoints = new ArrayList<Location>();
 
     ObjectEffectRegressionChecks(NewGodWarPlugin core) { this.core = core; this.visuals = new VisualProbe(core); }
 
@@ -44,7 +48,7 @@ final class ObjectEffectRegressionChecks {
         boolean supported = ObjectEffects.supported();
         if (Bukkit.getBukkitVersion().startsWith("26.")) require(supported, "Modern server failed Display capability discovery");
         Map<String, Object> saved = new HashMap<String, Object>();
-        for (String key : Arrays.asList("enabled", "particles", "objects", "object-limit")) {
+        for (String key : Arrays.asList("enabled", "particles", "objects", "object-limit", "animations")) {
             saved.put(key, core.getConfig().get("abilities.effects." + key));
         }
         world = Bukkit.getWorlds().get(0); world.getChunkAt(0, 0).load();
@@ -74,6 +78,8 @@ final class ObjectEffectRegressionChecks {
             renderer.clear();
 
             for (ObjectModel model : visuals.models()) {
+                // Many designs are exercised now; keep each fixture inside the loaded chunk.
+                location.setX(8);
                 require(show(renderer, context, player, model), "Display model failed: " + model);
                 List<Entity> created = displays();
                 require(created.size() == model.parts(0, 1).size(), "Incomplete/duplicated model: " + model);
@@ -91,6 +97,7 @@ final class ObjectEffectRegressionChecks {
                 renderer.clear(); require(displays().isEmpty(), "Model cleanup leaked: " + model);
             }
             require(shown > 0, "Private display visibility was never granted to the audience");
+            checkRenderScenarios(context, player, renderer);
 
             core.getConfig().set("abilities.effects.object-limit", 0);
             particles = 0; visuals.effect("hammer", context, location);
@@ -124,7 +131,8 @@ final class ObjectEffectRegressionChecks {
             particles = 0;
             feedback = visuals.feedback("gaia");
             feedback.impact(new AbilityPlayerContext(core, player, core.abilities().registry().get("gaia")), location);
-            require(particles == 0 && displays().isEmpty(), "RGB fallback ignored particles=false while objects were enabled");
+            require(particles == 0 && !displays().isEmpty(), "Designed roots did not retain objects when particles were disabled");
+            feedback.clear();
             core.getConfig().set("abilities.effects.particles", true);
 
             require(show(renderer, context, player, visuals.model("thor", "HAMMER")), "Expiry fixture did not spawn");
@@ -161,11 +169,86 @@ final class ObjectEffectRegressionChecks {
             require(!show(new ObjectEffects(), context, player, visuals.model("athena", "PHALANX")), "Global display limit was exceeded");
             require(displays().size() == 245, "Budget refusal left a partial formation");
             ObjectEffects.clearAll(); require(displays().isEmpty(), "Global budget entities were not reclaimed");
-            core.getLogger().info("PASS object effects: all 10 models, actual Display entities, reuse, visibility, expiry, disconnect, partial-spawn rollback, budgets and exclusive fallback");
+            core.getLogger().info("PASS object effects: all original and action designs, actual Display entities, reuse, visibility, expiry, disconnect, partial-spawn rollback, budgets and exclusive fallback");
         } finally {
             visuals.clear(); renderer.clear(); ObjectEffects.clearAll();
             for (Map.Entry<String, Object> entry : saved.entrySet()) core.getConfig().set("abilities.effects." + entry.getKey(), entry.getValue());
         }
+    }
+
+    private void checkRenderScenarios(AbilityPlayerContext context, Player player, ObjectEffects renderer) throws Exception {
+        AbilityFeedback body = new AbilityFeedback();
+        for (EffectCue cue : Arrays.asList(EffectCue.GUARD, EffectCue.WINGS)) {
+            for (float yaw : new float[] {0,90,180,270}) {
+                List<Location> reference = null;
+                for (float pitch : new float[] {0,-90,90}) {
+                    location.setYaw(yaw); location.setPitch(pitch);
+                    core.getConfig().set("abilities.effects.objects", true);
+                    body.drawCue(context, location, cue, Collections.singletonList(player), player, true);
+                    require(!displays().isEmpty(), "Body attachment failed at " + yaw + "/" + pitch);
+                    for (Entity display : displays()) {
+                        require(display.getLocation().getPitch() == 0, "Body attachment inherited camera pitch");
+                        require(Math.abs((display.getLocation().getYaw() - yaw + 540) % 360 - 180) < 0.01, "Body attachment lost its heading");
+                    }
+                    body.clear();
+                    core.getConfig().set("abilities.effects.objects", false); emittedPoints.clear();
+                    body.drawCue(context, location, cue, Collections.singletonList(player), player, true);
+                    require(!emittedPoints.isEmpty() && emittedPoints.size() <= 64, "Body fallback missing or unbounded");
+                    if (reference == null) reference = new ArrayList<Location>(emittedPoints);
+                    else {
+                        require(reference.size() == emittedPoints.size(), "Camera pitch changed fallback detail");
+                        for (int i=0;i<reference.size();i++) require(reference.get(i).distanceSquared(emittedPoints.get(i)) < 0.000001,
+                            "Camera pitch moved body fallback through the player");
+                    }
+                    require(location.getPitch() == pitch, "Renderer mutated the caller's location");
+                }
+            }
+        }
+        location.setYaw(0); location.setPitch(0);
+        core.getConfig().set("abilities.effects.objects", true);
+        core.getConfig().set("abilities.effects.animations", true);
+        AbilityPlayerContext roots = new AbilityPlayerContext(core, player, core.abilities().registry().get("gaia"));
+        AbilityFeedback design = visuals.feedback("gaia");
+        core.getConfig().set("abilities.effects.object-limit", 0); particles=0;
+        design.drawCue(roots, location, EffectCue.ROOT, Collections.singletonList(player), player, true);
+        require(displays().isEmpty() && particles>0, "Full-budget design did not start in fallback");
+        int prior=particles;
+        core.getConfig().set("abilities.effects.object-limit", 48); stepDesign(design);
+        require(displays().isEmpty() && particles>prior, "Fallback upgraded mid-animation and restarted the pose");
+        design.clear(); particles=0;
+        design.drawCue(roots, location, EffectCue.ROOT, Collections.singletonList(player), player, true);
+        require(!displays().isEmpty() && particles==0, "New design did not use the restored display capacity");
+        core.getConfig().set("abilities.effects.objects", false); stepDesign(design);
+        require(displays().isEmpty() && particles>0, "Display failure did not continue in fallback");
+        core.getConfig().set("abilities.effects.objects", true); stepDesign(design);
+        require(displays().isEmpty(), "Restored display setting restarted an in-flight fallback");
+        design.clear();
+
+        // Sudden movement, pitch changes and lifecycle events reuse/reclaim the same attachments.
+        AbilityFeedback flight=visuals.feedback("hermes");
+        AbilityPlayerContext flyingContext=new AbilityPlayerContext(core,player,core.abilities().registry().get("hermes"));
+        flying=true; location.setPitch(-90); flight.flight(flyingContext);
+        Set<UUID> ids=ids(displays()); location.add(1,0.5,1); location.setYaw(180); location.setPitch(90);
+        flight.flight(flyingContext);
+        require(ids.equals(ids(displays())), "Moving flight spawned duplicate wings");
+        for(Entity display:displays()) require(display.getLocation().getPitch()==0 && display.getLocation().getYaw()==180,
+            "Flight camera pitch rotated the attachment");
+        flight.clear(); flying=false;
+        visuals.effect("scales",new AbilityPlayerContext(core,player,core.abilities().registry().get("anubis")),player,3D);
+        for(Entity display:displays()) require(display.getLocation().getPitch()==0,"Judgment scales tipped with the target's camera");
+        visuals.clear(); location.setPitch(0); location.setYaw(0);
+
+        require(show(renderer,context,player,SharedModels.SHIELD),"Range fixture did not spawn");
+        int beforeHide=hidden,beforeShow=shown;
+        viewerOffset=33;step(renderer);require(hidden>beforeHide,"Leaving 32 blocks did not hide existing objects");
+        viewerOffset=0;step(renderer);require(shown>beforeShow,"Returning viewer could not see the live scene");
+        dead=true;step(renderer);require(displays().isEmpty(),"Dead owner left live displays");dead=false;
+        renderer.clear(); body.clear();
+        core.getLogger().info("PASS rendering scenarios: four headings, up/down camera, model/fallback body alignment, moving flight, scales, mid-animation budget/settings changes, range and death");
+    }
+
+    private void stepDesign(AbilityFeedback feedback) throws Exception {
+        Method method=AbilityFeedback.class.getDeclaredMethod("updateDesigns");method.setAccessible(true);method.invoke(feedback);
     }
 
     public static final class SpawnBlocker implements Listener {
@@ -194,12 +277,13 @@ final class ObjectEffectRegressionChecks {
                 case "getUniqueId": return id;
                 case "getName": return "ObjectViewer";
                 case "getWorld": return world;
-                case "getLocation": return location.clone();
+                case "getLocation": return location.clone().add(viewerOffset,0,0);
                 case "isOnline": return online;
+                case "isDead": return dead;
                 case "isFlying": return flying;
                 case "canSee": return true;
                 case "hasPotionEffect": return invisible && args[0].equals(PotionEffectType.INVISIBILITY);
-                case "spawnParticle": particles++; return null;
+                case "spawnParticle": particles++; emittedPoints.add(((Location)args[1]).clone()); return null;
                 case "showEntity": shown++; return null;
                 case "hideEntity": hidden++; return null;
                 case "equals": return proxy == args[0];

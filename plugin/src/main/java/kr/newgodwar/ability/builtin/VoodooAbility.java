@@ -24,18 +24,19 @@ import java.util.UUID;
 @AbilityInfo(
     id = "voodoo",
     name = "부두술사",
-    description = "팻말로 대상을 연결해 원격 피해를 줍니다.",
-    normalSkill = "팻말 설치 후 첫 줄에 접속 중인 적의 정확한 이름을 적고, 연결된 팻말을 좌클릭해 피해를 줍니다. 유저 간 전투를 막는 킬타임 중에는 연결할 수 없습니다.",
+    description = "팻말로 대상을 연결해 원격 피해를 줘요.",
+    normalSkill = "팻말 첫 줄에 접속 중인 적의 정확한 이름을 적으세요. 연결된 팻말을 좌클릭하면 피해를 줘요. 킬타임으로 유저 간 공격이 막혀 있으면 연결할 수 없어요.",
     normalStoneCost = 5,
     normalCooldownSeconds = 180,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "연결은 7초 유지되며 팻말이 자동 제거됩니다. 피해량과 타격 간격은 서버 설정을 따릅니다.",
+    passiveSkill = "7초 뒤 연결이 끊기고 팻말이 사라져요. 피해량과 타격 간격은 서버 설정에 따라 달라요.",
     grade = AbilityGrade.B
 )
 final class VoodooAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.SHADOW)
         .hit(EffectCue.POISON)
+        .effect(EffectCue.POISON, AbilityDesigns.VOODOO_DOLL)
         .build();
 
     @Override

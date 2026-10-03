@@ -1,0 +1,10 @@
+name: VisualRegressionProbe
+main: kr.newgodwar.regression.VisualRegressionProbe
+version: 1.0
+depend: [NewGodWar]
+commands:
+  ngwvisual:
+    permission: ngwvisual.test
+permissions:
+  ngwvisual.test:
+    default: op

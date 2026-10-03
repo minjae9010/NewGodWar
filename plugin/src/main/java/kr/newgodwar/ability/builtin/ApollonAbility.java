@@ -20,11 +20,11 @@ import java.util.List;
 @AbilityInfo(
     id = "apollon",
     name = "아폴론",
-    description = "태양을 띄우고 밝은 곳의 플레이어를 장시간 불태웁니다.",
-    normalSkill = "블레이즈 막대기 좌클릭: 시간을 낮으로 바꿉니다.",
+    description = "태양을 띄우고 밝은 곳의 플레이어를 장시간 불태워요.",
+    normalSkill = "블레이즈 막대기 좌클릭: 시간을 낮으로 바꿔요.",
     normalStoneCost = 3,
     normalCooldownSeconds = 45,
-    advancedSkill = "블레이즈 막대기 우클릭: 밝기 15인 곳의 다른 플레이어를 반복해서 불태웁니다.",
+    advancedSkill = "블레이즈 막대기 우클릭: 같은 월드에서 밝기 15인 곳의 생존 적 전체를 반복해서 불태워요. 거리 제한은 없어요.",
     advancedStoneCost = 18,
     advancedCooldownSeconds = 110,
     passiveSkill = "없음",
@@ -33,6 +33,8 @@ import java.util.List;
 final class ApollonAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.FIRE)
         .hit(EffectCue.FIRE)
+        .effect(EffectCue.SUN, AbilityDesigns.SOLAR_ARROW)
+        .effect(EffectCue.FIRE, AbilityDesigns.SOLAR_ARROW)
         .build();
 
     @Override

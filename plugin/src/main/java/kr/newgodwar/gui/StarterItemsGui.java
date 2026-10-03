@@ -42,7 +42,7 @@ public final class StarterItemsGui implements Listener {
         }
         player.openInventory(inventory);
         openViewers.add(player.getUniqueId());
-        plugin.messages().send(player, "&7창고에 넣은 아이템이 게임 시작 기본 지급 목록으로 저장됩니다.");
+        plugin.messages().send(player, "&7시작할 때 나눠 줄 아이템을 넣어 주세요. 창을 닫으면 저장돼요.");
     }
 
     @EventHandler
@@ -60,7 +60,7 @@ public final class StarterItemsGui implements Listener {
         }
         plugin.getConfig().set(StarterItems.PATH, entries);
         plugin.saveConfig();
-        plugin.messages().send(player, "&a기본 지급 아이템 창고를 저장했습니다. &f" + entries.size() + "종&a이 지급됩니다.");
+        plugin.messages().send(player, "&a시작 아이템 &f" + entries.size() + "종&a을 저장했어요.");
     }
 
     private boolean isStarterItemsInventory(InventoryCloseEvent event) {

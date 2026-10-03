@@ -20,19 +20,21 @@ import java.util.List;
 @AbilityInfo(
     id = "clocking",
     name = "클로킹",
-    description = "투명화 후 공격 시 확률로 즉사시킵니다.",
-    normalSkill = "블레이즈 막대기 좌클릭: 잠시 투명화합니다.",
+    description = "투명화 후 공격하면 확률로 즉사시켜요.",
+    normalSkill = "블레이즈 막대기 좌클릭: 잠시 투명화해요.",
     normalStoneCost = 25,
     normalCooldownSeconds = 60,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "투명화 중 공격 시 확률로 큰 피해를 줍니다.",
+    passiveSkill = "투명화 중 공격하면 확률로 큰 피해를 줘요.",
     grade = AbilityGrade.A
 )
 final class ClockingAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.SHADOW)
         .hit(EffectCue.SLASH)
         .privateCast()
+        .effect(EffectCue.STEALTH, AbilityDesigns.CLOAK)
+        .effect(EffectCue.SLASH, AbilityDesigns.DAGGER_STEP)
         .build();
 
     @Override

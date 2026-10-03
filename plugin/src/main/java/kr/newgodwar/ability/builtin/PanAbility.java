@@ -14,12 +14,12 @@ import java.util.List;
 
 @AbilityInfo(
     id = "pan", name = "판",
-    description = "제자리에 서서 피리를 불어 퍼져 나가는 선율로 적을 겁주고 아군을 춤추게 합니다.",
-    normalSkill = "블레이즈 막대기 좌클릭: 2초간 공포의 피리를 연주합니다. 반경 3·5·7블록으로 퍼지는 세 선율이 적을 감속시키고 마지막 선율이 밀쳐냅니다.",
+    description = "제자리에 서서 피리를 불어 퍼져 나가는 선율로 적을 겁주고 아군을 춤추게 해요.",
+    normalSkill = "블레이즈 막대기 좌클릭: 2초간 공포의 피리를 연주해요. 반경 3·5·7블록으로 퍼지는 세 선율이 적을 감속시키고 마지막 선율이 밀쳐내요.",
     normalStoneCost = 12, normalCooldownSeconds = 35,
-    advancedSkill = "블레이즈 막대기 우클릭: 2초간 목동의 피리를 연주합니다. 세 선율이 아군에게 4초간 신속과 점프 강화를 주고 끝까지 연주하면 체력 2를 회복합니다.",
+    advancedSkill = "블레이즈 막대기 우클릭: 2초간 목동의 피리를 연주해요. 세 선율이 아군에게 4초간 신속과 점프 강화를 주고 끝까지 연주하면 체력 2를 회복해요.",
     advancedStoneCost = 18, advancedCooldownSeconds = 65,
-    passiveSkill = "연주 시작점에서 1블록 넘게 이동하면 연주가 중단됩니다. 염소의 다리로 낙하 피해를 30% 줄입니다.",
+    passiveSkill = "연주 시작점에서 1블록 넘게 이동하면 연주가 중단돼요. 염소의 다리로 낙하 피해를 30% 줄여요.",
     grade = AbilityGrade.B
 )
 final class PanAbility extends TransientAbility {

@@ -33,19 +33,36 @@ public final class ObjectEffects {
             && context.plugin().getConfig().getBoolean("abilities.effects.objects", true);
     }
 
-    public boolean contains(String key) { return scenes.containsKey(key); }
+    public boolean contains(String key) { return scenes.containsKey(key) || scenes.containsKey(key + ":art"); }
 
     public boolean show(String key, AbilityPlayerContext context, ObjectModel model, Supplier<Location> anchor,
                         Supplier<List<Player>> audience, int lifetime, double detail) {
-        if (!enabled(context)) { remove(key); return false; }
+        EffectArtPack pack = context.plugin().effectArtPack();
+        ObjectModel art = pack == null ? null : ArtModels.variant(model);
+        if (art == null) return showSingle(key, context, model, anchor, audience, lifetime, detail);
+        boolean base = showSingle(key, context, model, anchor, () -> select(audience.get(), pack, false), lifetime, detail);
+        boolean enhanced = showSingle(key + ":art", context, art, anchor, () -> select(audience.get(), pack, true), lifetime, detail);
+        if (!base || !enhanced) { remove(key); return false; }
+        return true;
+    }
+
+    private static List<Player> select(List<Player> viewers, EffectArtPack pack, boolean enhanced) {
+        List<Player> selected = new ArrayList<Player>();
+        for (Player player : viewers) if (pack.ready(player) == enhanced) selected.add(player);
+        return selected;
+    }
+
+    private boolean showSingle(String key, AbilityPlayerContext context, ObjectModel model, Supplier<Location> anchor,
+                        Supplier<List<Player>> audience, int lifetime, double detail) {
+        if (!enabled(context)) { removeSingle(key); return false; }
         Location location = anchor.get();
-        if (!validLocation(location) || !context.player().isOnline() || context.player().isDead()) { remove(key); return false; }
+        if (!validLocation(location) || !context.player().isOnline() || context.player().isDead()) { removeSingle(key); return false; }
         List<Player> viewers = audience.get();
         // An invisible scene is still handled: never reveal it with a public fallback.
-        if (viewers.isEmpty()) { remove(key); return true; }
+        if (viewers.isEmpty()) { removeSingle(key); return true; }
         Scene previous = scenes.get(key);
         if (previous != null && (previous.model != model || !previous.world.equals(location.getWorld()))) {
-            remove(key); previous = null;
+            removeSingle(key); previous = null;
         }
         int ttl = Math.max(2, Math.min(40, lifetime));
         if (previous != null) {
@@ -53,10 +70,10 @@ public final class ObjectEffects {
             try { render(previous); return true; }
             catch (ReflectiveOperationException | RuntimeException | LinkageError ex) { fail(); return false; }
         }
-        List<ObjectModel.Part> parts = model.parts(tick, detail);
+        List<ObjectModel.Part> parts = model.parts(0, detail);
         int limit = Math.max(0, Math.min(96, context.plugin().getConfig().getInt("abilities.effects.object-limit", 48)));
         if (ownedParts + parts.size() > limit || totalParts + parts.size() > GLOBAL_LIMIT) return false;
-        Scene scene = new Scene(context, model, anchor, audience, location, tick + ttl, detail);
+        Scene scene = new Scene(context, model, anchor, audience, location, tick, tick + ttl, detail);
         try {
             for (ObjectModel.Part part : parts) DisplayBridge.INSTANCE.spawn(context.plugin(), location, part, scene.entities);
             scenes.put(key, scene); ownedParts += scene.entities.size(); totalParts += scene.entities.size(); ACTIVE.add(this);
@@ -87,7 +104,7 @@ public final class ObjectEffects {
     private void render(Scene scene) throws ReflectiveOperationException {
         Location location = scene.anchor.get();
         if (!validLocation(location) || !scene.world.equals(location.getWorld())) throw new IllegalStateException("Scene anchor left its world");
-        List<ObjectModel.Part> parts = scene.model.parts(tick, scene.detail);
+        List<ObjectModel.Part> parts = scene.model.parts(tick - scene.started, scene.detail);
         Set<Player> audience = new LinkedHashSet<Player>(scene.audience.get());
         audience.removeIf(player -> !player.isOnline() || !scene.world.equals(player.getWorld())
             || player.getLocation().distanceSquared(location) > 32 * 32);
@@ -112,6 +129,10 @@ public final class ObjectEffects {
     }
 
     public void remove(String key) {
+        removeSingle(key); removeSingle(key + ":art");
+    }
+
+    private void removeSingle(String key) {
         Scene scene = scenes.remove(key);
         if (scene != null) {
             for (Entity entity : scene.entities) entity.remove();
@@ -144,12 +165,14 @@ public final class ObjectEffects {
         Set<Player> viewers = new LinkedHashSet<Player>();
         Supplier<Location> anchor;
         Supplier<List<Player>> audience;
+        final int started;
         int expires;
         double detail;
         Scene(AbilityPlayerContext context, ObjectModel model, Supplier<Location> anchor, Supplier<List<Player>> audience,
-              Location location, int expires, double detail) {
+              Location location, int started, int expires, double detail) {
             this.context = context; this.model = model; this.anchor = anchor; this.audience = audience;
-            this.world = location.getWorld(); this.ownerWorld = context.player().getWorld(); this.expires = expires; this.detail = detail;
+            this.world = location.getWorld(); this.ownerWorld = context.player().getWorld(); this.started = started;
+            this.expires = expires; this.detail = detail;
         }
     }
 }

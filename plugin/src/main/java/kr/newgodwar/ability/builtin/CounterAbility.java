@@ -18,19 +18,20 @@ import java.util.List;
 @AbilityInfo(
     id = "counter",
     name = "카운터",
-    description = "성급함으로 전투를 준비하고 적의 능력을 잠시 봉인합니다.",
-    normalSkill = "먼저 /x <플레이어>로 적 지정. 블레이즈 막대기 좌클릭: 지정한 적의 능력을 12초 동안 봉인합니다.",
+    description = "성급함으로 전투를 준비하고 적의 능력을 잠시 봉인해요.",
+    normalSkill = "먼저 /x <플레이어>로 적 지정. 블레이즈 막대기 좌클릭: 같은 월드의 지정한 적 능력을 12초 동안 봉인해요. 거리·시야 제한은 없어요.",
     normalStoneCost = 20,
     normalCooldownSeconds = 90,
-    advancedSkill = "블레이즈 막대기 우클릭: 주변 적의 능력을 6초 동안 봉인하고 자신은 짧게 더 강한 성급함을 얻습니다.",
+    advancedSkill = "블레이즈 막대기 우클릭: 반경 10블록 적의 능력을 6초 동안 봉인하고 자신은 짧게 더 강한 성급함을 얻어요.",
     advancedStoneCost = 32,
     advancedCooldownSeconds = 150,
-    passiveSkill = "상시 성급함 효과를 유지하며 타깃 지정 명령을 사용할 수 있습니다.",
+    passiveSkill = "항상 성급함 효과를 받아요. /x <플레이어>로 대상을 지정하세요.",
     grade = AbilityGrade.S
 )
 final class CounterAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.RUNE)
         .hit(EffectCue.SEAL)
+        .effect(EffectCue.SEAL, AbilityDesigns.COUNTER_LOCK)
         .build();
 
     @Override

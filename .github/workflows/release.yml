@@ -90,11 +90,25 @@ jobs:
       - name: Build
         run: ./gradlew --no-daemon clean build
 
+      - name: Verify versioned resource packs
+        run: python scripts/effect-art/verify_versions.py
+
       - name: Upload plugin jar
         uses: actions/upload-artifact@v4
         with:
           name: newgodwar-plugin
           path: build/libs/NewGodWar-*.jar
+          if-no-files-found: error
+
+      - name: Upload versioned resource packs
+        uses: actions/upload-artifact@v4
+        with:
+          name: newgodwar-resource-packs
+          compression-level: 0
+          path: |
+            build/libs/NewGodWar-Art-*.zip
+            build/libs/NewGodWar-Art-*.sha1
+            build/libs/NewGodWar-Art-manifest.tsv
           if-no-files-found: error
 
       - name: Upload regression fixtures
@@ -420,6 +434,12 @@ jobs:
           name: newgodwar-plugin
           path: release-artifacts
 
+      - name: Download resource packs
+        uses: actions/download-artifact@v4
+        with:
+          name: newgodwar-resource-packs
+          path: release-artifacts
+
       - name: Create release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -433,9 +453,9 @@ jobs:
           fi
 
           if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
-            gh release upload "$RELEASE_TAG" release-artifacts/NewGodWar-*.jar --clobber
+            gh release upload "$RELEASE_TAG" release-artifacts/NewGodWar-* --clobber
           else
-            gh release create "$RELEASE_TAG" release-artifacts/NewGodWar-*.jar \
+            gh release create "$RELEASE_TAG" release-artifacts/NewGodWar-* \
               --title "NewGodWar $RELEASE_TAG" \
               "${notes_args[@]}"
           fi

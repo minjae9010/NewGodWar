@@ -16,20 +16,22 @@ import java.util.List;
 @AbilityInfo(
     id = "sus",
     name = "수상한녀석",
-    description = "의심스러운 움직임으로 숨어들고 적을 교란합니다.",
-    normalSkill = "블레이즈 막대기 좌클릭: 잠시 투명화하고 신속을 얻습니다.",
+    description = "의심스러운 움직임으로 숨어들고 적을 교란해요.",
+    normalSkill = "블레이즈 막대기 좌클릭: 잠시 투명화하고 신속을 얻어요.",
     normalStoneCost = 16,
     normalCooldownSeconds = 70,
-    advancedSkill = "블레이즈 막대기 우클릭: 주변 적 하나와 위치를 바꾸고 서로 실명합니다.",
+    advancedSkill = "블레이즈 막대기 우클릭: 반경 10블록 적 하나와 위치를 바꾸고 서로 실명해요.",
     advancedStoneCost = 22,
     advancedCooldownSeconds = 105,
-    passiveSkill = "피격 시 가끔 짧게 투명화합니다.",
+    passiveSkill = "공격받으면 가끔 짧게 투명화해요.",
     grade = AbilityGrade.B
 )
 final class SusAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.SHADOW)
         .hit(EffectCue.PORTAL)
         .privateCast()
+        .effect(EffectCue.PORTAL, AbilityDesigns.FALSE_FACE)
+        .effect(EffectCue.STEALTH, AbilityDesigns.FALSE_FACE)
         .build();
 
     @Override

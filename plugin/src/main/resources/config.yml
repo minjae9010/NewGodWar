@@ -95,15 +95,28 @@ core:
     iron-seconds: 1500
     diamond-seconds: 1500
 
+ui:
+  resource-pack:
+    # Menu icons share abilities.effects.resource-pack.url/sha1 below (Minecraft 1.14+).
+    # Players who decline or cannot load the pack keep the standard, labeled menu items.
+    enabled: true
+
 abilities:
   effects:
+    # Version-matched packs from this repository GitHub Release. Restart after changing settings.
+    resource-pack:
+      enabled: true
+      # auto (or empty): use the bundled version catalogue and verified GitHub Release SHA-1.
+      url: 'auto'
+      # Only needed when overriding url with a custom HTTP(S) download URL.
+      sha1: ''
     enabled: true
     particles: true
     # 지원되는 Display API에서는 실체 오브젝트, 미지원/예산 초과 시 파티클로 자동 전환
     objects: true
     # 능력 세션별 오브젝트 조각 수 (전체 서버 상한 256, 설정 상한 96)
     object-limit: 48
-    # 투사체 궤적과 비행 잔상 (기술의 전용 연출은 particles 설정으로 제어)
+    # 행동별 등장/동작/소멸, 투사체 궤적과 비행 잔상 (false면 행동 디자인은 정지 형태)
     animations: true
     sounds: true
     action-bar: true
@@ -131,32 +144,28 @@ gambling:
       - chance: 5
         material: DIAMOND
         amount: 3
-        message: "&b와우! 축하합니다! 다이아몬드 3개입니다!"
+        message: "&b다이아몬드 3개 당첨!"
       - chance: 15
         material: OAK_LOG
         legacy-material: LOG
         amount: 3
-        message: "&6대박! 짜잔! 원목 3개 당첨 축하드립니다!"
+        message: "&6원목 3개 당첨!"
       - chance: 15
         material: BLAZE_ROD
         amount: 1
-        messages:
-          - "&c꽝!"
-          - "&9서버의 신의 자비로 능력의 막대를 드립니다."
+        message: "&6블레이즈 막대기 1개를 받았어요."
       - chance: 45
         material: IRON_INGOT
         amount: 3
-        message: "평범하군요! 철괴 3개를 드립니다."
+        message: "철괴 3개를 받았어요."
       - chance: 19
         material: IRON_INGOT
         amount: 4
-        message: "평범하군요! 철괴 4개를 드립니다."
+        message: "철괴 4개를 받았어요."
       - chance: 1
         material: DIAMOND
         amount: 22
-        messages:
-          - "&e헐... 대박, 당신의 운은 미쳤군요!"
-          - "&b다이아몬드 22개에 당첨되셨습니다."
+        message: "&b대박! 다이아몬드 22개 당첨!"
 scoreboard:
   enabled: true
   team-prefixes: true
@@ -173,15 +182,15 @@ tips:
     interval-seconds: 180
     repeat: true
   lines:
-    - "&f블막 조합: &e막대기 3개&7를 세로/가로/대각선으로 놓으면 &6블레이즈 막대기 1개&7를 만들 수 있습니다."
-    - "&f능력 확인: &b/a&7로 내 능력 설명과 쿨타임을 확인하세요."
-    - "&f재추첨: &b/gw yes&7로 확정, &c/gw no&7로 다시 뽑기를 선택합니다."
-    - "&f타깃 능력: &b/x <닉네임>&7으로 대상을 빠르게 지정합니다."
-    - "&f팀 설정: &b/gw settings&7의 팀 메뉴에서 팀 추가, 이름, 색상, 스폰, 심장을 관리할 수 있습니다."
-    - "&f비활성 팀: &7비활성화된 팀은 자동 배정, 중간 참여, 시작 검사에서 제외됩니다."
-    - "&f우르프: &b/gw urf 80%&7처럼 쿨타임 감소율을 바로 조정할 수 있습니다."
-    - "&f도박: &b/도박&7에서 코블스톤으로 추가 자원을 노려볼 수 있습니다."
-    - "&f팀 채팅: &b/tc&7로 모드를 켜면 일반 채팅이 팀챗으로 전송됩니다."
+    - "&e막대기 3개&7를 가로·세로·대각선으로 놓으면 &6블레이즈 막대기&7가 돼요."
+    - "&b/a&7에서 내 능력의 사용법과 쿨타임을 볼 수 있어요."
+    - "&7능력이 마음에 들면 &b/gw yes&7, 다시 뽑으려면 &b/gw no&7를 입력하세요."
+    - "&7대상을 정하는 능력은 먼저 &b/x <닉네임>&7을 입력하세요."
+    - "&b/gw abilities&7에서 다른 능력도 구경해 보세요."
+    - "&7우리 팀의 다이아 심장이 깨지면 팀이 탈락해요. 심장을 지켜 주세요!"
+    - "&7우르프가 켜져 있으면 능력을 더 자주 쓸 수 있어요."
+    - "&b/도박&7에서 조약돌로 아이템을 뽑아 보세요."
+    - "&b/tc&7로 팀 채팅을 켜고 끌 수 있어요."
 
 gamerules:
   enabled: true

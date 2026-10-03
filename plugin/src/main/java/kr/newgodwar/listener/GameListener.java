@@ -92,7 +92,8 @@ public final class GameListener implements Listener {
         gameManager.requestCheckpoint();
     }
 
-    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    // Resolve generic immunity at HIGH before applying attacker on-hit effects.
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onDamage(EntityDamageByEntityEvent event) {
         if (gameManager.hasCustomMode()) return;
         Entity damagerEntity = event.getDamager();

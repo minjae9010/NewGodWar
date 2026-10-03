@@ -1,0 +1,60 @@
+// Builds a local report from original screenshots and machine-readable results; no image rewriting.
+import {readFileSync,writeFileSync,existsSync,copyFileSync} from 'node:fs';
+import {dirname,resolve,join,relative} from 'node:path';
+import {fileURLToPath} from 'node:url';
+const root=resolve(dirname(fileURLToPath(import.meta.url)),'../..');
+const out=join(root,'.build/minecraft-mcp/evidence/all-abilities');
+const read=(name,otherwise=null)=>existsSync(join(out,name))?JSON.parse(readFileSync(join(out,name),'utf8')):otherwise;
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const url=p=>relative(out,p).split(/[\\/]/).map(encodeURIComponent).join('/');
+const catalog=read('catalog.json');
+function merge(base,retries){const map=new Map(base.map(r=>[r.id,r]));for(const r of retries)if(!map.get(r.id)?.started||!r.started||r.started>=map.get(r.id).started)map.set(r.id,r);return [...map.values()];}
+const models=merge(read('models.json',[]),read('models-retry.json',[]));
+const casts=merge(read('casts.json',[]),read('casts-retry.json',[]));
+for(const retry of read('passives-retry.json',[])) {
+  const row=casts.find(r=>r.id===retry.id);
+  if(row){if(retry.error)row.error=retry.error;else row.passive=retry.passive;}
+}
+const failed=casts.filter(a=>a.error||a.attempts.some(x=>x.status==='needs-review'));
+const attempts=casts.flatMap(a=>a.attempts),counts={};
+for(const a of attempts)counts[a.status]=(counts[a.status]??0)+1;
+const fixes=['MEDICINE','EARTH_FLOWER','POMEGRANATE','INK_ORCHID','TRICK_MASK','FALSE_FACE','RECORD','VOODOO_DOLL'];
+const session=read('verification-session.json',{});
+const animations=read('animations.json',[]).filter(c=>c.ok);
+const clipData=animations.map(c=>({...c,frames:c.frames.map(f=>({src:url(f.path),ms:f.ms}))}));
+const clipButton=(kind,id)=>{const i=animations.findIndex(c=>c.kind===kind&&c.id===id);return i<0?'':`<button class="watch" data-clip="${i}">▶ 애니메이션 보기 · ${animations[i].fps} fps</button>`;};
+const labels={'activated':'발동 확인','prepared':'준비 확인','informational':'정보 표시','not-applicable':'해당 없음','needs-review':'확인 필요'};
+const status=r=>r?.error?'오류':r?labels[r.status]??r.status:'기록 없음';
+const capture=(path,label)=>path?`<a href="${url(path)}"><img loading="lazy" src="${url(path)}" alt="${esc(label)}"></a>`:'';
+const modelCards=models.map(m=>`<article class="model searchable" data-search="${esc(m.id+' '+m.description)}"><h3>${esc(m.id)}</h3><p>${esc(m.description)}</p><a class="model-link" href="models/${encodeURIComponent(m.id)}/front.png"><img class="model-image" loading="lazy" data-model="${esc(m.id)}" src="models/${encodeURIComponent(m.id)}/front.png" alt="${esc(m.description)}"></a>${clipButton('model',m.id)}<p class="${m.ok?'good':'bad'}">${m.ok?'생성·소멸 통과':esc(m.error)} · ${m.parts}개 파트 · ${m.captures.length}가지 표시 조건</p></article>`).join('');
+const abilityCards=catalog.abilities.map(a=>{
+  const r=casts.find(r=>r.id===a.id),normal=r?.attempts.find(x=>x.kind==='normal'),advanced=r?.attempts.find(x=>x.kind==='advanced');
+  return `<details class="ability searchable" data-search="${esc(a.name+' '+a.id)}"><summary><strong>${esc(a.name)}</strong><code>${esc(a.id)}</code><span>일반: ${status(normal)} · 고급: ${status(advanced)}</span><span class="${r?.error?'bad':'good'}">${r?.error?'확인 필요':r?.passive?'이벤트 검사 완료':r?.delayed?.dead?'지연 폭발·사망 확인':'기록 확인'}</span></summary><div class="detail"><p>${esc(a.normal)}<br>${esc(a.advanced)}<br>패시브: ${esc(a.passive)}</p>${r?.error?`<pre class="bad">${esc(r.error)}</pre>`:''}<div class="images">${(r?.attempts??[]).filter(x=>x.picture).map(x=>`<figure>${capture(x.picture,a.name+' '+x.kind)}<figcaption>${esc(x.kind)} · ${status(x)} · 조약돌 ${x.before.stones} → ${x.after.stones}</figcaption></figure>`).join('')}${r?.passive?`<figure>${capture(r.passive.picture,a.name+' 이벤트')}<figcaption>이벤트 검사 후 화면</figcaption></figure>`:''}${r?.delayed?`<figure>${capture(r.delayed.picture,a.name+' 지연 결과')}<figcaption>지연 동작 결과</figcaption></figure>`:''}</div><details><summary>원본 발동 로그·상태·검사 관측값</summary><pre>${esc(JSON.stringify(r,null,2))}</pre></details></div></details>`;
+}).join('');
+const comparisons=fixes.map(name=>`<article><h3>${esc(name)}</h3><div class="images"><figure><a href="models-before/design.${name}/first.png"><img loading="lazy" src="models-before/design.${name}/first.png" alt="수정 전 ${name}"></a><figcaption>수정 전</figcaption></figure><figure><a href="models/design.${name}/first.png"><img loading="lazy" src="models/design.${name}/first.png" alt="수정 후 ${name}"></a><figcaption>수정 후 · 조준선 주변 확보</figcaption></figure></div></article>`).join('');
+const animationSection=animations.length?`<section id="animation"><h2>움직임을 직접 확인하세요</h2><p>실제 게임 화면을 연속 촬영했습니다. <strong>0.5배속</strong>으로 등장 → 동작 → 소멸을 보고, 슬라이더로 한 프레임씩 확인할 수 있습니다.</p><p class="animation-count">모델 ${animations.filter(c=>c.kind==='model').length}개 · 실제 능력 발동 ${animations.filter(c=>c.kind==='cast').length}개</p><select class="clip" aria-label="애니메이션 선택"></select><img alt="애니메이션 프레임"><div class="transport"><button class="play">▶ 재생</button><button class="previous" aria-label="이전 프레임">◀ 한 장</button><button class="next" aria-label="다음 프레임">한 장 ▶</button><select class="speed" aria-label="재생 속도"><option value="1">1배속 · 원속도</option><option value="0.5" selected>0.5배속 · 느리게</option><option value="0.25">0.25배속</option></select><label><input type="checkbox" checked> 반복</label><span class="phase"></span><output></output></div><input type="range" min="0" max="1" value="0" step="1" aria-label="프레임 탐색"><p class="clip-note"></p><div class="examples">${animations.map((c,i)=>c.kind==='cast'?`<button data-clip="${i}">▶ ${esc(c.label)}</button>`:'').join('')}</div><p class="muted">모델 단독 재생과 실제 능력 발동은 구분해 표시합니다. 일반 모델 영상은 정면에서 찍었으며, 1인칭·파티클 비교 정지 화면은 아래에 그대로 남겨 두었습니다.</p></section><script id="animation-data" type="application/json">${JSON.stringify(clipData).replace(/</g,'\\u003c')}</script><link rel="stylesheet" href="animation-player.css"><script src="animation-player.js" defer></script>`:'';
+for(const file of ['animation-player.js','animation-player.css'])copyFileSync(join(root,'scripts/minecraft-mcp',file),join(out,file));
+const summary={generated:new Date().toISOString(),abilities:casts.length,models:models.length,modelsPassed:models.filter(m=>m.ok).length,
+  attempts:counts,unresolved:failed.map(r=>r.id),passiveCallbacks:casts.filter(r=>r.passive).length,
+  animationClips:{models:animations.filter(c=>c.kind==='model').length,casts:animations.filter(c=>c.kind==='cast').length,
+    frames:animations.reduce((n,c)=>n+c.frames.length,0),source:'original timed Minecraft framebuffer PNGs'},
+  pluginSha256:session.pluginSha256,visualFixes:fixes,gameplayFix:'Hades destination uses world minimum height minus two',
+  limits:['Real client: Minecraft 26.3, default resources, no shaders, muted, 960x540.',
+    'Cast success is confirmed by resource use or success chat; not every downstream gameplay branch is asserted.',
+    'Passive and special-input preconditions use server event fixtures; they are not all real network input.',
+    'All model scenarios are captured with entity count and expiry checks. Manual visual review is selective.',
+    'Other client versions, resource packs, shaders, audio, every probability branch and multiplayer combinations remain unverified.']};
+writeFileSync(join(out,'summary.json'),JSON.stringify(summary,null,2));
+writeFileSync(join(out,'index.html'),`<!doctype html><html lang="ko"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>NewGodWar 전체 능력 검증</title><style>
+:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:#111820;color:#e8eef5;font:15px/1.65 system-ui,sans-serif}main{max-width:1400px;margin:auto;padding:38px 24px}h1{font-size:32px}h2{margin-top:48px}h3{font-size:15px}.muted,figcaption{color:#a7b6c7}.good{color:#8bdfaf}.bad{color:#ff9e9e}.stats{display:flex;gap:16px;flex-wrap:wrap}.stats div,article{background:#1a2530;border:1px solid #324354;border-radius:12px;padding:18px}.stats strong{display:block;font-size:28px}.toolbar{position:sticky;top:0;background:#111820ef;padding:12px 0;z-index:1;display:flex;gap:15px;flex-wrap:wrap}input,select{background:#1a2530;color:#fff;border:1px solid #526477;padding:10px;border-radius:7px}input{min-width:280px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:15px}.comparisons{display:grid;grid-template-columns:repeat(auto-fit,minmax(440px,1fr));gap:16px}.images{display:flex;gap:12px;flex-wrap:wrap}.images figure{flex:1;min-width:200px;margin:0}img{display:block;width:100%;border-radius:7px;aspect-ratio:16/9}article p{font-size:13px}.ability{border-bottom:1px solid #324354;padding:10px 0}.ability>summary{cursor:pointer;display:flex;gap:12px;align-items:center;flex-wrap:wrap}.ability strong{width:135px}.ability code{color:#a7b6c7;width:105px}.detail{padding:15px 0}pre{white-space:pre-wrap;word-break:break-word;font-size:12px;max-height:420px;overflow:auto}a{color:#a8d6ff}aside{border-left:3px solid #789dbc;padding-left:18px;margin:24px 0}.hidden{display:none!important}nav a{margin-right:20px}footer{margin:45px 0;color:#a7b6c7}
+</style><main><p class="muted">2026-10-02 · 실제 Minecraft 26.3 · 숨김 클라이언트 · 원본 PNG</p><h1>전체 능력 재검증</h1><div class="stats"><div>능력 검사<strong>${casts.length} / ${catalog.abilities.length}</strong></div><div>모델 생성·소멸<strong>${summary.modelsPassed} / ${catalog.models.length}</strong></div><div>발동 확인<strong>${counts.activated??0}</strong></div><div>미해결 기록<strong class="${failed.length?'bad':'good'}">${failed.length}</strong></div></div>
+<aside><p>일반·고급 입력은 실제 클라이언트의 내부 좌·우클릭을 사용하고, 성공 채팅 또는 재료 차감으로 발동을 확인했습니다. 주문·팻말·저격 및 패시브 조건은 격리 서버의 이벤트 도구로 재현했습니다. 재료 차감 확인이 모든 후속 효과의 정확성을 보장하지는 않습니다.</p><p>97개 모델은 정면, 1인칭, 위쪽 시점, 파티클 최소, 강제 파티클 대체의 5가지 조건에서 촬영하고 Display 수와 소멸을 검사했습니다. 모든 캡처를 수동 미술 검수한 결과는 아닙니다. 기본 리소스·셰이더 없음·음소거·960×540 조건이며, 다른 클라이언트 버전·리소스팩·셰이더·소리·모든 확률 분기와 다인전 조합은 별도 확인이 필요합니다.</p></aside>
+<nav>${existsSync(join(out,'../art-effects/index.html'))?'<a href="../art-effects/index.html#animation">✨ 새 리소스팩 연출 재생</a>':''}<a href="#animation">▶ 애니메이션 재생</a><a href="#abilities">능력별 결과</a><a href="#fixes">1인칭 수정 전후</a><a href="#models">97개 모델</a><a href="summary.json">검증 요약 JSON</a></nav><p>하데스의 나락 이동은 고정 Y=-2에서 <strong>월드 최저 높이-2</strong>로 수정했습니다. 현대 평지 월드에서 일반 시전자는 Y&lt;-64, 고급 대상은 Y=-66으로 이동하는 것을 실제 상태로 확인했습니다. 8개 시각 모델의 정면 가림은 어깨 옆 또는 머리 위 배치로 수정했습니다.</p>
+${animationSection}
+<div class="toolbar">${existsSync(join(out,'../art-effects/index.html'))?'<a href="../art-effects/index.html#animation">✨ 새 연출 보기</a>':''}<input id="search" placeholder="능력명 또는 모델 검색" aria-label="검색"><select id="view" aria-label="모델 표시 조건"><option value="front">모델: 정면</option><option value="first">모델: 1인칭</option><option value="up">모델: 위쪽 시점</option><option value="minimal">모델: 파티클 최소</option><option value="fallback">모델: 파티클 대체</option></select></div>
+<h2 id="abilities">93개 능력 · 펼쳐서 원본 확인</h2>${abilityCards}<h2 id="fixes">1인칭 시야 수정 전후</h2><p class="muted">원본 화면입니다. 촬영 시간이 달라 배경의 시간대와 주변 동물이 다를 수 있습니다.</p><div class="comparisons">${comparisons}</div><h2 id="models">모델 표시 조건 비교</h2><div class="grid">${modelCards}</div><footer>실행 플러그인 SHA-256: <code>${esc(summary.pluginSha256)}</code><br>이미지를 누르면 원본 960×540 PNG가 열립니다. 모델 검사는 형태 재생, 능력 검사는 발동과 이벤트 검증으로 구분합니다.</footer></main><script>
+document.querySelector('#search').addEventListener('input',e=>{const q=e.target.value.trim().toLowerCase();document.querySelectorAll('.searchable').forEach(x=>x.classList.toggle('hidden',!x.dataset.search.toLowerCase().includes(q)))});
+document.querySelector('#view').addEventListener('change',e=>{document.querySelectorAll('.model-image').forEach(img=>{const src='models/'+encodeURIComponent(img.dataset.model)+'/'+e.target.value+'.png';img.src=src;img.parentElement.href=src})});
+</script></html>`);
+console.log(JSON.stringify(summary,null,2));
+if(failed.length||casts.length!==catalog.abilities.length||summary.modelsPassed!==catalog.models.length)process.exitCode=1;

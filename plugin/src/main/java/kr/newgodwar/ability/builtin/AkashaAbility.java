@@ -20,11 +20,11 @@ import java.util.List;
 @AbilityInfo(
     id = "akasha",
     name = "아카샤",
-    description = "아군에게 향락을, 적에게 고통을 부여합니다.",
-    normalSkill = "블레이즈 막대기 좌클릭: 자신과 주변 아군에게 신속과 재생을 부여합니다.",
+    description = "아군에게 향락을, 적에게 고통을 줘요.",
+    normalSkill = "블레이즈 막대기 좌클릭: 자신과 주변 아군에게 신속과 재생을 줘요.",
     normalStoneCost = 10,
     normalCooldownSeconds = 60,
-    advancedSkill = "블레이즈 막대기 우클릭: 주변 적에게 혼란과 피해를 줍니다.",
+    advancedSkill = "블레이즈 막대기 우클릭: 반경 10블록 적에게 혼란과 피해를 줘요.",
     advancedStoneCost = 20,
     advancedCooldownSeconds = 80,
     passiveSkill = "없음",
@@ -34,6 +34,8 @@ final class AkashaAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.ARCANE)
         .hit(EffectCue.POISON)
         .benefit(EffectCue.HEAL)
+        .effect(EffectCue.HEAL, AbilityDesigns.AKASHIC_BOOK)
+        .effect(EffectCue.POISON, AbilityDesigns.AKASHIC_CURSE)
         .build();
 
     @Override

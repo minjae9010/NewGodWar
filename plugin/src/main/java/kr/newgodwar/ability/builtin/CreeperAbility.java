@@ -20,19 +20,20 @@ import java.util.List;
 @AbilityInfo(
     id = "creeper",
     name = "크리퍼",
-    description = "자폭으로 섬 지형을 흔들고 번개를 맞으면 다음 폭발력이 커집니다.",
-    normalSkill = "블레이즈 막대기 좌클릭: 자신의 위치에서 자폭 폭발을 일으키고 사망합니다.",
+    description = "자폭으로 섬 지형을 흔들고 번개를 맞으면 다음 폭발력이 커져요.",
+    normalSkill = "블레이즈 막대기 좌클릭: 자신의 위치에서 자폭 폭발을 일으키고 사망해요.",
     normalStoneCost = 24,
     normalCooldownSeconds = 90,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "번개를 맞으면 다음 자폭 폭발력이 증가합니다.",
+    passiveSkill = "번개를 맞으면 다음 자폭 폭발력이 늘어나요.",
     grade = AbilityGrade.B
 )
 final class CreeperAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.FIRE)
         .passive(EffectCue.CHARGE)
         .dedicated()
+        .effect(EffectCue.CHARGE, AbilityDesigns.CREEPER_FUSE)
         .build();
 
     @Override

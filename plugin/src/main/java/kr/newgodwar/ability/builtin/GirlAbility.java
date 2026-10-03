@@ -20,8 +20,8 @@ import java.util.List;
 @AbilityInfo(
     id = "girl",
     name = "안락소녀",
-    description = "가까운 적을 자신의 섬 위치로 끌어와 허기와 움직임을 끊습니다.",
-    normalSkill = "블레이즈 막대기 좌클릭: 수평 반경 5블록 적을 끌어오고 허기를 0으로 만듭니다.",
+    description = "가까운 적을 자신의 섬 위치로 끌어와 허기와 움직임을 끊어요.",
+    normalSkill = "블레이즈 막대기 좌클릭: 수평 반경 5블록 적을 끌어오고 허기를 0으로 만들어요.",
     normalStoneCost = 22,
     normalCooldownSeconds = 90,
     advancedSkill = "없음",
@@ -32,6 +32,8 @@ import java.util.List;
 final class GirlAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.HEALING)
         .hit(EffectCue.SLOW)
+        .effect(EffectCue.SLOW, AbilityDesigns.HEART_BIND)
+        .effect(EffectCue.ROOT, AbilityDesigns.HEART_BIND)
         .build();
 
     @Override
@@ -41,6 +43,8 @@ final class GirlAbility extends BaseAbility {
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
         if (useNormal(context, player)) {
             for (Player target : nearbyPlayers(context, player, 5, 0, 5, false)) {
+                Vector offset = target.getLocation().toVector().subtract(player.getLocation().toVector()).setY(0);
+                if (offset.lengthSquared() > 25.0D) continue;
                 target.teleport(player);
                 target.setFoodLevel(0);
                 effectTicks(target, "SLOWNESS", "SLOW", 60, 200);

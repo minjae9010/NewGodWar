@@ -20,18 +20,19 @@ import java.util.List;
 @AbilityInfo(
     id = "morpious",
     name = "모르피우스",
-    description = "지정한 적을 수면 상태로 만듭니다.",
-    normalSkill = "먼저 /x <플레이어>로 적 지정. 블레이즈 막대기 좌클릭: 지정한 적에게 실명과 강한 감속을 부여합니다.",
+    description = "지정한 적을 수면 상태로 만들어요.",
+    normalSkill = "먼저 /x <플레이어>로 적 지정. 블레이즈 막대기 좌클릭: 같은 월드의 지정한 적에게 30초 실명과 강한 감속을 줘요. 거리·시야 제한은 없어요.",
     normalStoneCost = 20,
     normalCooldownSeconds = 100,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "타깃 지정 명령을 사용할 수 있습니다.",
+    passiveSkill = "타깃 지정 명령을 사용할 수 있어요.",
     grade = AbilityGrade.B
 )
 final class MorpiousAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.SHADOW)
         .hit(EffectCue.SLEEP)
+        .effect(EffectCue.SLEEP, AbilityDesigns.DREAM)
         .build();
 
     @Override

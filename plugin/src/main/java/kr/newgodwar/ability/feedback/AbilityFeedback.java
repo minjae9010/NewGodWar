@@ -27,6 +27,8 @@ public final class AbilityFeedback {
     private final Map<String, Long> notices = new LinkedHashMap<String, Long>();
     private final Map<UUID, Reaction> reactions = new LinkedHashMap<UUID, Reaction>();
     private int reactionTask = -1;
+    private final Map<String, DesignedScene> designedScenes = new LinkedHashMap<String, DesignedScene>();
+    private int designTask = -1;
     private final ObjectEffects objects = new ObjectEffects();
     private final AbilityVisuals visualPolicy;
 
@@ -59,6 +61,9 @@ public final class AbilityFeedback {
 
     public void clear() {
         notices.clear(); reactions.clear(); objects.clear();
+        designedScenes.clear();
+        if (designTask >= 0) Bukkit.getScheduler().cancelTask(designTask);
+        designTask = -1;
         if (reactionTask >= 0) Bukkit.getScheduler().cancelTask(reactionTask);
         reactionTask = -1;
     }
@@ -87,7 +92,7 @@ public final class AbilityFeedback {
         AbilityTheme theme = style().theme();
         String label = label(context.ability(), advanced);
         String summary = summary(context.ability(), advanced);
-        chat(context, player, "success", theme.color() + "✦ [" + label + "] " + ChatColor.WHITE + summary);
+        chat(context, player, "success", theme.color() + "✦ " + label + ChatColor.WHITE + " 사용!");
         actionBar(context, player, theme.color() + "✦ " + label + " 발동 " + ChatColor.WHITE + shorten(summary));
         if (advanced && enabled(context, "titles")) {
             context.plugin().nms().sendTitle(player, theme.color() + context.ability().name(),
@@ -140,15 +145,23 @@ public final class AbilityFeedback {
 
     public void drawCue(AbilityPlayerContext context, Location center, EffectCue cue, List<Player> audience, Player subject, boolean useObjects) {
         if (center == null || center.getWorld() == null || !visuals(context)) return;
+        DesignedEffect design = style().effect(cue);
+        if (design != null) {
+            designed(context, center, cue, design, audience, subject, useObjects);
+            cueSound(context, center, cue, audience);
+            return;
+        }
         ObjectModel model = cue == EffectCue.GUARD ? SharedModels.SHIELD : cue == EffectCue.WINGS
             ? (style().theme() == AbilityTheme.FIRE ? SharedModels.FIRE_WINGS : SharedModels.WINGS) : null;
-        if (useObjects && model != null) {
+        if (model != null) {
             String key = "cue:" + cue + ":" + (subject == null ? positionKey(center) : subject.getUniqueId());
-            Location fixed = center.clone();
-            if (objects.show(key, context, model,
-                () -> subject == null ? fixed.clone() : subject.isOnline() && !subject.isDead() ? subject.getLocation() : null,
+            Location fixed = upright(center);
+            if (useObjects && objects.show(key, context, model,
+                () -> subject == null ? fixed.clone() : subject.isOnline() && !subject.isDead() ? upright(subject.getLocation()) : null,
                 () -> subject == null ? effectViewers(context, fixed) : targetViewers(context, subject, subject.getLocation()),
                 cue == EffectCue.GUARD || style().flightModel() != null ? 22 : 16, 1)) return;
+            modelOutline(context, fixed, model, 0, 1, audience);
+            return;
         }
         if (!enabled(context, "particles")) return;
         double yaw = Math.toRadians(center.getYaw()), cos = Math.cos(yaw), sin = Math.sin(yaw);
@@ -166,9 +179,86 @@ public final class AbilityFeedback {
                 particle(context, point, kind, audience, 1, 0);
             }
         });
+        cueSound(context, center, cue, audience);
+    }
+
+    private void cueSound(AbilityPlayerContext context, Location center, EffectCue cue, List<Player> audience) {
         if (cue == EffectCue.FORGE || cue == EffectCue.ITEM)
             sound(context, center, audience, cue == EffectCue.FORGE ? AbilityTheme.CRAFT.sound()
                 : AbilityTheme.sound("ENTITY_EXPERIENCE_ORB_PICKUP"), 0.25F, 1.5F);
+    }
+
+    /** Every frame revalidates ownership, target visibility and world before showing anything. */
+    private void designed(AbilityPlayerContext context, Location center, EffectCue cue, DesignedEffect effect,
+                          List<Player> audience, Player subject, boolean useObjects) {
+        String key = "design:" + cue + ":" + (subject == null ? positionKey(center) : subject.getUniqueId());
+        if (designedScenes.containsKey(key) || designedScenes.size() >= 8) return;
+        boolean animate = enabled(context, "animations");
+        DesignedScene scene = new DesignedScene(context, center, subject, audience, effect.model(animate), useObjects, animate);
+        if (!renderDesign(key, scene)) return;
+        // Static mode retains the readable pose; ObjectEffects owns its expiration.
+        if (!animate) return;
+        designedScenes.put(key, scene);
+        if (designTask >= 0) return;
+        designTask = Bukkit.getScheduler().scheduleSyncRepeatingTask(context.plugin(), this::updateDesigns, 4L, 4L);
+    }
+
+    private void updateDesigns() {
+        for (String active : new ArrayList<String>(designedScenes.keySet())) {
+            DesignedScene current = designedScenes.get(active);
+            current.age += 4;
+            if (current.age >= DesignedEffect.DURATION || !renderDesign(active, current)) {
+                designedScenes.remove(active); objects.remove(active);
+            }
+        }
+        if (designedScenes.isEmpty()) {
+            Bukkit.getScheduler().cancelTask(designTask); designTask = -1;
+        }
+    }
+
+    private boolean renderDesign(String key, DesignedScene scene) {
+        Location center = scene.anchor();
+        if (center == null || !visuals(scene.context)) return false;
+        if (scene.animate && !enabled(scene.context, "animations")) return false;
+        Supplier<List<Player>> audience = () -> scene.audience(this);
+        if (audience.get().isEmpty()) return false;
+        if (!scene.particlesOnly && objects.show(key, scene.context, scene.model, scene::anchor, audience,
+                DesignedEffect.DURATION - scene.age, 1)) return true;
+        // A fallback keeps the same timeline even when entity capacity becomes available later.
+        scene.particlesOnly = true;
+        modelOutline(scene.context, center, scene.model, scene.animate ? scene.age : 8, 1, audience.get(), 64);
+        return true;
+    }
+
+    private static final class DesignedScene {
+        final AbilityPlayerContext context;
+        final Location origin;
+        final Player subject;
+        final org.bukkit.World ownerWorld;
+        final List<Player> permitted;
+        final ObjectModel model;
+        final boolean animate;
+        boolean particlesOnly;
+        int age;
+        DesignedScene(AbilityPlayerContext context, Location origin, Player subject, List<Player> permitted,
+                      ObjectModel model, boolean useObjects, boolean animate) {
+            this.context = context; this.origin = origin.clone(); this.subject = subject;
+            this.ownerWorld = context.player().getWorld(); this.permitted = new ArrayList<Player>(permitted);
+            this.model = model; this.particlesOnly = !useObjects; this.animate = animate;
+        }
+        Location anchor() {
+            Player owner = context.player();
+            if (!owner.isOnline() || owner.isDead() || !ownerWorld.equals(owner.getWorld())) return null;
+            if (subject != null && (!subject.isOnline() || subject.isDead() || !origin.getWorld().equals(subject.getWorld()))) return null;
+            return upright(subject == null ? origin : subject.getLocation());
+        }
+        List<Player> audience(AbilityFeedback feedback) {
+            Location at = anchor();
+            if (at == null) return Collections.emptyList();
+            List<Player> fresh = new ArrayList<Player>(subject == null ? feedback.effectViewers(context, at)
+                : feedback.targetViewers(context, subject, at));
+            fresh.retainAll(permitted); return fresh;
+        }
     }
 
     public void impact(AbilityPlayerContext context, Location center) {
@@ -190,12 +280,17 @@ public final class AbilityFeedback {
 
     public boolean hasParticles(AbilityPlayerContext context) { return enabled(context, "particles"); }
 
+    /** Body attachments follow heading, never the up/down camera angle. Does not mutate the input. */
+    public static Location upright(Location location) {
+        Location result = location.clone(); result.setPitch(0); return result;
+    }
+
     public void flight(AbilityPlayerContext context) {
         Player player = context.player();
         ObjectModel model = style().flightModel();
         if (model == null || !player.isFlying()) return;
         objects.show("cue:WINGS:" + player.getUniqueId(), context, model,
-            () -> player.isOnline() && !player.isDead() && player.isFlying() ? player.getLocation() : null,
+            () -> player.isOnline() && !player.isDead() && player.isFlying() ? upright(player.getLocation()) : null,
             () -> targetViewers(context, player, player.getLocation()), 22, 1);
     }
 
@@ -330,6 +425,18 @@ public final class AbilityFeedback {
         if (bees && phase % 4 == 0) sound(context, center, audience, AbilityTheme.SWARM.sound(), 0.25F, 1.5F);
     }
 
+    public void flock(AbilityPlayerContext context, Player target, int phase, boolean bees, ObjectModel model) {
+        if (target == null || !target.isOnline() || target.isDead()) return;
+        Supplier<Location> anchor = () -> {
+            if (!target.isOnline() || target.isDead()) return null;
+            Location at = target.getLocation(); at.setPitch(0); at.setYaw(0); return at;
+        };
+        Supplier<List<Player>> audience = () -> targetViewers(context, target, target.getLocation());
+        if (!followObject("flock:" + target.getUniqueId(), context, model, anchor, audience, 22, 1))
+            modelOutline(context, anchor.get(), model, phase * 10, 1, audience.get());
+        if (bees && phase % 4 == 0) sound(context, target.getLocation(), audience.get(), AbilityTheme.SWARM.sound(), 0.25F, 1.5F);
+    }
+
     public void spear(AbilityPlayerContext context, Location from, Location to) {
         if (from == null || to == null || from.getWorld() == null || !from.getWorld().equals(to.getWorld())) return;
         List<Player> audience = effectViewers(context, to);
@@ -355,15 +462,22 @@ public final class AbilityFeedback {
     }
 
     public void modelOutline(AbilityPlayerContext context, Location center, ObjectModel model, double phase, double detail, List<Player> audience) {
+        modelOutline(context, center, model, phase, detail, audience, 64);
+    }
+
+    private void modelOutline(AbilityPlayerContext context, Location center, ObjectModel model, double phase, double detail, List<Player> audience, int budget) {
         if (!enabled(context, "particles")) return;
         double yaw = Math.toRadians(center.getYaw()), pitch = Math.toRadians(center.getPitch());
-        int budget = 64;
-        for (ObjectModel.Part part : model.parts(phase, detail)) {
+        List<ObjectModel.Part> parts = model.parts(phase, detail);
+        int samples = Math.max(1, Math.min(8, budget / Math.max(1, parts.size())));
+        for (ObjectModel.Part part : parts) {
             // Sample the longest face, so thin shafts retain their length in the fallback.
             boolean top = part.sz > part.sy;
-            for (int edge = 0; edge < 4; edge++) for (int step = 0; step < 2; step++) {
+            for (int sample = 0; sample < samples; sample++) {
                 if (budget-- <= 0) return;
-                double t = step / 2D;
+                double perimeter = sample * 4D / samples;
+                int edge = (int) perimeter;
+                double t = perimeter - edge;
                 double u = edge == 0 ? -0.5 + t : edge == 1 ? 0.5 : edge == 2 ? 0.5 - t : -0.5;
                 double v = edge == 0 ? -0.5 : edge == 1 ? -0.5 + t : edge == 2 ? 0.5 : 0.5 - t;
                 double x = u * part.sx, y = top ? part.sy / 2 : v * part.sy, z = top ? v * part.sz : part.sz / 2;
@@ -382,9 +496,14 @@ public final class AbilityFeedback {
     }
 
     public List<Player> targetViewers(AbilityPlayerContext context, Player target, Location center) {
-        if (hidden(target)) return target.equals(context.player()) ? Collections.singletonList(target) : Collections.emptyList();
-        if (hidden(context.player()) || style().privateCast())
-            return context.player().canSee(target) ? Collections.singletonList(context.player()) : Collections.emptyList();
+        // A recipient must see their own applied effect even while invisible. Other players must not learn their position.
+        if (hidden(target)) return Collections.singletonList(target);
+        if (hidden(context.player()) || style().privateCast()) {
+            List<Player> audience = new ArrayList<Player>();
+            audience.add(target);
+            if (!target.equals(context.player()) && context.player().canSee(target)) audience.add(context.player());
+            return audience;
+        }
         List<Player> audience = viewers(center, target);
         audience.removeIf(viewer -> !viewer.equals(context.player()) && !viewer.canSee(context.player()));
         return audience;

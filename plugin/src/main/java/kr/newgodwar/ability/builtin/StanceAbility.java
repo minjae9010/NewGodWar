@@ -20,17 +20,18 @@ import java.util.List;
 @AbilityInfo(
     id = "stance",
     name = "스탠스",
-    description = "공격 넉백과 피해 증폭을 무시합니다.",
+    description = "공격 넉백과 피해 증폭을 무시해요.",
     normalSkill = "없음",
     normalStoneCost = 0,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "공격과 투사체 피해의 넉백/증폭을 억제합니다.",
+    passiveSkill = "공격과 투사체 피해의 넉백/증폭을 억제해요.",
     grade = AbilityGrade.B
 )
 final class StanceAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.GUARD)
         .passive(EffectCue.GUARD)
+        .effect(EffectCue.GUARD, AbilityDesigns.ANCHOR)
         .build();
 
     @Override

@@ -19,22 +19,22 @@ final class CommandCatalog {
     static {
         add("help", "general", false, "[분류|검색어|페이지] [페이지]", "기본 명령어 / 분류별 도움말 / 검색", "ghelp", "h", "?", "도움말", "도움");
         add("status", "game", false, "", "현재 게임 상태 확인", "gstatus", "st", "상태");
-        add("tips", "general", false, "", "서버 플레이 팁 보기", null, "tip", "팁");
+        add("tips", "general", false, "[페이지]", "게임 팁 보기", null, "tip", "팁");
         add("info", "team", false, "[team]", "본인 또는 지정한 팀의 팀원 확인", null, "i", "팀정보");
         add("ability", "ability", false, "[player]", "내 능력 / 같은 팀 능력 확인", null, "a", "능력");
-        add("abilities", "ability", false, "[검색어]", "등록된 능력 도감 검색", null, "book", "도감");
+        add("abilities", "ability", false, "[검색어]", "능력 도감 보기", null, "book", "도감");
         add("yes", "ability", false, "", "현재 능력 확정", "gconfirm", "y", "confirm", "확정");
         add("no", "ability", false, "", "내 능력 다시 뽑기", "greroll", "n", "rr", "다시뽑기");
         add("target", "ability", false, "<player>", "타깃형 능력 대상 지정", null, "x", "대상");
-        add("gamble", "general", false, "", "도박 GUI 열기", null, "con", "도박");
+        add("gamble", "general", false, "", "조약돌로 보상 뽑기", null, "con", "도박");
         add("start", "game", true, "", "게임 시작 및 능력 배정", "gstart", "go", "시작");
         add("stop", "game", true, "", "게임 종료", "gstop", "end", "종료");
         add("test", "game", true, "[ability]", "혼자 능력 테스트 시작", null, "테스트");
         add("dummy", "game", true, "[spawn|remove]", "플레이어형 타깃 더미 소환 / 제거", null, "더미");
-        add("skip", "game", true, "[초]", "능력 확정 대기 종료 및 시작 카운트다운 조정", "gskip", "스킵");
+        add("skip", "game", true, "[초]", "능력 선택을 마치고 시작 대기 시간 정하기", "gskip", "스킵");
         add("autoteam", "team", true, "", "온라인 플레이어 자동 팀 배정", "gautoteam", "at", "자동팀");
         add("join", "team", true, "<team> <player>", "플레이어 팀 수동 배정", "gjoin", "j", "team", "t", "배정");
-        add("changeteam", "team", true, "<player> <team>", "능력을 유지한 채 팀 변경 (팀/플레이어 순서 교환 가능)", null, "ct", "teamchange", "switchteam", "팀변경", "팀바꾸기");
+        add("changeteam", "team", true, "<player> <team>", "능력을 유지한 채 팀 바꾸기", null, "ct", "teamchange", "switchteam", "팀변경", "팀바꾸기");
         add("midjoin", "team", true, "<player> [team|auto]", "진행 중 게임에 중간 참여", null, "mj", "cutin", "중간참여");
         add("leave", "team", true, "<player>", "플레이어 팀 배정 해제", null, "out", "팀해제");
         add("participants", "team", true, "[검색어|팀]", "참가자의 팀, 능력, 킬, 관전 상태 확인", "gplayers", "p", "participant", "players", "users", "list", "plist", "참가자", "유저");
@@ -43,7 +43,7 @@ final class CommandCatalog {
         add("setlobby", "world", true, "", "현재 위치를 접속/종료 로비로 등록", null, "sl", "lobby", "로비", "로비설정");
         add("map", "world", true, "[world|clear|help]", "게임 맵 선택 / 해제 / 상세 도움말", "gmap", "maps", "맵", "지도");
         add("world", "world", true, "[help|gui|list|game|create|load|copy|tp|lobby|unload|delete|backup]", "월드 관리 및 상세 도움말", "gworld", "w", "worlds", "월드");
-        add("setability", "ability", true, "<player> <ability>", "능력 수동 지정 (/a set도 사용 가능)", null, "sa", "능력지정");
+        add("setability", "ability", true, "<player> <ability>", "플레이어의 능력 정하기", null, "sa", "능력지정");
         add("randomability", "ability", true, "[player]", "랜덤 능력 배정 (대상 생략 시 전체 참가자)", null);
         add("removeability", "ability", true, "<player>", "플레이어 능력 삭제", null);
         add("resetabilities", "ability", true, "[player]", "능력 배정 초기화 (대상 생략 시 전체)", null);

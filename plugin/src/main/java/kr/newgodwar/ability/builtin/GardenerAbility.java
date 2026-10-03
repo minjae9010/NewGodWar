@@ -20,17 +20,18 @@ import java.util.List;
 @AbilityInfo(
     id = "gardener",
     name = "정원사",
-    description = "나무를 캐면 꽃과 코블스톤을 얻습니다.",
+    description = "나무를 캐면 꽃과 조약돌을 얻어요.",
     normalSkill = "없음",
     normalStoneCost = 0,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "배정 시 묘목과 염료를 받고 나무 채굴 시 보상을 얻습니다.",
+    passiveSkill = "능력을 받으면 묘목과 염료를 받고 나무 채굴 시 보상을 얻어요.",
     grade = AbilityGrade.B
 )
 final class GardenerAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.NATURE)
         .hit(EffectCue.BLOOM)
+        .effect(EffectCue.BLOOM, AbilityDesigns.SEEDLING)
         .build();
 
     @Override

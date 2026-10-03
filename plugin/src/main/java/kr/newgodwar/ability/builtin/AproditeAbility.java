@@ -20,8 +20,8 @@ import java.util.List;
 @AbilityInfo(
     id = "aprodite",
     name = "아프로디테",
-    description = "지면에 서 있을 때 주변 플레이어를 자신의 섬 위치로 끌어옵니다.",
-    normalSkill = "블레이즈 막대기 좌클릭: 반경 20블록 플레이어를 자신의 위치로 끌어옵니다.",
+    description = "땅에 서서 주변 플레이어를 내 위치로 끌어와요.",
+    normalSkill = "블레이즈 막대기 좌클릭: 반경 20블록의 생존 적을 자신의 위치로 끌어와요. 아군은 이동하지 않아요.",
     normalStoneCost = 24,
     normalCooldownSeconds = 120,
     advancedSkill = "없음",
@@ -32,6 +32,7 @@ import java.util.List;
 final class AproditeAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.HEALING)
         .hit(EffectCue.PORTAL)
+        .effect(EffectCue.PORTAL, AbilityDesigns.ROSE_GATE)
         .build();
 
     @Override

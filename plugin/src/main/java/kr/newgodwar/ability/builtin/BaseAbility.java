@@ -391,14 +391,28 @@ public abstract class BaseAbility implements GodAbility {
     }
 
     protected void effect(Player player, PotionEffectType type, int seconds, int amplifier) {
-        BukkitCompat.addPotionEffect(player, type, seconds * 20, amplifier, true, false);
+        applyStatus(player, type, seconds * 20, amplifier);
     }
 
     protected void effect(AbilityPlayerContext context, Player player, PotionEffectType type, int seconds, int amplifier) {
-        org.bukkit.potion.PotionEffect previous = player.getPotionEffect(type);
-        effect(player, type, seconds, amplifier);
-        if (seconds < 3600 && (previous == null || previous.getAmplifier() != amplifier))
+        org.bukkit.potion.PotionEffect previous = type == null ? null : player.getPotionEffect(type);
+        if (applyStatus(player, type, seconds * 20, amplifier)
+            && seconds < 3600 && (previous == null || previous.getAmplifier() != amplifier))
             feedback.status(context, player, type.getName());
+    }
+
+    /** A weaker aura or shorter refresh must not erase an existing buff/debuff. */
+    private boolean applyStatus(Player player, PotionEffectType type, int ticks, int amplifier) {
+        if (player == null || type == null || !player.isOnline() || player.isDead() || ticks <= 0) return false;
+        org.bukkit.potion.PotionEffect previous = player.getPotionEffect(type);
+        if (previous != null && (previous.getAmplifier() > amplifier
+            || (previous.getAmplifier() == amplifier
+                && (previous.getDuration() < 0 || previous.getDuration() >= ticks)))) return false;
+        BukkitCompat.addPotionEffect(player, type, ticks, amplifier, true, false);
+        org.bukkit.potion.PotionEffect applied = player.getPotionEffect(type);
+        return applied != null && applied.getAmplifier() == amplifier
+            && (previous == null || applied.getAmplifier() != previous.getAmplifier()
+                || applied.getDuration() > previous.getDuration());
     }
 
     protected void effect(AbilityPlayerContext context, Player player, String modernName, String legacyName, int seconds, int amplifier) {
@@ -443,7 +457,7 @@ public abstract class BaseAbility implements GodAbility {
     protected void effectTicks(Player player, String modernName, String legacyName, int ticks, int amplifier) {
         PotionEffectType type = effectType(modernName, legacyName);
         if (type != null) {
-            BukkitCompat.addPotionEffect(player, type, ticks, amplifier, true, false);
+            applyStatus(player, type, ticks, amplifier);
         }
     }
 
@@ -467,7 +481,7 @@ public abstract class BaseAbility implements GodAbility {
     }
 
     protected void damage(AbilityPlayerContext context, Player target, double amount, Player source) {
-        if (target == null || source == null || amount <= 0.0D) {
+        if (target == null || source == null || target.isDead() || source.isDead() || amount <= 0.0D) {
             return;
         }
         if (!target.equals(source)
@@ -579,10 +593,14 @@ public abstract class BaseAbility implements GodAbility {
 
     protected List<Player> nearbyPlayers(AbilityPlayerContext context, Player player, int range, boolean sameTeam) {
         List<Player> players = new ArrayList<Player>();
+        Location center = player.getLocation();
+        double radiusSquared = (double) range * range;
         for (Entity entity : player.getNearbyEntities(range, range, range)) {
             if (entity instanceof Player) {
                 Player target = (Player) entity;
-                if (canTarget(context, player, target, sameTeam)) {
+                if (canTarget(context, player, target, sameTeam)
+                    && center.getWorld().equals(target.getWorld())
+                    && center.distanceSquared(target.getLocation()) <= radiusSquared) {
                     players.add(target);
                 }
             }
@@ -651,7 +669,7 @@ public abstract class BaseAbility implements GodAbility {
     }
 
     private boolean eligibleTarget(AbilityPlayerContext context, Player target) {
-        return target.isOnline() && context.plugin().game().canUseAbility(target);
+        return target.isOnline() && !target.isDead() && context.plugin().game().canUseAbility(target);
     }
 
     protected Player targetPlayer() {

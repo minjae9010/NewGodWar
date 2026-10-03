@@ -2,6 +2,45 @@
 
 이 프로젝트는 빌드, 실제 서버 기동, 기능 회귀 검사로 호환성을 확인합니다.
 
+## 버전별 리소스팩 배포 검사 (2026-10-03)
+
+JDK 21 빌드와 단위 테스트 76개, `verify_versions.py`의 ZIP 25종·54개 버전·1,583개 모델 ID·텍스처/모델 참조·기본 모델 복귀·SHA-1·배포 JAR 목록 일치 검사를 통과했습니다. 기존 음식·메뉴 팩 검사 및 actionlint도 통과했습니다. Paper 1.12.2·1.21.1·1.21.5·26.3에서 메뉴·인벤토리·코어 회귀 검사를 통과했습니다.
+
+```powershell
+./gradlew.bat clean build --offline
+python scripts/effect-art/verify_versions.py
+python scripts/effect-art/verify_pack.py
+python scripts/effect-art/verify_gui_pack.py
+python scripts/Test-Inventory.py 1.12.2
+python scripts/Test-Inventory.py 1.21.1
+python scripts/Test-Inventory.py 1.21.5
+python scripts/Test-Inventory.py 26.3
+```
+
+구버전 메뉴는 팩 미수신 시 원래 아이템 유지, 수신 후 PAPER/CustomModelData 전환, 재표시, 비활성화 후 원래 재질 복원, 외부 보상 모델 보존을 검사합니다. 최신 Paper는 Bukkit API 문자열과 Minecraft 버전이 다르므로 실제 서버 버전을 조회하며, 지원 서버가 팩 목록을 선택하지 못하면 검사에 실패합니다.
+
+버전별 ZIP 구조와 서버 코드의 회귀 검사이며, 모든 버전의 실제 클라이언트 화면을 검증한 것은 아닙니다. 이전 26.3 화면 검증 기록은 아래에 별도로 남깁니다. [배포 파일·호환 범위](wiki/resource-packs.md)를 참고하세요.
+
+## 메뉴와 리소스팩 검사 (2026-10-03)
+
+`./gradlew build :plugin:visualRegressionJar --offline`과 전체 단위 테스트를 통과했습니다. `scripts/effect-art/verify_gui_pack.py`는 서버 아이콘 31종과 팩의 item/model/texture 참조, 97.1 형식, 아틀라스 중복, ZIP 항목과 SHA-1을 검사합니다.
+
+```powershell
+python scripts/effect-art/verify_gui_pack.py
+python scripts/Test-Inventory.py 26.3
+python scripts/Test-Commands.py 26.3
+python scripts/Test-Inventory.py 1.12.2
+python scripts/Test-Commands.py 1.12.2
+```
+
+위 서버 검사는 캐시된 Paper와 승인된 EULA를 읽어 별도 임시 월드에서 실행하며 모두 통과했습니다. 실제 CraftPlayer 인벤토리 이벤트로 도박 좌클릭 비용·결과 갱신, 우클릭/Shift/숫자키 차단, 미리보기·드래그 보호, 23개 보상의 21+2 페이지, 메뉴 팩 수신 여부와 비활성화에 따른 모델 대체, 외부 보상 모델 보존을 확인합니다. 명령 검사는 설정 화면 12곳의 직접 이동, 한글·영문 별칭, 잘못된 입력과 권한을 확인합니다.
+
+26.3 / Fabric 0.19.5 / 960×540 실제 클라이언트에서도 팩 다운로드 성공, 홈→전투→홈 이동, 우르프·게임룰·팩 연결 안내의 한글 툴팁, 도박 확률·비용·당첨 결과와 조약돌 64→32 차감, 메뉴 텍스처 비활성화를 확인했습니다. 원본 캡처와 검사 해시는 `build/gui-preview/`에 있습니다. 이 검사는 쉐이더 조합이나 다른 버전의 실제 클라이언트 화면까지 검증한 결과는 아닙니다.
+
+재현은 `Test-ClientVisuals.py run --hidden --art-pack`으로 전용 클라이언트를 시작하고 해당 팩의 수신 성공을 확인한 뒤 `node scripts/minecraft-mcp/scenario.mjs scripts/minecraft-mcp/menu-views.json`을 실행합니다. `menu_hover`와 `menu_click`은 게임 내부 슬롯 좌표·네트워크 클릭만 사용하며 OS 마우스를 움직이지 않습니다. 이미 실행 중인 시각 검사 세션에서는 동시에 실행하지 마세요.
+
+## 기본 검사
+
 1. Gradle 빌드가 Java 8 바이트코드로 성공하는지 확인합니다.
 2. Paper 서버를 실제로 켜서 `NewGodWar enabled` 로그가 출력되고 서버가 정상 기동되는지 확인합니다.
 3. 최신 지원 Paper에서 코어·능력·명령어 회귀 검사와 실제 프로세스 재시작·강제 종료 후 복구 검사를 실행합니다.
@@ -51,7 +90,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\Test-PaperMatrix.ps1
 이미 빌드된 jar를 테스트하려면 다음처럼 실행합니다.
 
 ```powershell
-.\scripts\Test-PaperMatrix.ps1 -SkipBuild -PluginJar .\build\libs\NewGodWar-0.3.5.jar -Versions 26.3
+.\scripts\Test-PaperMatrix.ps1 -SkipBuild -PluginJar .\build\libs\NewGodWar-0.3.6.jar -Versions 26.3
 ```
 
 테스트 서버 파일은 `.paper-smoke/` 아래에 생성되며 git에는 포함되지 않습니다.
@@ -71,6 +110,8 @@ powershell -ExecutionPolicy Bypass -File .\scripts\Test-PaperMatrix.ps1
 ```
 
 코어 검사는 심장 파괴·승패·카운트다운·팀 채팅·게임과 테스트 월드 복원을, 능력 검사는 팻말·대상 검증·재료·쿨타임·아이템 지급·효과음을, 명령어 검사는 권한·별칭·자동완성·도움말·설정 GUI 이동을 확인합니다.
+
+능력 표시 검사에는 네 방향 × 위/정면/아래 시선, 이동 중 날개, 저울 수평 유지, 오브젝트 예산·설정의 중간 변경, 32블록 이탈·복귀, 사망 시 정리를 포함합니다. 2026-10-02에 Paper 1.12.2·1.21.1·26.3에서 통과했습니다. 실제 서버 엔티티와 기록용 관전자 객체를 사용하는 검사이며, 클라이언트의 텍스처·셰이더·투명도·1인칭 가림을 시각적으로 검증한 결과는 아닙니다.
 
 코어 검사에는 실제 서버 인벤토리를 이용한 이름·설명 있는 재료 차감, 재료 부족 시 무차감, 기본 아이템의 정확한 수량, 도박 보상의 부분·전체 초과 수량 드롭, 사망 시 방어구·보조 손의 단일 드롭, 오프라인 참가자 종료 정리가 포함됩니다. 복구 검사에서는 종료 정리 대기 기록이 실제 프로세스 재시작을 거쳐 적용되고, 완료한 정리는 강제 종료 후에도 다시 실행되지 않는지 확인합니다.
 
@@ -98,6 +139,14 @@ python scripts/Test-Load.py --players 16,32,64 --seconds 60
 
 측정 환경은 서버 힙 3GiB, 시야·시뮬레이션 거리 4, 작은 평지 전장, 8종 능력 조합입니다. 테스트 도구가 체력을 높이고 매초 회복시키며 재료를 보충해 지속 부하를 유지합니다. 실제 클라이언트 렌더링, 외부 네트워크 지연, 광범위한 청크 탐험, 모든 능력·애드온 조합 및 장시간 운영 용량을 보장하는 검사는 아닙니다.
 
+## 실제 클라이언트 화면 검사
+
+실제 Minecraft 클라이언트의 화면을 검사하려면 [별도 MCP 테스트 환경](../scripts/minecraft-mcp/README.md)을 사용합니다. `Test-ClientVisuals.py prepare`와 `preflight`는 게임을 실행하지 않습니다. `run --hidden`은 표시·포커스·마우스 잡기가 차단된 SDL 창에서 실제 게임을 렌더링하고 MCP로 내부 프레임을 캡처합니다. 기존 서버 회귀 검사와 MCP 연결 검사만 통과한 상태를 화면 검증 완료로 간주하지 않습니다.
+
+2026-10-02에는 Minecraft 26.3 숨김 클라이언트에서 93개 능력 전체의 일반/고급 사용 경로를 순회했습니다. 발동 137건, 준비 1건, 정보 표시 1건을 확인했으며 기술이 없는 47개 경로는 해당 없음으로 기록했습니다. 패시브와 특수 발동 조건에는 별도 서버 이벤트 도구를 사용했습니다. 97개 모델은 정면·1인칭·위쪽 시점·파티클 최소·강제 파티클 대체의 5가지 조건에서 촬영하고 생성 개수와 소멸을 검사했습니다. 자동 검사와 선별적인 수동 시각 검토는 구분합니다.
+
+무적의 장갑판에 이어 8개 모델의 1인칭 시야 가림을 수정해 재촬영했고, 하데스의 고정 Y=-2 이동을 월드 최저 높이-2로 수정한 뒤 실제 좌표를 확인했습니다. 빌드와 Paper 26.3·1.12.2 능력 회귀 검사도 통과했습니다. [검사 도구 설명](../scripts/minecraft-mcp/README.md)에 재현 명령과 한계를 기록했습니다. 결과 보고서·JSON·원본 PNG는 `.build/minecraft-mcp/evidence/all-abilities/`에 있습니다. 다른 버전의 실제 클라이언트, 모든 확률 분기·다인전 조합, 다른 플레이어의 관전·거리 경계, 리소스팩·셰이더·소리는 이번 화면 검사 범위에 포함하지 않았습니다.
+
 ## GitHub Actions
 
 `.github/workflows/compatibility.yml` 워크플로가 브랜치 push, pull request, 수동 실행에서 동작합니다.
@@ -122,7 +171,7 @@ python scripts/Test-Load.py --players 16,32,64 --seconds 60
 1. 플러그인 jar를 빌드합니다.
 2. 최신 지원 Paper 서버 기동 스모크 테스트를 통과해야 합니다.
 3. 최신 지원 Paper의 코어·능력·명령어 검사와 Paper 26.3의 재시작·강제 종료 복구 검사를 모두 통과해야 합니다.
-4. 테스트가 성공하면 해당 태그의 GitHub Release를 만들고 `NewGodWar-*.jar`를 첨부합니다. 릴리즈 본문은 `docs/releases/<태그>.md`를 사용합니다.
+4. 테스트가 성공하면 해당 태그의 GitHub Release를 만들고 `NewGodWar-*.jar`, 버전별 리소스팩 ZIP 25종·SHA-1·버전 목록을 첨부합니다. 릴리즈 본문은 `docs/releases/<태그>.md`를 사용합니다.
 
 전체 Paper 매트릭스는 별도 호환성 신호로 계속 실행하지만, 구버전 개별 실패가 릴리즈 생성을 막지는 않습니다.
 

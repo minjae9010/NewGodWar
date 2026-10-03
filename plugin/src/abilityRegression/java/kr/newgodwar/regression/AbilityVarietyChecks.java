@@ -2,6 +2,7 @@ package kr.newgodwar.regression;
 
 import kr.newgodwar.NewGodWarPlugin;
 import kr.newgodwar.ability.AbilitySession;
+import kr.newgodwar.ability.builtin.BaseAbility;
 import kr.newgodwar.ability.api.*;
 import kr.newgodwar.game.*;
 import kr.newgodwar.gui.AbilityGui;
@@ -36,6 +37,7 @@ final class AbilityVarietyChecks {
     private int nextTask;
     private boolean safeFloor = true;
     private boolean anchorObstructed;
+    private int lightningStrikes;
 
     AbilityVarietyChecks(NewGodWarPlugin core) { this.core = core; }
 
@@ -43,6 +45,8 @@ final class AbilityVarietyChecks {
     void run() throws Exception {
         Server original = Bukkit.getServer();
         Field server = field(Bukkit.class, "server");
+        Field pluginServer = field(org.bukkit.plugin.java.JavaPlugin.class, "server");
+        Object originalPluginServer = pluginServer.get(core);
         teams = (Map<UUID, GodTeam>) field(GameManager.class, "teams").get(core.game());
         assignments = (Map<UUID, AbilitySession>) field(core.abilities().getClass(), "assignments").get(core.abilities());
         Map<String, Object> config = new LinkedHashMap<String, Object>();
@@ -54,6 +58,7 @@ final class AbilityVarietyChecks {
                 case "getUID": return worldId;
                 case "getPlayers": return players();
                 case "getNearbyEntities": return new ArrayList<Entity>(players());
+                case "strikeLightning": lightningStrikes++; return null;
                 case "getBlockAt": return air(a.length == 1 ? (Location) a[0]
                     : new Location(world, ((Number) a[0]).intValue(), ((Number) a[1]).intValue(), ((Number) a[2]).intValue()));
                 default: return defaultValue(m.getReturnType());
@@ -67,9 +72,11 @@ final class AbilityVarietyChecks {
         new AbilityDamageContext(core, caster.player, enemy.player, core.abilities().registry().get("thor"),
             attackEvent(caster.player, enemy.player, 4));
         new Task(() -> { }, 0, 0);
+        new ScopeProbe();
         new PlayerMoveEvent(caster.player, caster.location, caster.location);
         new org.bukkit.event.player.PlayerRespawnEvent(caster.player, caster.location, false);
         Class.forName("kr.newgodwar.gui.GuiText", true, core.getClass().getClassLoader());
+        Class.forName("kr.newgodwar.ability.DamageAttributionTracker$Entry", true, core.getClass().getClassLoader());
         new AbilityKillContext(core, caster.player, enemy.player, core.abilities().registry().get("nike"), deathEvent(enemy.player));
         Class.forName("kr.newgodwar.ability.builtin.RunesmithAbility$Rune", true, core.getClass().getClassLoader());
         Arrow arrow = proxy(Arrow.class, (p, m, a) -> defaultValue(m.getReturnType()));
@@ -88,7 +95,7 @@ final class AbilityVarietyChecks {
             return invoke(original.getScheduler(), m, a);
         });
         try {
-            server.set(null, proxy(Server.class, (p, m, a) -> {
+            Server fixtureServer = proxy(Server.class, (p, m, a) -> {
                 if (m.getName().equals("getScheduler")) return scheduler;
                 if (m.getName().equals("getScoreboardManager")) return null;
                 if (m.getName().equals("getOnlinePlayers")) return players();
@@ -97,7 +104,10 @@ final class AbilityVarietyChecks {
                     return null;
                 }
                 return invoke(original, m, a);
-            }));
+            });
+            server.set(null, fixtureServer);
+            pluginServer.set(core, fixtureServer);
+            checkSharedSemantics();
             checkArtemis(arrow);
             checkThor();
             checkEcho();
@@ -121,6 +131,7 @@ final class AbilityVarietyChecks {
         } finally {
             if (ability != null) ability.cancelScheduledTasks();
             server.set(null, original);
+            pluginServer.set(core, originalPluginServer);
             for (Actor actor : actors) { teams.remove(actor.id); assignments.remove(actor.id); }
             for (Map.Entry<String, Object> entry : config.entrySet()) core.getConfig().set(entry.getKey(), entry.getValue());
         }
@@ -497,6 +508,7 @@ final class AbilityVarietyChecks {
             actor.armor = new ItemStack[4]; actor.lastVelocity = new org.bukkit.util.Vector();
             actor.contents = new ItemStack[0]; actor.lastRemoved = null;
             actor.lineOfSight = true; actor.teleportAllowed = true; actor.immune = false; actor.food = 10; actor.granted = 0;
+            actor.gameMode = GameMode.SURVIVAL; actor.rejectEffects = false;
             teams.remove(actor.id);
         }
         enemy.location.setZ(3); ally.location.setX(1); outsider.location.setX(2);
@@ -510,6 +522,91 @@ final class AbilityVarietyChecks {
         AbilityDefinition definition = core.abilities().registry().get(id);
         ability = definition.create(); context = new AbilityPlayerContext(core, caster.player, definition);
         assignments.put(caster.id, new AbilitySession(definition, ability));
+    }
+
+    private void checkSharedSemantics() throws Exception {
+        reset("ares");
+        ScopeProbe probe = new ScopeProbe();
+        far.location = new Location(world, 4, 160, 4);
+        enemy.location = new Location(world, 3, 160, 4);
+        require(probe.radius(context, 5, false).equals(Arrays.asList(enemy.player)),
+            "Radius included a square corner or excluded the exact 3-4-5 boundary");
+        enemy.health = 0;
+        require(probe.radius(context, 5, false).isEmpty(), "Dead player received an area effect");
+        enemy.health = 20; enemy.gameMode = GameMode.SPECTATOR;
+        require(probe.radius(context, 5, false).isEmpty(), "Spectator received an area effect");
+        enemy.gameMode = GameMode.SURVIVAL; enemy.online = false;
+        require(probe.radius(context, 5, false).isEmpty(), "Offline player received an area effect");
+        enemy.online = true; teams.remove(enemy.id);
+        require(probe.radius(context, 5, false).isEmpty(), "Outsider received an area effect");
+        teams.put(enemy.id, GodTeam.RED);
+        require(probe.radius(context, 5, false).isEmpty()
+            && probe.radius(context, 5, true).contains(enemy.player), "Area effect ignored team polarity");
+        ally.health = 0;
+        require(!probe.allies(context).contains(ally.player), "Global team buff included a corpse");
+
+        reset("ares");
+        probe.status(caster.player, 20, 1);
+        probe.status(caster.player, 60, 0);
+        require(caster.effects.get(PotionEffectType.SPEED).getAmplifier() == 1
+            && caster.effects.get(PotionEffectType.SPEED).getDuration() == 400, "Weak buff erased a stronger buff");
+        probe.status(caster.player, 5, 1);
+        require(caster.effects.get(PotionEffectType.SPEED).getDuration() == 400, "Short buff shortened an active effect");
+        probe.status(caster.player, 30, 1);
+        require(caster.effects.get(PotionEffectType.SPEED).getDuration() == 600, "Longer equal buff failed to refresh");
+        caster.rejectEffects = true; probe.status(caster.player, 8, 2);
+        require(caster.effects.get(PotionEffectType.SPEED).getAmplifier() == 1, "Cancelled status changed the effect");
+        caster.rejectEffects = false; probe.status(caster.player, 8, 2);
+        require(caster.effects.get(PotionEffectType.SPEED).getAmplifier() == 2
+            && caster.effects.get(PotionEffectType.SPEED).getDuration() == 160, "Stronger buff inherited an unrelated duration");
+
+        reset("ares"); ability = probe;
+        assignments.put(caster.id, new AbilitySession(context.ability(), probe));
+        EntityDamageByEntityEvent blocked = attackEvent(caster.player, enemy.player, 4);
+        blocked.setCancelled(true); core.abilities().handleDamage(caster.player, enemy.player, blocked);
+        core.abilities().handleProjectileHit(caster.player, enemy.player, blocked);
+        require(probe.hits == 0, "Cancelled hit activated a passive");
+        caster.health = 0; left();
+        require(probe.casts == 0, "Dead player cast an ability");
+        caster.health = 20; left(); require(probe.casts == 1, "Living player's ability was blocked");
+        org.bukkit.event.player.PlayerItemConsumeEvent consume = new org.bukkit.event.player.PlayerItemConsumeEvent(caster.player, new ItemStack(Material.BREAD));
+        consume.setCancelled(true); core.abilities().handleItemConsume(caster.player, consume);
+        require(probe.meals == 0, "Cancelled consumption granted a food effect");
+        consume.setCancelled(false); core.abilities().handleItemConsume(caster.player, consume);
+        require(probe.meals == 1, "Valid consumption was not dispatched");
+
+        reset("hades"); enemy.location = new Location(world, 3, 160, 0);
+        far.location = new Location(world, 3, 160, 3); right();
+        require(enemy.location.getY() == -2 && far.location.getY() == 160 && ally.location.getY() == 160,
+            "Hades abyss included a square corner or teammate instead of its four-block sphere");
+        reset("girl"); enemy.location = new Location(world, 3, 160, 4);
+        far.location = new Location(world, 4, 160, 4); left();
+        require(enemy.food == 0 && far.food == 10 && ally.food == 10,
+            "Girl's horizontal circle affected a square corner or ally");
+        reset("wizard"); lightningStrikes = 0; right();
+        teams.put(enemy.id, GodTeam.RED); advance(4);
+        require(lightningStrikes == 0, "Delayed lightning hit a player who became an ally");
+        reset("wizard"); lightningStrikes = 0; right(); enemy.health = 0; advance(4);
+        require(lightningStrikes == 0, "Delayed lightning hit a dead target");
+        reset("wizard"); lightningStrikes = 0; right(); enemy.online = false; advance(4);
+        require(lightningStrikes == 0, "Delayed lightning hit a disconnected target");
+        reset("wizard"); lightningStrikes = 0; right();
+        enemy.location.setWorld(proxy(World.class, (p, m, a) -> defaultValue(m.getReturnType()))); advance(4);
+        require(lightningStrikes == 0, "Delayed lightning followed a target into a different world");
+        core.getLogger().info("PASS shared ability semantics: spherical boundary/corners, teams, dead/offline/spectator/outsider rejection, potion precedence, cancelled hits/consumption and dead casts");
+    }
+
+    private static final class ScopeProbe extends BaseAbility {
+        int hits, casts, meals;
+        List<Player> radius(AbilityPlayerContext context, int range, boolean allies) {
+            return nearbyPlayers(context, context.player(), range, allies);
+        }
+        List<Player> allies(AbilityPlayerContext context) { return alliedPlayers(context, context.player(), true); }
+        void status(Player target, int seconds, int amplifier) { effect(target, PotionEffectType.SPEED, seconds, amplifier); }
+        @Override public void onDamageByEntity(AbilityPlayerContext context, EntityDamageByEntityEvent event, Player target, boolean attacker) { hits++; }
+        @Override public void onProjectileHit(AbilityPlayerContext context, EntityDamageByEntityEvent event, Player target) { hits++; }
+        @Override protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) { casts++; }
+        @Override public void onItemConsume(AbilityPlayerContext context, org.bukkit.event.player.PlayerItemConsumeEvent event) { meals++; }
     }
 
     private void checkReviewedAbilities() throws Exception {
@@ -561,7 +658,7 @@ final class AbilityVarietyChecks {
         icon.setAccessible(true);
         AbilityGui gui = new AbilityGui(core, core.abilities());
         ItemStack readyIcon = (ItemStack) icon.invoke(gui, caster.player, context.ability(), 1);
-        require(readyIcon.getItemMeta().getLore().toString().contains("준비 완료")
+        require(readyIcon.getItemMeta().getLore().toString().contains("쿨타임 대기 없음")
             && !readyIcon.getItemMeta().getDisplayName().contains("사용 완료"), "Unused single-use skill was disabled");
         left();
         require(ability.isSkillConsumed(1) && core.abilities().isSkillConsumed(caster.player, 1)
@@ -571,8 +668,8 @@ final class AbilityVarietyChecks {
         ItemStack usedIcon = (ItemStack) icon.invoke(gui, caster.player, context.ability(), 1);
         String lore = ChatColor.stripColor(usedIcon.getItemMeta().getLore().toString());
         String sidebar = ChatColor.stripColor((String) status.invoke(core.game(), caster.player, context.ability(), 1));
-        require(usedIcon.getItemMeta().getDisplayName().contains("사용 완료") && lore.contains("재사용 불가")
-            && !lore.contains("준비 완료") && !lore.contains("부족") && sidebar.contains("재사용 불가"),
+        require(usedIcon.getItemMeta().getDisplayName().contains("사용 완료") && lore.contains("이번 게임에서 이미 사용했어요")
+            && !lore.contains("쿨타임 대기 없음") && !lore.contains("더 필요해요") && sidebar.contains("재사용 불가"),
             "Consumed skill still appeared ready or resource-limited in the GUI/sidebar");
         // Read native materials: the legacy API bridge maps both colors back to STAINED_GLASS.
         Method nativeType = ItemStack.class.getMethod("getType");
@@ -687,7 +784,8 @@ final class AbilityVarietyChecks {
         ItemStack[] contents = new ItemStack[0];
         ItemStack lastRemoved;
         org.bukkit.util.Vector lastVelocity = new org.bukkit.util.Vector();
-        boolean online = true, sneaking, lineOfSight = true, teleportAllowed = true, immune;
+        boolean online = true, sneaking, lineOfSight = true, teleportAllowed = true, immune, rejectEffects;
+        GameMode gameMode = GameMode.SURVIVAL;
         int stones = 200, velocities, particles, food = 10, granted;
         double damage, health = 20;
 
@@ -735,12 +833,14 @@ final class AbilityVarietyChecks {
                         return nearby;
                     case "getItemInHand": return held;
                     case "setItemInHand": held = (ItemStack) a[0]; return null;
-                    case "getGameMode": return GameMode.SURVIVAL;
+                    case "getGameMode": return gameMode;
                     case "isOnline": return online;
                     case "isSneaking": return sneaking;
                     case "canSee": return true;
                     case "hasLineOfSight": return lineOfSight;
-                    case "teleport": if (teleportAllowed) location = ((Location) a[0]).clone(); return teleportAllowed;
+                    case "teleport":
+                        if (teleportAllowed) location = (a[0] instanceof Entity ? ((Entity) a[0]).getLocation() : (Location) a[0]).clone();
+                        return teleportAllowed;
                     case "isDead": return health <= 0;
                     case "getFoodLevel": return food;
                     case "setFoodLevel": food = (Integer) a[0]; return null;
@@ -748,7 +848,10 @@ final class AbilityVarietyChecks {
                     case "getMaxHealth": return 20D;
                     case "setHealth": health = (Double) a[0]; return null;
                     case "getActivePotionEffects": return new ArrayList<PotionEffect>(effects.values());
-                    case "addPotionEffect": PotionEffect effect = (PotionEffect) a[0]; effects.put(effect.getType(), effect); return true;
+                    case "getPotionEffect": return effects.get(a[0]);
+                    case "addPotionEffect":
+                        if (rejectEffects) return false;
+                        PotionEffect effect = (PotionEffect) a[0]; effects.put(effect.getType(), effect); return true;
                     case "removePotionEffect": effects.remove(a[0]); return null;
                     case "hasPotionEffect": return effects.containsKey(a[0]);
                     case "setVelocity": velocities++; lastVelocity = ((org.bukkit.util.Vector) a[0]).clone(); return null;

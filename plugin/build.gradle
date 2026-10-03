@@ -35,6 +35,8 @@ tasks.named("runServer") {
 }
 
 tasks.processResources {
+    dependsOn rootProject.tasks.named("resourcePack")
+    from(rootProject.layout.buildDirectory.dir("generated/pack-resources"))
     filteringCharset = "UTF-8"
     filesMatching("plugin.yml") {
         expand(version: pluginVersion)
@@ -112,6 +114,10 @@ tasks.named("build") {
 
 // Isolated Paper integration fixture, never bundled in the production plugin.
 sourceSets {
+    visualRegression {
+        compileClasspath += sourceSets.main.output + configurations.testRuntimeClasspath
+        runtimeClasspath += output + compileClasspath
+    }
     loadRegression {
         compileClasspath += sourceSets.main.output + configurations.testRuntimeClasspath
         runtimeClasspath += output + compileClasspath
@@ -132,6 +138,13 @@ sourceSets {
         compileClasspath += sourceSets.main.output + configurations.testRuntimeClasspath
         runtimeClasspath += output + compileClasspath
     }
+}
+
+tasks.register("visualRegressionJar", Jar) {
+    dependsOn tasks.named("visualRegressionClasses")
+    archiveFileName = "VisualRegressionProbe.jar"
+    destinationDirectory = layout.buildDirectory.dir("visual-regression")
+    from sourceSets.visualRegression.output
 }
 
 tasks.register("loadRegressionJar", Jar) {

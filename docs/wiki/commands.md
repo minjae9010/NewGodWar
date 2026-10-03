@@ -4,9 +4,9 @@
 
 ## 도움말과 검색
 
-- `/gw`, `/gw help` 또는 `/ghelp`: 자주 쓰는 명령어를 바로 보여줍니다. 일반 유저는 **내 능력**과 **팀·게임 정보**, 관리자는 **기본 플레이**와 **관리자 전용 게임 운영** 구역으로 나뉩니다.
-- 일반 유저 첫 화면: `/a`, `/gw yes`, `/gw no`, `/gw abilities`, `/x`, `/tc`, `/gw info`, `/gw status`, `/gw tips`, `/gw gamble`.
-- 관리자 첫 화면: `/a`, `/gw yes`, `/gw no`, `/tc`와 함께 `/gw gui`, `/gw autoteam`, `/gw start`, `/gw skip`, `/gw stop`, `/gw participants`, `/gw dummy`.
+- `/gw`, `/gw help` 또는 `/ghelp`: 자주 쓰는 명령부터 짧게 보여줘요. 다른 명령은 아래 분류 버튼이나 검색으로 찾을 수 있어요.
+- 일반 유저 첫 화면: `/a`, `/gw yes`, `/gw no`, `/tc`, `/gw status`.
+- 관리자 첫 화면: `/a`, `/gw yes`, `/gw no`와 `/gw gui`, `/gw autoteam`, `/gw start`, `/gw stop`.
 - `/gw help player [페이지]` 또는 `/gw help 유저 [페이지]`: 관리자도 유저 기본 명령만 따로 볼 수 있습니다.
 - `/gw help all [페이지]`: 전체 명령 목록. 기존 `/gw help 2`도 전체 목록의 2페이지를 엽니다.
 - `/gw help team`, `/gw help ability 2`: 해당 분류만 봅니다. `general`, `game`, `team`, `ability`, `settings`, `admin` 분류를 지원합니다.
@@ -18,7 +18,7 @@
 - `/gw world help`, `/gw map help`: 월드·맵 상세 도움말. 기존 `/gw help world`, `/gw help map`도 지원합니다.
 - `/gw gui help` 또는 `/gw help gui`: 설정 화면 바로가기 목록. `/gw gui help 2`로 다음 화면 목록을 봅니다.
 
-상세 도움말은 페이지당 5개 항목으로 표시하며, **유저 명령**과 **관리자 전용**을 제목과 색으로 구분합니다. 첫 화면 아래 **더 보기**의 분류 버튼과 이전·다음·기본 명령 버튼은 클릭으로 이동하며, 명령어는 클릭하면 입력창에 들어갑니다. 마우스를 올리면 다른 입력 형식이나 간편 명령과 별칭을 볼 수 있습니다. 명령 클릭만으로 게임을 시작하거나 설정을 변경하지 않습니다. 콘솔에서는 이동 명령이 텍스트로 표시됩니다.
+상세 도움말은 한 페이지에 5개씩 보여줘요. 명령어를 클릭하면 입력창에 들어가고, 마우스를 올리면 간편 명령과 별칭을 볼 수 있어요. 분류나 이전·다음 버튼을 클릭하면 도움말 페이지가 바뀌어요. 콘솔에서는 이동할 명령어를 텍스트로 안내해요.
 
 명령어를 잘못 입력하면 유사 명령과 용도를 한 줄씩 안내하고, 추천이 없으면 권한에 맞는 기본 명령을 보여줍니다. `/gw `에서 Tab을 누르면 기본 명령과 분류를 우선 표시하며, 글자를 입력하면 기존 별칭과 나머지 명령도 찾을 수 있습니다. 도움말과 자동완성에는 사용할 수 있는 권한의 명령만 표시합니다. `<값>`은 필수 인수, `[값]`은 선택 인수입니다.
 
@@ -29,13 +29,15 @@
 | 화면 | 바로가기 | 한글 또는 짧은 별칭 |
 | --- | --- | --- |
 | 설정 메인 | `/gw gui main` 또는 `/gmenu` | `메인`, `home` |
-| 게임 진행 | `/gw gui game` | `게임`, `진행` |
+| 게임 준비 / 시작·종료 | `/gw gui game` | `게임`, `진행` |
+| 전투 / 부활 / 우르프 / 킬타임 | `/gw gui combat` | `전투`, `부활`, `우르프`, `urf` |
 | 팀 목록 | `/gw gui team` | `팀`, `teams` |
 | 특정 팀 상세 | `/gw gui team red` | `/gmenu team red`, `/gw 설정 열기 팀 red` |
 | 월드 | `/gw gui world` | `월드`, `맵` |
-| 코어 / 게임룰 | `/gw gui core` | `코어`, `게임룰`, `gamerule` |
+| 심장 보호 | `/gw gui core` | `코어` |
+| 게임룰 | `/gw gui rules` | `게임룰`, `gamerule` |
 | 코어 보호 / 곡괭이 시간 | `/gw gui protection` | `보호`, `곡괭이`, `pickaxe` |
-| 표시 / 우르프 | `/gw gui display` | `표시`, `우르프`, `urf` |
+| 화면 / 알림 / 리소스팩 | `/gw gui display` | `표시` |
 | 도박 | `/gw gui gambling` | `도박`, `gamble` |
 | 도박 확률 | `/gw gui rewards` | `보상`, `확률`, `chance` |
 | 기본 지급 아이템 창고 | `/gw gui items` | `기본템`, `시작템`, `kit` |
@@ -63,7 +65,7 @@
 | `/gw game test [ability]` | `/gw test [ability]` | 관리자: 혼자 능력 테스트 |
 | `/gw game dummy [spawn\|remove]` | `/gw dummy`, `/gw 더미` | 관리자: 플레이어형 타깃 더미 소환 / 제거 |
 | `/gw game skip [초]` | `/gskip [초]`, `/gw skip [초]` | 관리자: 능력 선택 대기 종료 및 시작 카운트다운 조정 |
-| `/gw game tips` | `/gw tips`, `/gw 팁` | 서버 플레이 팁 |
+| `/gw game tips [페이지]` | `/gw tips [페이지]`, `/gw 팁 [페이지]` | 게임 팁을 3개씩 보기 |
 
 한글 예: `/gw 게임 시작`, `/gw 게임 상태`, `/gw 게임 스킵 5`.
 

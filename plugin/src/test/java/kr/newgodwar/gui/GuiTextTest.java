@@ -27,4 +27,23 @@ public final class GuiTextTest {
         String text = "도감\n\n" + new String(Character.toChars(0x1F30D)) + " 월드";
         assertEquals(Arrays.asList("도감", "", "🌍 월드"), GuiText.wrap(Arrays.asList(text)));
     }
+
+    @Test
+    public void wrapsAtWordsAndKeepsColorsAfterTheBreak() {
+        String first = ChatColor.GRAY + "조약돌 10개를 모아서 주변의 아군에게 ";
+        List<String> lines = GuiText.wrap(Arrays.asList(first + ChatColor.AQUA + "재생효과를줘요."));
+        assertEquals(first, lines.get(0));
+        assertTrue(lines.get(1).startsWith(ChatColor.GRAY.toString() + ChatColor.AQUA));
+        assertEquals("재생효과를줘요.", ChatColor.stripColor(lines.get(1)));
+    }
+
+    @Test
+    public void skillLayoutPreservesControlsNumbersAndConditions() {
+        List<String> lines = GuiText.skill("블레이즈 막대기 좌클릭: 0.75초 뒤 피해 2를 줘요. 1.5블록 밖이면 빗나가요.");
+        assertEquals(3, lines.size());
+        assertEquals("블레이즈 막대기 좌클릭", ChatColor.stripColor(lines.get(0)));
+        assertEquals("0.75초 뒤 피해 2를 줘요.", ChatColor.stripColor(lines.get(1)));
+        assertEquals("1.5블록 밖이면 빗나가요.", ChatColor.stripColor(lines.get(2)));
+        assertEquals(Arrays.asList(ChatColor.WHITE + "채팅으로 정답을 맞히세요."), GuiText.skill("채팅으로 정답을 맞히세요."));
+    }
 }

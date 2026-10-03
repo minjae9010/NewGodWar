@@ -176,7 +176,10 @@ public final class CommandRoutingTest {
         route("settings urf", "settings", "open", "urf");
         route("gamblereward normal add hand", "settings", "rewards", "normal", "add", "hand");
         assertEquals(SettingsPage.PROTECTION, SettingsPage.parse("곡괭이"));
-        assertEquals(SettingsPage.DISPLAY, SettingsPage.parse("urf"));
+        assertEquals(SettingsPage.COMBAT, SettingsPage.parse("urf"));
+        assertEquals(SettingsPage.COMBAT, SettingsPage.parse("부활"));
+        assertEquals(SettingsPage.RULES, SettingsPage.parse("gamerule"));
+        assertEquals(SettingsPage.RULES, SettingsPage.parse("게임룰"));
         assertNull(SettingsPage.parse("stop_confirm"));
     }
 
@@ -187,7 +190,7 @@ public final class CommandRoutingTest {
         assertTrue(complete(false, "gui", "").isEmpty());
         assertEquals(Arrays.asList("1", "2", "3"), complete(true, "ability", "help", ""));
         assertEquals(Arrays.asList("1", "2", "3"), complete(true, "world", "help", ""));
-        assertEquals(Arrays.asList("1", "2"), complete(true, "gui", "help", ""));
+        assertEquals(Arrays.asList("1", "2", "3"), complete(true, "gui", "help", ""));
     }
 
     @Test public void overviewShowsUsableCommandsAndSeparatesRolesAcrossEntryPoints() {
@@ -202,8 +205,9 @@ public final class CommandRoutingTest {
             assertTrue(adminHelp.contains("/gw gui [화면] — 설정 화면"));
             assertTrue(adminHelp.contains("/gw yes — 현재 능력 확정"));
             assertTrue(adminHelp.contains("/gw help player"));
-            assertTrue(adminHelp.contains("/gw dummy [spawn|remove]"));
-            assertTrue(messages.size() <= 22);
+            assertTrue(adminHelp.contains("/gw help game"));
+            assertFalse(adminHelp.contains("/gw dummy [spawn|remove]"));
+            assertTrue(messages.size() <= 16);
             messages.clear();
             executor.onCommand(sender(false, messages), root, "gw", args);
             String playerHelp = messages.toString();
@@ -217,6 +221,7 @@ public final class CommandRoutingTest {
             assertFalse(playerHelp.contains("관리"));
             assertFalse(playerHelp.contains("팀 배정"));
             assertFalse(playerHelp.contains("dummy"));
+            assertTrue(messages.size() <= 12);
         }
     }
 
@@ -245,6 +250,10 @@ public final class CommandRoutingTest {
         CommandHelp.show(sender(true, messages), new String[] {"game"});
         assertTrue(messages.toString().contains("유저 명령"));
         assertTrue(messages.toString().contains("관리자 전용"));
+        assertTrue(messages.size() <= 12);
+        messages.clear();
+        CommandHelp.show(sender(true, messages), new String[] {"dummy"});
+        assertTrue(messages.toString().contains("/gw game dummy"));
     }
 
     @Test public void unknownCommandHintsGiveUsablePermissionFilteredSuggestions() {

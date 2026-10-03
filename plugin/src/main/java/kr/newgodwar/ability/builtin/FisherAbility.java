@@ -20,18 +20,19 @@ import java.util.List;
 @AbilityInfo(
     id = "fisher",
     name = "노인과바다",
-    description = "낚시로 잡동사니와 광물을 얻습니다.",
+    description = "낚시로 잡동사니와 광물을 얻어요.",
     normalSkill = "없음",
     normalStoneCost = 0,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "배정 시 낚싯대를 받고 낚시 성공 시 광물/아이템을 얻습니다.",
+    passiveSkill = "능력을 받으면 낚싯대를 받고 낚시 성공 시 광물/아이템을 얻어요.",
     grade = AbilityGrade.B
 )
 final class FisherAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.WATER)
         .hit(EffectCue.WATER)
         .passive(EffectCue.WATER)
+        .effect(EffectCue.WATER, AbilityDesigns.FISH_HOOK)
         .build();
 
     @Override

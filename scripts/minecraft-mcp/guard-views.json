@@ -1,0 +1,380 @@
+{
+  "name": "guard-views",
+  "steps": [
+    {
+      "tool": "enter_control_mode"
+    },
+    {
+      "tool": "execute_command",
+      "args": {
+        "command": "/gw stop"
+      }
+    },
+    {
+      "tool": "execute_command",
+      "args": {
+        "command": "/time set noon"
+      }
+    },
+    {
+      "tool": "execute_command",
+      "args": {
+        "command": "/weather clear"
+      }
+    },
+    {
+      "tool": "execute_command",
+      "args": {
+        "command": "/difficulty peaceful"
+      }
+    },
+    {
+      "tool": "execute_command",
+      "args": {
+        "command": "/tp @s 0 -60 0 0 0"
+      }
+    },
+    {
+      "tool": "execute_command",
+      "args": {
+        "command": "/clear @s"
+      }
+    },
+    {
+      "tool": "execute_command",
+      "args": {
+        "command": "/item replace entity @s weapon.mainhand with minecraft:blaze_rod"
+      }
+    },
+    {
+      "tool": "execute_command",
+      "args": {
+        "command": "/give @s minecraft:cobblestone 640"
+      }
+    },
+    {
+      "tool": "client_action",
+      "args": {
+        "action": "hud",
+        "value": "false"
+      }
+    },
+    {
+      "tool": "execute_command",
+      "args": {
+        "command": "/gw stop"
+      }
+    },
+    {
+      "tool": "execute_command",
+      "args": {
+        "command": "/gw test invincibility"
+      }
+    },
+    {
+      "tool": "execute_command",
+      "args": {
+        "command": "/title @s clear"
+      }
+    },
+    {
+      "tool": "client_action",
+      "args": {
+        "action": "camera",
+        "value": "front"
+      }
+    },
+    {
+      "tool": "client_action",
+      "args": {
+        "action": "particles",
+        "value": "ALL"
+      }
+    },
+    {
+      "tool": "set_view_angle",
+      "args": {
+        "yaw": 0,
+        "pitch": 0
+      }
+    },
+    {
+      "tool": "client_action",
+      "args": {
+        "action": "attack"
+      },
+      "delay": 1000,
+      "expectChat": "✦ [무적 · 일반]"
+    },
+    {
+      "delay": 250,
+      "capture": "guard-front"
+    },
+    {
+      "tool": "execute_command",
+      "args": {
+        "command": "/gw stop"
+      }
+    },
+    {
+      "tool": "execute_command",
+      "args": {
+        "command": "/gw test invincibility"
+      }
+    },
+    {
+      "tool": "execute_command",
+      "args": {
+        "command": "/title @s clear"
+      }
+    },
+    {
+      "tool": "client_action",
+      "args": {
+        "action": "camera",
+        "value": "front"
+      }
+    },
+    {
+      "tool": "client_action",
+      "args": {
+        "action": "particles",
+        "value": "ALL"
+      }
+    },
+    {
+      "tool": "set_view_angle",
+      "args": {
+        "yaw": 90,
+        "pitch": -50
+      }
+    },
+    {
+      "tool": "client_action",
+      "args": {
+        "action": "attack"
+      },
+      "delay": 1000,
+      "expectChat": "✦ [무적 · 일반]"
+    },
+    {
+      "delay": 250,
+      "capture": "guard-up"
+    },
+    {
+      "tool": "execute_command",
+      "args": {
+        "command": "/gw stop"
+      }
+    },
+    {
+      "tool": "execute_command",
+      "args": {
+        "command": "/gw test invincibility"
+      }
+    },
+    {
+      "tool": "execute_command",
+      "args": {
+        "command": "/title @s clear"
+      }
+    },
+    {
+      "tool": "client_action",
+      "args": {
+        "action": "camera",
+        "value": "front"
+      }
+    },
+    {
+      "tool": "client_action",
+      "args": {
+        "action": "particles",
+        "value": "ALL"
+      }
+    },
+    {
+      "tool": "set_view_angle",
+      "args": {
+        "yaw": 180,
+        "pitch": 50
+      }
+    },
+    {
+      "tool": "client_action",
+      "args": {
+        "action": "attack"
+      },
+      "delay": 1000,
+      "expectChat": "✦ [무적 · 일반]"
+    },
+    {
+      "delay": 250,
+      "capture": "guard-down"
+    },
+    {
+      "tool": "execute_command",
+      "args": {
+        "command": "/gw stop"
+      }
+    },
+    {
+      "tool": "execute_command",
+      "args": {
+        "command": "/gw test invincibility"
+      }
+    },
+    {
+      "tool": "execute_command",
+      "args": {
+        "command": "/title @s clear"
+      }
+    },
+    {
+      "tool": "client_action",
+      "args": {
+        "action": "camera",
+        "value": "back"
+      }
+    },
+    {
+      "tool": "client_action",
+      "args": {
+        "action": "particles",
+        "value": "ALL"
+      }
+    },
+    {
+      "tool": "set_view_angle",
+      "args": {
+        "yaw": 270,
+        "pitch": 0
+      }
+    },
+    {
+      "tool": "client_action",
+      "args": {
+        "action": "attack"
+      },
+      "delay": 1000,
+      "expectChat": "✦ [무적 · 일반]"
+    },
+    {
+      "delay": 250,
+      "capture": "guard-back"
+    },
+    {
+      "tool": "execute_command",
+      "args": {
+        "command": "/gw stop"
+      }
+    },
+    {
+      "tool": "execute_command",
+      "args": {
+        "command": "/gw test invincibility"
+      }
+    },
+    {
+      "tool": "execute_command",
+      "args": {
+        "command": "/title @s clear"
+      }
+    },
+    {
+      "tool": "client_action",
+      "args": {
+        "action": "camera",
+        "value": "first"
+      }
+    },
+    {
+      "tool": "client_action",
+      "args": {
+        "action": "particles",
+        "value": "ALL"
+      }
+    },
+    {
+      "tool": "set_view_angle",
+      "args": {
+        "yaw": 0,
+        "pitch": 0
+      }
+    },
+    {
+      "tool": "client_action",
+      "args": {
+        "action": "attack"
+      },
+      "delay": 1000,
+      "expectChat": "✦ [무적 · 일반]"
+    },
+    {
+      "delay": 250,
+      "capture": "guard-first"
+    },
+    {
+      "tool": "execute_command",
+      "args": {
+        "command": "/gw stop"
+      }
+    },
+    {
+      "tool": "execute_command",
+      "args": {
+        "command": "/gw test invincibility"
+      }
+    },
+    {
+      "tool": "execute_command",
+      "args": {
+        "command": "/title @s clear"
+      }
+    },
+    {
+      "tool": "client_action",
+      "args": {
+        "action": "camera",
+        "value": "front"
+      }
+    },
+    {
+      "tool": "client_action",
+      "args": {
+        "action": "particles",
+        "value": "MINIMAL"
+      }
+    },
+    {
+      "tool": "set_view_angle",
+      "args": {
+        "yaw": 0,
+        "pitch": 0
+      }
+    },
+    {
+      "tool": "client_action",
+      "args": {
+        "action": "attack"
+      },
+      "delay": 1000,
+      "expectChat": "✦ [무적 · 일반]"
+    },
+    {
+      "delay": 250,
+      "capture": "guard-minimal"
+    },
+    {
+      "delay": 8000,
+      "capture": "guard-cleanup"
+    },
+    {
+      "tool": "client_action",
+      "args": {
+        "action": "particles",
+        "value": "ALL"
+      }
+    }
+  ]
+}

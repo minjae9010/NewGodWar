@@ -21,20 +21,22 @@ import java.util.List;
 @AbilityInfo(
     id = "hecate",
     name = "헤카테",
-    description = "짧은 은신과 지정한 적에게 약한 저주를 사용합니다.",
-    normalSkill = "블레이즈 막대기 좌클릭: 잠시 투명화하고 신속을 얻습니다.",
+    description = "짧은 은신과 지정한 적에게 약한 저주를 사용해요.",
+    normalSkill = "블레이즈 막대기 좌클릭: 잠시 투명화하고 신속을 얻어요.",
     normalStoneCost = 14,
     normalCooldownSeconds = 75,
-    advancedSkill = "먼저 /x <플레이어>로 적 지정. 블레이즈 막대기 우클릭: 지정한 적에게 실명과 감속을 짧게 부여합니다.",
+    advancedSkill = "먼저 /x <플레이어>로 적 지정. 블레이즈 막대기 우클릭: 같은 월드의 지정한 적에게 실명과 감속을 짧게 줘요. 거리·시야 제한은 없어요.",
     advancedStoneCost = 20,
     advancedCooldownSeconds = 115,
-    passiveSkill = "타깃 지정 명령을 사용할 수 있습니다.",
+    passiveSkill = "타깃 지정 명령을 사용할 수 있어요.",
     grade = AbilityGrade.B
 )
 final class HecateAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.SHADOW)
         .hit(EffectCue.STEALTH)
         .privateCast()
+        .effect(EffectCue.STEALTH, AbilityDesigns.WITCH_MOONS)
+        .effect(EffectCue.POISON, AbilityDesigns.WITCH_MOONS)
         .build();
 
     @Override

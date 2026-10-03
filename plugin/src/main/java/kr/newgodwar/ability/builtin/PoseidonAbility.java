@@ -23,20 +23,21 @@ import java.util.Map;
 @AbilityInfo(
     id = "poseidon",
     name = "포세이돈",
-    description = "물을 만들어 전장을 바꾸고 물가에서 전투 능력이 크게 올라갑니다.",
-    normalSkill = "블레이즈 막대기 좌클릭: 10블록 안의 바라보는 위치에 8초 동안 3x3 해역을 만듭니다.",
+    description = "물을 만들어 전장을 바꾸고 물가에서 전투 능력이 크게 올라가요.",
+    normalSkill = "블레이즈 막대기 좌클릭: 10블록 안의 바라보는 위치에 8초 동안 실제 물로 3x3 해역을 만들어요. 물의 이동 영향은 아군과 적 모두에게 적용돼요.",
     normalStoneCost = 12,
     normalCooldownSeconds = 45,
-    advancedSkill = "블레이즈 막대기 우클릭: 반경 12블록 적에게 해일 피해를 주고 밀쳐내며 약화/감속시킵니다.",
+    advancedSkill = "블레이즈 막대기 우클릭: 반경 12블록 적에게 해일 피해를 주고 밀쳐내며 약화/감속시켜요.",
     advancedStoneCost = 28,
     advancedCooldownSeconds = 115,
-    passiveSkill = "익사를 무시하고 물속에서 신속, 재생, 저항과 물 전투 피해 증가를 얻습니다.",
+    passiveSkill = "익사를 무시하고 물속에서 신속, 재생, 저항과 물 전투 피해 증가를 얻어요.",
     grade = AbilityGrade.S
 )
 final class PoseidonAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.WATER)
         .hit(EffectCue.WATER)
         .dedicated()
+        .effect(EffectCue.WATER, AbilityDesigns.TRIDENT)
         .build();
 
     @Override

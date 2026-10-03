@@ -53,6 +53,13 @@ final class VisualProbe {
                 if (field.getType() == ObjectModel.class) result.add(model(id, field.getName()));
             }
         }
+        for (Field field : kr.newgodwar.ability.builtin.AbilityDesigns.class.getFields()) {
+            try {
+                Object value = field.get(null);
+                result.add(value instanceof kr.newgodwar.ability.feedback.DesignedEffect
+                    ? ((kr.newgodwar.ability.feedback.DesignedEffect)value).model(true) : (ObjectModel)value);
+            } catch (IllegalAccessException ex) { throw new AssertionError(ex); }
+        }
         return result;
     }
 

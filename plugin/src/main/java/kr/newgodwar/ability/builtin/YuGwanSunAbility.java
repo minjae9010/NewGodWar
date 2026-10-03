@@ -16,20 +16,22 @@ import java.util.List;
 @AbilityInfo(
     id = "yugwansun",
     name = "유관순",
-    description = "만세의 함성으로 아군의 사기를 끌어올리고 적을 흔듭니다.",
-    normalSkill = "블레이즈 막대기 좌클릭: 주변 아군에게 신속, 공격력 증가, 저항을 주고 주변 적에게 약화와 감속을 부여합니다.",
+    description = "만세의 함성으로 아군의 사기를 끌어올리고 적을 흔들어요.",
+    normalSkill = "블레이즈 막대기 좌클릭: 자신과 반경 12블록 아군에게 신속, 공격력 증가, 저항을 주고 반경 12블록 적에게 약화와 감속을 줘요.",
     normalStoneCost = 44,
     normalCooldownSeconds = 190,
-    advancedSkill = "블레이즈 막대기 우클릭: 주변 아군에게 강한 생존 효과를 주고 적에게 실명, 혼란, 화염을 부여합니다.",
+    advancedSkill = "블레이즈 막대기 우클릭: 자신과 반경 14블록 아군에게 강한 생존 효과를 주고, 접속 중인 생존 적 전체에게 실명, 혼란, 화염을 줘요. 적은 거리·월드 제한이 없어요.",
     advancedStoneCost = 64,
     advancedCooldownSeconds = 280,
-    passiveSkill = "치명상을 입으면 짧게 흡수와 저항을 얻습니다.",
+    passiveSkill = "치명상을 입으면 짧게 흡수와 저항을 얻어요.",
     grade = AbilityGrade.S
 )
 final class YuGwanSunAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.GUARD)
         .hit(EffectCue.FIRE)
         .benefit(EffectCue.GUARD)
+        .effect(EffectCue.GUARD, AbilityDesigns.RESOLVE)
+        .effect(EffectCue.FIRE, AbilityDesigns.RESOLVE)
         .build();
 
     @Override

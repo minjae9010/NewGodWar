@@ -20,8 +20,8 @@ import java.util.List;
 @AbilityInfo(
     id = "horeundal",
     name = "호른달",
-    description = "위험한 섬 진입 후 10초 뒤 저장한 위치로 귀환합니다.",
-    normalSkill = "블레이즈 막대기 좌클릭: 현재 위치를 저장하고 10초 후 되돌아옵니다.",
+    description = "위험한 섬 진입 후 10초 뒤 저장한 위치로 귀환해요.",
+    normalSkill = "블레이즈 막대기 좌클릭: 현재 위치를 저장하고 10초 후 되돌아와요.",
     normalStoneCost = 18,
     normalCooldownSeconds = 100,
     advancedSkill = "없음",
@@ -32,6 +32,8 @@ import java.util.List;
 final class HoreundalAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.TIME)
         .hit(EffectCue.PORTAL)
+        .effect(EffectCue.PORTAL, AbilityDesigns.RETURN_GATE)
+        .effect(EffectCue.STEALTH, AbilityDesigns.RETURN_GATE)
         .build();
 
     @Override

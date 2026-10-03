@@ -18,20 +18,22 @@ import java.util.List;
 @AbilityInfo(
     id = "shinsaimdang",
     name = "신사임당",
-    description = "섬세한 그림과 돌봄으로 아군을 안정적으로 보조합니다.",
-    normalSkill = "블레이즈 막대기 좌클릭: 염료와 꽃을 만들고 자신에게 재생을 부여합니다.",
+    description = "섬세한 그림과 돌봄으로 아군을 안정적으로 보조해요.",
+    normalSkill = "블레이즈 막대기 좌클릭: 염료와 꽃을 만들고 자신에게 재생을 줘요.",
     normalStoneCost = 8,
     normalCooldownSeconds = 55,
-    advancedSkill = "블레이즈 막대기 우클릭: 주변 아군의 체력을 조금 회복하고 재생을 부여합니다.",
+    advancedSkill = "블레이즈 막대기 우클릭: 자신과 반경 8블록 아군의 체력을 조금 회복하고 재생을 줘요.",
     advancedStoneCost = 20,
     advancedCooldownSeconds = 115,
-    passiveSkill = "피격 시 가끔 공격자를 약화시킵니다.",
+    passiveSkill = "공격받으면 가끔 공격자를 약화시켜요.",
     grade = AbilityGrade.B
 )
 final class ShinSaimdangAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.NATURE)
         .normal(EffectCue.ITEM)
         .benefit(EffectCue.HEAL)
+        .effect(EffectCue.ITEM, AbilityDesigns.INK_ORCHID)
+        .effect(EffectCue.HEAL, AbilityDesigns.INK_ORCHID)
         .build();
 
     @Override

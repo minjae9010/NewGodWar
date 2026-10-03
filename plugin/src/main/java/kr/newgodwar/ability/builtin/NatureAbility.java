@@ -21,20 +21,23 @@ import java.util.List;
 @AbilityInfo(
     id = "nature",
     name = "자연계",
-    description = "세계수의 자녀로서 주변 식물을 빠르게 자라게 하고 자연의 힘을 나눕니다.",
-    normalSkill = "블레이즈 막대기 좌클릭: 무작위 식물을 얻습니다.",
+    description = "세계수의 자녀로서 주변 식물을 빠르게 자라게 하고 자연의 힘을 나눠요.",
+    normalSkill = "블레이즈 막대기 좌클릭: 무작위 식물을 얻어요.",
     normalStoneCost = 10,
     normalCooldownSeconds = 35,
-    advancedSkill = "블레이즈 막대기 우클릭: 팀원들에게 치유 버프를 부여합니다.",
+    advancedSkill = "블레이즈 막대기 우클릭: 자신과 접속 중인 생존 팀원 전체에게 재생 II 15초와 흡수 I 12초를 줘요. 거리·월드 제한은 없어요.",
     advancedStoneCost = 24,
     advancedCooldownSeconds = 110,
-    passiveSkill = "주변 식물이 빠르게 자라며, 식물을 훼손하면 디버프를 받고 식물 근처에서는 버프를 얻습니다.",
+    passiveSkill = "주변 식물이 빠르게 자라며, 식물을 훼손하면 디버프를 받고 식물 근처에서는 버프를 얻어요.",
     grade = AbilityGrade.A
 )
 final class NatureAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.NATURE)
         .normal(EffectCue.ITEM)
         .benefit(EffectCue.HEAL)
+        .effect(EffectCue.ITEM, AbilityDesigns.NATURE_LEAVES)
+        .effect(EffectCue.HEAL, AbilityDesigns.NATURE_LEAVES)
+        .effect(EffectCue.POISON, AbilityDesigns.VENOM)
         .build();
 
     @Override

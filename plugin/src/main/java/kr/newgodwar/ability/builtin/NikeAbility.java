@@ -16,17 +16,18 @@ import java.util.List;
 
 @AbilityInfo(
     id = "nike", name = "니케",
-    description = "승리의 날개로 진입하고 처치로 얻은 월계관을 아군의 승전 축복으로 바꿉니다.",
-    normalSkill = "블레이즈 막대기 좌클릭: 바라보는 방향으로 날개 돌진합니다. 6초 안의 첫 낙하 피해를 무시합니다.",
+    description = "승리의 날개로 진입하고 처치로 얻은 월계관을 아군의 승전 축복으로 바꿔요.",
+    normalSkill = "블레이즈 막대기 좌클릭: 바라보는 방향으로 날개 돌진해요. 6초 안의 첫 낙하 피해를 무시해요.",
     normalStoneCost = 10, normalCooldownSeconds = 25,
-    advancedSkill = "블레이즈 막대기 우클릭: 월계관을 모두 소비해 반경 8블록 아군을 월계관 수 + 2만큼 회복하고 4 + 월계관 수 × 2초간 신속 I을 부여합니다.",
+    advancedSkill = "블레이즈 막대기 우클릭: 월계관을 모두 소비해 반경 8블록 아군을 월계관 수 + 2만큼 회복하고 4 + 월계관 수 × 2초간 신속 I을 줘요.",
     advancedStoneCost = 18, advancedCooldownSeconds = 60,
-    passiveSkill = "적을 직접 처치하면 월계관을 1개 얻습니다. 최대 3개이며 사망하거나 능력을 잃으면 사라집니다.",
+    passiveSkill = "적을 직접 처치하면 월계관을 1개 얻어요. 최대 3개이며 사망하거나 능력을 잃으면 사라져요.",
     grade = AbilityGrade.B
 )
 final class NikeAbility extends TransientAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.WIND)
         .dedicated()
+        .effect(EffectCue.HEAL, AbilityDesigns.VICTORY)
         .build();
 
     @Override
@@ -95,7 +96,9 @@ final class NikeAbility extends TransientAbility {
     private void wings(AbilityPlayerContext context, Location center, int laurels) {
         if (center == null || center.getWorld() == null) return;
         List<Player> audience = feedback.effectViewers(context, center);
-        feedback.drawCue(context, center, EffectCue.WINGS, audience);
+        feedback.drawCue(context, center, EffectCue.WINGS, audience, context.player(), true);
+        if (laurels > 0 && feedback.object(context, "laurel", AbilityDesigns.LAUREL,
+                kr.newgodwar.ability.feedback.AbilityFeedback.upright(center), 18, laurels)) return;
         for (int i = 0; i < Math.min(3, laurels); i++)
             feedback.particle(context, center.clone().add((i - 1) * 0.3D, 2.4D, 0), AbilityTheme.NATURE.particle(), audience, 2, 0);
     }

@@ -20,19 +20,20 @@ import java.util.List;
 @AbilityInfo(
     id = "tajja",
     name = "타짜",
-    description = "검을 숨겨 맨손 공격에 검 피해를 싣습니다.",
-    normalSkill = "블레이즈 막대기 좌클릭: 인벤토리의 검 하나를 숨깁니다.",
+    description = "검을 숨겨 맨손 공격에 검 피해를 더해요.",
+    normalSkill = "블레이즈 막대기 좌클릭: 인벤토리의 검 하나를 숨겨요.",
     normalStoneCost = 10,
     normalCooldownSeconds = 60,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "맨손 공격에 숨긴 검 피해를 제한 횟수만큼 싣습니다.",
+    passiveSkill = "맨손 공격에 숨긴 검 피해를 제한 횟수만큼 더해요.",
     grade = AbilityGrade.B
 )
 final class TajjaAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.SHADOW)
         .hit(EffectCue.SLASH)
         .privateCast()
+        .effect(EffectCue.SLASH, AbilityDesigns.HIDDEN_CARDS)
         .build();
 
     @Override

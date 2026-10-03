@@ -19,13 +19,13 @@ import java.util.List;
 @AbilityInfo(
     id = "examinee",
     name = "수험생",
-    description = "수학 문제를 맞히면 무작위 능력으로 바뀝니다.",
-    normalSkill = "블레이즈 막대기 좌클릭: 수학 문제를 출제합니다.",
+    description = "수학 문제를 맞히면 무작위 능력으로 바뀌어요.",
+    normalSkill = "블레이즈 막대기 좌클릭: 수학 문제를 출제해요.",
     normalStoneCost = 5,
     normalCooldownSeconds = 60,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "채팅으로 정답을 맞히면 무작위 능력으로 바뀝니다.",
+    passiveSkill = "채팅으로 정답을 맞히면 무작위 능력으로 바뀌어요.",
     grade = AbilityGrade.C
 )
 final class ExamineeAbility extends BaseAbility {

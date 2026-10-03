@@ -21,20 +21,22 @@ import java.util.List;
 @AbilityInfo(
     id = "quetzalcoatl",
     name = "케찰코아틀",
-    description = "섬 사이를 넘나드는 도약과 광역 밀치기로 공중전을 장악합니다.",
-    normalSkill = "블레이즈 막대기 좌클릭: 바라보는 방향으로 크게 도약합니다.",
+    description = "섬 사이를 넘나드는 도약과 광역 밀치기로 공중전을 장악해요.",
+    normalSkill = "블레이즈 막대기 좌클릭: 바라보는 방향으로 크게 도약해요.",
     normalStoneCost = 10,
     normalCooldownSeconds = 45,
-    advancedSkill = "블레이즈 막대기 우클릭: 반경 9블록 적을 공중으로 띄우고 밀쳐냅니다.",
+    advancedSkill = "블레이즈 막대기 우클릭: 반경 9블록 적을 공중으로 띄우고 밀쳐내요.",
     advancedStoneCost = 24,
     advancedCooldownSeconds = 120,
-    passiveSkill = "낙하 피해를 무시합니다.",
+    passiveSkill = "낙하 피해를 무시해요.",
     grade = AbilityGrade.A
 )
 final class QuetzalcoatlAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.WIND)
         .normal(EffectCue.WINGS)
         .hit(EffectCue.WIND)
+        .effect(EffectCue.WINGS, AbilityDesigns.SERPENT_FEATHERS)
+        .effect(EffectCue.WIND, AbilityDesigns.SERPENT_FEATHERS)
         .build();
 
     @Override

@@ -60,6 +60,7 @@ public final class AbilityRegressionProbe extends JavaPlugin {
                 new ItemGrantRegressionChecks().run(core);
                 new ObjectEffectRegressionChecks(core).run();
                 new FeedbackRegressionChecks(core).run();
+                new SiksinFoodRegressionChecks(core).run();
                 runChecks();
                 new AbilityVarietyChecks(core).run();
                 getLogger().info("ABILITY REGRESSION PASS");

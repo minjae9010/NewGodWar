@@ -2,6 +2,7 @@ package kr.newgodwar.ability.builtin;
 
 import kr.newgodwar.ability.api.*;
 import kr.newgodwar.ability.feedback.AbilityStyle;
+import kr.newgodwar.ability.feedback.EffectCue;
 import kr.newgodwar.ability.feedback.AbilityTheme;
 import kr.newgodwar.game.GodTeam;
 
@@ -20,11 +21,11 @@ import java.util.List;
 @AbilityInfo(
     id = "priest",
     name = "사제",
-    description = "자신과 팀원에게 여러 전투 축복 중 하나 이상을 무작위로 부여합니다.",
-    normalSkill = "블레이즈 막대기 좌클릭: 자신에게 30초짜리 무작위 축복을 하나 이상 부여합니다.",
+    description = "자신과 팀원에게 여러 전투 축복 중 하나 이상을 무작위로 줘요.",
+    normalSkill = "블레이즈 막대기 좌클릭: 자신에게 30초짜리 무작위 축복을 하나 이상 줘요.",
     normalStoneCost = 22,
     normalCooldownSeconds = 45,
-    advancedSkill = "블레이즈 막대기 우클릭: 팀원 전체에게 30초짜리 무작위 축복을 하나 이상 부여합니다.",
+    advancedSkill = "블레이즈 막대기 우클릭: 자신과 접속 중인 생존 팀원 전체에게 30초짜리 무작위 축복을 하나 이상 줘요. 거리·월드 제한은 없어요.",
     advancedStoneCost = 40,
     advancedCooldownSeconds = 105,
     passiveSkill = "없음",
@@ -32,6 +33,10 @@ import java.util.List;
 )
 final class PriestAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.HEALING)
+        .effect(EffectCue.HEAL, AbilityDesigns.BLESSING)
+        .effect(EffectCue.GUARD, AbilityDesigns.BLESSING)
+        .effect(EffectCue.CHARGE, AbilityDesigns.BLESSING)
+        .effect(EffectCue.WIND, AbilityDesigns.BLESSING)
         .build();
 
     @Override

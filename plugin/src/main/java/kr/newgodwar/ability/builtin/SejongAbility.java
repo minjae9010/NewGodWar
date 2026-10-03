@@ -17,20 +17,22 @@ import java.util.List;
 @AbilityInfo(
     id = "sejong",
     name = "세종대왕",
-    description = "집현전의 지혜로 아군을 강화하고 훈민정음의 칙령으로 적의 능력을 봉인합니다.",
-    normalSkill = "블레이즈 막대기 좌클릭: 자신과 주변 아군에게 재생, 저항, 성급함을 부여하고 경험 레벨을 나눕니다.",
+    description = "집현전의 지혜로 아군을 강화하고 훈민정음의 칙령으로 적의 능력을 봉인해요.",
+    normalSkill = "블레이즈 막대기 좌클릭: 자신과 반경 10블록 아군에게 재생, 저항, 성급함을 부여하고 경험 레벨을 나눠요.",
     normalStoneCost = 40,
     normalCooldownSeconds = 180,
-    advancedSkill = "블레이즈 막대기 우클릭: 바라보는 적의 능력을 봉인하고 실명, 약화, 감속을 부여합니다.",
+    advancedSkill = "블레이즈 막대기 우클릭: 28블록 안에서 바라보는 적의 능력을 봉인하고 실명, 약화, 감속을 줘요.",
     advancedStoneCost = 64,
     advancedCooldownSeconds = 300,
-    passiveSkill = "책을 들고 공격하면 피해가 증가하고, 배정 시 책을 받습니다.",
+    passiveSkill = "책을 들고 공격하면 피해가 증가하고, 능력을 받으면 책을 받아요.",
     grade = AbilityGrade.S
 )
 final class SejongAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.RUNE)
         .hit(EffectCue.SEAL)
         .benefit(EffectCue.HEAL)
+        .effect(EffectCue.SEAL, AbilityDesigns.ROYAL_DECREE)
+        .effect(EffectCue.HEAL, AbilityDesigns.ROYAL_GRACE)
         .build();
 
     @Override

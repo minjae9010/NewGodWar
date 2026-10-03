@@ -35,6 +35,7 @@ final class FeedbackRegressionChecks {
     private final List<String> messages = new ArrayList<String>();
     private final List<String> bars = new ArrayList<String>();
     private final List<String> titles = new ArrayList<String>();
+    private final Map<Integer, Runnable> animations = new LinkedHashMap<Integer, Runnable>();
     private final Map<Integer, Runnable> tasks = new LinkedHashMap<Integer, Runnable>();
     private final List<Player> viewers = new ArrayList<Player>();
     private World world;
@@ -44,7 +45,7 @@ final class FeedbackRegressionChecks {
     private boolean invisible;
     private boolean targetInvisible;
     private boolean online = true;
-    private float yaw;
+    private float yaw, pitch;
     private org.bukkit.potion.PotionEffect existingPotion;
 
     FeedbackRegressionChecks(NewGodWarPlugin core) { this.core = core; this.visuals = new VisualProbe(core); }
@@ -71,6 +72,7 @@ final class FeedbackRegressionChecks {
         viewers.add(player("Near", 5, true));
         viewers.add(player("Far", 100, true));
         viewers.add(player("CannotSee", 5, false));
+        viewers.add(player("Observer", 8, true));
 
         Server original = Bukkit.getServer();
         Field serverField = field(Bukkit.class, "server");
@@ -87,7 +89,8 @@ final class FeedbackRegressionChecks {
         AbilityPlayerContext context = context("zeus");
         BukkitScheduler scheduler = proxy(BukkitScheduler.class, (p, m, a) -> {
             if (m.getName().equals("scheduleSyncDelayedTask")) { tasks.put(++nextTask, (Runnable) a[1]); return nextTask; }
-            if (m.getName().equals("cancelTask")) { tasks.remove(a[0]); return null; }
+            if (m.getName().equals("scheduleSyncRepeatingTask")) { animations.put(++nextTask, (Runnable) a[1]); return nextTask; }
+            if (m.getName().equals("cancelTask")) { tasks.remove(a[0]); animations.remove(a[0]); return null; }
             return invoke(original.getScheduler(), m, a);
         });
         try {
@@ -114,8 +117,9 @@ final class FeedbackRegressionChecks {
                 "Native lightning acquired a second cast effect");
             require(count(particles, "Far") == 0 && count(sounds, "Far") == 0 && count(particles, "CannotSee") == 0,
                 "Feedback leaked to distant/hidden viewers");
-            require(contains(messages, "제우스 · 고급") && contains(messages, "연속 번개") && titles.size() == 1,
-                "Advanced slot 0 must use the advanced description/title");
+            require(contains(messages, "제우스 · 고급") && !contains(messages, "연속 번개")
+                && contains(bars, "연속 번개") && titles.size() == 1,
+                "Activation chat must stay brief while the action bar identifies the advanced effect");
             int castParticles = count(particles, "Caster");
             messages.clear();
             require(!ability.cast(context, true) && !ability.cast(context, true), "Cooldown was bypassed");
@@ -149,7 +153,7 @@ final class FeedbackRegressionChecks {
             feedback.affected(context("gaia"), viewers.get(1), "대지 속박 · 7초", true);
             feedback.affected(context("gaia"), viewers.get(1), "대지 속박 · 7초", true);
             flush();
-            require(bars.size() == 1 && count(particles, "Near") == 24, "Target feedback missing or unthrottled");
+            require(bars.size() == 1 && count(particles, "Near") > 0 && count(particles, "Near") <= 64, "Target feedback missing or unthrottled");
             Location from = new Location(world, 0, 65, 0), to = new Location(world, 20, 65, 0);
             clearOutput(); feedback.link(context, from, to);
             require(count(particles, "Near") <= 25 && from.getX() == 0 && to.getX() == 20,
@@ -173,7 +177,8 @@ final class FeedbackRegressionChecks {
             require(count(particles, "Far") == 0 && count(particles, "CannotSee") == 0 && from.getY() == 65,
                 "Named kit effects leaked visibility/range or changed their anchor");
             clearOutput(); invisible = true; namedKitEffects(feedback, from);
-            require(count(particles, "Near") == 0 && count(sounds, "Near") == 0, "Named kits revealed an invisible caster");
+            require(count(particles, "Near") > 0 && count(particles, "Observer") == 0 && count(sounds, "Observer") == 0,
+                "An affected recipient lost feedback or a bystander saw an invisible caster");
             invisible = false;
 
             clearOutput();
@@ -205,6 +210,7 @@ final class FeedbackRegressionChecks {
             for (Runnable task : pending) task.run();
             require(timed.cleaned == 2 && contains(bars, "보호 종료 완료"), "Timer completion feedback missing");
             checkAllStylesAndReactions();
+            checkFallbackFacing();
             core.getLogger().info("PASS feedback: server particle/sound aliases, cast/failure/ready, resource accounting, visibility, range, toggles, throttle and cleanup");
         } finally {
             visuals.clear();
@@ -212,6 +218,29 @@ final class FeedbackRegressionChecks {
             nmsField.set(core, oldNms);
             for (Map.Entry<String, Object> entry : oldConfig.entrySet()) core.getConfig().set(entry.getKey(), entry.getValue());
         }
+    }
+
+    private void checkFallbackFacing() {
+        AbilityFeedback body = new AbilityFeedback();
+        for (EffectCue cue : Arrays.asList(EffectCue.GUARD, EffectCue.WINGS)) {
+            for (float heading : new float[] {0, 90, 180, 270}) {
+                List<Location> reference = null;
+                yaw = heading;
+                for (float looking : new float[] {0, -90, 90}) {
+                    clearOutput(); pitch = looking;
+                    body.drawCue(context("hermes"), caster.getLocation(), cue, Collections.singletonList(caster), caster, true);
+                    require(!points.isEmpty() && points.size() <= 64, "Missing body outline on this server");
+                    if (reference == null) reference = new ArrayList<Location>(points);
+                    else {
+                        require(reference.size() == points.size(), "Fallback changed with the camera angle");
+                        for (int i=0;i<points.size();i++) require(reference.get(i).distanceSquared(points.get(i)) < 0.000001,
+                            "Body outline tipped when looking up/down");
+                    }
+                }
+            }
+        }
+        yaw = 0; pitch = 0; body.clear(); clearOutput();
+        core.getLogger().info("PASS fallback facing: shield/wing model outlines stay upright at four headings and three camera pitches");
     }
 
     private void checkAllStylesAndReactions() {
@@ -233,7 +262,11 @@ final class FeedbackRegressionChecks {
                 require(tasks.size() == (cue == EffectCue.NONE ? 0 : 1), "Unexpected cast tasks: " + id);
                 flush();
                 final int[] expected = {0}; cue.draw((ink, x, y, z, rgb) -> expected[0]++);
-                require(count(particles, "Caster") == expected[0] && tasks.isEmpty(), "Cast duplicated: " + id);
+                boolean designed = visuals.ability(id).style().effect(cue) != null;
+                boolean modelCue = cue == EffectCue.WINGS || cue == EffectCue.GUARD;
+                require((designed || modelCue ? count(particles, "Caster") > 0 && count(particles, "Caster") <= 64
+                    : count(particles, "Caster") == expected[0]) && tasks.isEmpty(), "Cast duplicated: " + id);
+                require(animations.size() == (designed ? 1 : 0), "Unexpected design animation count: " + id);
                 require(count(particles, "CannotSee") == 0 && count(particles, "Far") == 0, "Cast visibility leaked: " + id);
                 if (visuals.ability(id).style().privateCast()) require(count(particles, "Near") == 0 && count(sounds, "Near") == 0,
                     "Private cast leaked: " + id);
@@ -251,11 +284,24 @@ final class FeedbackRegressionChecks {
         feedback.impact(healing, target);
         require(tasks.size() == 1 && particles.isEmpty(), "Reactions did not merge before rendering");
         flush();
-        require(count(particles, "Near") == 3 && kinds.size() == 3, "Healing stacked status and impact decoration");
+        require(count(particles, "Near") > 0 && count(particles, "Near") <= 64 && animations.size() == 1, "Healing stacked status and impact decoration");
         for (int i = 0; i < points.size(); i++) {
-            require(kinds.get(i) == AbilityTheme.HEALING.particle(), "Healing used the wrong native sprite");
-            require(Math.abs(points.get(i).getX() - 5) <= 0.4D, "Healing was attached to the caster instead of the target");
+            Location point = points.get(i);
+            // Shoulder props may extend beyond the target's body, but must stay anchored to that recipient.
+            require(point.distanceSquared(target.getLocation()) < point.distanceSquared(caster.getLocation()),
+                "Healing was attached to the caster instead of the target");
         }
+        int before = count(particles, "Near");
+        int casterBefore = count(particles, "Caster");
+        targetInvisible = true;
+        for (Runnable animation : new ArrayList<Runnable>(animations.values())) animation.run();
+        require(count(particles, "Near") > before && count(particles, "Caster") == casterBefore,
+            "In-flight design hid the recipient's own effect or revealed their invisible position");
+        targetInvisible = false;
+        online = false;
+        for (Runnable animation : new ArrayList<Runnable>(animations.values())) animation.run();
+        require(animations.isEmpty(), "Design animation survived owner disconnect");
+        online = true;
         feedback.clear(); clearOutput();
         new ProbeAbility().buff(healing, 0); flush();
         require(count(particles, "Caster") == 3, "New regeneration effect has no healing cue");
@@ -273,17 +319,19 @@ final class FeedbackRegressionChecks {
             feedback.cue(healing, target, cue);
             require(tasks.size() <= 1, "One invocation accumulated reaction tasks");
         }
-        feedback.clear(); require(tasks.isEmpty(), "Session cleanup left queued reactions");
+        feedback.clear(); require(tasks.isEmpty() && animations.isEmpty(), "Session cleanup left queued reactions");
 
         clearOutput(); feedback.cue(context("hermes"), caster, EffectCue.WINGS);
         invisible = true; flush();
-        require(count(particles, "Caster") == 30 && count(particles, "Near") == 0, "Delayed reaction revealed a newly invisible caster");
+        require(count(particles, "Caster") > 0 && count(particles, "Caster") <= 64 && count(particles, "Near") == 0,
+            "Delayed reaction revealed a newly invisible caster or exceeded the model budget");
         invisible = false; feedback.clear(); clearOutput();
         feedback.cue(healing, target, EffectCue.ROOT); online = false; flush();
         require(particles.isEmpty(), "Reaction continued after caster disconnect"); online = true;
         feedback.clear(); clearOutput();
         feedback.cue(healing, target, EffectCue.ROOT); targetInvisible = true; flush();
-        require(particles.isEmpty(), "Delayed reaction revealed an invisible target"); targetInvisible = false;
+        require(count(particles, "Near") > 0 && count(particles, "Caster") == 0 && count(particles, "CannotSee") == 0,
+            "Invisible recipient lost their own feedback or was revealed to another player"); targetInvisible = false;
         feedback.clear(); clearOutput();
         feedback.cue(healing, target, EffectCue.ROOT);
         World priorWorld = world; world = proxy(World.class, (p, m, a) -> defaultValue(m.getReturnType()));
@@ -291,8 +339,8 @@ final class FeedbackRegressionChecks {
         feedback.clear(); clearOutput();
         feedback = new AbilityFeedback(visuals.ability("hecate"));
         feedback.affected(context("hecate"), target, "저주", true); flush();
-        require(count(particles, "Caster") > 0 && count(particles, "CannotSee") == 0 && count(particles, "Near") == 0,
-            "Target effect revealed a private caster");
+        require(count(particles, "Caster") > 0 && count(particles, "CannotSee") == 0 && count(particles, "Near") > 0,
+            "Private caster's applied effect was hidden from its recipient or leaked to bystanders");
 
         feedback.clear(); clearOutput();
         feedback = new AbilityFeedback(visuals.ability("thor"));
@@ -314,6 +362,13 @@ final class FeedbackRegressionChecks {
         require(count(particles, "Caster") == 24, "Gravity streams were missing or duplicated");
         clearOutput(); visuals.effect("frostCage", context("frost"), target.getLocation(), 3);
         require(count(particles, "Caster") <= 36 && count(particles, "Caster") > 0, "Ice cage was unbounded");
+        feedback.clear(); clearOutput();
+        feedback = new AbilityFeedback(visuals.ability("gaia"));
+        feedback.cue(healing, target, EffectCue.ROOT); flush();
+        require(animations.size() == 1, "Design did not start its bounded timeline");
+        for (int frame = 0; frame < 5; frame++)
+            for (Runnable animation : new ArrayList<Runnable>(animations.values())) animation.run();
+        require(animations.isEmpty(), "Design timeline exceeded its lifetime");
         feedback.clear(); clearOutput();
         core.getConfig().set("abilities.effects.particles", false);
         feedback.cue(healing, target, EffectCue.HEAL);
@@ -373,12 +428,13 @@ final class FeedbackRegressionChecks {
                 case "getUniqueId": return id;
                 case "getName": return name;
                 case "getWorld": return world;
-                case "getLocation": case "getEyeLocation": return new Location(world, x, 65, 0, yaw, 0);
+                case "getLocation": case "getEyeLocation": return new Location(world, x, 65, 0, yaw, pitch);
                 case "getInventory": return inventory;
                 case "isOnline": return !name.equals("Caster") || online;
                 case "canSee": return visible;
                 case "hasPotionEffect": return (invisible && name.equals("Caster")) || (targetInvisible && name.equals("Near"));
                 case "getPotionEffect": return existingPotion != null && existingPotion.getType().equals(a[0]) ? existingPotion : null;
+                case "addPotionEffect": existingPotion = (org.bukkit.potion.PotionEffect) a[0]; return true;
                 case "sendMessage": if (a[0] instanceof String) messages.add((String) a[0]); return null;
                 case "spawnParticle":
                     Particle particle = (Particle) a[0];

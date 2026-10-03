@@ -20,11 +20,11 @@ import java.util.List;
 @AbilityInfo(
     id = "aeolus",
     name = "아이올로스",
-    description = "섬 전투에서 아군의 이동을 돕고 적을 바깥쪽으로 밀어냅니다.",
-    normalSkill = "블레이즈 막대기 좌클릭: 자신과 반경 20블록 아군에게 15초 신속과 재생을 부여합니다.",
+    description = "섬 전투에서 아군의 이동을 돕고 적을 바깥쪽으로 밀어내요.",
+    normalSkill = "블레이즈 막대기 좌클릭: 자신과 반경 20블록 아군에게 15초 신속과 재생을 줘요.",
     normalStoneCost = 10,
     normalCooldownSeconds = 60,
-    advancedSkill = "블레이즈 막대기 우클릭: 반경 10블록 적을 밀쳐내고 8초 약화/감속을 부여합니다.",
+    advancedSkill = "블레이즈 막대기 우클릭: 반경 10블록 적을 밀쳐내고 8초 약화/감속을 줘요.",
     advancedStoneCost = 24,
     advancedCooldownSeconds = 170,
     passiveSkill = "없음",
@@ -34,6 +34,9 @@ final class AeolusAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.WIND)
         .hit(EffectCue.WIND)
         .benefit(EffectCue.HEAL)
+        .effect(EffectCue.WIND, AbilityDesigns.GALE)
+        .effect(EffectCue.HEAL, AbilityDesigns.WIND_HEAL)
+        .effect(EffectCue.SLOW, AbilityDesigns.GALE)
         .build();
 
     @Override

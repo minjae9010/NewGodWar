@@ -20,18 +20,19 @@ import java.util.List;
 @AbilityInfo(
     id = "witch",
     name = "마녀",
-    description = "주변 적과 공격자에게 저주를 겁니다.",
-    normalSkill = "블레이즈 막대기 좌클릭: 주변 적에게 저주를 겁니다.",
+    description = "주변 적과 공격자에게 저주를 걸어요.",
+    normalSkill = "블레이즈 막대기 좌클릭: 반경 10블록 적에게 저주를 걸어요.",
     normalStoneCost = 15,
     normalCooldownSeconds = 60,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "피격 시 확률로 공격자에게 저주를 겁니다.",
+    passiveSkill = "공격받으면 확률로 공격자에게 저주를 걸어요.",
     grade = AbilityGrade.A
 )
 final class WitchAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.SHADOW)
         .hit(EffectCue.POISON)
+        .effect(EffectCue.POISON, AbilityDesigns.CAULDRON)
         .build();
 
     @Override

@@ -20,19 +20,21 @@ import java.util.List;
 @AbilityInfo(
     id = "midoriya",
     name = "미도리야",
-    description = "원 포 올을 준비한 뒤 맨손 공격으로 큰 피해를 줍니다.",
-    normalSkill = "블레이즈 막대기 좌클릭: 원 포 올을 준비합니다.",
+    description = "원 포 올을 준비한 뒤 맨손 공격으로 큰 피해를 줘요.",
+    normalSkill = "블레이즈 막대기 좌클릭: 원 포 올을 준비해요.",
     normalStoneCost = 50,
     normalCooldownSeconds = 150,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "준비 후 맨손 공격 시 큰 피해와 자기 디버프를 발생시킵니다.",
+    passiveSkill = "준비 후 맨손 공격하면 큰 피해와 자기 디버프를 일으켜요.",
     grade = AbilityGrade.A
 )
 final class MidoriyaAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.LIGHTNING)
         .hit(EffectCue.HIT)
         .passive(EffectCue.CHARGE)
+        .effect(EffectCue.HIT, AbilityDesigns.GREEN_SMASH)
+        .effect(EffectCue.CHARGE, AbilityDesigns.GREEN_SMASH)
         .build();
 
     @Override

@@ -43,3 +43,6 @@ run/
 server/
 servers/
 .paper-smoke/
+
+# Local MCP connection contains absolute host paths
+.codex/config.toml

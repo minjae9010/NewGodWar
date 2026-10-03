@@ -20,17 +20,18 @@ import java.util.List;
 @AbilityInfo(
     id = "eris",
     name = "에리스",
-    description = "피격 시 낮은 확률로 공격자의 위치를 비틀어 섬 전투를 흔듭니다.",
+    description = "공격받으면 낮은 확률로 공격자의 위치를 비틀어 섬 전투를 흔들어요.",
     normalSkill = "없음",
     normalStoneCost = 0,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "피격 시 12.5% 확률로 공격자를 대각선 5블록 위치로 이동시킵니다.",
+    passiveSkill = "공격받으면 12.5% 확률로 공격자를 대각선 5블록 위치로 옮겨요.",
     grade = AbilityGrade.B
 )
 final class ErisAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.ARCANE)
         .hit(EffectCue.PORTAL)
+        .effect(EffectCue.PORTAL, AbilityDesigns.DISCORD)
         .build();
 
     @Override

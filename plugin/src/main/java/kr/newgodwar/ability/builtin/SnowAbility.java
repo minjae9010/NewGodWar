@@ -20,19 +20,21 @@ import java.util.List;
 @AbilityInfo(
     id = "snow",
     name = "사이코스노우",
-    description = "눈덩이로 고정 피해를 주고 사망할 때마다 공격 지수가 성장합니다.",
-    normalSkill = "블레이즈 막대기 좌클릭: 눈덩이를 1개 생성합니다.",
+    description = "눈덩이로 고정 피해를 주고 사망할 때마다 공격 지수가 성장해요.",
+    normalSkill = "블레이즈 막대기 좌클릭: 눈덩이를 1개 만들어요.",
     normalStoneCost = 2,
     normalCooldownSeconds = 3,
-    advancedSkill = "블레이즈 막대기 우클릭: 현재 공격 지수를 확인합니다.",
+    advancedSkill = "블레이즈 막대기 우클릭: 현재 공격 지수를 확인해요.",
     advancedStoneCost = 0,
-    passiveSkill = "눈덩이 피해가 공격 지수를 따르고 사망할 때 최대 5까지 성장합니다.",
+    passiveSkill = "눈덩이 피해가 공격 지수를 따르고 사망할 때 최대 5까지 성장해요.",
     grade = AbilityGrade.A
 )
 final class SnowAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.FROST)
         .normal(EffectCue.ITEM)
         .hit(EffectCue.FROST)
+        .effect(EffectCue.ITEM, AbilityDesigns.SNOWFLAKE)
+        .effect(EffectCue.FROST, AbilityDesigns.SNOWFLAKE)
         .build();
 
     @Override

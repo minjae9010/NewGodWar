@@ -126,14 +126,12 @@ public final class CommandRegressionProbe extends JavaPlugin {
         Map<UUID, String> selected = (Map<UUID, String>) field(gui, "selectedTeamIds");
         Map<UUID, String> renames = (Map<UUID, String>) field(gui, "pendingTeamRenameIds");
         CommandSender player = sender(true, true);
-        String[] expected = {"MAIN", "GAME", "TEAM", "WORLD", "WORLD_CORE", "PICKAXE_UNLOCK", "DISPLAY", "GAMBLING", "GAMBLING_NORMAL"};
-        int index = 0;
         for (SettingsPage page : SettingsPage.values()) {
             displayed = null;
             dispatch(player, "gw gui " + page.id());
             check(displayed != null, "GUI did not open: " + page.id());
             if (page != SettingsPage.ITEMS) {
-                check(expected[index++].equals(views.get(first).toString()), "wrong settings screen: " + page.id());
+                check(field(page, "view").equals(views.get(first)), "wrong settings screen: " + page.id());
                 ItemStack heading = displayed.getItem(4);
                 check(heading.getItemMeta().getLore().toString().contains("/gw gui"), "missing GUI shortcut hint: " + page.id());
             }
@@ -147,7 +145,9 @@ public final class CommandRegressionProbe extends JavaPlugin {
         dispatch(player, "gmenu rewards");
         check("GAMBLING_NORMAL".equals(views.get(first).toString()), "gmenu rewards must open a screen");
         dispatch(player, "gw settings open urf");
-        check("DISPLAY".equals(views.get(first).toString()), "URF screen alias");
+        check("COMBAT".equals(views.get(first).toString()), "URF screen alias");
+        dispatch(player, "gw settings open gamerule");
+        check("WORLD_RULES".equals(views.get(first).toString()), "game rule screen alias");
         dispatch(player, "gw help");
         dispatch(player, "gw help ability 2");
         check(componentMessages > 0, "interactive help was not delivered as chat components");
@@ -164,7 +164,7 @@ public final class CommandRegressionProbe extends JavaPlugin {
         views.remove(first);
         selected.remove(first);
         ((java.util.Set<UUID>) field(gui, "openViewers")).remove(first);
-        getLogger().info("PASS all 10 GUI destinations, team detail, aliases, invalid inputs and permissions");
+        getLogger().info("PASS all " + SettingsPage.values().length + " GUI destinations, team detail, aliases, invalid inputs and permissions");
     }
 
     private Object field(Object object, String name) throws Exception {

@@ -8,6 +8,20 @@ import java.util.List;
 final class GuiText {
     private GuiText() { }
 
+    /** Put controls first, then give each effect or condition its own line. */
+    static List<String> skill(String text) {
+        List<String> lines = new ArrayList<String>();
+        int colon = text.indexOf(": ");
+        if (colon >= 0) {
+            lines.add(ChatColor.AQUA + text.substring(0, colon));
+            text = text.substring(colon + 2);
+        }
+        for (String sentence : text.split("(?<=[.!?])\\s+")) {
+            lines.add(ChatColor.WHITE + sentence);
+        }
+        return lines;
+    }
+
     static List<String> wrap(List<String> lore) {
         List<String> result = new ArrayList<String>();
         for (String text : lore) {
@@ -25,9 +39,19 @@ final class GuiText {
                     int cells = cp >= 0x2E80 ? 2 : 1;
                     if (width + cells > 48) {
                         String previous = line.toString();
-                        result.add(previous);
-                        line = new StringBuilder(ChatColor.getLastColors(previous));
-                        width = 0;
+                        int boundary = previous.lastIndexOf(' ') + 1;
+                        // Prefer a word boundary, but hard-wrap unusually long words.
+                        if (boundary > 0 && cells(previous.substring(0, boundary)) >= 24) {
+                            String completed = previous.substring(0, boundary);
+                            result.add(completed);
+                            line = new StringBuilder(ChatColor.getLastColors(completed))
+                                .append(previous.substring(boundary));
+                            width = cells(line.toString());
+                        } else {
+                            result.add(previous);
+                            line = new StringBuilder(ChatColor.getLastColors(previous));
+                            width = 0;
+                        }
                     }
                     line.appendCodePoint(cp);
                     width += cells;
@@ -37,5 +61,10 @@ final class GuiText {
             }
         }
         return result;
+    }
+
+    private static int cells(String text) {
+        String plain = ChatColor.stripColor(text);
+        return plain.codePoints().map(cp -> cp >= 0x2E80 ? 2 : 1).sum();
     }
 }

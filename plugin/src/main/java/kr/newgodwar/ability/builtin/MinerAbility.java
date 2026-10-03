@@ -20,17 +20,18 @@ import java.util.List;
 @AbilityInfo(
     id = "miner",
     name = "광부",
-    description = "코블스톤 채굴 보너스와 곡괭이 고정 피해를 가집니다.",
+    description = "조약돌 채굴 보너스와 곡괭이 고정 피해를 얻어요.",
     normalSkill = "없음",
     normalStoneCost = 0,
     advancedSkill = "없음",
     advancedStoneCost = 0,
-    passiveSkill = "상시 성급함 효과를 받고 코블스톤 채굴 보너스와 곡괭이 고정 피해를 가집니다.",
+    passiveSkill = "항상 성급함 효과를 받고 조약돌 채굴 보너스와 곡괭이 고정 피해를 얻어요.",
     grade = AbilityGrade.A
 )
 final class MinerAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.CRAFT)
         .hit(EffectCue.HIT)
+        .effect(EffectCue.HIT, AbilityDesigns.ORE_SPLIT)
         .build();
 
     @Override

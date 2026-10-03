@@ -2,6 +2,39 @@
 
 설정 파일은 서버 시작 후 `plugins/NewGodWar/config.yml`에 생성됩니다. 파일을 직접 수정한 뒤에는 `/gw reload`를 실행하거나 서버를 재시작하세요.
 
+## 설정은 어디에서 바꾸나요?
+
+`/gmenu`로 설정 홈을 엽니다. 설정 화면의 왼쪽 아래는 **홈**, 아래 가운데는 **뒤로**, 오른쪽 아래는 **닫기**입니다. 상단 아이템에서 현재 경로와 바로가기 명령, 도움말 아이콘에서 관련 설정의 위치를 확인할 수 있습니다. 항목에 마우스를 올리면 현재 값과 클릭 동작을 보여 주며, 변경한 값은 자동 저장됩니다. 시작 아이템 창고는 닫으면 저장되며 `/gmenu`로 설정 홈에 돌아올 수 있습니다.
+
+| 바꾸려는 것 | 화면 / 바로가기 |
+| --- | --- |
+| 최소 인원, 재추첨, 지급, 게임 시작·종료 | 게임 진행 · `/gmenu game` |
+| 우르프, 킬타임, 팀킬, 부활·탈락 | 전투 / 부활 · `/gmenu combat` |
+| 팀 이름·색상, 스폰과 심장 위치 | 팀 / 등록 · `/gmenu team` |
+| 게임 월드, 초기화, 시간·난이도·자연 스폰 | 월드 · `/gmenu world` |
+| 심장 파괴 조건, 폭발·곡괭이 보호 시간 | 심장 보호 · `/gmenu core` |
+| 사망 시 아이템, 시간·날씨·불 번짐, 위치 표시 | 월드 게임룰 · `/gmenu rules` |
+| 메뉴 텍스처, 스코어보드, 메시지·소리·시각 효과 | 화면 / 연출 · `/gmenu display` |
+| 뽑기 가격·허용, 상품·확률 | 도박 · `/gmenu gambling`, 상품 직접 편집 `/gmenu rewards` |
+| 시작할 때 나눠 줄 아이템 | 시작 아이템 편집 · `/gmenu items` |
+
+월드 게임룰은 저장 후 **지금 모든 월드에 적용**을 누르거나 다음 게임 시작 때 적용됩니다. 도박 상품 편집은 21개씩 표시하며 이전·다음 버튼으로 나머지 상품도 수정할 수 있습니다. 플레이어의 `/도박` 화면은 보상 미리보기이며, 설정 변경은 관리자 메뉴에서 합니다.
+
+## 메뉴·능력 리소스팩
+
+[버전별 리소스팩 다운로드와 호환 범위](resource-packs.md)를 확인하세요. 기본값 `url: auto`는 이 저장소의 GitHub Release에서 서버 버전에 맞는 ZIP을 선택하고 내장된 SHA-1을 적용합니다. JDK 21의 `./gradlew build` 또는 `./gradlew resourcePack`으로 ZIP 25종을 생성합니다.
+
+팩을 수락한 플레이어에게 메뉴·식신 음식·능력 문양을 표시합니다. 메뉴는 다시 열어 주세요. 1.12~1.13은 기본 아이템, Display가 없는 버전은 파티클로 유지합니다. 구버전 단일 팩 API와 다중 클라이언트 버전의 제한은 위 문서에 설명되어 있습니다.
+
+| 키 | 기본값 | 설명 |
+| --- | --- | --- |
+| `ui.resource-pack.enabled` | `true` | 전용 메뉴 아이콘 표시. `false`면 메뉴만 일반 아이템으로 표시 |
+| `abilities.effects.resource-pack.enabled` | `true` | 팩 자동 제안. 완전히 끄려면 `false` |
+| `abilities.effects.resource-pack.url` | `auto` | GitHub 버전 자동 선택. 빈 값도 자동 선택. 직접 HTTP(S) ZIP 주소로 변경 가능 |
+| `abilities.effects.resource-pack.sha1` | 빈 문자열 | 직접 URL 사용 시 해당 ZIP의 40자리 SHA-1. 자동 선택에서는 내장 해시 사용 |
+
+설정 변경 후 서버를 재시작합니다. 이전 26.3 전용 주소를 직접 입력했다면 `auto`로 변경하세요.
+
 ## game
 
 | 키 | 기본값 | 설명 |
@@ -131,7 +164,9 @@
 | `abilities.effects.particles` | `true` | 추가 입자 및 오브젝트 미지원 시의 파티클 폴백 |
 | `abilities.effects.objects` | `true` | Display 오브젝트 우선 사용. 미지원·생성 거부·예산 초과 시 파티클로 전환 |
 | `abilities.effects.object-limit` | `48` | 능력 세션별 오브젝트 조각 예산(0~96). 전체 서버 상한 256개 |
-| `abilities.effects.animations` | `true` | 투사체 궤적과 파티클 비행 잔상. 오브젝트 움직임과 기술의 전용 연출은 유지 |
+| `abilities.effects.resource-pack.url` | `auto` | GitHub Release의 서버 버전별 ZIP 자동 선택. 직접 HTTP(S) 주소로 재정의 가능 |
+| `abilities.effects.resource-pack.sha1` | 빈 문자열 | 배포 ZIP의 40자리 SHA-1. 이 팩의 수신 성공을 확인한 플레이어에게만 전용 ItemDisplay 문양 표시 |
+| `abilities.effects.animations` | `true` | 행동별 짧은 애니메이션, 투사체 궤적과 파티클 비행 잔상. 끄면 행동 디자인은 정지 형태, 묠니르·시간장 등 기술 자체의 전용 장면은 유지 |
 | `abilities.effects.sounds` | `true` | 발동, 실패, 재사용 가능 효과음 |
 | `abilities.effects.action-bar` | `true` | 발동 내용, 피격·지원 효과, 종료와 재사용 가능 안내 |
 | `abilities.effects.titles` | `true` | 고급 능력 발동 시 짧은 중앙 타이틀 |

@@ -21,7 +21,7 @@ final class DisplayBridge {
     static final DisplayBridge INSTANCE = discover();
     private final Class<?> blockDisplay, itemDisplay;
     private final Constructor<?> matrix, brightness, itemStack;
-    private final Method spawn, visible, persistent, show, hide, transform, translate, rotateZ, rotateY, scale;
+    private final Method spawn, visible, persistent, show, hide, transform, translate, rotateZ, rotateY, rotateX, scale;
     private final Method block, item, itemTransform, blockData, material;
     private final Method interpolation, delay, teleportDuration, light, width, height, viewRange;
     private final Object fixed;
@@ -51,6 +51,7 @@ final class DisplayBridge {
         translate = matrixClass.getMethod("translate", float.class, float.class, float.class);
         rotateZ = matrixClass.getMethod("rotateZ", float.class);
         rotateY = matrixClass.getMethod("rotateY", float.class);
+        rotateX = matrixClass.getMethod("rotateX", float.class);
         scale = matrixClass.getMethod("scale", float.class, float.class, float.class);
         block = blockDisplay.getMethod("setBlock", Class.forName("org.bukkit.block.data.BlockData"));
         item = itemDisplay.getMethod("setItemStack", ItemStack.class);
@@ -84,14 +85,10 @@ final class DisplayBridge {
                 entity.addScoreboardTag("newgodwar_cosmetic");
                 interpolation.invoke(entity, 2); delay.invoke(entity, 0);
                 if (teleportDuration != null) teleportDuration.invoke(entity, 2);
-                light.invoke(entity, brightness.newInstance(12, 12));
+                light.invoke(entity, brightness.newInstance(part.art == null ? 12 : 15, part.art == null ? 12 : 15));
                 width.invoke(entity, 12F); height.invoke(entity, 6F); viewRange.invoke(entity, 0.6F);
                 if (part.item) {
-                    ItemStack stack = items.get(part.material);
-                    if (stack == null) {
-                        stack = (ItemStack) itemStack.newInstance(material.invoke(null, part.material));
-                        items.put(part.material, stack);
-                    }
+                    ItemStack stack = stack(part);
                     item.invoke(entity, stack.clone()); itemTransform.invoke(entity, fixed);
                 } else {
                     Object data = blocks.get(part.material);
@@ -110,12 +107,29 @@ final class DisplayBridge {
     }
 
     void transform(Entity entity, ObjectModel.Part p) throws ReflectiveOperationException {
+        if (p.art != null) item.invoke(entity, stack(p).clone());
         Object value = matrix.newInstance();
         translate.invoke(value, (float) p.x, (float) p.y, (float) p.z);
         rotateZ.invoke(value, (float) p.roll); rotateY.invoke(value, (float) p.turn);
+        rotateX.invoke(value, (float) p.pitch);
         scale.invoke(value, (float) p.sx, (float) p.sy, (float) p.sz);
         if (!p.item) translate.invoke(value, -0.5F, -0.5F, -0.5F);
         delay.invoke(entity, 0); transform.invoke(entity, value);
+    }
+
+    private ItemStack stack(ObjectModel.Part part) throws ReflectiveOperationException {
+        String cacheKey = part.art == null ? part.material : part.art;
+        ItemStack stack = items.get(cacheKey);
+        if (stack == null) {
+            stack = (ItemStack) itemStack.newInstance(material.invoke(null, part.material));
+            if (part.art != null) {
+                org.bukkit.inventory.meta.ItemMeta meta = stack.getItemMeta();
+                PackModels.apply(meta, part.art);
+                stack.setItemMeta(meta);
+            }
+            items.put(cacheKey, stack);
+        }
+        return stack;
     }
 
     void visibility(Plugin plugin, Player viewer, Entity entity, boolean value) throws ReflectiveOperationException {

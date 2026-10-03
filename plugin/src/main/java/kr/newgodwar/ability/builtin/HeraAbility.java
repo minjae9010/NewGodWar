@@ -2,6 +2,7 @@ package kr.newgodwar.ability.builtin;
 
 import kr.newgodwar.ability.api.*;
 import kr.newgodwar.ability.feedback.AbilityStyle;
+import kr.newgodwar.ability.feedback.EffectCue;
 import kr.newgodwar.ability.feedback.AbilityTheme;
 
 import org.bukkit.Location;
@@ -13,17 +14,18 @@ import java.util.List;
 
 @AbilityInfo(
     id = "hera", name = "헤라",
-    description = "아군 한 명과 수호의 서약을 맺고 함께 있을 때 왕후의 축복을 나눕니다.",
-    normalSkill = "블레이즈 막대기 좌클릭: 바라보는 8블록 안의 아군과 8초간 서약합니다. 서로 8블록 이내에 있으면 둘 모두 저항 I을 얻으며 멀어지면 서약이 끝납니다.",
+    description = "아군 한 명과 수호의 서약을 맺고 함께 있을 때 왕후의 축복을 나눠요.",
+    normalSkill = "블레이즈 막대기 좌클릭: 바라보는 8블록 안의 아군과 8초간 서약해요. 서로 8블록 이내에 있으면 둘 모두 저항 I을 얻으며 멀어지면 서약이 끝나요.",
     normalStoneCost = 12, normalCooldownSeconds = 35,
-    advancedSkill = "블레이즈 막대기 우클릭: 유지 중인 서약을 소비해 두 사람의 체력을 4 회복하고 4초간 흡수 I을 부여합니다.",
+    advancedSkill = "블레이즈 막대기 우클릭: 유지 중인 서약을 소비해 두 사람의 체력을 4 회복하고 4초간 흡수 I을 줘요.",
     advancedStoneCost = 20, advancedCooldownSeconds = 70,
-    passiveSkill = "서약은 한 명과만 맺을 수 있으며 동료가 사망하거나 팀을 떠나도 종료됩니다.",
+    passiveSkill = "서약은 한 명과만 맺을 수 있으며 동료가 사망하거나 팀을 떠나도 종료돼요.",
     grade = AbilityGrade.B
 )
 final class HeraAbility extends TransientAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.GUARD)
         .dedicated()
+        .effect(EffectCue.HEAL, AbilityDesigns.OATH_KNOT)
         .build();
 
     @Override

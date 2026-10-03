@@ -200,6 +200,14 @@ double bonus = context.plugin()
 
 능력 쿨타임은 `AbilityManager`를 통해 우르프 배율이 적용됩니다. 직접 시간을 계산하는 능력도 `game.urf.enabled`와 `game.urf.cooldown-multiplier`의 영향을 받을지 결정해야 합니다. 내장 능력처럼 쿨타임을 노출하면 `/a` GUI와 스코어보드에서 남은 시간을 표시할 수 있습니다.
 
+## 행동별 디자인
+
+능력의 `AbilityStyle`에 `.effect(EffectCue.HEAL, design)`처럼 행동과 `DesignedEffect`를 연결할 수 있습니다. 실제 회복·적중·아이템 생성 시 발생하는 cue를 대체하며, 존재하지 않는 행동을 자동으로 추가하지 않습니다. `dedicated()` 능력에서도 직접 호출한 cue에 적용됩니다.
+
+`DesignedEffect`에는 설명과 `ObjectModel`을 전달합니다. 모델의 `phase`는 장면 시작 후 틱 수이며, 짧은 행동 디자인은 18틱 안에 등장·동작·소멸합니다. 모든 프레임의 조각 수·재질·item 여부를 고정해야 Display를 재사용할 수 있습니다. 내장 행동 디자인은 최대 24조각으로 제한합니다. 구버전에는 같은 모델에서 최대 64점의 윤곽을 추출합니다.
+
+표시는 `AbilityFeedback`을 통해 호출해 범위·은신·수명·정리를 적용하세요. 대상에게 붙는 효과는 `feedback.cue(context, target, cue)`를 사용합니다. 이미 제한된 관전자 목록을 넘긴 장면은 다음 프레임에서도 그 목록을 확대하지 않습니다. `animations: false`면 완성된 정지 형태를 표시하며, 능력 해제 때에는 `feedback.clear()`가 작업과 엔티티를 회수합니다.
+
 ## 등록 확인
 
 서버에서 다음 명령으로 등록 여부를 확인합니다.

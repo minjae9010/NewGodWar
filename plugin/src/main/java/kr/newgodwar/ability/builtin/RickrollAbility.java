@@ -15,19 +15,20 @@ import java.util.List;
 @AbilityInfo(
     id = "rickroll",
     name = "릭롤",
-    description = "예상 밖의 공연으로 적의 움직임과 시야를 흔듭니다.",
-    normalSkill = "블레이즈 막대기 좌클릭: 주변 적에게 혼란, 감속, 약화를 부여합니다.",
+    description = "예상 밖의 공연으로 적의 움직임과 시야를 흔들어요.",
+    normalSkill = "블레이즈 막대기 좌클릭: 반경 8블록 적에게 혼란, 감속, 약화를 줘요.",
     normalStoneCost = 14,
     normalCooldownSeconds = 60,
-    advancedSkill = "블레이즈 막대기 우클릭: 바라보는 적을 자신의 앞으로 끌어오고 실명시킵니다.",
+    advancedSkill = "블레이즈 막대기 우클릭: 22블록 안에서 바라보는 적을 자신의 앞으로 끌어오고 실명시켜요.",
     advancedStoneCost = 24,
     advancedCooldownSeconds = 115,
-    passiveSkill = "피격 시 가끔 공격자를 혼란시킵니다.",
+    passiveSkill = "공격받으면 가끔 공격자를 혼란시켜요.",
     grade = AbilityGrade.B
 )
 final class RickrollAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.MUSIC)
         .hit(EffectCue.MUSIC)
+        .effect(EffectCue.MUSIC, AbilityDesigns.RECORD)
         .build();
 
     @Override
