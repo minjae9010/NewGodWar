@@ -67,6 +67,8 @@ Wiki 배포 전 저장소 Settings > Features에서 Wiki 기능을 켜야 합니
 
 총 93개 능력을 지원합니다. 중력술사·메아리 검사·룬 세공사를 추가하고, 토르·아르테미스·헤르미온느를 전하 축적·표식 사냥·지원 주문 중심으로 개편했습니다. 각 능력의 범위와 발동 예고를 전용 입자 연출로 표시합니다.
 
+전용 리소스팩에서는 묠니르·궁니르·삼지창·단검·방패를 실제 두께가 있는 3D 모델로 표시하며 10개 연출에서 재사용합니다. 이펙트는 위치·모양·아이템이 바뀔 때만 갱신하고, 팩이 없는 플레이어와 구버전 서버의 대체 연출도 유지합니다.
+
 크로노스·오딘·헤파이토스·아테나·헤라·아누비스·여왕벌·니케·데메테르·판도 이름에 맞게 개편했습니다. 시간 되감기, 까마귀 정찰과 궁니르, 열기 담금질, 방어 후 반격, 아군 서약, 심판의 저울, 추적 벌떼, 승리의 월계관, 수확 영역, 이동하면 중단되는 피리 연주를 각각 사용합니다.
 
 ## 추가 조합법
@@ -140,7 +142,7 @@ Windows PowerShell에서는 다음처럼 실행할 수 있습니다.
 .\gradlew.bat clean build
 ```
 
-빌드 결과물은 `build/libs/NewGodWar-0.3.10.jar`에 복사되며, 모듈 산출물은 `plugin/build/libs/NewGodWar-0.3.10.jar`에서도 확인할 수 있습니다.
+빌드 결과물은 `build/libs/NewGodWar-0.3.11.jar`에 복사되며, 모듈 산출물은 `plugin/build/libs/NewGodWar-0.3.11.jar`에서도 확인할 수 있습니다.
 
 ## 라이선스
 
@@ -154,7 +156,7 @@ Copyright (c) 2026 minjae9010
 `build`는 배포 플러그인과 별도로 `plugin/build/core-regression/CoreRegressionProbe.jar`를 생성합니다. 이 파일은 테스트 전용이며 운영 서버에 설치하면 안 됩니다.
 
 ```powershell
-./scripts/Test-PaperMatrix.ps1 -SkipBuild -LatestVersion -PluginJar build/libs/NewGodWar-0.3.10.jar -ProbeJar plugin/build/core-regression/CoreRegressionProbe.jar -WorkDir .paper-smoke/core-regression
+./scripts/Test-PaperMatrix.ps1 -SkipBuild -LatestVersion -PluginJar build/libs/NewGodWar-0.3.11.jar -ProbeJar plugin/build/core-regression/CoreRegressionProbe.jar -WorkDir .paper-smoke/core-regression
 ```
 
 격리된 Paper 서버에서 비참가자·관전자 등의 심장 파괴 차단, 정상 파괴, 중복 위치, 동시 폭발의 일괄 탈락, 종료 후 이벤트 차단, 준비 인원 재검사와 타이머 정리를 검사합니다. 일반 게임과 능력 테스트에서 설치·저장한 상자가 종료 후 제거되고 다음 게임에 남지 않는지도 검사합니다. 릴리즈는 이 검사를 통과해야 게시됩니다.
@@ -164,7 +166,7 @@ Copyright (c) 2026 minjae9010
 `build`는 `plugin/build/command-regression/CommandRegressionProbe.jar`도 생성합니다. 테스트 전용으로 격리된 Paper 서버에서만 사용합니다.
 
 ```powershell
-./scripts/Test-PaperMatrix.ps1 -SkipBuild -LatestVersion -PluginJar build/libs/NewGodWar-0.3.10.jar -ProbeJar plugin/build/command-regression/CommandRegressionProbe.jar -ProbeSuccessMarker "COMMAND REGRESSION PASS" -WorkDir .paper-smoke/command-regression
+./scripts/Test-PaperMatrix.ps1 -SkipBuild -LatestVersion -PluginJar build/libs/NewGodWar-0.3.11.jar -ProbeJar plugin/build/command-regression/CommandRegressionProbe.jar -ProbeSuccessMarker "COMMAND REGRESSION PASS" -WorkDir .paper-smoke/command-regression
 ```
 
 단계형·한글·간편 명령의 권한, 자동완성, 실제 등록 상태와 쿨타임 초기화 범위를 확인합니다. 없는 대상·콘솔 대상 생략·추가 인수·능력 조회가 전체 초기화로 이어지지 않는지도 검사합니다.

@@ -44,6 +44,7 @@ final class ThorAbility extends TransientAbility {
     private long nextCharge;
     private boolean hammerDamage;
     private boolean hammerInFlight;
+    private static final double HAMMER_GRIP_DISTANCE = 0.65D;
 
     @Override
     public void onPrepare(AbilityPlayerContext context) {
@@ -64,28 +65,58 @@ final class ThorAbility extends TransientAbility {
         Player target = targetPlayerInSight(context, player, 20, false);
         if (target == null || !useNormal(context, player)) return;
         hammerInFlight = true;
-        Location origin = player.getEyeLocation();
         Location impact = target.getEyeLocation();
+        Location origin = hammerLaunchPoint(player.getEyeLocation(), impact);
+        final Location[] current = {origin.clone()};
+        hammer(context, current[0]);
         for (int i = 1; i <= 12; i++) {
             final int frame = i;
             scheduleLater(context, () -> {
                 if (frame == 12) hammerInFlight = false;
-                if (!active(context) || !player.getWorld().equals(impact.getWorld())) return;
-                hammer(context, frame <= 6 ? between(origin, impact, frame / 6.0D)
-                    : between(impact, player.getEyeLocation(), (frame - 6) / 6.0D));
+                if (!active(context) || !player.getWorld().equals(impact.getWorld())) {
+                    feedback.removeObject("hammer");
+                    return;
+                }
+                if (frame == 12) {
+                    feedback.removeObject("hammer");
+                    gainCharge(context);
+                    return;
+                }
+                // Keep the thrown pose on recall: the grip leads back into the hand,
+                // while the head remains in front of the caster instead of turning toward them.
+                current[0] = frame <= 6 ? hammerPoint(origin, impact, frame / 6.0D)
+                    : hammerReturnPoint(current[0], handPosition(player.getEyeLocation()), 1.0D / (12 - frame));
+                hammer(context, current[0]);
                 if (frame == 6 && validEnemy(context, target, 24) && player.hasLineOfSight(target)
                     && target.getEyeLocation().distanceSquared(impact) <= 2.25D) {
                     thunderbolt(context, impact);
                     hammerHit(context, target, 5);
                     if (validEnemy(context, target, 24)) effect(context, target, "SLOWNESS", "SLOW", 2, 0);
                 }
-                if (frame == 12) gainCharge(context);
             }, i * 2L);
         }
     }
 
-    private Location between(Location from, Location to, double fraction) {
-        return from.clone().add(to.toVector().subtract(from.toVector()).multiply(fraction));
+    static Location hammerPoint(Location from, Location to, double fraction) {
+        return projectilePoint(from, to, fraction);
+    }
+
+    static Location hammerLaunchPoint(Location eye, Location impact) {
+        Location origin = hammerPoint(handPosition(eye), impact, 0);
+        // At touching distance the head must not start beyond the target and fly backwards.
+        double offset = Math.min(HAMMER_GRIP_DISTANCE, origin.toVector().distance(impact.toVector()) * 0.5D);
+        return origin.add(origin.getDirection().multiply(offset));
+    }
+
+    static Location hammerReturnPoint(Location from, Location hand, double fraction) {
+        // The anchor is the metal head's centre. Offset it ahead of the hand so the
+        // trailing grip reaches the fingers without pulling the head into the caster.
+        Location catchPoint = hand.clone().add(from.getDirection().multiply(HAMMER_GRIP_DISTANCE));
+        return from.clone().add(catchPoint.toVector().subtract(from.toVector()).multiply(fraction));
+    }
+
+    static Location handPosition(Location eye) {
+        return rightHandPosition(eye);
     }
 
     @Override
@@ -156,13 +187,15 @@ final class ThorAbility extends TransientAbility {
 
     static final ObjectModel HAMMER = ObjectModel.animated((phase, detail) -> {
         List<ObjectModel.Part> out = new ArrayList<ObjectModel.Part>();
-        box(out, "IRON_BLOCK", 0, 0.12, 0, 0.78, 0.34, 0.34, 0, 0);
-        box(out, "POLISHED_ANDESITE", -0.43, 0.12, 0, 0.09, 0.28, 0.28, 0, 0);
-        box(out, "POLISHED_ANDESITE", 0.43, 0.12, 0, 0.09, 0.28, 0.28, 0, 0);
-        box(out, "DARK_OAK_PLANKS", 0, -0.4, 0, 0.11, 0.7, 0.11, 0, 0);
-        box(out, "GOLD_BLOCK", 0, -0.1, 0, 0.18, 0.09, 0.18, 0, 0);
-        box(out, "GOLD_BLOCK", 0, -0.76, 0, 0.18, 0.12, 0.18, 0, 0);
-        return rotate(out, Math.sin(phase * 0.6) * 0.4);
+        // The no-pack model and particle outline use the same head-first profile as the art mesh.
+        // The head is centred at the flight anchor, with its grip trailing behind along -Z.
+        box(out, "IRON_BLOCK", 0, 0, 0, 0.34, 0.78, 0.34, 0, 0);
+        box(out, "POLISHED_ANDESITE", 0, -0.43, 0, 0.28, 0.09, 0.28, 0, 0);
+        box(out, "POLISHED_ANDESITE", 0, 0.43, 0, 0.28, 0.09, 0.28, 0, 0);
+        box(out, "DARK_OAK_PLANKS", 0, 0, -0.52, 0.11, 0.11, 0.7, 0, 0);
+        box(out, "GOLD_BLOCK", 0, 0, -0.22, 0.18, 0.18, 0.09, 0, 0);
+        box(out, "GOLD_BLOCK", 0, 0, -0.88, 0.18, 0.18, 0.12, 0, 0);
+        return out;
     });
 
     /** A small hammer silhouette, used along Mjolnir's actual outbound/return path. */

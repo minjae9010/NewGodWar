@@ -273,7 +273,8 @@ final class AbilityChoreography {
 
     private static void trident(ArtModels.Frame f) {
         double thrust=f.in(2,6),recoil=f.in(9,16),z=.6+thrust*1.45-recoil*.6;
-        f.emblem(f.out(),-.48,1.05,z,.58,1.9,-.6+thrust*.35,0,-1.1,false);
+        // The native tip lies on model +Y; positive pitch tilts it along the forward (+Z) thrust.
+        f.emblem(f.out(),-.48,1.05,z,.58,1.9,-.6+thrust*.35,0,1.1,false);
         for(int i=0;i<3;i++) {
             double q=f.after(4+i,12+i);
             f.fx("wave",f.decay(4+i,3),-.48,1.0,1.6+q*1.5,.35+q*1.5,.35+q*1.5,0,0,0,false);

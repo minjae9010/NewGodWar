@@ -12,13 +12,22 @@ import java.util.*;
  * Each motion then adds the movement that names the skill: a sweeping blade, a tracer, chains
  * tightening, a beam from the sky. Persistent scenes loop instead and mark their real radius.
  *
- * Billboarded parts sit on the anchor's vertical axis (or in rings around it) because a billboard
- * also turns its translation toward the viewer. Directional parts stay fixed to the anchor's yaw.
+ * Billboard offsets follow the anchor; only their meshes turn toward each viewer.
+ * Directional parts stay fixed to the anchor's yaw.
  * Original geometry remains the no-pack fallback.
  */
 public final class ArtModels {
     private ArtModels() { }
     private static final Map<ObjectModel,ObjectModel> VARIANTS = new IdentityHashMap<ObjectModel,ObjectModel>();
+    private static final Properties SOLID_ART = solidArt();
+
+    private static Properties solidArt() {
+        Properties result = new Properties();
+        try (InputStream input = Objects.requireNonNull(ArtModels.class.getResourceAsStream("/solid-art.properties"))) {
+            result.load(input);
+        } catch (IOException error) { throw new IllegalStateException("Invalid solid artwork catalogue", error); }
+        return result;
+    }
     /** VfxPainter paints the ring's (and sigil's) outer core at radius 118 on a 256px canvas. */
     public static final double BOUNDARY_TEXTURE_RADIUS = 118.0 / 256.0;
     /** The scene's display budget; ObjectEffects still enforces its session and server limits. */
@@ -29,6 +38,8 @@ public final class ArtModels {
      * A display's local +x is the anchor's left side, verified from behind in the 26.3 client.
      */
     private static final double HAND = -.42;
+    /** SolidArtwork's spear tip is model Y=15.3; the collision anchor denotes its tip, not its centre. */
+    private static final double SPEAR_TIP_OFFSET = (15.3-8)/16*1.6;
     private static boolean initialized;
 
     public static synchronized ObjectModel variant(ObjectModel source) {
@@ -74,7 +85,7 @@ public final class ArtModels {
         case "phalanx":
             for(int i=-2;i<=2;i++) {
                 double angle=i*Math.PI/5;
-                f.emblem(1,Math.sin(angle)*4.5,1.15,Math.cos(angle)*4.5,1.5,2.1,0,-angle,0,false);
+                f.emblem(1,Math.sin(angle)*4.5,1.15,Math.cos(angle)*4.5,1.5,2.1,0,f.shieldTurn(angle),0,false);
                 f.fx("wave",.55+.35*Math.sin(t*.12+i),Math.sin(angle)*4.5,1.15,Math.cos(angle)*4.5-.05,2.6,2.6,0,-angle,0,false);
             }
             f.boundary(4.5,t*.01,.8);
@@ -132,12 +143,19 @@ public final class ArtModels {
             f.converge(9,r,.2,.95,t*1.4,"shard",.3);
             break;
         }
-        case "projectile":
-            f.emblem(1,0,0,0,1.0,1.6,t*.32,0,Math.PI/2,false);
-            f.emblem(1,0,0,0,1.0,1.6,t*.32,Math.PI/2,0,false);
+        case "projectile": {
+            // A native mesh has real side faces; one item replaces the two crossed sprites.
+            boolean hammer=f.key.equals("thor/hammer"),spear=f.key.equals("shared/spear");
+            // Mjolnir flies head-first: its grip trails along -Z and the head's long axis is vertical.
+            // Rx(PI/2) aligns the handle with flight; Rz(PI/2) turns the head into the side-on hammer profile.
+            double roll=hammer?Math.PI/2:spear?0:t*.32;
+            double offset=hammer?-(12.4-8)/16:spear?-SPEAR_TIP_OFFSET:0;
+            f.emblem(1,0,0,offset,1.0,hammer?1.0:1.6,roll,0,Math.PI/2,false);
+            if(!f.solid)f.emblem(1,0,0,0,1.0,1.6,t*.32,Math.PI/2,0,false);
             f.fx("flash",.55+.25*Math.sin(t*.7),0,0,0,1.7,1.7,0,0,0,true);
             for(int i=0;i<3;i++)f.fx("spark",.8-i*.22,0,0,-.45-i*.35,.55-i*.12,.55-i*.12,t*.2+i,0,0,true);
             break;
+        }
         case "flock": {
             boolean bees=f.key.endsWith("bees");int count=bees?3:2;
             for(int i=0;i<count;i++) {
@@ -181,7 +199,7 @@ public final class ArtModels {
             // the barrier is a waist-level ring around the whole body.
             for(int i=0;i<3;i++) {
                 double angle=i==0?1.15:i==1?-1.15:Math.PI,r=.8+(1-f.in(0,4))*.9;
-                f.emblem(f.out(),Math.sin(angle)*r,1.0,Math.cos(angle)*r,.8*f.pop(),1.3*f.pop(),0,-angle,0,false);
+                f.emblem(f.out(),Math.sin(angle)*r,1.0,Math.cos(angle)*r,.8*f.pop(),1.3*f.pop(),0,f.shieldTurn(angle),0,false);
             }
             f.fx("wave",f.decay(4,4),0,.95,0,1.2+2.4*f.after(4,8),1.2+2.4*f.after(4,8),0,0,Math.PI/2,false);
             f.cast(1.7,false,true);f.hero(HEAD,1.0,0);f.rise(5,.75,.2,1.9,t,"spark",.3);
@@ -190,7 +208,7 @@ public final class ArtModels {
         case "wall":
             for(int i=0;i<5;i++) {
                 double angle=(i-2)*.5,drop=1-f.in(i*.6,3+i*.6);
-                f.emblem(f.out(),Math.sin(angle)*1.35,.6+drop*1.8,Math.cos(angle)*1.35,.7,1.05,0,-angle,0,false);
+                f.emblem(f.out(),Math.sin(angle)*1.35,.6+drop*1.8,Math.cos(angle)*1.35,.7,1.05,0,f.shieldTurn(angle),0,false);
             }
             f.fx("wave",f.decay(4,4),0,.7,0,1.6+2.6*f.after(4,9),1.6+2.6*f.after(4,9),0,0,Math.PI/2,false);
             f.wave(5.0);f.flash(HEAD,3.25);f.burst(4,1.2,"shard",.34);
@@ -443,7 +461,7 @@ public final class ArtModels {
             f.boundary(r,t*.02,1);
             for(int i=0;i<6;i++) {
                 double a=i*Math.PI/3+.2;
-                f.emblem(.85,Math.sin(a)*r,1.0,Math.cos(a)*r,.9,1.2,0,-a,0,false);
+                f.emblem(.85,Math.sin(a)*r,1.0,Math.cos(a)*r,.9,1.2,0,f.shieldTurn(a),0,false);
             }
             f.fx("flash",.35+.15*Math.sin(t*.25),0,r*.8+.6,0,r*1.2,r*.6,0,0,0,true);
             f.pulse(r,t,24);
@@ -566,7 +584,8 @@ public final class ArtModels {
         }
         case "hook": {
             double pull=f.in(4,10);
-            f.weapon(.6,1.2,3.4-pull*2.3-(1-f.in(0,4))*.8,Math.sin(t*.5)*.2,1.15);
+            // Throw and retract the hook along Z; travel distance must never become the weapon's scale.
+            f.weapon(3.4-pull*2.3-(1-f.in(0,4))*.8,1.2,.6,Math.sin(t*.5)*.2,1.15);
             f.tracer(1.2,3.4-pull*2.3,f.out()*.8);
             f.fx("wave",f.decay(3,5),0,.1,3.4,1+2.5*f.after(3,10),1+2.5*f.after(3,10),0,0,Math.PI/2,false);
             f.burst(6,1.0,"shard",.3);f.frontFlash(1.2,3.4-pull*2.3,1.6);
@@ -708,9 +727,11 @@ public final class ArtModels {
         final List<ObjectModel.Part> parts=new ArrayList<ObjectModel.Part>();
         final String key,palette;
         final double t;
-        final boolean shortAction,still;
+        final boolean shortAction,still,solid,solidShield;
         Frame(String key,String palette,double phase,boolean shortAction,boolean still) {
             this.key=key;this.palette=palette;this.shortAction=shortAction;this.still=still;
+            solid=SOLID_ART.containsKey(key);
+            solidShield="shield".equals(SOLID_ART.getProperty(key));
             t=Math.max(0,phase);
         }
 
@@ -727,6 +748,9 @@ public final class ArtModels {
             if(!shortAction)return 1;
             return t<4?.25+.9*ease(t/4):1.15-.15*ease(clamp((t-4)/4));
         }
+
+        /** Model -Z becomes display +Z after ItemDisplayRenderer's Y=180-degree rotation. */
+        double shieldTurn(double angle) {return solidShield?angle:-angle;}
 
         // ---- primitives
         void emblem(double alpha,double x,double y,double z,double sx,double sy,double roll,double turn,double pitch,boolean billboard) {
@@ -756,7 +780,9 @@ public final class ArtModels {
             boolean hidden=a<.04;
             int fade=a>.8?3:a>.5?2:a>.22?1:0;
             double size=hidden?.01:1;
-            parts.add(new ObjectModel.Part("PAPER",true,x,y,z,Math.max(.01,sx*size),Math.max(.01,sy*size),1,roll,turn,pitch,
+            // Solid glyphs scale in depth too, including when a faded part collapses out of sight.
+            double depth=solid&&texture.equals("art/"+key+"/glyph")?Math.max(.01,Math.min(sx,sy)*size):1;
+            parts.add(new ObjectModel.Part("PAPER",true,x,y,z,Math.max(.01,sx*size),Math.max(.01,sy*size),depth,roll,turn,pitch,
                 texture+fade,billboard));
         }
 
@@ -764,7 +790,7 @@ public final class ArtModels {
         /** The skill's emblem pops above the head, readable from every side. */
         void hero(double y,double size,double roll) {
             double s=size*pop();
-            // A billboard's local +z faces the viewer: keep the emblem just in front of its own flash.
+            // A small anchor-local offset separates the emblem from the flash plane.
             double lift=shortAction?in(10,18)*.35:0;
             if(shortAction&&!still&&t<4) {
                 // During the charge a pen of light traces the emblem's strokes; the finished emblem pops on impact.
@@ -773,11 +799,11 @@ public final class ArtModels {
             }
             emblem(out(),0,y+lift,.08,s,s,roll,0,0,true);
         }
-        /** A weapon-shaped emblem held in front of the body, with a profile face for side viewers. */
+        /** A held weapon; flat artwork needs a profile face while native meshes need just one item. */
         void weapon(double z,double y,double size,double roll,double height) {
             double s=size*pop();
             emblem(out(),HAND,y,z,s,s*height,roll,0,0,false);
-            emblem(out(),HAND,y,z,s,s*height,roll,Math.PI/2,0,false);
+            if(!solid)emblem(out(),HAND,y,z,s,s*height,roll,Math.PI/2,0,false);
         }
         /** A small personal casting circle; never larger than the body's own footprint area. */
         void cast(double diameter,boolean fast,boolean reverse) {

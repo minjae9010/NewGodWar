@@ -108,7 +108,7 @@ final class DisplayBridge {
                     }
                     block.invoke(entity, data);
                 }
-                transform(entity, part);
+                transform(entity, part, null);
             } catch (ReflectiveOperationException ex) { throw new IllegalStateException("Cannot initialize cosmetic display", ex); }
         };
         Entity entity = (Entity) spawn.invoke(location.getWorld(), location, part.item ? itemDisplay : blockDisplay, initializer);
@@ -116,10 +116,13 @@ final class DisplayBridge {
         return entity;
     }
 
-    void transform(Entity entity, ObjectModel.Part p) throws ReflectiveOperationException {
-        if (p.art != null) item.invoke(entity, stack(p).clone());
+    void transform(Entity entity, ObjectModel.Part p, ObjectModel.Part previous) throws ReflectiveOperationException {
+        // spawn() already installed the initial stack. Only texture/model changes need another copy.
+        if (previous != null && p.item && !ObjectFrame.sameItem(previous, p)) item.invoke(entity, stack(p).clone());
+        if (ObjectFrame.sameTransform(previous, p)) return;
         Object value = matrix.newInstance();
-        translate.invoke(value, (float) p.x, (float) p.y, (float) p.z);
+        // Billboard offsets already live in the entity position, outside its camera-facing rotation.
+        if (!p.item || !p.billboard) translate.invoke(value, (float) p.x, (float) p.y, (float) p.z);
         rotateZ.invoke(value, (float) p.roll); rotateY.invoke(value, (float) p.turn);
         rotateX.invoke(value, (float) p.pitch);
         scale.invoke(value, (float) p.sx, (float) p.sy, (float) p.sz);

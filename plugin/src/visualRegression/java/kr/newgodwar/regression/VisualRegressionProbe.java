@@ -28,6 +28,8 @@ public final class VisualRegressionProbe extends JavaPlugin {
     private final IdentityHashMap<Object, String> modelNames = new IdentityHashMap<Object, String>();
     private AbilityFeedback feedback;
     private int outlineTask = -1;
+    private int traceTask = -1;
+    private final List<Object> motionTrace = new ArrayList<Object>();
     private long sequence;
     private Player target;
     private String current;
@@ -66,6 +68,12 @@ public final class VisualRegressionProbe extends JavaPlugin {
                 case "catalog": result.put("catalog", catalog()); break;
                 case "prepare": prepare(player, args[1], args.length > 2 ? args[2] : "enemy"); result.putAll(state(player)); break;
                 case "state": result.putAll(state(player)); break;
+                case "trace": trace(player); result.putAll(state(player)); break;
+                case "boundary": boundary(player); result.putAll(state(player)); break;
+                case "settings":
+                    if (!Arrays.asList("objects", "animations").contains(args[1])) throw new IllegalArgumentException("Unsupported visual setting");
+                    core.getConfig().set("abilities.effects." + args[1], Boolean.parseBoolean(args[2]));
+                    result.putAll(state(player)); break;
                 case "pack": core.effectArtPack().offer(player); result.putAll(state(player)); break;
                 case "cue": cue(player, args[1], args[2], args[3]); result.putAll(state(player)); break;
                 case "model": model(player, args[1], args[2]); result.putAll(state(player)); break;
@@ -128,6 +136,8 @@ public final class VisualRegressionProbe extends JavaPlugin {
     }
 
     private void clear() {
+        if (traceTask >= 0) getServer().getScheduler().cancelTask(traceTask);
+        traceTask = -1; motionTrace.clear();
         if (outlineTask >= 0) getServer().getScheduler().cancelTask(outlineTask);
         outlineTask = -1;
         if (feedback != null) feedback.clear();
@@ -136,6 +146,8 @@ public final class VisualRegressionProbe extends JavaPlugin {
 
     private void prepare(Player player, String id, String role) throws Exception {
         clear(); core.game().stop(false);
+        core.getConfig().set("abilities.effects.objects", true);
+        core.getConfig().set("abilities.effects.animations", true);
         if (player.isDead()) player.spigot().respawn();
         World world = player.getWorld();
         for (Entity entity : new ArrayList<Entity>(world.getEntities())) if (!(entity instanceof Player)) entity.remove();
@@ -366,14 +378,66 @@ public final class VisualRegressionProbe extends JavaPlugin {
         throw new IllegalStateException("Death event constructor missing");
     }
 
+    private void boundary(Player player) {
+        clear(); feedback = new AbilityFeedback();
+        AbilityPlayerContext context = new AbilityPlayerContext(core, player, core.abilities().get(player));
+        Location anchor = player.getLocation();
+        int remoteX = anchor.getBlockX() + 1000000;
+        require(!anchor.getWorld().isChunkLoaded(remoteX >> 4, anchor.getBlockZ() >> 4), "Fixture chunk already loaded");
+        final boolean[] outside = {true};
+        ObjectModel model = (phase, detail) -> Arrays.asList(
+            new ObjectModel.Part("PAPER", true, 0, 1, 0, .2, .2, .2, 0, 0, 0, null, true),
+            new ObjectModel.Part("PAPER", true, outside[0] ? 1000000 : 0, 1, 0, .2, .2, .2, 0, 0, 0, null, true));
+        require(!feedback.object(context, "boundary", model, anchor, 10, 1), "Unloaded offset unexpectedly spawned");
+        outside[0] = false;
+        require(feedback.object(context, "boundary", model, anchor, 10, 1), "Initial culling poisoned renderer");
+        outside[0] = true;
+        require(!feedback.object(context, "boundary", model, anchor, 10, 2), "Updated offset unexpectedly rendered");
+        outside[0] = false;
+        require(feedback.object(context, "boundary", model, anchor, 10, 1), "Update culling poisoned renderer");
+        feedback.clear();
+        require(!anchor.getWorld().isChunkLoaded(remoteX >> 4, anchor.getBlockZ() >> 4), "Cosmetic model loaded a remote chunk");
+    }
+
+    /** Timed server poses complement original client frames; never used by the production plugin. */
+    private void trace(Player player) {
+        if (traceTask >= 0) getServer().getScheduler().cancelTask(traceTask);
+        motionTrace.clear();
+        final int[] tick = {0};
+        traceTask = getServer().getScheduler().scheduleSyncRepeatingTask(this, () -> {
+            List<Object> entities = new ArrayList<Object>();
+            for (Entity entity : player.getWorld().getEntities()) {
+                if (!entity.getType().name().endsWith("DISPLAY") || !entity.getScoreboardTags().contains("newgodwar_cosmetic")) continue;
+                Location at = entity.getLocation();
+                String billboard;
+                String art = null;
+                try { billboard = String.valueOf(entity.getClass().getMethod("getBillboard").invoke(entity)); }
+                catch (ReflectiveOperationException error) { throw new IllegalStateException(error); }
+                if (entity.getType().name().equals("ITEM_DISPLAY")) try {
+                    ItemStack item = (ItemStack)entity.getClass().getMethod("getItemStack").invoke(entity);
+                    Object key = org.bukkit.inventory.meta.ItemMeta.class.getMethod("getItemModel").invoke(item.getItemMeta());
+                    if (key != null) art = key.toString();
+                } catch (NoSuchMethodException ignored) {
+                    // Older visual fixtures can still record the entity pose without a modern model key.
+                } catch (ReflectiveOperationException error) { throw new IllegalStateException(error); }
+                entities.add(map("entity", entity.getEntityId(), "billboard", billboard,
+                    "art", art, "x", at.getX(), "y", at.getY(), "z", at.getZ(), "yaw", at.getYaw(), "pitch", at.getPitch()));
+            }
+            motionTrace.add(map("tick", tick[0], "entities", entities));
+            if (++tick[0] >= 50) { getServer().getScheduler().cancelTask(traceTask); traceTask = -1; }
+        }, 1L, 1L);
+    }
+
     private Map<String,Object> state(Player player) {
         int stones=0; for(ItemStack item:player.getInventory().getContents()) if(item!=null&&item.getType()==Material.COBBLESTONE) stones+=item.getAmount();
         GodAbility ability=core.abilities().session(player)==null?null:core.abilities().session(player).ability();
         int displays=0;for(Entity entity:player.getWorld().getEntities()) if(entity.getType().name().endsWith("DISPLAY")) displays++;
         return map("artPackLoaded",core.effectArtPack().ready(player),"ability",current,"stones",stones,"health",player.getHealth(),"dead",player.isDead(),"displays",displays,
+            "motionTrace", motionTrace,
             "normalCooldown",ability==null?0:ability.cooldownRemainingMillis(1),"advancedCooldown",ability==null?0:ability.cooldownRemainingMillis(2),
             "x",player.getLocation().getX(),"y",player.getLocation().getY(),"z",player.getLocation().getZ(),"target",target==null?null:target.getName(),
-            "targetHealth",target==null?null:target.getHealth(),"targetY",target==null?null:target.getLocation().getY());
+            "targetHealth",target==null?null:target.getHealth(),"targetY",target==null?null:target.getLocation().getY(),
+            "targetX",target==null?null:target.getLocation().getX(),"targetZ",target==null?null:target.getLocation().getZ());
     }
 
     private static Map<String,Object> map(Object... pairs) {

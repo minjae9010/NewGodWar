@@ -41,9 +41,7 @@ final class NikeAbility extends TransientAbility {
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
         if (!useNormal(context, player)) return;
-        Vector direction = player.getLocation().getDirection().setY(0);
-        if (direction.lengthSquared() < 0.01D) direction.setZ(1);
-        player.setVelocity(direction.normalize().multiply(1.1D).setY(0.35D));
+        player.setVelocity(horizontalDirection(player.getLocation()).multiply(1.1D).setY(0.35D));
         wingGuard = true;
         cancelScheduledTask(wingTask);
         wingTask = scheduleLater(context, () -> { wingGuard = false; wingTask = -1; }, 120);

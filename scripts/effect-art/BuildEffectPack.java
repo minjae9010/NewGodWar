@@ -270,6 +270,7 @@ public class BuildEffectPack {
         List<String[]> rows=new ArrayList<>();
         for(String row:profiles)if(!row.startsWith("#")&&!row.isBlank())rows.add(row.split("\\|"));
         Set<String> families=new TreeSet<>();for(String[] p:rows)families.add(p[4]);
+        SolidArtwork solids=new SolidArtwork(repo);
         int columns=8,cell=160,sheetRows=(rows.size()+columns-1)/columns+families.size();
         BufferedImage sheet=new BufferedImage(columns*cell,sheetRows*cell,BufferedImage.TYPE_INT_RGB);Graphics2D g=sheet.createGraphics();
         g.setColor(new Color(15,20,32));g.fillRect(0,0,sheet.getWidth(),sheet.getHeight());g.setFont(new Font("SansSerif",Font.PLAIN,10));
@@ -280,7 +281,7 @@ public class BuildEffectPack {
             ink.clear();glyph(p[1]);
             BufferedImage emblem=p[1].equals("wingfeather")?FeatherArtwork.paint(p[4].equals("fire"))
                 :VfxPainter.emblem(new ArrayList<>(ink),color,VfxPainter.FAMILIES.get(p[4]),p[1].equals("rainbow"));
-            sprite(root,"art/"+key+"/glyph",emblem);
+            if(!solids.write(root,key,color,p[4]))sprite(root,"art/"+key+"/glyph",emblem);
             List<BufferedImage> traced=new ArrayList<>();
             for(int i=0;i<VfxAnimator.TRACE;i++)traced.add(VfxAnimator.trace(new ArrayList<>(ink),VfxPainter.FAMILIES.get(p[4]),.4+.4*i));
             frames(root,"art/"+key+"/draw",traced);
@@ -305,6 +306,7 @@ public class BuildEffectPack {
             row++;
         }
         g.dispose();ImageIO.write(sheet,"png",repo.resolve("build/effect-pack/contact-sheet.png").toFile());
+        solids.preview(repo.resolve("build/effect-pack/solid-models.png"));
         // Animated layers, plus a frame-by-frame preview sheet (one row per palette and animation).
         BufferedImage frameSheet=new BufferedImage(LOOP_COLUMNS*96,families.size()*5*104,BufferedImage.TYPE_INT_RGB);Graphics2D a=frameSheet.createGraphics();
         a.setColor(new Color(15,20,32));a.fillRect(0,0,frameSheet.getWidth(),frameSheet.getHeight());a.setFont(new Font("SansSerif",Font.PLAIN,10));

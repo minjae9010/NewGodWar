@@ -8,13 +8,14 @@
 
 | Minecraft | ZIP | SHA-1 |
 | --- | --- | --- |
-| 1.14 – 26.3 | [NewGodWar-Art-d36217f4.zip](https://raw.githubusercontent.com/minjae9010/NewGodWar/master/resoucepack/NewGodWar-Art-d36217f4.zip) | `d36217f436eeaaeb6b1bd51a3ff3b4a4c830e96b` |
+| 1.14 – 26.3 | [NewGodWar-Art-b2d524b9.zip](https://raw.githubusercontent.com/minjae9010/NewGodWar/master/resoucepack/NewGodWar-Art-b2d524b9.zip) | `b2d524b99e694910f993b7633033aa7d230696d9` |
 
 플러그인은 `abilities.effects.resource-pack.url: auto`에서 이 파일명과 SHA-1을 자동으로 사용합니다. [버전별 주소·SHA-1 목록](manifest.tsv)도 같은 파일을 가리킵니다.
 
 - 텍스처는 모든 버전의 기본 아이템 아틀라스가 읽는 `textures/item/` 아래에 있어 버전별 아틀라스 파일이 필요 없습니다.
 - 구형 `custom_model_data` 오버라이드(1.14–1.21.3)와 새 아이템 모델 정의(1.21.4+)가 함께 들어 있고, 각 클라이언트는 이해하지 못하는 쪽을 무시합니다.
 - `pack.mcmeta`는 `pack_format`·`supported_formats`·`min_format`/`max_format`으로 형식 4–97 전체를 선언합니다.
+- 묠니르·궁니르·삼지창·단검·방패의 입체 모델을 10개 능력 연출에서 사용합니다. 기존 모델 ID는 유지하며 사용하지 않는 평면 이미지 40개를 제거했습니다.
 
 ## 이전 팩
 

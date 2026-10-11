@@ -5,6 +5,7 @@ import kr.newgodwar.ability.feedback.AbilityStyle;
 import kr.newgodwar.ability.feedback.AbilityTheme;
 
 import org.bukkit.entity.Player;
+import org.bukkit.Location;
 import org.bukkit.event.player.PlayerInteractEvent;
 
 import java.util.List;
@@ -57,12 +58,40 @@ final class OdinAbility extends TransientAbility {
         spearPending = true;
         feedback.affected(context, target, "궁니르가 날아옵니다 · 엄폐하세요", true, true);
         feedback.sigil(context, target.getLocation(), 1);
+        Location launch = spearLaunchPoint(player.getEyeLocation(), target.getEyeLocation());
+        // Start with the shaft ahead of the hand; the anchor denotes the spear's tip.
+        final Location[] tip = {launch};
+        feedback.spearFlightFrame(context, tip[0]);
+        for (int i = 1; i < 6; i++) {
+            final int frame = i;
+            scheduleLater(context, () -> {
+                if (!validEnemy(context, target, 24)) {
+                    feedback.removeObject("spear");
+                    return;
+                }
+                tip[0] = spearPoint(tip[0], target.getEyeLocation(), 1.0D / (7 - frame));
+                feedback.spearFlightFrame(context, tip[0]);
+            }, i * 2L);
+        }
         scheduleLater(context, () -> {
             spearPending = false;
-            if (!validEnemy(context, target, 24) || !player.hasLineOfSight(target)) return;
-            feedback.spear(context, player.getEyeLocation(), target.getEyeLocation());
+            if (!validEnemy(context, target, 24) || !player.hasLineOfSight(target)) {
+                feedback.removeObject("spear");
+                return;
+            }
+            feedback.spear(context, tip[0], target.getEyeLocation());
             damage(context, target, 7, player);
         }, 12);
+    }
+
+    static Location spearPoint(Location from, Location target, double fraction) {
+        return projectilePoint(from, target, fraction);
+    }
+
+    static Location spearLaunchPoint(Location eye, Location target) {
+        Location launch = spearPoint(rightHandPosition(eye), target, 0);
+        double offset = Math.min(1.6D, launch.toVector().distance(target.toVector()) * 0.5D);
+        return launch.add(launch.getDirection().multiply(offset));
     }
 
     private void stopScout() {

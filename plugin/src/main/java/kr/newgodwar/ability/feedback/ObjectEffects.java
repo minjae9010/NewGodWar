@@ -67,19 +67,27 @@ public final class ObjectEffects {
         int ttl = Math.max(2, Math.min(40, lifetime));
         if (previous != null) {
             previous.anchor = anchor; previous.audience = audience; previous.detail = detail; previous.expires = tick + ttl;
-            try { render(previous); return true; }
+            try { render(previous, location, viewers); return true; }
+            catch (SceneOutsideLoadedChunks ex) { removeSingle(key); return false; }
             catch (ReflectiveOperationException | RuntimeException | LinkageError ex) { fail(); return false; }
         }
-        List<ObjectModel.Part> parts = model.parts(0, detail);
+        ObjectFrame frame = new ObjectFrame(model);
+        List<ObjectModel.Part> parts = frame.sample(context.plugin().getConfig().getBoolean("abilities.effects.animations", true) ? 0 : 8, detail);
         int limit = Math.max(0, Math.min(96, context.plugin().getConfig().getInt("abilities.effects.object-limit", 48)));
         if (ownedParts + parts.size() > limit || totalParts + parts.size() > GLOBAL_LIMIT) return false;
-        Scene scene = new Scene(context, model, anchor, audience, location, tick, tick + ttl, detail);
+        Scene scene = new Scene(context, model, frame, anchor, audience, location, tick, tick + ttl, detail);
         try {
-            for (ObjectModel.Part part : parts) DisplayBridge.INSTANCE.spawn(context.plugin(), location, part, scene.entities);
+            for (ObjectModel.Part part : parts)
+                DisplayBridge.INSTANCE.spawn(context.plugin(), displayLocation(location, part), part, scene.entities);
+            scene.renderedParts = parts; scene.renderedLocation = location.clone();
             scenes.put(key, scene); ownedParts += scene.entities.size(); totalParts += scene.entities.size(); ACTIVE.add(this);
-            render(scene);
+            render(scene, location, viewers);
             if (task < 0) task = Bukkit.getScheduler().scheduleSyncRepeatingTask(context.plugin(), this::update, 2L, 2L);
             return true;
+        } catch (SceneOutsideLoadedChunks ex) {
+            if (scenes.containsKey(key)) removeSingle(key);
+            else for (Entity entity : scene.entities) entity.remove();
+            return false;
         } catch (ReflectiveOperationException | RuntimeException | LinkageError ex) {
             if (!scenes.containsKey(key)) for (Entity entity : scene.entities) entity.remove();
             fail(); return false;
@@ -90,38 +98,48 @@ public final class ObjectEffects {
         tick += 2;
         for (String key : new ArrayList<String>(scenes.keySet())) {
             Scene scene = scenes.get(key);
+            // Removing a base scene also removes its pack variant from this key snapshot.
+            if (scene == null) continue;
             Player owner = scene.context.player(); Location location = scene.anchor.get();
             if (tick >= scene.expires || !enabled(scene.context) || !owner.isOnline() || owner.isDead()
                 || !scene.ownerWorld.equals(owner.getWorld()) || !validLocation(location) || !scene.world.equals(location.getWorld())) {
                 remove(key); continue;
             }
-            try { render(scene); }
+            try { render(scene, location, scene.audience.get()); }
+            catch (SceneOutsideLoadedChunks ex) { remove(key); }
             catch (ReflectiveOperationException | RuntimeException | LinkageError ex) { fail(); return; }
         }
         stopIfEmpty();
     }
 
-    private void render(Scene scene) throws ReflectiveOperationException {
-        Location location = scene.anchor.get();
+    private void render(Scene scene, Location location, List<Player> viewers) throws ReflectiveOperationException {
         if (!validLocation(location) || !scene.world.equals(location.getWorld())) throw new IllegalStateException("Scene anchor left its world");
         double phase = scene.context.plugin().getConfig().getBoolean("abilities.effects.animations", true)
             ? tick - scene.started : 8;
-        List<ObjectModel.Part> parts = scene.model.parts(phase, scene.detail);
-        Set<Player> audience = new LinkedHashSet<Player>(scene.audience.get());
+        List<ObjectModel.Part> parts = scene.frame.sample(phase, scene.detail);
+        if (parts.size() != scene.entities.size()) throw new IllegalStateException("Cosmetic model changed its part count");
+        Set<Player> audience = new LinkedHashSet<Player>(viewers);
         audience.removeIf(player -> !player.isOnline() || !scene.world.equals(player.getWorld())
             || player.getLocation().distanceSquared(location) > 32 * 32);
-        for (Entity entity : scene.entities) {
+        boolean moved = !location.equals(scene.renderedLocation);
+        for (int i = 0; i < scene.entities.size(); i++) {
+            Entity entity = scene.entities.get(i);
+            ObjectModel.Part part = parts.get(i);
             for (Player viewer : scene.viewers) if (!audience.contains(viewer) && viewer.isOnline())
                 DisplayBridge.INSTANCE.visibility(scene.context.plugin(), viewer, entity, false);
-            if (!entity.isValid() || !entity.teleport(location)) throw new IllegalStateException("Cosmetic display disappeared");
+            boolean offsetMoved = part.item && part.billboard && !ObjectFrame.sameOffset(scene.renderedParts.get(i), part);
+            if (!entity.isValid() || ((moved || offsetMoved) && !entity.teleport(displayLocation(location, part))))
+                throw new IllegalStateException("Cosmetic display disappeared");
         }
         for (int i = 0; i < scene.entities.size(); i++) {
             Entity entity = scene.entities.get(i);
-            DisplayBridge.INSTANCE.transform(entity, parts.get(i));
+            DisplayBridge.INSTANCE.transform(entity, parts.get(i), scene.renderedParts.get(i));
             for (Player viewer : audience) if (!scene.viewers.contains(viewer))
                 DisplayBridge.INSTANCE.visibility(scene.context.plugin(), viewer, entity, true);
         }
         scene.viewers = audience;
+        scene.renderedParts = parts;
+        if (moved) scene.renderedLocation = location.clone();
     }
 
     private static boolean validLocation(Location location) {
@@ -129,6 +147,15 @@ public final class ObjectEffects {
             && Double.isFinite(location.getY()) && Double.isFinite(location.getZ())
             && location.getWorld().isChunkLoaded(location.getBlockX() >> 4, location.getBlockZ() >> 4);
     }
+
+    private static Location displayLocation(Location anchor, ObjectModel.Part part) {
+        Location location = ObjectFrame.displayLocation(anchor, part);
+        if (!validLocation(location)) throw new SceneOutsideLoadedChunks();
+        return location;
+    }
+
+    /** Leaving rendered terrain is temporary culling, not a broken Display API. */
+    private static final class SceneOutsideLoadedChunks extends RuntimeException { }
 
     public void remove(String key) {
         removeSingle(key); removeSingle(key + ":art");
@@ -162,17 +189,20 @@ public final class ObjectEffects {
     private static final class Scene {
         final AbilityPlayerContext context;
         final ObjectModel model;
+        final ObjectFrame frame;
         final World world, ownerWorld;
         final List<Entity> entities = new ArrayList<Entity>();
         Set<Player> viewers = new LinkedHashSet<Player>();
+        List<ObjectModel.Part> renderedParts;
+        Location renderedLocation;
         Supplier<Location> anchor;
         Supplier<List<Player>> audience;
         final int started;
         int expires;
         double detail;
-        Scene(AbilityPlayerContext context, ObjectModel model, Supplier<Location> anchor, Supplier<List<Player>> audience,
+        Scene(AbilityPlayerContext context, ObjectModel model, ObjectFrame frame, Supplier<Location> anchor, Supplier<List<Player>> audience,
               Location location, int started, int expires, double detail) {
-            this.context = context; this.model = model; this.anchor = anchor; this.audience = audience;
+            this.context = context; this.model = model; this.frame = frame; this.anchor = anchor; this.audience = audience;
             this.world = location.getWorld(); this.ownerWorld = context.player().getWorld(); this.started = started;
             this.expires = expires; this.detail = detail;
         }

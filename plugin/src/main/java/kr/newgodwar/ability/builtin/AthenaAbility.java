@@ -70,9 +70,7 @@ final class AthenaAbility extends TransientAbility {
         if (formation || !useAdvanced(context, player)) return;
         formation = true;
         Location center = player.getLocation();
-        Vector facing = center.getDirection().setY(0);
-        if (facing.lengthSquared() < 0.01D) facing.setZ(1);
-        facing.normalize();
+        Vector facing = horizontalDirection(center);
         for (int i = 0; i < 6; i++) scheduleLater(context, () -> {
             if (!active(context) || !player.getWorld().equals(center.getWorld())) return;
             phalanx(context, center, facing);

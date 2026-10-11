@@ -23,7 +23,7 @@ public final class AbilityDesigns {
     public static final DesignedEffect AKASHIC_BOOK = book("펼쳐지는 기록서와 상승하는 책갈피", "ENCHANTED_BOOK", "PURPLE_CONCRETE", false);
     public static final DesignedEffect AKASHIC_CURSE = book("기록서의 세 글자가 바깥으로 흩어짐", "ENCHANTED_BOOK", "PURPLE_CONCRETE", true);
     public static final DesignedEffect SUN_MIRROR = sun("태양 거울의 팔각 테두리가 열림", 8, true);
-    public static final DesignedEffect SOLAR_ARROW = bow("불타는 태양 활이 화살을 놓음", false, false, "ORANGE_CONCRETE");
+    public static final DesignedEffect SOLAR_ARROW = solarArrow();
     public static final DesignedEffect SOLAR_DISC = sun("라의 태양 원반과 좌우 매의 깃", 6, false);
     public static final DesignedEffect ROSE_GATE = flower("장미 꽃잎 여섯 장이 열리며 대상을 감쌈", "PINK_CONCRETE", 6, true);
     public static final DesignedEffect WAR_BLADES = blades("엇갈리는 두 붉은 전쟁 검", "RED_CONCRETE", 2);
@@ -313,6 +313,27 @@ public final class AbilityDesigns {
             line(o,venom?"LIME_CONCRETE":GOLD,-0.25+arrow,1.2,0.7+arrow,1.2,0.65,0.045);
             line(o,WHITE,0.55+arrow,1.32,0.7+arrow,1.2,0.65,0.055);
             line(o,WHITE,0.55+arrow,1.08,0.7+arrow,1.2,0.65,0.055); return o; });
+    }
+    private static DesignedEffect solarArrow() {
+        return effect("불타는 태양 활이 화살을 놓음",(t,d)->{
+            List<ObjectModel.Part> o=parts();
+            double x=-.48,y=1.2,z=1.05;
+            double draw=Math.max(0,Math.min(1,t/4)),release=Math.max(0,Math.min(1,(t-4)/2));
+            double flight=Math.max(0,Math.min(1,(t-4)/7));
+            for(int i=0;i<6;i++) {
+                double a=-Math.PI/2+i*Math.PI/6,b=a+Math.PI/6;
+                beam(o,"ORANGE_CONCRETE",x,y+Math.sin(a)*.52,z+Math.cos(a)*.3,
+                    x,y+Math.sin(b)*.52,z+Math.cos(b)*.3,.06);
+            }
+            double nock=z-.2*draw*(1-release);
+            beam(o,WHITE,x,y-.52,z,x,y,nock,.018);
+            beam(o,WHITE,x,y,nock,x,y+.52,z,.018);
+            double arrow=nock+flight*4.2;
+            beam(o,GOLD,x,y,arrow-.25,x,y,arrow+.7,.045);
+            for(int side:new int[]{-1,1})
+                beam(o,WHITE,x+side*.1,y,arrow+.55,x,y,arrow+.7,.055);
+            return o;
+        });
     }
     private static DesignedEffect serpent(String name,String m,boolean staff) {
         return effectAt(name,(t,d)->{ List<ObjectModel.Part> o=parts();

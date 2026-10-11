@@ -2,6 +2,121 @@
 
 이 프로젝트는 빌드, 실제 서버 기동, 기능 회귀 검사로 호환성을 확인합니다.
 
+## 전체 능력 움직임 점검 (2026-10-11)
+
+배포 버전은 v0.3.11입니다. 릴리즈 JAR SHA-256은 `c9b8457c5b8022cfff2a5cdfba7730eb761d4666dfeffdd2dae1fe17ebbf0882`이며, 아래 시각 검사본과 ZIP 항목을 비교해 `plugin.yml`·매니페스트의 버전 표기만 달라졌음을 확인했습니다. 실행 코드와 리소스는 같습니다. 새 버전의 전체 빌드·단위 테스트 127개와 저장된 팩의 모델·텍스처·해시 검사도 통과했습니다.
+
+93개 능력과 150개 모델을 다시 점검했습니다. 니케 돌진·아테나 진형·암살자 뒤잡기는 시선을 수직으로 올리거나 내렸을 때 남쪽으로 방향이 바뀌던 처리를 제거하고 yaw를 유지합니다. 공통 밀쳐내기도 같은 수평 방향 계산을 사용합니다. 오딘 궁니르는 적중 순간에만 나타나던 방식에서 오른손 앞에서 출발해 0.6초 동안 움직이는 표적을 향해 날아가도록 바꿨습니다. 기존 비용·피해·적중 시점과 엄폐 판정은 유지합니다. 태양 화살의 기본 모델은 얼굴 옆에서 가로로 움직이던 화살을 활에서 정면으로 발사하도록 수정했습니다. 묠니르·궁니르의 근거리 출발점도 표적을 지나치지 않도록 제한합니다. 묠니르는 투척 자세를 유지한 손잡이 우선 회수를 계속 사용합니다.
+
+수정 전 전체 발동 점검은 JAR `3d3c2d152f9e428376350910fad25ea8199ce67672f3fe25b792bdc3faea1b8b`로 진행했습니다. 실제 클라이언트에서 93개 능력의 해당 일반/고급 기술을 순회했고 발동 136건·준비 2건·안내 1건·해당 기술 없음 47건을 확인했습니다. 139개 영상·7,839개 원본 프레임과 패시브 콜백 경로 91종을 기록했습니다. 크리퍼·메구밍은 사용 후 사망하므로 이 순회의 패시브 콜백에서는 제외합니다. 특수 조건과 패시브는 서버 도구로 재현하며 실제 클라이언트 클릭 검사와 구분합니다. 기록은 `.build/minecraft-mcp/evidence/all-motion-audit-20261011/`에 있습니다.
+
+최종 수정본 JAR `9a4f2e9fb337662a8d4b52b47e062ca314bc11d2ac654db9ec1c059b13a9f862`에서는 수직 시선 6조건, 밀쳐내기 10조건, 궁니르 8조건, 묠니르 8조건을 재검사했습니다. 궁니르는 고저차·이동 표적·근거리·비행 중 엄폐·능력 변경 취소·파티클 대체·애니메이션 끄기를 포함하며, 실제 창 아이템의 틱별 좌표와 자세를 확인합니다. 취소는 독립 모델을 지우는 명령 대신 실제 능력 재지정으로 검사합니다. 포세이돈의 물 흐름은 약간의 옆 이동을 만들므로 서쪽 이동 벡터의 정렬을 검사하고, 오딘 표적 지정은 시점 패킷 반영을 기다린 뒤 입력합니다.
+
+최종본의 150개 모델 재생·소멸은 5,516프레임, 위 32조건과 주작·헤르메스 공중 비행은 2,050프레임으로 모두 통과했습니다. 총 184개 영상·7,566프레임이며 최저 캡처 속도는 17.82fps입니다. 이는 게임 렌더링 FPS 측정값이 아닙니다. 태양 화살·삼지창·낚싯바늘의 기본 파티클 윤곽도 별도 3개 영상·111프레임으로 확인했습니다. 자동 검사는 전체에 적용했고, 대표 투척·진형·돌진·날개·파티클 장면은 원본 화면을 수동 확인했습니다. 모든 능력 조합·GPU·구버전 클라이언트의 시각 결과를 보장하는 검사는 아닙니다.
+
+전체 빌드와 단위 테스트 127개, 최종 JAR의 Paper 26.3 및 1.12.2 능력 회귀 검사를 통과했습니다. 서버 로그는 `.paper-smoke/ability-variety-26.3-4kg9rt83/logs/latest.log`와 `.paper-smoke/ability-variety-1.12.2-th9iziie/logs/latest.log`에 있습니다. 최종 화면·좌표 기록과 궁니르 원본 시간 간격 GIF는 `.build/minecraft-mcp/evidence/all-motion-final-20261011/`, 기본 파티클 기록은 `.build/minecraft-mcp/evidence/all-motion-fallback-20261011/`에 있습니다. 팩 SHA-1은 `b2d524b99e694910f993b7633033aa7d230696d9`로 유지합니다. 테스트 클라이언트와 격리 서버는 종료했습니다.
+
+```powershell
+$env:NGW_EVIDENCE='all-motion-audit-20261011'
+$env:NGW_REQUIRE_ART='1'
+$env:NGW_RECORD_CASTS='1'
+node scripts/minecraft-mcp/suite.mjs casts
+# 수정 후 최종본: 다른 경로에 기록
+$env:NGW_EVIDENCE='all-motion-final-20261011'
+node scripts/minecraft-mcp/animations.mjs directional
+node scripts/minecraft-mcp/animations.mjs push
+node scripts/minecraft-mcp/animations.mjs spear
+node scripts/minecraft-mcp/animations.mjs motion
+node scripts/minecraft-mcp/animations.mjs models
+node scripts/minecraft-mcp/animations.mjs flight
+$env:NGW_EVIDENCE='all-motion-fallback-20261011'
+node scripts/minecraft-mcp/animations.mjs outlines design.SOLAR_ARROW design.TRIDENT design.FISH_HOOK
+```
+
+## 묠니르 자세를 유지하는 회수 (2026-10-11)
+
+회수 시 이동 방향에 맞춰 망치를 뒤집던 동작을 제거했습니다. 머리가 앞서는 투척 자세를 그대로 유지하면서 손잡이부터 돌아옵니다. 시전자 이동·시점 변경은 회수 위치에만 반영하며 yaw/pitch는 바꾸지 않습니다. 금속 머리의 중심은 현재 손보다 투척 방향으로 0.65블록 앞에서 멈춥니다. 출발 위치도 같은 손잡이 기준을 사용합니다. 피해·적중 시점·전하 지급 시점은 유지했습니다.
+
+전체 빌드와 테스트 123개를 통과했습니다. 실제 Minecraft 26.3의 옆 시점·1인칭·이동·고저차·근거리·애니메이션 끄기·파티클 대체·도중 종료 8개 조건을 원본 497프레임으로 기록했습니다. 서버 좌표 검사는 투척과 회수 양쪽의 관측, 투척 자세 보존, 손잡이 우선 회수, 좌표 점프와 종료 정리를 확인합니다. 옆 시점·1인칭·고저차 대표 프레임을 수동 확인했고, 실제 일반/고급 기술도 모두 발동했습니다. 이동 조건은 서버의 작은 위치 이동으로 재현합니다.
+
+원본 PNG, 검사 JSON, 원본 시간 간격의 GIF는 `.build/minecraft-mcp/evidence/thor-grip-first-20261011/`에 있습니다. 당시 JAR SHA-256은 `3d3c2d152f9e428376350910fad25ea8199ce67672f3fe25b792bdc3faea1b8b`입니다. 팩은 기존 `b2d524b99e694910f993b7633033aa7d230696d9`를 사용하며 다시 만들 필요가 없습니다. 테스트 클라이언트와 서버는 종료했습니다. 아래의 회수 방향 영상과 판정은 이 검사로 대체됩니다. 도중 종료 조건은 위의 전체 점검에서 실제 능력 재지정으로 다시 확인했습니다.
+
+```powershell
+$env:NGW_EVIDENCE='thor-grip-first-20261011'
+$env:NGW_REQUIRE_ART='1'
+node scripts/minecraft-mcp/animations.mjs motion
+node scripts/minecraft-mcp/suite.mjs casts thor
+```
+
+## 이전 묠니르 비행 자세 검사 (2026-10-11)
+
+사용자 피드백에 따라 T자로 세워 이동시키던 자세를 수정했습니다. 옆에서 `ㅓ`처럼 보이도록 머리의 긴 축은 비행 방향과 직각으로, 손잡이는 뒤쪽으로 배치합니다. 팩 모델은 X축·Z축 회전을 조합하고 머리 중심을 비행 기준점에 맞췄습니다. 팩 미사용 오브젝트와 구버전 파티클 윤곽도 같은 형태를 사용합니다. 수평뿐 아니라 고저차가 있는 실제 이동 벡터에 yaw/pitch를 맞추며, 대상의 시선은 사용하지 않습니다.
+
+기존의 '세워진 자세/pitch 0이면 통과'라는 잘못된 검사 기준을 제거했습니다. 머리·손잡이 축의 정렬과 기본 모델의 앞뒤 관계, 고저차·수직 경로를 검사합니다. 전체 빌드와 테스트 122개, 실제 Minecraft 26.3의 옆 시점·1인칭·이동·고저차·근거리·애니메이션 끄기·파티클 대체·도중 종료 8개 조건(497프레임)을 통과했습니다. 옆 시점의 원본 프레임으로 머리가 앞서고 손잡이가 뒤로 뻗은 모습과 회수 방향을 직접 확인했습니다. 원본과 새 GIF는 `.build/minecraft-mcp/evidence/thor-head-first-20261011/`에 있습니다.
+
+Paper 26.3과 1.12.2 서버 회귀 검사도 통과했습니다. 로그는 `.paper-smoke/ability-variety-26.3-z_2vldy6/`와 `.paper-smoke/ability-variety-1.12.2-g7uv_k36/`에 있습니다. 테스트 클라이언트와 서버는 종료했습니다.
+
+당시 JAR SHA-256은 `40c18ce8bdbb8c270d2d432eba77aa717291acfd016cf7c93570b3b8e1574c4b`입니다. 이 검사본은 회수할 때 머리가 시전자를 향해 뒤집히므로 위의 자세 유지 회수로 대체됩니다.
+
+## 이전 움직임·투척 검사 기록 (2026-10-11)
+
+묠니르의 기본 90도 눕힘과 드릴 형태 회전을 제거하고 작은 흔들림만 남겼습니다. 투척 위치의 pitch는 0으로 유지하고 yaw는 실제 수평 진행 방향에서 구하므로 대상의 시선이 회수 자세에 섞이지 않습니다. 오른손 앞에서 출발하며, 회수할 때 매 단계 현재 위치에서 움직인 손 위치를 향합니다. 22틱에 마지막 손 위치를 보내고 24틱에 제거하여 클라이언트가 마지막 2틱 이동을 보간할 수 있게 했습니다. 피해 5·충돌 판정 시점 12틱·전하 지급 24틱은 유지합니다.
+
+궁니르의 불필요한 축 회전을 제거하고 창끝을 충돌 기준점에 맞췄습니다. 삼지창은 진행 방향을 향하도록 pitch 부호를 고쳤습니다. 낚싯바늘은 거리와 크기 인자가 뒤바뀌어 확대·축소되던 것을 실제 전진·회수로 수정했습니다. 카메라를 향하는 불꽃·김·잔상은 위치와 회전을 분리하여 카메라를 돌려도 원래 물체에서 이탈하지 않게 했습니다. 파츠가 로드되지 않은 청크에 걸리면 해당 장면만 정리하고 다음 장면은 복구합니다.
+
+전체 빌드와 단위 테스트 121개가 통과했습니다. 실제 Minecraft 26.3에서 묠니르의 옆 시점·1인칭·이동 중 회수·고저차·근거리·애니메이션 끄기·파티클 대체·도중 종료 8개 조건을 원본 497프레임으로 기록했습니다. 원본 화면과 틱별 서버 좌표에서 망치의 세운 자세, 비정상 좌표 점프와 회수 후 잔류 여부를 확인했습니다. 이동 조건은 서버의 작은 위치 이동으로 재현합니다. 청크 경계 초기 생성/갱신 실패 후 복구·미로딩·Display 정리도 통과했습니다.
+
+전체 150개 모델의 등장·동작·소멸 5,538프레임과 주작·헤르메스 실제 비행 161프레임을 추가 기록하여 총 160개 영상·6,196프레임을 검증했습니다. 모든 영상의 시간 간격·프레임 수와 모델 소멸을 자동 검사하고, 망치·삼지창·갈고리·단조·김·분사·날개 등 대표 장면은 원본 화면을 수동 확인했습니다. 최저 캡처 속도는 18.89fps이며 이는 게임 자체의 렌더링 FPS 측정값이 아닙니다. 실제 일반/고급 12개 발동(토르·오딘·포세이돈·무적·아테나·대장장이)과 노인과바다 패시브 경로도 통과했습니다. 모든 능력 조합이나 모든 GPU·클라이언트 버전의 시각 결과를 보장하는 검사는 아닙니다.
+
+Paper 26.3과 1.12.2 능력 회귀 검사도 통과했습니다. 각 서버에서 93개 스타일·186개 시전 피드백과 파티클 대체, 시점/범위/설정 변경, 사망·접속 종료 정리를 확인합니다. 로그는 `.paper-smoke/ability-variety-26.3-wnsqi_84/`와 `.paper-smoke/ability-variety-1.12.2-royuq9vr/`에 있습니다. 검사용 클라이언트·서버는 종료했습니다. 로컬 OSHI/Perflib 및 오프라인 테스트 계정 인증 경고와 실제 회귀 실패는 구분합니다.
+
+이전 검사본 JAR SHA-256은 `73efa91539884816d3aebd984f0b9d345bdc1594c603468fb1ad21c893938916`이며 팩은 `b2d524b99e694910f993b7633033aa7d230696d9`입니다. 당시 원본 기록은 `.build/minecraft-mcp/evidence/motion-verified-20261011/`에 있습니다. 아래 입체화 최초 검사와 부하 측정의 JAR·수치는 추가 동작 수정 전 기록입니다.
+
+```powershell
+$env:NGW_EVIDENCE='motion-verified-20261011'
+$env:NGW_REQUIRE_ART='1'
+node scripts/minecraft-mcp/animations.mjs motion
+node scripts/minecraft-mcp/animations.mjs models
+node scripts/minecraft-mcp/animations.mjs flight
+node scripts/minecraft-mcp/suite.mjs casts thor odin poseidon invincibility athena fisher blacksmith
+```
+
+## 입체 리소스와 렌더러 최적화 검사 (2026-10-11)
+
+렌더러가 같은 위치·변환·아이템을 반복 반영하지 않도록 수정했습니다. 같은 애니메이션 시점/강도의 모양은 재사용하지만, 관전자 거리·월드·접속 상태와 설정 변경은 계속 평가합니다. 기본 장면과 팩 장면이 같은 업데이트에 만료될 때 제거된 장면을 다시 접근하던 오류도 수정했습니다.
+
+묠니르·궁니르·삼지창·단검·방패의 5가지 입체 형상을 10개 연출에 연결했습니다. 한 형상은 12~18개 직육면체로 구성하고, 묠니르·궁니르의 팩 장면은 Display 6개에서 5개로 줄였습니다. 기존 모델 ID 1,957개는 유지합니다. 미사용 평면 PNG 40개를 없애고 작은 재질 아틀라스로 대체했습니다. 실제 게임에서 확인한 아이템 렌더러의 추가 Y축 180도 회전을 반영하여 방패 장식이 바깥을 향하도록 보정합니다.
+
+JDK 21 전체 빌드와 단위 테스트 110개가 통과했습니다. Paper 1.12.2와 26.3의 능력 회귀 검사에서 구버전 파티클 대체, 실제 Display 생성·재사용·관객 필터·설정 변경·예산·만료·사망/접속 종료 정리를 통과했습니다. `verify_versions.py`, `verify_solid_art.py`, `verify_pack.py`, `verify_gui_pack.py`, `verify_catalogue.py`로 54개 버전 목록, 기존/신형 아이템 모델 참조, 형상 범위·UV·텍스처·SHA-1과 JAR 메타데이터를 검사합니다. 구버전 실제 클라이언트 화면 전체를 검사한 결과는 아닙니다.
+
+```powershell
+./gradlew.bat --offline resourcePack
+# stage 이전에 기존 ID와 새로 생성된 ID가 동일한지 확인
+python scripts/effect-art/verify_solid_art.py
+python scripts/effect-art/stage.py
+./gradlew.bat --offline build :plugin:visualRegressionJar :plugin:loadRegressionJar
+python scripts/effect-art/verify_versions.py
+python scripts/effect-art/verify_catalogue.py
+python scripts/Test-Abilities.py 1.12.2
+python scripts/Test-Abilities.py 26.3
+```
+
+Minecraft 26.3 숨김 클라이언트에서 최종 팩 `b2d524b99e694910f993b7633033aa7d230696d9`의 10개 모델을 정면·1인칭·위쪽·최소 파티클·강제 파티클 대체의 50개 조건으로 촬영하고 소멸을 확인했습니다. 묠니르·삼지창·프로테고의 원본 애니메이션 3개(108프레임)도 기록했습니다. 삼지창의 입체감과 1인칭 시야, 방패 외부의 장식·내부의 손잡이를 수동으로 확인했으며 모델/텍스처 누락 로그는 없었습니다. 캡처 전체에 자동 검사를 적용했고 수동 시각 검토는 대표 장면을 대상으로 했습니다.
+
+최종 원본 PNG·프레임·검사 JSON·JAR/팩 해시는 `.build/minecraft-mcp/evidence/solid-art-verified-20261011/`에 있습니다. 제작 미리보기 `build/effect-pack/solid-models.png`는 실제 게임 캡처와 구분합니다. 앞선 `solid-art-final-20261011/`의 방패 사진은 아이템 렌더러 회전 보정 전 기록입니다. 해당 폴더의 토르·오딘·포세이돈·어쌔신·무적·아테나 일반/고급 12개 발동 검사는 런타임 연결을 확인한 별도 기록입니다. 게임 소리·셰이더·다른 GPU와 모든 구버전 클라이언트는 이번 시각 검사 범위에 포함되지 않습니다.
+
+동일한 `python scripts/Test-Load.py --players 16,32 --seconds 20`으로 변경 전과 최종 JAR를 비교했습니다. 최종 측정은 화면 검사·빌드·다른 테스트 서버를 모두 종료한 뒤 진행했습니다. Paper 26.3, 힙 최대 3GiB, 시야/시뮬레이션 거리 4, 8종 능력, 단계별 10초 준비와 20초 측정 조건입니다.
+
+| 조건 | 변경 전 틱 p95 | 변경 후 틱 p95 | 변경 후 TPS | 변경 후 명령 왕복 p95 |
+| --- | ---: | ---: | ---: | ---: |
+| 16명 일반 | 7.23ms | 6.88ms | 20.00 | 7.70ms |
+| 32명 일반 | 7.84ms | 7.88ms | 20.00 | 10.74ms |
+| 32명 우르프 | 8.80ms | 8.01ms | 20.00 | 12.26ms |
+
+세 단계 모두 성능 기준과 종료·접속 해제·재접속 후 정리 검사를 통과했고 서버/클라이언트 오류는 0건입니다. 짧은 단일 측정이고 전투 경로에 변동이 있어 큰 성능 향상이나 운영 서버 수용 인원을 증명하지는 않습니다. TCP 클라이언트는 리소스팩을 렌더링하지 않으므로 이 수치는 새 모델의 GPU 성능 측정도 아닙니다. 리소스팩 ZIP은 36,072,061바이트에서 35,538,202바이트로 줄었으며, 실제 GPU 아틀라스 메모리 감소를 의미하지는 않습니다.
+
+원본 결과는 `.paper-smoke/load-26.3-zrl7ou_h/results.json`(변경 전)과 `.paper-smoke/load-26.3-y4ijr5ug/results.json`(최종)에 있습니다. 중간 측정 `load-26.3-gb9khaza`는 다른 검사가 겹쳐 비교표에서 제외했습니다. 최종 JAR SHA-256은 `52fe9eebc1fc9b046c6a717f3935d5b4e3b502f2574599c80a02167c2acf16c1`입니다. 모든 테스트 프로세스는 종료했습니다. 운영에서 `url: auto`를 사용할 때는 새 ZIP을 저장소에 게시한 뒤 해당 JAR를 적용해야 합니다.
+
 ## 저장소 resoucepack 디렉토리 검사
 
 버전별 ZIP은 같은 저장소의 `resoucepack/` 디렉토리에 보관합니다. `clean build`는 팩을 재생성하지 않습니다. `python scripts/effect-art/verify_catalogue.py --plugin-only`는 ZIP 25종의 SHA-1과 버전 목록을 확인하고, 배포 JAR에 ZIP·텍스처가 포함되지 않았는지도 검사합니다.

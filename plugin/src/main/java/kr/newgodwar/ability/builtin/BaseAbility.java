@@ -977,17 +977,34 @@ public abstract class BaseAbility implements GodAbility {
         return lines;
     }
 
+    /** Preserve heading even when the camera looks straight up or down. */
+    protected static Vector horizontalDirection(Location location) {
+        Location horizontal = location.clone();
+        horizontal.setPitch(0);
+        return horizontal.getDirection();
+    }
+
+    protected static Location rightHandPosition(Location eye) {
+        double yaw = Math.toRadians(eye.getYaw());
+        return eye.clone().add(-Math.cos(yaw) * 0.45D - Math.sin(yaw) * 0.35D, -0.35D,
+            -Math.sin(yaw) * 0.45D + Math.cos(yaw) * 0.35D);
+    }
+
+    /** A +Z-authored projectile faces its actual three-dimensional travel vector. */
+    protected static Location projectilePoint(Location from, Location to, double fraction) {
+        Vector direction = to.toVector().subtract(from.toVector());
+        Location point = from.clone().add(direction.clone().multiply(fraction));
+        if (direction.lengthSquared() > 0.000001D) point.setDirection(direction);
+        return point;
+    }
+
     protected void push(AbilityPlayerContext context, Player player, List<Player> targets, double power, long delayTicks) {
         Vector up = new Vector(0, 0.5D, 0);
         for (Player target : targets) {
             target.setVelocity(up);
             feedback.affected(context, target, "밀쳐내기", true);
         }
-        Vector horizontal = player.getEyeLocation().getDirection().setY(0.0D);
-        if (horizontal.lengthSquared() == 0.0D) {
-            return;
-        }
-        final Vector vector = horizontal.normalize().multiply(power * 1.4D);
+        final Vector vector = horizontalDirection(player.getEyeLocation()).multiply(power * 1.4D);
         scheduleLater(context, () -> {
             if (!player.isOnline() || !context.plugin().game().canUseAbility(player)) return;
             for (Player target : targets) {

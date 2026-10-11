@@ -52,6 +52,186 @@ public class ArtModelsTest {
         assertNotEquals(art.parts(8,1).get(0).art,art.parts(18,1).get(0).art);
     }
 
+    @Test public void solidProjectilesUseOneMeshWithoutChangingTheFallback() throws Exception {
+        Field hammer=Class.forName("kr.newgodwar.ability.builtin.ThorAbility").getDeclaredField("HAMMER");
+        hammer.setAccessible(true);
+        for(ObjectModel source:new ObjectModel[]{SharedModels.SPEAR,(ObjectModel)hammer.get(null)}) {
+            ObjectModel art=ArtModels.variant(source);
+            for(double phase:new double[]{0,4,8,16,40}) {
+                List<ObjectModel.Part> parts=art.parts(phase,1);
+                assertEquals("One mesh, one flash and three trail sparks",5,parts.size());
+                int meshes=0;
+                for(ObjectModel.Part part:parts)if(part.art.contains("/glyph")) {
+                    meshes++;
+                    assertFalse("Projectile faces follow its flight direction",part.billboard);
+                    assertEquals(Math.min(part.sx,part.sy),part.sz,.00001);
+                }
+                assertEquals(1,meshes);
+            }
+            for(ObjectModel.Part part:source.parts(8,1))assertNull("No-pack model is still native blocks/items",part.art);
+        }
+    }
+
+    @Test public void solidWeaponDepthFollowsItsSizeAndDisappearsWithTheScene() {
+        ObjectModel trident=ArtModels.create("design/trident","slash","water",true,false);
+        ObjectModel.Part visible=trident.parts(8,1).get(0),hidden=trident.parts(18,1).get(0);
+        assertEquals(.58,visible.sz,.00001);
+        assertFalse(visible.billboard);
+        assertEquals(.01,hidden.sx,.00001);
+        assertEquals(.019,hidden.sy,.00001);
+        assertEquals(.01,hidden.sz,.00001);
+        ObjectModel dagger=ArtModels.create("design/dagger_step","slash","shadow",true,false);
+        int blades=0;
+        for(ObjectModel.Part part:dagger.parts(8,1))if(part.art.contains("/glyph"))blades++;
+        assertEquals("The side profile comes from the mesh, not a duplicate display",1,blades);
+    }
+
+    @Test public void spearStaysPointFirstWithoutSpinningAndItsTipMatchesTheFlightAnchor() {
+        ObjectModel spear=ArtModels.create("shared/spear","projectile","gold",false,false);
+        ObjectModel.Part initial=spear.parts(0,1).get(0);
+        for(double tick=0;tick<=120;tick+=.5) {
+            ObjectModel.Part part=spear.parts(tick,1).get(0);
+            double[] axis=displayedWeaponLongAxis(part);
+            assertEquals("Spear must point along the anchor's flight direction",1,axis[2],.000001);
+            assertEquals(initial.roll,part.roll,0);
+            assertEquals(initial.turn,part.turn,0);
+            assertEquals(initial.pitch,part.pitch,0);
+            // Native spear's furthest tip is Y=15.3 in the 16px model; ItemDisplay centres models at 8.
+            double tip=(15.3-8)/16*part.sy;
+            assertEquals("Tip reaches the collision anchor exactly",0,part.z+axis[2]*tip,.000001);
+            assertTrue("The shaft trails behind its contact point",part.z<0);
+        }
+    }
+
+    @Test public void thrownHammerFliesHeadFirstWithAVerticalHeadAndTrailingGrip() {
+        ObjectModel hammer=ArtModels.create("thor/hammer","projectile","storm",false,false);
+        for(double tick=0;tick<=120;tick+=.5) {
+            ObjectModel.Part part=hammer.parts(tick,1).get(0);
+            double[] axis=displayedWeaponLongAxis(part);
+            assertEquals("Grip-to-head axis must point along flight",1,axis[2],.000001);
+            assertEquals(0,axis[0],.000001);assertEquals(0,axis[1],.000001);
+            // Client Ry(PI) flips model X before Rz * Ry * Rx. The head's long model-X edge becomes vertical.
+            assertEquals("Head is vertical in side view, not a standing T",1,
+                Math.abs(Math.cos(part.turn)*Math.sin(part.roll)),.000001);
+            assertEquals("Metal head centre follows the flight anchor",0,part.z+(12.4-8)/16*part.sy,.000001);
+            assertTrue("Grip trails behind the head",part.z+(1.4-8)/16*part.sy<-.5);
+            assertEquals(hammer.parts(0,1).get(0).roll,part.roll,0);
+        }
+    }
+
+    @Test public void fallbackHammerHasTheSameSideOnFlightProfile() {
+        for(double tick:new double[]{0,2,12,22,120}) {
+            List<ObjectModel.Part> parts=ThorAbility.HAMMER.parts(tick,1);
+            ObjectModel.Part head=parts.get(0),grip=parts.get(3);
+            assertTrue("Head's long edge is vertical",head.sy>head.sx*2&&head.sy>head.sz*2);
+            assertTrue("Grip is parallel to flight",grip.sz>grip.sx*5&&grip.sz>grip.sy*5);
+            assertTrue("Entire grip is behind the head",grip.z+grip.sz/2<=head.z-head.sz/2+.000001);
+            assertEquals(head.x,grip.x,0);assertEquals(head.y,grip.y,0);
+        }
+    }
+
+    @Test public void tridentTipFacesItsForwardThrustThroughoutTheStroke() {
+        ObjectModel trident=ArtModels.create("design/trident","slash","water",true,false);
+        double previousZ=trident.parts(2,1).get(0).z;
+        for(double tick=0;tick<=18;tick+=.5) {
+            ObjectModel.Part part=trident.parts(tick,1).get(0);
+            assertTrue("Prongs must lead the forward stroke",displayedWeaponLongAxis(part)[2]>.85);
+            assertTrue("The weapon stays beside the hand",part.x<-.3);
+            if(tick>2&&tick<=6) {
+                assertTrue("The strike advances, it does not fly backward",part.z>previousZ);
+                previousZ=part.z;
+            }
+        }
+        assertTrue("The hand retracts after contact",trident.parts(16,1).get(0).z<trident.parts(8,1).get(0).z);
+    }
+
+    @Test public void fishHookTravelsOutAndBackWithoutInflatingBesideTheCamera() {
+        ObjectModel hook=ArtModels.create("design/fish_hook","hook","water",true,false);
+        assertEquals(2.6,hook.parts(0,1).get(0).z,.000001);
+        assertEquals(3.4,hook.parts(4,1).get(0).z,.000001);
+        assertEquals(1.1,hook.parts(10,1).get(0).z,.000001);
+        double previousZ=3.4;
+        for(double tick=0;tick<=18;tick+=.5) {
+            ObjectModel.Part part=hook.parts(tick,1).get(0);
+            assertTrue("Travel is expressed as position, not a giant icon",part.sx<=.7&&part.sy<=.81);
+            assertTrue("The hook stays in front of the player",part.z>=1.1-.000001&&part.z<=3.4);
+            if(tick>4&&tick<=10) {assertTrue(part.z<previousZ);previousZ=part.z;}
+        }
+    }
+
+    private static double[] displayedWeaponLongAxis(ObjectModel.Part part) {
+        // The client appends Ry(PI), which leaves the native weapons' +Y tip/handle axis unchanged.
+        double y=Math.cos(part.pitch),z=Math.sin(part.pitch);
+        double x=z*Math.sin(part.turn);z*=Math.cos(part.turn);
+        return new double[]{x*Math.cos(part.roll)-y*Math.sin(part.roll),
+            x*Math.sin(part.roll)+y*Math.cos(part.roll),z};
+    }
+
+    @Test public void solidCatalogueOnlyReusesExistingGlyphIdsAndMatchingSilhouettes() throws Exception {
+        Properties solid=new Properties();
+        try(InputStream input=ArtModels.class.getResourceAsStream("/solid-art.properties")) { solid.load(input); }
+        Map<String,String> motifs=new HashMap<String,String>();
+        for(String[] row:catalogue())motifs.put(row[0].toLowerCase(Locale.ROOT).replace('.','/'),row[1]);
+        assertEquals(10,solid.size());
+        for(String key:solid.stringPropertyNames()) {
+            assertEquals(key,motifs.get(key),solid.getProperty(key));
+            for(int fade=0;fade<4;fade++)assertTrue(key,PackModels.modelId("art/"+key+"/glyph"+fade)>=74000);
+        }
+    }
+
+    @Test public void solidShieldFrontsFaceAwayFromTheProtectedCentre() {
+        String[][] scenes={{"athena/phalanx","phalanx","5"},{"design/aegis_plates","guard","3"},
+            {"design/black_armor","guard","3"},{"design/servant_wall","wall","5"},{"design/protego","dome","6"}};
+        for(String[] scene:scenes)for(double phase:new double[]{0,4,8,18,40}) {
+            ObjectModel model=ArtModels.create(scene[0],scene[1],"holy",!scene[1].equals("phalanx"),false);
+            int shields=0;
+            for(ObjectModel.Part p:model.parts(phase,3))if(!p.billboard&&p.art.contains("/glyph")) {
+                double[] normal=displayedShieldFrontNormal(p);
+                double outward=(p.x*normal[0]+p.z*normal[2])/Math.hypot(p.x,p.z);
+                assertTrue(scene[0]+" front normal must have positive radial dot product",outward>0);
+                assertEquals(scene[0]+" faces directly outward",1,outward,.000001);
+                shields++;
+            }
+            assertEquals(scene[0],Integer.parseInt(scene[2]),shields);
+        }
+    }
+
+    @Test public void solidShieldFrontSurvivesClientRotationForHeldAndBillboardModels() {
+        ObjectModel held=ArtModels.create("shared/shield","guard","steel",false,false);
+        assertEquals("Held shield faces ahead after the client's item rotation",1,
+            displayedShieldFrontNormal(held.parts(8,1).get(0))[2],.000001);
+        ObjectModel plates=ArtModels.create("design/aegis_plates","guard","holy",true,false);
+        int emblems=0;
+        for(ObjectModel.Part part:plates.parts(8,1))if(part.billboard&&part.art.contains("/glyph")) {
+            assertEquals("Billboard's decorated face points toward the viewer",1,
+                displayedShieldFrontNormal(part)[2],.000001);
+            emblems++;
+        }
+        assertEquals(1,emblems);
+    }
+
+    private static double[] displayedShieldFrontNormal(ObjectModel.Part part) {
+        // SolidArtwork puts the decorated face on model -Z (also asserted by verify_solid_art.py).
+        // Verified in the 26.3 client's DisplayRenderer$ItemDisplayRenderer.submitInner:
+        // item rendering appends Ry(PI), before DisplayBridge's Rz * Ry * Rx transforms the vertices.
+        double x=-Math.sin(Math.PI),y=0,z=-Math.cos(Math.PI);
+        double py=y*Math.cos(part.pitch)-z*Math.sin(part.pitch),pz=y*Math.sin(part.pitch)+z*Math.cos(part.pitch);
+        double tx=x*Math.cos(part.turn)+pz*Math.sin(part.turn),tz=-x*Math.sin(part.turn)+pz*Math.cos(part.turn);
+        return new double[]{tx*Math.cos(part.roll)-py*Math.sin(part.roll),
+            tx*Math.sin(part.roll)+py*Math.cos(part.roll),tz};
+    }
+
+    @Test public void nonSolidShieldScenesKeepTheirExistingOrientation() {
+        for(String motion:new String[]{"phalanx","guard","wall","dome"}) {
+            ObjectModel model=ArtModels.create("design/test",motion,"holy",!motion.equals("phalanx"),false);
+            for(ObjectModel.Part p:model.parts(8,3))if(!p.billboard&&p.art.contains("/glyph")) {
+                double angle=Math.atan2(p.x,p.z);
+                assertEquals(motion,Math.sin(-angle),Math.sin(p.turn),.000001);
+                assertEquals(motion,Math.cos(-angle),Math.cos(p.turn),.000001);
+            }
+        }
+    }
+
     @Test public void everyCatalogueMotionStaysFiniteWithinTheDisplayBudget() throws Exception {
         Set<String> silhouettes=new HashSet<String>();int checked=0;
         for(String[] row:catalogue()) {
@@ -164,7 +344,7 @@ public class ArtModelsTest {
     }
 
     @Test public void billboardsStayOnRingsAroundTheAnchorAxis() throws Exception {
-        // A billboard rotates its offset with the viewer, so only axis-symmetric placements are allowed.
+        // Hero emblems stay close to the anchor axis so their owner remains visually unambiguous.
         for(String[] row:catalogue())for(String motion:new String[]{row[3]}) {
             if(motion.matches("slash|punch|bow|shot|scope|hook|gust|step|exhaust|forge|shatter|mirror|wings|projectile|flock|relic|melody|strike|harvest|dome|weaken"))continue;
             for(ObjectModel.Part p:ArtModels.create("design/test",motion,"gold",true,false).parts(8,2))

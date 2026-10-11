@@ -43,6 +43,25 @@ async function capture(folder,name) {
 }
 async function action(action,value){return tool('client_action',value===undefined?{action}:{action,value});}
 function save(name,value){writeFileSync(join(output,name+'.json'),JSON.stringify(value,null,2));}
+async function startCastClip(id,kind) {
+  if(process.env.NGW_RECORD_CASTS!=='1')return null;
+  const name=Date.now()+'-audit-'+id+'-'+kind;
+  const folder=join(runtime,'client/recordings',name);
+  const durationMs=['megumin','graviton'].includes(id)?5500:2800;
+  await tool('record_clip',{name,durationMs});await sleep(250);
+  return {folder,path:join(folder,'clip.json')};
+}
+async function finishCastClip(recording) {
+  if(!recording)return undefined;
+  for(let i=0;i<150&&!existsSync(recording.path);i++)await sleep(50);
+  if(!existsSync(recording.path))throw new Error('Cast recording did not finish');
+  const clip=JSON.parse(readFileSync(recording.path,'utf8'));
+  if(clip.error)throw new Error(clip.error);
+  const frames=clip.frames.map(frame=>({...frame,path:join(recording.folder,frame.file)}));
+  const fps=(frames.length-1)*1000/(frames.at(-1).ms-frames[0].ms);
+  if(frames.length<20||fps<10)throw new Error('Insufficient cast capture');
+  return {frames,durationMs:clip.durationMs,fps};
+}
 
 try {
   await client.connect(new StdioClientTransport({command:process.execPath,args:[join(root,'scripts/minecraft-mcp/bridge.mjs')],cwd:root}));
@@ -108,13 +127,17 @@ try {
           else await tool('set_view_angle',{yaw:0,pitch:0});
           await sleep(700);
           const before=await fixture('state');const offset=readFileSync(logPath,'utf8').length;
-          await fixture('condition '+kind);
-          if(ability.id==='harry')await fixture('chat '+(kind==='normal'?'Lumos':'Stupefy'));
-          else if(ability.id==='hermione')await fixture('chat '+(kind==='normal'?'윙가르디움 레비오사':'프로테고'));
-          else if(ability.id!=='sniper'&&!(ability.id==='voodoo'&&kind==='normal')) await action(kind==='normal'?'attack':'use');
-          await sleep(180);
-          const picture=await capture(join(output,'casts',ability.id),kind);
-          const after=await fixture('state');
+          const recording=await startCastClip(ability.id,kind);
+          let picture,clip,after;
+          try {
+            await fixture('condition '+kind);
+            if(ability.id==='harry')await fixture('chat '+(kind==='normal'?'Lumos':'Stupefy'));
+            else if(ability.id==='hermione')await fixture('chat '+(kind==='normal'?'윙가르디움 레비오사':'프로테고'));
+            else if(ability.id!=='sniper'&&!(ability.id==='voodoo'&&kind==='normal')) await action(kind==='normal'?'attack':'use');
+            await sleep(180);
+            picture=await capture(join(output,'casts',ability.id),kind);
+            after=await fixture('state');
+          } finally { clip=await finishCastClip(recording); }
           if(ability.id==='hades' && (kind==='normal'?after.y:after.targetY)>=-64)
             throw new Error('Abyss destination was not below the modern world floor');
           const log=readFileSync(logPath,'utf8').slice(offset);
@@ -124,7 +147,7 @@ try {
             || (ability.id==='bomber'&&kind==='normal'&&after.displays>0);
           const infoOnly=ability.id==='snow'&&kind==='advanced';
           const prepared=['midoriya','sniper'].includes(ability.id)&&kind==='normal'&&log.includes('준비');
-          row.attempts.push({kind,status:confirmed?'activated':prepared?'prepared':infoOnly?'informational':'needs-review',before,after,log,picture});
+          row.attempts.push({kind,status:confirmed?'activated':prepared?'prepared':infoOnly?'informational':'needs-review',before,after,log,picture,clip});
           if(ability.id==='sniper'&&kind==='normal')await sleep(4500);
           if(kind==='normal'&&['thor','pan'].includes(ability.id))await sleep(1500);
           if(kind==='normal'&&ability.id==='megumin') {

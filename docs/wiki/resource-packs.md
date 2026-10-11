@@ -11,7 +11,7 @@ abilities:
       sha1: ''
 ```
 
-`auto` 또는 빈 URL은 통합 팩의 파일명과 SHA-1을 사용합니다. 현재 주소는 [https://raw.githubusercontent.com/minjae9010/NewGodWar/master/resoucepack/NewGodWar-Art-d36217f4.zip](https://raw.githubusercontent.com/minjae9010/NewGodWar/master/resoucepack/NewGodWar-Art-d36217f4.zip)입니다. 파일명에 팩 자체의 해시가 들어가므로 팩을 고쳐도 이미 배포된 플러그인이 받는 파일은 바뀌지 않습니다. 직접 URL을 지정할 때는 같은 ZIP의 SHA-1도 입력합니다. 변경 후 서버를 재시작하세요.
+`auto` 또는 빈 URL은 통합 팩의 파일명과 SHA-1을 사용합니다. 현재 주소는 [NewGodWar-Art-b2d524b9.zip](https://raw.githubusercontent.com/minjae9010/NewGodWar/master/resoucepack/NewGodWar-Art-b2d524b9.zip)입니다. 파일명에 팩 자체의 해시가 들어가므로 팩을 고쳐도 이미 배포된 플러그인이 받는 파일은 바뀌지 않습니다. 직접 URL을 지정할 때는 같은 ZIP의 SHA-1도 입력합니다. 변경 후 서버를 재시작하세요.
 
 [직접 다운로드](https://github.com/minjae9010/NewGodWar/tree/master/resoucepack)와 [전체 버전·주소·SHA-1 목록](https://raw.githubusercontent.com/minjae9010/NewGodWar/master/resoucepack/manifest.tsv)을 제공합니다. 별도 저장소나 배포 브랜치를 사용하지 않습니다. 일반 플러그인 빌드와 릴리즈는 팩을 생성하거나 첨부하지 않습니다.
 

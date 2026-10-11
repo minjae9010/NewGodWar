@@ -599,6 +599,12 @@ public final class AbilityFeedback {
         sound(context, to, audience, AbilityTheme.COMBAT.sound(), 0.5F, 0.7F);
     }
 
+    /** A moving spear's tip; flight updates must not replay the impact sound or a full-path beam. */
+    public void spearFlightFrame(AbilityPlayerContext context, Location tip) {
+        if (!object(context, "spear", SharedModels.SPEAR, tip, 5, 1))
+            modelOutline(context, tip, SharedModels.SPEAR, 0, 1, effectViewers(context, tip));
+    }
+
     public boolean object(AbilityPlayerContext context, String key, ObjectModel model, Location center, int ticks, double detail) {
         Location anchor = center.clone();
         return objects.show(key, context, model, () -> anchor.clone(), () -> effectViewers(context, anchor), ticks, detail);

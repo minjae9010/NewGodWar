@@ -64,9 +64,8 @@ final class AssasinAbility extends BaseAbility {
     @Override
     protected void onStaffRight(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
         for (Player target : nearbyPlayers(context, player, 10, false)) {
-            Vector behind = target.getLocation().getDirection().setY(0);
-            if (behind.lengthSquared() < 0.01D) behind.setZ(1);
-            Location location = target.getLocation().subtract(behind.normalize());
+            Vector behind = horizontalDirection(target.getLocation());
+            Location location = target.getLocation().subtract(behind);
             if (!location.getBlock().isEmpty() || !location.clone().add(0, 1, 0).getBlock().isEmpty()) continue;
             if (useAdvanced(context, player) && player.teleport(location)) feedback.castCue(context, player, kr.newgodwar.ability.feedback.EffectCue.PORTAL);
             return;
