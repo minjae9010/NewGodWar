@@ -34,4 +34,36 @@ public final class DamageAttributionTrackerTest {
         tracker.remember(target, target, 2000L);
         assertNull(tracker.resolve(target, 2000L));
     }
+
+    @Test
+    public void cleanupReclaimsUnqueriedEntitiesAndPreservesTheTtlBoundary() {
+        DamageAttributionTracker tracker = new DamageAttributionTracker(1000L);
+        UUID source = UUID.randomUUID();
+        for (int i = 0; i < 1000; i++) {
+            tracker.remember(UUID.randomUUID(), source, 100L);
+        }
+        UUID fresh = UUID.randomUUID();
+        tracker.remember(fresh, source, 101L);
+
+        assertEquals(0, tracker.removeExpired(1100L));
+        assertEquals(1000, tracker.removeExpired(1101L));
+        assertEquals(source, tracker.resolve(fresh, 1101L));
+        assertEquals(1, tracker.removeExpired(1102L));
+        assertEquals(0, tracker.removeExpired(1102L));
+    }
+
+    @Test
+    public void cleanupKeepsRenewedSourcesAndIgnoresConsumedEntries() {
+        DamageAttributionTracker tracker = new DamageAttributionTracker(1000L);
+        UUID target = UUID.randomUUID();
+        UUID oldSource = UUID.randomUUID();
+        UUID newSource = UUID.randomUUID();
+        tracker.remember(target, oldSource, 100L);
+        tracker.remember(target, newSource, 1000L);
+
+        assertEquals(0, tracker.removeExpired(1101L));
+        assertEquals(newSource, tracker.consume(target, 1101L));
+        assertEquals(0, tracker.removeExpired(3000L));
+        assertNull(tracker.resolve(target, 3000L));
+    }
 }

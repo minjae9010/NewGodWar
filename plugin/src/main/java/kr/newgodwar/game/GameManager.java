@@ -1015,7 +1015,7 @@ public final class GameManager {
         kills.put(uuid, current == null ? 1 : current + 1);
         requestCheckpoint();
         nmsAdapter.sendActionBar(killer, ChatColor.GOLD + "킬 수: " + killsOf(killer));
-        refreshPlayerDisplay(killer);
+        refreshPlayerSidebar(killer);
     }
 
     public void eliminate(GodTeam team, Player breaker) {
@@ -2446,7 +2446,7 @@ public final class GameManager {
         if (killtimeRemainingSeconds() <= 0L) {
             announceKilltimeEnded();
             cancelGameTimerTask();
-            refreshAllPlayerDisplays();
+            refreshAllPlayerSidebars();
             return;
         }
         if (!gameTimerBossBarEnabled()) {
@@ -2639,7 +2639,7 @@ public final class GameManager {
         waterHealTask = Bukkit.getScheduler().scheduleSyncRepeatingTask(plugin, () -> {
             if (state == GameState.RUNNING) {
                 abilityManager.tick(BukkitCompat.onlinePlayers());
-                refreshAllPlayerDisplays();
+                refreshAllPlayerSidebars();
             }
         }, interval, interval);
     }

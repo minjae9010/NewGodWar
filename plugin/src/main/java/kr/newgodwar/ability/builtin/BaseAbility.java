@@ -242,7 +242,7 @@ public abstract class BaseAbility implements GodAbility {
     }
 
     private void refreshDisplay(final AbilityPlayerContext context) {
-        context.plugin().game().refreshPlayerDisplay(context.player());
+        context.plugin().game().refreshPlayerSidebar(context.player());
     }
 
     @Override
@@ -755,18 +755,23 @@ public abstract class BaseAbility implements GodAbility {
     protected Player targetPlayerInSight(AbilityPlayerContext context, Player player, int range, boolean sameTeam) {
         Player target = null;
         double nearestDistance = Double.MAX_VALUE;
+        Location origin = player.getLocation();
+        Location eye = player.getEyeLocation();
+        Vector direction = eye.getDirection().normalize();
+        double radiusSquared = (double) range * range;
         for (Player candidate : context.targetPlayers()) {
-            if (candidate.equals(player) || candidate.getWorld() != player.getWorld()) {
+            if (candidate.equals(player) || candidate.getWorld() != origin.getWorld()) {
                 continue;
             }
-            if (!canTarget(context, player, candidate, sameTeam) || !lookingAt(player, candidate, range)) {
+            Location location = candidate.getLocation();
+            double distance = origin.distanceSquared(location);
+            if (distance >= nearestDistance || distance > radiusSquared
+                || !canTarget(context, player, candidate, sameTeam)
+                || !lookingAt(player, candidate, location, eye, direction, range)) {
                 continue;
             }
-            double distance = player.getLocation().distanceSquared(candidate.getLocation());
-            if (distance < nearestDistance) {
-                nearestDistance = distance;
-                target = candidate;
-            }
+            nearestDistance = distance;
+            target = candidate;
         }
         if (target == null) {
             sendAbilityMessage(context, player, "failure", ChatColor.RED + "타깃이 해당 구역에 없습니다.");
@@ -825,16 +830,20 @@ public abstract class BaseAbility implements GodAbility {
     }
 
     private boolean lookingAt(Player player, Player target, int range) {
-        if (player.getLocation().distanceSquared(target.getLocation()) > range * range) {
-            return false;
-        }
-        if (!player.hasLineOfSight(target)) {
+        Location location = target.getLocation();
+        if (player.getLocation().distanceSquared(location) > (double) range * range) {
             return false;
         }
         Location eye = player.getEyeLocation();
         Vector direction = eye.getDirection().normalize();
-        return lookingNear(eye, direction, target.getEyeLocation(), range)
-            || lookingNear(eye, direction, target.getLocation().add(0.0D, 0.9D, 0.0D), range);
+        return lookingAt(player, target, location, eye, direction, range);
+    }
+
+    private boolean lookingAt(Player player, Player target, Location location, Location eye, Vector direction, int range) {
+        // Check the aiming corridor before asking Bukkit to trace blocks for visibility.
+        return (lookingNear(eye, direction, target.getEyeLocation(), range)
+            || lookingNear(eye, direction, location.clone().add(0.0D, 0.9D, 0.0D), range))
+            && player.hasLineOfSight(target);
     }
 
     private boolean lookingNear(Location eye, Vector direction, Location point, int range) {

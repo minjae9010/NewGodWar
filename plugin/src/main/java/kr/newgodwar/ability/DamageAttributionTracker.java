@@ -39,6 +39,18 @@ final class DamageAttributionTracker {
         return entry.sourceId;
     }
 
+    /** Reclaim expired entities even when they never deal damage or get queried again. */
+    int removeExpired(long nowMillis) {
+        int removed = 0;
+        for (Map.Entry<UUID, Entry> entry : entries.entrySet()) {
+            if (nowMillis - entry.getValue().createdAtMillis > ttlMillis
+                && entries.remove(entry.getKey(), entry.getValue())) {
+                removed++;
+            }
+        }
+        return removed;
+    }
+
     void clear() {
         entries.clear();
     }

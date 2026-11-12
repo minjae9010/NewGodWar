@@ -458,6 +458,9 @@ public final class AbilityManager {
     }
 
     public void tickCountdownAlerts(Iterable<? extends Player> players) {
+        long now = System.currentTimeMillis();
+        recentDamageSources.removeExpired(now);
+        attributedEntities.removeExpired(now);
         for (Player player : players) {
             AbilitySession session = activeSession(player);
             if (session != null) {
