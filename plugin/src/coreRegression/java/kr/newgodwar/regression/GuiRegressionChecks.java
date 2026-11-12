@@ -58,6 +58,7 @@ final class GuiRegressionChecks {
             core.getConfig().set("gambling.cost.cobblestone", 32);
             drawAndProtectPreviews();
             paginatesEveryReward();
+            rejectsStaleClicksAndCloses();
             checksOptionalModels();
             core.getLogger().info("PASS menu interactions: left-click cost/result refresh, alternate-click and drag protection, 21-reward pagination and resource-pack fallback");
         } finally {
@@ -239,13 +240,50 @@ final class GuiRegressionChecks {
         }
     }
 
-    private void click(int rawSlot, ClickType type, InventoryAction action) {
+    private void rejectsStaleClicksAndCloses() {
+        core.getConfig().set("gambling.rewards.normal", Collections.singletonList(reward(namedReward("Deferred reward", 2))));
+        player.getInventory().clear();
+        player.getInventory().setItem(0, new ItemStack(Material.COBBLESTONE, 64));
+        gui.open(player);
+        InventoryView oldView = player.getOpenInventory();
+        Set<Integer> existingTasks = pendingTasks();
+        InventoryClickEvent queued = new InventoryClickEvent(oldView, InventoryType.SlotType.CONTAINER,
+            13, ClickType.LEFT, InventoryAction.PICKUP_ALL);
+        gui.onClick(queued);
+        require(queued.isCancelled(), "Queued draw did not protect the menu");
+        gui.open(player);
+        gui.onClose(new InventoryCloseEvent(oldView));
+        runClickTasks(existingTasks);
+        require(count(Material.COBBLESTONE) == 64 && count(Material.DIAMOND) == 0,
+            "An old menu's queued click charged the newly opened menu");
+        click(13, ClickType.LEFT, InventoryAction.PICKUP_ALL);
+        require(count(Material.COBBLESTONE) == 32 && count(Material.DIAMOND) == 2,
+            "An old close event discarded the new menu's state");
+        InventoryView closedView = player.getOpenInventory();
+        close();
+        InventoryClickEvent stale = new InventoryClickEvent(closedView, InventoryType.SlotType.CONTAINER,
+            13, ClickType.LEFT, InventoryAction.PICKUP_ALL);
+        gui.onClick(stale);
+        require(!stale.isCancelled(), "Closed menu remained registered");
+        core.getLogger().info("PASS menu lifecycle: wrapped inventories, stale deferred clicks, old close events and final close cleanup");
+    }
+
+    private Set<Integer> pendingTasks() {
         Set<Integer> existingTasks = new java.util.HashSet<Integer>();
         for (org.bukkit.scheduler.BukkitTask task : Bukkit.getScheduler().getPendingTasks()) existingTasks.add(task.getTaskId());
+        return existingTasks;
+    }
+
+    private void click(int rawSlot, ClickType type, InventoryAction action) {
+        Set<Integer> existingTasks = pendingTasks();
         InventoryClickEvent event = new InventoryClickEvent(player.getOpenInventory(), InventoryType.SlotType.CONTAINER,
             rawSlot, type, action, type == ClickType.NUMBER_KEY ? 0 : -1);
         gui.onClick(event);
         require(event.isCancelled(), "Menu did not cancel inventory action at " + rawSlot + ": " + type);
+        runClickTasks(existingTasks);
+    }
+
+    private void runClickTasks(Set<Integer> existingTasks) {
         // Complete only this click's deferred transaction; do not advance unrelated game tasks.
         for (org.bukkit.scheduler.BukkitTask task : Bukkit.getScheduler().getPendingTasks()) {
             if (task.getOwner() != core || existingTasks.contains(task.getTaskId())) continue;

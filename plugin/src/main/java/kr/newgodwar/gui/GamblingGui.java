@@ -180,7 +180,7 @@ public final class GamblingGui implements Listener, CommandExecutor {
         // Reopening with a new balance/title is deferred until after the click transaction.
         Bukkit.getScheduler().runTask(plugin, () -> {
             if (!player.isOnline() || current(player, clicked) != state
-                || player.getOpenInventory().getTopInventory() != clicked) return;
+                || !clicked.equals(player.getOpenInventory().getTopInventory())) return;
             if (slot == (state.catalog ? GALLERY_CLOSE_SLOT : GamblingLayout.CLOSE)) {
                 player.closeInventory(); return;
             }
@@ -199,7 +199,8 @@ public final class GamblingGui implements Listener, CommandExecutor {
 
     private ViewState current(Player player, Inventory inventory) {
         ViewState state = openViewers.get(player.getUniqueId());
-        return state != null && state.inventory == inventory && inventory.getHolder() == state ? state : null;
+        // Legacy CraftBukkit can wrap the same backing inventory in a new API object.
+        return state != null && state.inventory.equals(inventory) && inventory.getHolder() == state ? state : null;
     }
 
     @EventHandler
@@ -211,7 +212,7 @@ public final class GamblingGui implements Listener, CommandExecutor {
     @EventHandler
     public void onClose(InventoryCloseEvent event) {
         ViewState state = openViewers.get(event.getPlayer().getUniqueId());
-        if (state != null && state.inventory == event.getInventory()) openViewers.remove(event.getPlayer().getUniqueId());
+        if (state != null && state.inventory.equals(event.getInventory())) openViewers.remove(event.getPlayer().getUniqueId());
     }
 
     private void gamble(Player player, ViewState state) {
