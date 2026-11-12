@@ -1600,6 +1600,23 @@ public final class GameManager {
         syncGameTimerBarPlayer(player);
     }
 
+    public void refreshJoinedPlayerDisplay(Player player) {
+        if (player == null) return;
+        refreshPlayerDisplay(player);
+        // Boards built while this member was offline do not contain their name.
+        // Update the roster without replacing other viewers' boards/objectives.
+        GodTeam assigned = teamOf(player);
+        String name = player.getName();
+        for (Scoreboard board : playerScoreboards.values()) {
+            Team expected = assigned == null ? null : board.getTeam("gw_" + assigned.id());
+            Team previous = board.getEntryTeam(name);
+            if (previous != null && previous.getName().startsWith("gw_") && !previous.equals(expected)) {
+                previous.removeEntry(name);
+            }
+            if (expected != null && !expected.hasEntry(name)) expected.addEntry(name);
+        }
+    }
+
     public void forgetPlayer(Player player) {
         if (player == null) {
             return;

@@ -69,7 +69,7 @@ public final class GameListener implements Listener {
         plugin.updater().notifyAdminIfOutdated(player);
         if ((gameManager.isRunning() || gameManager.state() == GameState.READY) && gameManager.teamOf(player) != null) {
             if (gameManager.handleEliminatedJoin(player)) {
-                gameManager.refreshPlayerDisplay(player);
+                gameManager.refreshJoinedPlayerDisplay(player);
                 return;
             }
             abilityManager.reapply(player);
@@ -78,7 +78,7 @@ public final class GameListener implements Listener {
             && gameManager.hasLobbyLocation()) {
             Bukkit.getScheduler().runTaskLater(plugin, () -> gameManager.teleportToLobby(player), 1L);
         }
-        gameManager.refreshPlayerDisplay(player);
+        gameManager.refreshJoinedPlayerDisplay(player);
     }
 
     @EventHandler

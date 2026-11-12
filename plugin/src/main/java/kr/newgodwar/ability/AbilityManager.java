@@ -416,7 +416,8 @@ public final class AbilityManager {
             if (player != null) {
                 AbilitySession session = activeSession(player);
                 if (session != null) {
-                    session.ability().onDeath(playerContext(player, session.definition()), event);
+                    invokeSharedCallback(player, session, "onDeath",
+                        () -> session.ability().onDeath(playerContext(player, session.definition()), event));
                 }
             }
         }
@@ -452,7 +453,8 @@ public final class AbilityManager {
         for (Player player : players) {
             AbilitySession session = activeSession(player);
             if (session != null) {
-                session.ability().onTick(playerContext(player, session.definition()));
+                invokeSharedCallback(player, session, "onTick",
+                    () -> session.ability().onTick(playerContext(player, session.definition())));
             }
         }
     }
@@ -464,7 +466,21 @@ public final class AbilityManager {
         for (Player player : players) {
             AbilitySession session = activeSession(player);
             if (session != null) {
-                session.ability().onCountdownTick(playerContext(player, session.definition()));
+                invokeSharedCallback(player, session, "onCountdownTick",
+                    () -> session.ability().onCountdownTick(playerContext(player, session.definition())));
+            }
+        }
+    }
+
+    private void invokeSharedCallback(Player player, AbilitySession session, String callback, Runnable action) {
+        try {
+            action.run();
+        } catch (RuntimeException | LinkageError ex) {
+            if (session.shouldReportFailure(System.nanoTime())) {
+                plugin.getLogger().log(java.util.logging.Level.SEVERE,
+                    "Ability callback failed: ability=" + session.definition().id()
+                        + ", player=" + player.getName() + " (" + player.getUniqueId() + ")"
+                        + ", callback=" + callback + "; further failures for this session are logged at most every 30 seconds", ex);
             }
         }
     }
@@ -618,7 +634,8 @@ public final class AbilityManager {
             }
             AbilitySession session = activeSession(player);
             if (session != null) {
-                session.ability().onBlockExplode(playerContext(player, session.definition()), event);
+                invokeSharedCallback(player, session, "onBlockExplode",
+                    () -> session.ability().onBlockExplode(playerContext(player, session.definition()), event));
             }
         }
     }
@@ -646,7 +663,8 @@ public final class AbilityManager {
             }
             AbilitySession session = activeSession(owner);
             if (session != null) {
-                session.ability().onItemConsume(playerContext(owner, session.definition()), event);
+                invokeSharedCallback(owner, session, "onItemConsume",
+                    () -> session.ability().onItemConsume(playerContext(owner, session.definition()), event));
                 if (event.isCancelled()) return;
             }
         }
