@@ -4,12 +4,13 @@ Minecraft Mod MCP 0.4.1의 Fabric 모드와 도구 스키마를 이용한다. `b
 
 ## 준비
 
-Node.js 20 이상, Java 25, 설치된 Minecraft Java 26.3, `.paper-smoke/26.3`의 기존 Paper 캐시와 동의된 EULA, 빌드된 NewGodWar JAR가 필요하다.
+프로젝트 전용 Node.js 22.23.4 (Windows x64), Java 25, 설치된 Minecraft Java 26.3, `.paper-smoke/26.3`의 기존 Paper 캐시와 동의된 EULA, 빌드된 NewGodWar JAR가 필요하다.
 
 ```powershell
-npm install --prefix .build/minecraft-mcp/bridge --cache .build/npm-cache --ignore-scripts --no-audit --no-fund --save-exact minecraft-mod-mcp@0.4.1
+./scripts/minecraft-mcp/Setup-Node.ps1
+./scripts/minecraft-mcp/Node.ps1 .build/node/node-v22.23.4-win-x64/node_modules/npm/bin/npm-cli.js install --prefix .build/minecraft-mcp/bridge --cache .build/npm-cache --ignore-scripts --no-audit --no-fund --save-exact minecraft-mod-mcp@0.4.1
 python scripts/Test-ClientVisuals.py prepare --minecraft-dir 'C:\Users\사용자\AppData\Roaming\.minecraft' --java 'C:\Java25\bin\java.exe'
-node scripts/minecraft-mcp/check.mjs
+./scripts/minecraft-mcp/Node.ps1 scripts/minecraft-mcp/check.mjs
 python scripts/Test-ClientVisuals.py preflight
 ```
 
@@ -18,6 +19,10 @@ python scripts/Test-ClientVisuals.py preflight
 상류 0.4.1의 `McpHttpServer`는 문서와 달리 `0.0.0.0`에 바인딩한다. 준비 스크립트는 SHA-256을 확인한 원본을 `downloads/`에 보관하고, 해당 클래스의 문자열 상수 하나만 `127.0.0.1`로 바꾼 `-localhost.jar`를 테스트 클라이언트에 설치한다. 이 단계에서는 변경 항목·ZIP CRC·원본/수정본 해시를 검사한다. 버전이 바뀌거나 상수가 달라지면 자동 적용을 거부한다.
 
 실행 시에는 `PrepareClientActions.java`가 `ReflectionHelper.sendCommand` 하나를 프로젝트의 `TestClientActions`로 교체한다. 상류의 잘못된 `Connection` 필드 탐색 대신 실제 26.3의 `getConnection().sendCommand()`를 사용한다. 카메라·좌/우클릭·HUD·파티클 설정은 Minecraft 메인 스레드의 내부 메서드로 처리하며 OS 입력을 보내지 않는다. 수정본의 해시는 실행 구성에 갱신한다. 상류 스크린샷은 최대 2초 전 캐시를 반환하므로 매 캡처 전에 캐시를 지워 짧은 효과를 놓치지 않게 한다.
+
+설치 스크립트는 [공식 22.23.4 보안 릴리스](https://nodejs.org/en/blog/release/v22.23.4)의 Windows x64 ZIP을 내려받아 고정 SHA-256을 검사한다. [2026-10-21 보안 공지](https://nodejs.org/en/blog/vulnerability/october-2026-security-releases)의 CVE-2026-111497 등을 포함한 런타임 수정이며 시스템 Node와 PATH는 변경하지 않는다. 프로젝트 루트에서 아래 명령들을 실행한다. 다른 OS에서는 공식 패치 버전 22.23.4 이상(22.x), 24.22.1 이상(24.x), 26.12.1 이상(26.x)을 사용해야 한다. 브리지는 이보다 오래된 런타임을 시작 시 거부한다.
+
+로컬 `.codex/config.toml`의 `mcp_servers.newgodwar_visual_test.command`는 프로젝트의 `.build/node/node-v22.23.4-win-x64/node.exe` 절대 경로로 지정한다. `args`와 `cwd`는 기존 프로젝트 경로를 유지한다. 이미 실행 중인 MCP에는 자동 적용되지 않으므로 설정 변경 후 해당 MCP 연결 또는 Codex를 재시작해야 한다.
 
 ## 실행과 검사
 
@@ -32,8 +37,8 @@ python scripts/Test-ClientVisuals.py stop
 실행기는 현재 빌드 JAR를 전용 서버로 복사하고 서버 준비 후 클라이언트를 시작한다. `stop` 또는 `Ctrl+C`로 종료한다. 창을 직접 보려는 경우에만 `--allow-client-window`를 사용한다. MCP `test_status`에서 전용 클라이언트 연결을 확인하고 `enter_control_mode`로 게임 내 자동화 모드에 진입한다. MCP 설정을 새로 읽는 세션에서 `newgodwar_visual_test` 도구를 사용할 수 있다. 재시작 전 세션에서는 아래 CLI도 같은 MCP 전송을 사용한다.
 
 ```powershell
-node scripts/minecraft-mcp/call.mjs test_status
-node scripts/minecraft-mcp/scenario.mjs scripts/minecraft-mcp/guard-views.json
+./scripts/minecraft-mcp/Node.ps1 scripts/minecraft-mcp/call.mjs test_status
+./scripts/minecraft-mcp/Node.ps1 scripts/minecraft-mcp/scenario.mjs scripts/minecraft-mcp/guard-views.json
 ```
 
 시나리오는 원본 PNG, 실행 단계, 명령 결과, 능력 사용 채팅 확인 여부를 `.build/minecraft-mcp/evidence/<name>/`에 저장한다. 같은 이름을 재실행하면 해당 증거 파일을 갱신한다. 명령 전송 성공만으로 능력 발동을 판정하지 않으며 `expectChat`이 있는 단계는 실제 성공 메시지가 도착해야 진행한다.
@@ -66,10 +71,10 @@ Minecraft 26.3 / Fabric 0.19.5 / 960×540 / 기본 리소스 / 셰이더 없음 
 .\gradlew.bat --offline build :plugin:visualRegressionJar
 python scripts/Test-ClientVisuals.py run --hidden --visual-probe
 # 서버와 전용 클라이언트의 접속 완료 후 별도 터미널에서 실행
-node scripts/minecraft-mcp/suite.mjs models
-node scripts/minecraft-mcp/suite.mjs casts
-node scripts/minecraft-mcp/suite.mjs passives creeper
-node scripts/minecraft-mcp/report.mjs
+./scripts/minecraft-mcp/Node.ps1 scripts/minecraft-mcp/suite.mjs models
+./scripts/minecraft-mcp/Node.ps1 scripts/minecraft-mcp/suite.mjs casts
+./scripts/minecraft-mcp/Node.ps1 scripts/minecraft-mcp/suite.mjs passives creeper
+./scripts/minecraft-mcp/Node.ps1 scripts/minecraft-mcp/report.mjs
 python scripts/Test-ClientVisuals.py stop
 ```
 
@@ -94,13 +99,13 @@ python scripts/Test-ClientVisuals.py stop
 ```powershell
 $env:NGW_EVIDENCE='art-effects'
 $env:NGW_REQUIRE_ART='1'
-node scripts/minecraft-mcp/suite.mjs models
-node scripts/minecraft-mcp/animations.mjs models
-node scripts/minecraft-mcp/animations.mjs casts
-node scripts/minecraft-mcp/art-report.mjs
+./scripts/minecraft-mcp/Node.ps1 scripts/minecraft-mcp/suite.mjs models
+./scripts/minecraft-mcp/Node.ps1 scripts/minecraft-mcp/animations.mjs models
+./scripts/minecraft-mcp/Node.ps1 scripts/minecraft-mcp/animations.mjs casts
+./scripts/minecraft-mcp/Node.ps1 scripts/minecraft-mcp/art-report.mjs
 ```
 
-`node scripts/minecraft-mcp/animations.mjs motion`은 묠니르의 옆 시점·1인칭·이동 중 회수·고저차·근거리·정지 모양·파티클 대체·도중 종료를 검사한다. 실제 클라이언트 좌클릭과 원본 영상, `/ngwvisual trace`의 틱별 Display 좌표를 함께 기록해 머리가 앞서는 투척·투척 자세를 유지한 손잡이 우선 회수·좌표 점프·회수 후 잔류를 검사한다. 이동 조건은 테스트 서버의 작은 위치 이동으로 재현하며 실제 키보드 보행 입력과 구분한다. `/ngwvisual boundary`는 billboard 조각이 로드되지 않은 청크에 걸린 뒤 같은 렌더러로 다시 표시할 수 있는지와 미로딩·정리를 검사한다. 이 명령과 설정 변경은 격리된 시각 검사 서버에서만 허용된다.
+`./scripts/minecraft-mcp/Node.ps1 scripts/minecraft-mcp/animations.mjs motion`은 묠니르의 옆 시점·1인칭·이동 중 회수·고저차·근거리·정지 모양·파티클 대체·도중 종료를 검사한다. 실제 클라이언트 좌클릭과 원본 영상, `/ngwvisual trace`의 틱별 Display 좌표를 함께 기록해 머리가 앞서는 투척·투척 자세를 유지한 손잡이 우선 회수·좌표 점프·회수 후 잔류를 검사한다. 이동 조건은 테스트 서버의 작은 위치 이동으로 재현하며 실제 키보드 보행 입력과 구분한다. `/ngwvisual boundary`는 billboard 조각이 로드되지 않은 청크에 걸린 뒤 같은 렌더러로 다시 표시할 수 있는지와 미로딩·정리를 검사한다. 이 명령과 설정 변경은 격리된 시각 검사 서버에서만 허용된다.
 
 `animations.mjs directional`은 수직 시선 위/아래에서 니케의 서쪽 돌진, 아테나의 서쪽 진형, 서쪽을 향한 표적 뒤로 가는 암살자 이동을 검사한다. `animations.mjs push`는 공통 밀쳐내기 5종을 같은 조건에서 검사하며 물 흐름에 따른 작은 횡방향 이동을 허용한다. `animations.mjs spear`는 궁니르의 전진·고저차·움직이는 표적·근거리·비행 중 엄폐·능력 변경 취소·파티클 대체·애니메이션 끄기를 검사한다. 창 아이템의 모델 키로 추적 표식과 비행 좌표를 구분한다. 취소 조건은 실제 능력 재지정으로 실행하여 독립 모델만 지우는 검사와 구분한다. `animations.mjs outlines <모델 ID>`는 원본 기본 모델의 파티클 윤곽을 촬영한다. 팩 촬영을 보존하려면 다른 `NGW_EVIDENCE` 경로를 사용한다. `NGW_RECORD_CASTS=1`로 `suite.mjs casts`를 실행하면 전체 93개 능력의 해당 일반/고급 발동에 원본 연속 프레임을 추가하고 패시브 경로도 실행한다. 준비·안내만 있는 기술과 기술이 없는 경우는 JSON에서 구분한다.
 
@@ -110,9 +115,9 @@ node scripts/minecraft-mcp/art-report.mjs
 
 ```powershell
 # --hidden --visual-probe로 실행하고 전용 클라이언트가 접속한 뒤
-node scripts/minecraft-mcp/animations.mjs models
-node scripts/minecraft-mcp/animations.mjs casts
-node scripts/minecraft-mcp/report.mjs
+./scripts/minecraft-mcp/Node.ps1 scripts/minecraft-mcp/animations.mjs models
+./scripts/minecraft-mcp/Node.ps1 scripts/minecraft-mcp/animations.mjs casts
+./scripts/minecraft-mcp/Node.ps1 scripts/minecraft-mcp/report.mjs
 ```
 
 기존 MCP 단일 캡처에는 요청 왕복 지연이 있으므로 `record_clip`이 게임 렌더 스레드에서 원본 PNG를 최대 20 fps로 저장한다. 실제 프레임 간격도 기록해 느려진 촬영을 임의의 20 fps 영상으로 표현하지 않는다. 입력 이름과 촬영 시간(1~6초)을 제한하고 중복 촬영과 경로 이탈을 거부한다. 이미지 합성·중간 프레임 생성은 하지 않는다. 프레임 원본은 `.build/minecraft-mcp/client/recordings/`, 목록은 `evidence/all-abilities/animations.json`에 있으므로 보고서를 옮길 때 프레임 폴더도 함께 보존해야 한다.

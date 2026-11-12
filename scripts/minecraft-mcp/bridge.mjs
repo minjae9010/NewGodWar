@@ -1,4 +1,5 @@
 // Project-scoped adapter for minecraft-mod-mcp 0.4.1. Never starts a game.
+import './runtime-check.mjs';
 import { readFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, resolve, join } from 'node:path';

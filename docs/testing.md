@@ -2,6 +2,136 @@
 
 이 프로젝트는 빌드, 실제 서버 기동, 기능 회귀 검사로 호환성을 확인합니다.
 
+Node 보조 도구는 [준비 절차](../scripts/minecraft-mcp/README.md)에 따라 프로젝트 전용 보안 패치 런타임을 설치한 후 프로젝트 루트에서 `scripts/minecraft-mcp/Node.ps1`로 실행합니다.
+
+## v0.3.12 릴리즈 준비 검사 (2026-11-12)
+
+JDK 21로 `clean build :plugin:loadRegressionJar :plugin:visualRegressionJar --offline`를 실행하고 Java 단위 테스트 138개, Python 성능 판정 테스트 4개, `actionlint`, Node 도구 문법·런타임 검사와 게시 리소스팩 카탈로그 검사를 통과했습니다. 배포 JAR의 클래스 249개는 모두 Java 8 바이트코드이며 회귀 검사 전용 클래스를 포함하지 않습니다.
+
+`build/libs/NewGodWar-0.3.12.jar`와 아래 능력·32명 성능·복구 검사에 사용한 `output/ability-pacing/NewGodWar-0.3.11.jar`를 ZIP 항목별로 비교했습니다. 실행 코드와 리소스는 같으며 `plugin.yml`과 매니페스트의 버전 표기만 다릅니다. 릴리즈 준비 JAR의 SHA-256은 `d00b2ddb5b71d7a3827647b99fe226d8cd8015f3e58b30cc1a3671f7b0601de2`입니다. GitHub Actions에서 게시 JAR를 다시 빌드하므로 이 로컬 파일 해시와 구분합니다.
+
+새 버전 JAR로 Paper 1.12.2·26.3 능력 회귀 검사를 다시 통과했습니다. 로그는 `.paper-smoke/ability-variety-1.12.2-px3nvmfl/ability-regression.log`, `.paper-smoke/ability-variety-26.3-afi6yq32/ability-regression.log`입니다. 로컬 서버 검사는 Java 25를 사용했으며, 릴리즈 CI는 1.12.2에 Java 8을 사용합니다. GitHub Actions의 필수 기동·코어·능력·명령어·복구 검사 통과 후 게시하도록 구성합니다.
+
+## 능력 10종의 전투 흐름 개선 (2026-11-12)
+
+[능력 변경 내역](wiki/abilities.md#전투-흐름-개선-2026-11-12)에 맞춰 재사용 폭렬·충전, 탐험 구역, 짧은 지원기, 꽃 수확·보호막, 눈덩이 명중 성장, 생존 중 상속, 시험 재도전을 검사했습니다. 비용과 쿨타임, 우르프 배율, 대상·아군 판정, 취소·사망·능력 교체, 저장 복원과 기존 메구밍의 사용 완료 상태 전환도 포함합니다. 확장 능력의 1회 사용 기능은 독립 검사 능력으로 계속 검증합니다.
+
+JDK 21의 오프라인 전체 빌드와 Java 단위 테스트 138개를 통과했습니다. 동일한 JAR로 Paper 1.12.2와 26.3의 능력 회귀 검사를 통과했으며, 두 로그에서 `PASS ability pacing`과 `ABILITY REGRESSION PASS`를 확인했습니다. 로그는 `.paper-smoke/ability-variety-1.12.2-6bb9zby5/ability-regression.log`, `.paper-smoke/ability-variety-26.3-xwm0xsyn/ability-regression.log`입니다. 26.3 기동 중 호스트의 Windows 성능 카운터 경고는 발생했지만, 능력 검사와 클래스 변환 오류 검사는 통과했습니다.
+
+시연 도구의 능력별 준비 조건도 갱신하고 Java 컴파일 및 JavaScript 문법 검사를 통과했습니다. 93종 능력의 연출 매핑 감사에서는 미분류 효과가 0개였습니다. 이번 검증에는 실제 클라이언트 영상 촬영이나 사람의 플레이 감각 평가는 포함하지 않습니다.
+
+검증한 JAR은 `output/ability-pacing/NewGodWar-0.3.11.jar`에 보관했으며 SHA-256은 `b10a669a58716828a359e24bf2821a9fdb8efb47b74c40a2df0b50ae05e03fe7`입니다. 검사 결과와 소스 해시는 같은 폴더의 `verification.json`에 기록했습니다.
+
+## 32명 주기 저장 최적화 (2026-11-12)
+
+플레이어 파일을 순서대로 저장하던 구간을 변경했습니다. 지원되는 Mojang 매핑/`ValueOutput` 저장 구조에서는 서버 스레드에서 플레이어 NBT를 깊은 복사하고 통계·발전과제를 서버의 원래 직렬화기로 캡처합니다. 최대 8개의 작업 스레드는 분리된 NBT와 UTF-8 바이트의 압축·파일 I/O만 처리합니다. 모든 쓰기가 끝날 때까지 같은 서버 틱에서 기다린 뒤 월드 저장·flush와 세션 확정을 진행합니다. 플레이어 저장을 여러 틱으로 분산하거나 Bukkit API를 작업 스레드에서 호출하지 않습니다. 저장 간격과 성능 합격 기준도 유지합니다.
+
+NBT 임시 파일과 세션은 디스크 동기화 후 원자 교체합니다. 플레이어의 기존 `.dat`는 새 파일 교체 전까지 유지하고 `.dat_old`도 남깁니다. 통계·발전과제는 서버의 기존 닫힌 파일 저장 기준을 유지하면서 원자 교체를 추가합니다. 실제 파일 내용이 같은 JSON만 쓰기를 생략하므로 다른 저장 경로가 쓴 파일을 오래된 메모리 캐시로 판단하지 않습니다. 실패·중단 때도 시작된 모든 쓰기를 기다리고, 해당 주기 저장이 실패하면 세션을 확정하지 않습니다. 종료 시에도 플레이어·월드 저장 성공 후 능력 상태를 확정합니다. 파일별 원자 교체이며 여러 파일 전체를 하나의 원자 트랜잭션으로 만드는 변경은 아닙니다.
+
+플레이어의 persistence 및 서버의 플레이어·통계·발전과제 저장 비활성화 설정을 따릅니다. 저장 구조를 확인할 수 없는 서버(1.12.2 포함)는 기존 `Bukkit.savePlayers()` 경로를 사용합니다. `game.log-save-timings`에는 `players_capture`, `players_io` 세부 구간이 추가되며 두 구간은 전체 `players` 시간 안에 포함됩니다.
+
+`--checkpoint-recovery`는 부하 측정 뒤 실제 접속자를 유지한 채 주기 저장을 기다리고 프로세스를 강제 종료합니다. 재접속 후 인벤토리·엔더 상자·경험치·통계·발전과제·팀·능력·세션을 비교합니다. 두 번째 종료에서는 플레이어 쌍의 아이템 교환과 월드 상자→플레이어 이동 결과까지 검증합니다. NBT/백업 압축 및 JSON 파일도 검사합니다.
+
+Paper 26.3 캐시 빌드 21, Java 25, 최대 힙 3GiB, 시야·시뮬레이션 거리 4, 각 모드 10초 준비 후 **60초** 측정으로 다음 결과를 얻었습니다. TPS 19 이상, 틱 p95·p99 50ms 이하, 최대 틱 250ms 이하, 느린 틱 1% 이하, 명령 왕복 p95 200ms 이하·최대 250ms 이하의 기존 기준을 모두 통과했습니다.
+
+| 32명 조건 | 이전 최대 틱 | 변경 후 최대 틱 | 틱 p95 / p99 | 50ms 초과 틱 | 명령 왕복 p95 / 최대 | 판정 |
+| --- | ---: | ---: | ---: | ---: | ---: | --- |
+| 일반 | 287.76ms | 193.65ms | 9.91 / 32.73ms | 9 / 1201 (0.75%) | 4.43 / 183.18ms | 통과 |
+| 우르프 | 286.92ms | 181.29ms | 9.66 / 13.35ms | 6 / 1201 (0.50%) | 7.49 / 158.66ms | 통과 |
+
+TPS는 일반 19.9999, 우르프 20.0입니다. 각 모드의 가장 긴 틱에 포함된 플레이어 저장은 203.00→109.03ms, 189.03→96.10ms로 줄었습니다. 이때 월드 저장은 69.46 / 71.13ms, 세션 저장은 6.62 / 4.32ms였습니다. 모든 성능 지표가 일률적으로 개선된 것은 아니며, 이번 변경은 주기 저장의 순간 지연을 줄이는 데 초점을 둡니다.
+
+부하 결과는 `.paper-smoke/load-26.3-cncuq8hm/results.json`이며 `performance_thresholds_passed: true`, 수집된 서버·클라이언트 오류 0건입니다. 실제 접속자 32명 상태의 강제 종료 복구 2회 및 16명 접속 해제→게임 종료→재접속 정리 2회도 통과했습니다. 측정 JAR와 최종 `build/libs/NewGodWar-0.3.11.jar`의 SHA-256은 모두 `b10a669a58716828a359e24bf2821a9fdb8efb47b74c40a2df0b50ae05e03fe7`입니다.
+
+현재 능력 밸런스 변경까지 반영한 전체 빌드, Java 단위 테스트 138개(저장 I/O 실패·중단·백업·변경 없는 JSON 검사 7개 포함), Python 판정 테스트 4개를 통과했습니다. Paper 1.12.2·26.3의 코어·능력 검사와 정상 종료·강제 종료·준비 상태·종료 정리·손상 파일 보호를 포함한 복구 6단계도 통과했습니다. 복구 로그는 `.paper-smoke/recovery-26.3-blx__29x/`, 코어 로그는 `.paper-smoke/inventory-menu-1.12.2-w4kfty1e/`, `.paper-smoke/inventory-menu-26.3-_y51hdvt/`, 능력 로그는 `.paper-smoke/ability-variety-1.12.2-vh2t_6ap/`, `.paper-smoke/ability-variety-26.3-oskt_0ym/`에 있습니다. 능력 실행기는 클래스 변환 오류가 있으면 PASS 문구가 출력되어도 실패 처리합니다.
+
+밸런스 변경을 포함한 최종 JAR 자체로 성능과 실제 접속자 복구를 재검증했으며 모든 검사 서버·클라이언트는 종료했습니다. 로컬 결과이며 원격 CI는 실행하지 않았습니다.
+
+```powershell
+./gradlew.bat build :plugin:loadRegressionJar --offline
+python -m unittest discover -s scripts/tests
+python scripts/Test-Load.py --players 32 --seconds 60 --checkpoint-recovery
+python scripts/Test-GameRecovery.py 26.3
+python scripts/Test-Inventory.py 1.12.2
+python scripts/Test-Inventory.py 26.3
+python scripts/Test-Abilities.py 1.12.2
+python scripts/Test-Abilities.py 26.3
+```
+
+## 재접속·능력 오류 격리와 저장 지연 계측 — 최적화 전 기준 (2026-11-12)
+
+아래 반복 처리 최적화 이후의 추가 수정본입니다. 재접속한 플레이어를 기존 다른 플레이어의 스코어보드 팀에 동기화하며, 다른 보드와 외부 objective는 유지합니다. 오프라인 중 생성된 보드와 잘못 남은 팀 항목을 실제 접속 처리로 검사합니다.
+
+능력의 `onTick`, `onCountdownTick`, 사망·블록 폭발·음식 섭취 공동 콜백은 능력별로 `RuntimeException`과 `LinkageError`를 격리합니다. 예외 뒤의 정상 능력은 계속 실행되며 기존 이벤트 취소 의미는 유지합니다. 능력 ID·플레이어 이름/UUID·콜백·스택을 기록하되 같은 능력 세션의 반복 오류는 30초에 한 번만 기록합니다. 일시적인 오류가 사라지면 다음 호출부터 다시 동작합니다.
+
+`game.log-save-timings: true`를 설정하면 `NGW SAVE TIMING`으로 플레이어 저장(`players`), 월드 저장(`worlds`), 구버전 디스크 반영 대기(`flush`), 세션 캡처·직렬화·파일 저장(`session`) 시간을 기록합니다. 기본값은 `false`이며 `/gw reload`로 적용할 수 있습니다. 부하 실행기는 이를 켜고 서버의 같은 단조 시계를 사용해 50ms를 넘긴 틱에 해당 저장 구간을 연결합니다. `results.json`의 `save_timings`와 각 단계의 `slow_ticks[].save_stages`에서 확인할 수 있습니다. 긴 틱의 상세 기록은 단계당 256개까지이며 전체 발생 횟수는 제한 없이 집계합니다.
+
+부하 합격 기준은 TPS 19 이상, 틱 p95·p99 50ms 이하, 최대 틱 250ms 이하, 50ms 초과 틱 비율 1% 이하, 명령 왕복 p95 200ms 이하·최대 250ms 이하입니다. 하나라도 벗어나거나 측정값이 없으면 `performance_failures`에 실패 이유를 저장하고 종료 코드 1을 반환합니다. 기존 p95 중심 판정으로 통과했던 결과도 이 기준으로는 실패할 수 있습니다.
+
+현재 수정본의 전체 빌드, Java 단위 테스트 130개, Python 부하 판정 테스트 4개, `actionlint` 검사를 통과했습니다. Paper 1.12.2·26.3에서 코어·능력·명령어 검사를 모두 통과했습니다. 로컬 서버 검사는 Java 25로 실행했으며, CI는 1.12.2에 Java 8을 사용합니다. Compatibility와 Release 모두 최신 지원 Paper 및 1.12.2의 코어·능력·명령어 6개 조합을 검사하며, Release는 모두 통과해야 게시합니다. CI 워크플로 자체는 아직 원격에서 실행하지 않았습니다.
+
+Paper 26.3의 정상 재시작, 진행 중·준비 중 강제 종료, 게임 종료 정리, 손상된 세션 파일 보호를 포함한 복구 검사 6단계도 통과했습니다. 로그는 `.paper-smoke/recovery-26.3-l5c01smj/phase-*.log`에 있습니다. 마지막 단계의 `Game recovery failed` 메시지는 의도적으로 손상시킨 파일을 덮어쓰지 않고 복구를 차단하는지 확인한 결과입니다.
+
+Paper 26.3, 최대 힙 3GiB, 시야·시뮬레이션 거리 4, 준비 10초 및 단계당 **60초**로 측정했습니다. 다른 빌드나 테스트 서버와 겹치지 않았습니다.
+
+| 조건 | 틱 p95 | 최대 틱 | 50ms 초과 틱 | 최대 명령 왕복 | 새 성능 기준 |
+| --- | ---: | ---: | ---: | ---: | --- |
+| 16명 일반 | 6.38ms | 197.52ms | 7회 | 146.48ms | 통과 |
+| 32명 일반 | 6.88ms | 287.76ms | 6회 | 251.46ms | 실패 |
+| 32명 우르프 | 8.87ms | 286.92ms | 6회 | 272.62ms | 실패 |
+
+32명 일반의 가장 긴 틱에는 플레이어 저장 203.00ms, 월드 저장 76.55ms, 세션 저장 4.87ms가 포함되었습니다. 우르프의 가장 긴 틱에서도 각각 189.03ms, 87.87ms, 4.92ms였습니다. 이 실행에서 주기 저장이 순간 지연의 대부분을 차지함을 확인했습니다. 복구용 저장 완료 보장은 유지하며, **32명 환경의 순간 지연은 아직 새 성능 기준을 넘습니다**. 이 결과를 성능 개선 완료나 32명 수용 보장으로 해석하지 않습니다. 기능·접속 해제/재접속 정리 검사는 통과했고, 부하 검사에서 수집한 서버·클라이언트 오류는 0건이며 서버는 종료했습니다.
+
+측정 결과는 `.paper-smoke/load-26.3-i0hz475z/results.json`, JAR SHA-256은 `62900f1ceb60da55a8a7aa7dd329019e08dabb315dfc368fbf83bb3234648a71`입니다. 코어 로그는 `.paper-smoke/inventory-menu-1.12.2-1sdlx4uo/`, `.paper-smoke/inventory-menu-26.3-t9sytw0c/`, 능력 로그는 `.paper-smoke/ability-variety-1.12.2-q_tnfqh4/`, `.paper-smoke/ability-variety-26.3-jkno0bfh/`, 명령어 로그는 `.paper-smoke/command-dummy-1.12.2-88ju7_9g/`, `.paper-smoke/command-dummy-26.3-rrlzy_45/`에 있습니다.
+
+```powershell
+./gradlew.bat build :plugin:loadRegressionJar --offline
+python -m unittest discover -s scripts/tests
+python scripts/Test-Inventory.py 1.12.2
+python scripts/Test-Inventory.py 26.3
+python scripts/Test-Abilities.py 1.12.2
+python scripts/Test-Abilities.py 26.3
+python scripts/Test-Commands.py 1.12.2
+python scripts/Test-Commands.py 26.3
+python scripts/Test-GameRecovery.py 26.3
+python scripts/Test-Load.py --players 16,32 --seconds 60
+```
+
+## 반복 처리 최적화와 구버전 메뉴 호환성 (2026-11-12)
+
+v0.3.11 기반 로컬 수정본에서 매초 능력 처리, 쿨타임 변경, 킬 집계, 킬타임 종료가 기존 스코어보드의 필요한 줄만 갱신하도록 연결했습니다. 팀 배정과 설정 변경의 전체 갱신은 유지하며, 보드가 없거나 교체된 경우에는 다시 구성합니다. 번개 등의 피해 출처 기록은 기존 15초 유효기간을 유지하면서 매초 만료 항목을 정리합니다. 새 예약 작업은 추가하지 않습니다.
+
+시선 타깃 검색은 시전자 위치·시선 벡터를 한 번 계산하고, 거리와 조준 범위를 통과한 후보에만 장애물 검사를 수행합니다. 가까운 대상의 엄폐, 같은 거리의 선택 순서, 눈·몸통 조준, 사거리 경계, 다른 월드, 관전자와 아군 판정을 확인했습니다.
+
+Paper 1.12.2에서 같은 메뉴를 가리키는 `CraftInventory` 래퍼가 달라 클릭 보호와 뽑기 처리가 누락되던 문제도 수정했습니다. 인벤토리 동등성 및 메뉴 상태를 확인하며, 이전 메뉴의 지연 클릭·닫기 이벤트가 새 메뉴의 비용이나 상태에 영향을 주지 않는지 검사합니다.
+
+JDK 21의 전체 빌드·단위 테스트 129개와 Paper 1.12.2·26.3의 능력 및 코어 회귀 검사를 통과했습니다. 코어 검사에는 메뉴 클릭·드래그·페이지 이동·닫기, 스코어보드 재사용·다른 objective 보존·표시 끄기/복원, 팀 재접속, 월드 복원이 포함됩니다. 첫 26.3 코어 실행은 월드 스냅샷 디렉토리 이동에 실패했으나, 재실행과 최종 검사에서는 월드 복원까지 통과했습니다. 최종 JAR의 SHA-256은 `6519ba972f50085cab6317ca6a9dbb3ef13c2ff290cc753925a3d4f2818b4973`입니다. 능력 검사 후 변경된 운영 클래스는 `GamblingGui`와 그 내부 클래스뿐이며, 최종 메뉴 수정본으로 양쪽 코어 검사를 다시 통과했습니다.
+
+검사 로그는 `.paper-smoke/ability-variety-1.12.2-g3s3_xt9/`, `.paper-smoke/ability-variety-26.3-xxz7um8b/`, `.paper-smoke/inventory-menu-1.12.2-5jcvkqus/`, `.paper-smoke/inventory-menu-26.3-bwi6bseo/`에 있습니다.
+
+변경 전과 최종 JAR를 같은 부하 스크립트로 각각 측정했습니다. Paper 26.3, Java 25, 최대 힙 3GiB, 시야·시뮬레이션 거리 4, 단계별 10초 준비와 20초 측정 조건이며, 다른 테스트 서버와 빌드를 겹치지 않았습니다.
+
+| 조건 | 변경 전 틱 p95 | 변경 후 틱 p95 | 변경 후 TPS | 변경 후 명령 왕복 p95 |
+| --- | ---: | ---: | ---: | ---: |
+| 16명 일반 | 14.96ms | 10.64ms | 20.00 | 9.44ms |
+| 32명 일반 | 11.60ms | 10.41ms | 20.00 | 18.18ms |
+| 32명 우르프 | 8.72ms | 9.21ms | 19.90 | 10.17ms |
+
+일반 모드의 p95는 줄었지만 우르프는 소폭 늘었습니다. 20초 단일 측정의 전투·JIT·GC 변동이 있으므로 모든 상황의 속도 향상이나 운영 수용 인원을 보장하지 않습니다. 세 단계 모두 TPS 19 이상·틱 p95 50ms 미만·명령 왕복 p95 200ms 미만의 기준과 종료 전 접속 해제·재접속 정리 검사를 통과했습니다. 부하 검사에서 수집하는 서버·클라이언트 오류는 0건이며 테스트 서버는 종료했습니다. 실제 클라이언트 화면은 이번 검사 범위에 포함되지 않습니다.
+
+원본 결과는 `.paper-smoke/load-26.3-8ji94_ln/results.json`(변경 전, JAR SHA-256 `486b26f6a08145165801682529814a8e489020a19ea34ec1beeabbcff125458a`)과 `.paper-smoke/load-26.3-i7v_fwnz/results.json`(최종)에 있습니다.
+
+```powershell
+# 빌드는 JAVA_HOME을 JDK 21로 지정한 환경에서 실행
+./gradlew.bat build :plugin:loadRegressionJar --offline
+# 서버 검사는 Java 25가 PATH에 있는 환경에서 실행
+python scripts/Test-Abilities.py 1.12.2
+python scripts/Test-Abilities.py 26.3
+python scripts/Test-Inventory.py 1.12.2
+python scripts/Test-Inventory.py 26.3
+python scripts/Test-Load.py --players 16,32 --seconds 20
+```
+
 ## 전체 능력 움직임 점검 (2026-10-11)
 
 배포 버전은 v0.3.11입니다. 아래 시각 검사본과 로컬 릴리즈 준비 JAR의 ZIP 내용을 비교해 `plugin.yml`·매니페스트의 버전 표기만 달라졌음을 확인했습니다. 실행 코드와 리소스는 같습니다. 새 버전의 전체 빌드·단위 테스트 127개와 저장된 팩의 모델·텍스처·해시 검사도 통과했습니다. 게시 JAR는 GitHub Actions에서 다시 빌드하므로 아래 시각 검사본의 파일 해시와 구분합니다.
@@ -20,17 +150,17 @@
 $env:NGW_EVIDENCE='all-motion-audit-20261011'
 $env:NGW_REQUIRE_ART='1'
 $env:NGW_RECORD_CASTS='1'
-node scripts/minecraft-mcp/suite.mjs casts
+./scripts/minecraft-mcp/Node.ps1 scripts/minecraft-mcp/suite.mjs casts
 # 수정 후 최종본: 다른 경로에 기록
 $env:NGW_EVIDENCE='all-motion-final-20261011'
-node scripts/minecraft-mcp/animations.mjs directional
-node scripts/minecraft-mcp/animations.mjs push
-node scripts/minecraft-mcp/animations.mjs spear
-node scripts/minecraft-mcp/animations.mjs motion
-node scripts/minecraft-mcp/animations.mjs models
-node scripts/minecraft-mcp/animations.mjs flight
+./scripts/minecraft-mcp/Node.ps1 scripts/minecraft-mcp/animations.mjs directional
+./scripts/minecraft-mcp/Node.ps1 scripts/minecraft-mcp/animations.mjs push
+./scripts/minecraft-mcp/Node.ps1 scripts/minecraft-mcp/animations.mjs spear
+./scripts/minecraft-mcp/Node.ps1 scripts/minecraft-mcp/animations.mjs motion
+./scripts/minecraft-mcp/Node.ps1 scripts/minecraft-mcp/animations.mjs models
+./scripts/minecraft-mcp/Node.ps1 scripts/minecraft-mcp/animations.mjs flight
 $env:NGW_EVIDENCE='all-motion-fallback-20261011'
-node scripts/minecraft-mcp/animations.mjs outlines design.SOLAR_ARROW design.TRIDENT design.FISH_HOOK
+./scripts/minecraft-mcp/Node.ps1 scripts/minecraft-mcp/animations.mjs outlines design.SOLAR_ARROW design.TRIDENT design.FISH_HOOK
 ```
 
 ## 묠니르 자세를 유지하는 회수 (2026-10-11)
@@ -44,8 +174,8 @@ node scripts/minecraft-mcp/animations.mjs outlines design.SOLAR_ARROW design.TRI
 ```powershell
 $env:NGW_EVIDENCE='thor-grip-first-20261011'
 $env:NGW_REQUIRE_ART='1'
-node scripts/minecraft-mcp/animations.mjs motion
-node scripts/minecraft-mcp/suite.mjs casts thor
+./scripts/minecraft-mcp/Node.ps1 scripts/minecraft-mcp/animations.mjs motion
+./scripts/minecraft-mcp/Node.ps1 scripts/minecraft-mcp/suite.mjs casts thor
 ```
 
 ## 이전 묠니르 비행 자세 검사 (2026-10-11)
@@ -75,10 +205,10 @@ Paper 26.3과 1.12.2 능력 회귀 검사도 통과했습니다. 각 서버에�
 ```powershell
 $env:NGW_EVIDENCE='motion-verified-20261011'
 $env:NGW_REQUIRE_ART='1'
-node scripts/minecraft-mcp/animations.mjs motion
-node scripts/minecraft-mcp/animations.mjs models
-node scripts/minecraft-mcp/animations.mjs flight
-node scripts/minecraft-mcp/suite.mjs casts thor odin poseidon invincibility athena fisher blacksmith
+./scripts/minecraft-mcp/Node.ps1 scripts/minecraft-mcp/animations.mjs motion
+./scripts/minecraft-mcp/Node.ps1 scripts/minecraft-mcp/animations.mjs models
+./scripts/minecraft-mcp/Node.ps1 scripts/minecraft-mcp/animations.mjs flight
+./scripts/minecraft-mcp/Node.ps1 scripts/minecraft-mcp/suite.mjs casts thor odin poseidon invincibility athena fisher blacksmith
 ```
 
 ## 입체 리소스와 렌더러 최적화 검사 (2026-10-11)
@@ -159,7 +289,7 @@ python scripts/Test-Commands.py 1.12.2
 
 26.3 / Fabric 0.19.5 / 960×540 실제 클라이언트에서도 팩 다운로드 성공, 홈→전투→홈 이동, 우르프·게임룰·팩 연결 안내의 한글 툴팁, 도박 확률·비용·당첨 결과와 조약돌 64→32 차감, 메뉴 텍스처 비활성화를 확인했습니다. 원본 캡처와 검사 해시는 `build/gui-preview/`에 있습니다. 이 검사는 쉐이더 조합이나 다른 버전의 실제 클라이언트 화면까지 검증한 결과는 아닙니다.
 
-재현은 `Test-ClientVisuals.py run --hidden --art-pack`으로 전용 클라이언트를 시작하고 해당 팩의 수신 성공을 확인한 뒤 `node scripts/minecraft-mcp/scenario.mjs scripts/minecraft-mcp/menu-views.json`을 실행합니다. `menu_hover`와 `menu_click`은 게임 내부 슬롯 좌표·네트워크 클릭만 사용하며 OS 마우스를 움직이지 않습니다. 이미 실행 중인 시각 검사 세션에서는 동시에 실행하지 마세요.
+재현은 `Test-ClientVisuals.py run --hidden --art-pack`으로 전용 클라이언트를 시작하고 해당 팩의 수신 성공을 확인한 뒤 `./scripts/minecraft-mcp/Node.ps1 scripts/minecraft-mcp/scenario.mjs scripts/minecraft-mcp/menu-views.json`을 실행합니다. `menu_hover`와 `menu_click`은 게임 내부 슬롯 좌표·네트워크 클릭만 사용하며 OS 마우스를 움직이지 않습니다. 이미 실행 중인 시각 검사 세션에서는 동시에 실행하지 마세요.
 
 ## 기본 검사
 

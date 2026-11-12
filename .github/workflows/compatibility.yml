@@ -29,6 +29,9 @@ jobs:
       - name: Verify published resource pack catalogue
         run: python scripts/effect-art/verify_catalogue.py --plugin-only
 
+      - name: Verify load acceptance rules
+        run: python -m unittest discover -s scripts/tests
+
       - name: Upload plugin jar
         uses: actions/upload-artifact@v4
         with:
@@ -221,13 +224,19 @@ jobs:
 
 
   core-regression:
-    name: Game ${{ matrix.suite }} regression / Paper
+    name: Game ${{ matrix.suite }} / Paper ${{ matrix.target.minecraft }}
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
+        suite: [core, ability, command]
+        target:
+          - minecraft: latest
+            java: "25"
+          - minecraft: "1.12.2"
+            java: "8"
         include:
           - suite: core
             probe: CoreRegressionProbe
@@ -251,18 +260,20 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: "25"
+          java-version: ${{ matrix.target.java }}
       - name: Test ${{ matrix.suite }} behavior
         shell: pwsh
         run: |
           $jar = (Get-ChildItem build/libs -Filter 'NewGodWar-*.jar' | Select-Object -First 1).FullName
-          ./scripts/Test-PaperMatrix.ps1 -SkipBuild -LatestVersion -PluginJar $jar -ProbeJar "build/regression-fixtures/${{ matrix.suite }}-regression/${{ matrix.probe }}.jar" -ProbeSuccessMarker "${{ matrix.marker }}" -WorkDir ".paper-smoke/${{ matrix.suite }}-regression" -TimeoutSeconds 180
+          $target = "${{ matrix.target.minecraft }}"
+          $versionArgs = if ($target -eq "latest") { @{ LatestVersion = $true } } else { @{ Versions = @($target) } }
+          ./scripts/Test-PaperMatrix.ps1 -SkipBuild @versionArgs -PluginJar $jar -ProbeJar "build/regression-fixtures/${{ matrix.suite }}-regression/${{ matrix.probe }}.jar" -ProbeSuccessMarker "${{ matrix.marker }}" -WorkDir ".paper-smoke/${{ matrix.suite }}-regression-${{ matrix.target.minecraft }}" -TimeoutSeconds 180
       - name: Upload regression logs
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.suite }}-regression-logs
-          path: .paper-smoke/${{ matrix.suite }}-regression/**/logs/latest.log
+          name: ${{ matrix.suite }}-regression-${{ matrix.target.minecraft }}-logs
+          path: .paper-smoke/${{ matrix.suite }}-regression-${{ matrix.target.minecraft }}/**/logs/latest.log
 
   recovery-regression:
     name: Restart and crash recovery / Paper 26.3
