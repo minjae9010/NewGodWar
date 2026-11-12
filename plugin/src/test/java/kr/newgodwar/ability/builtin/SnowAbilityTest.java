@@ -2,7 +2,6 @@ package kr.newgodwar.ability.builtin;
 
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
-import java.util.List;
 import kr.newgodwar.ability.api.AbilityPlayerContext;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
@@ -13,75 +12,44 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 public final class SnowAbilityTest {
-    private final List<String> messages = new ArrayList<String>();
-    private final Player owner = player(messages);
-    private final AbilityPlayerContext context = new AbilityPlayerContext(null, owner, null);
-
-    @Test public void firstDeathIncreasesAttackFromZeroToOneAndReportsIt() {
-        SnowAbility ability = new SnowAbility();
-        ability.onStaffRight(context, owner, null);
-        assertEquals("공격 지수 : 0", messages.get(0));
-        ability.onDeath(context, death(owner));
-        assertEquals("공격 지수가 1(으)로 증가했습니다. (최대 5)", messages.get(1));
-        ability.onStaffRight(context, owner, null);
-        assertEquals("공격 지수 : 1", messages.get(2));
-    }
-
-    @Test public void onlyOwnDeathsIncreaseAttackAndGrowthStopsAtFive() {
-        SnowAbility ability = new SnowAbility();
-        ability.onDeath(context, death(player(new ArrayList<String>())));
-        assertTrue(messages.isEmpty());
-        ability.onStaffRight(context, owner, null);
-        assertEquals("공격 지수 : 0", messages.get(0));
-        messages.clear();
-        for (int i = 1; i <= 8; i++) {
-            ability.onDeath(context, death(owner));
-            ability.onStaffRight(context, owner, null);
-            assertEquals("공격 지수 : " + Math.min(i, 5), messages.get(messages.size() - 1));
-        }
-        assertEquals(13, messages.size()); // Five growth messages and eight queries.
-    }
-
-    @Test public void growthSurvivesSessionRecoveryAndContinuesAfterwards() throws Exception {
-        SnowAbility original = new SnowAbility();
-        original.onDeath(context, death(owner));
-        original.onDeath(context, death(owner));
+    @Test public void deathsDoNotFarmOrEraseCombatProgress() {
+        Player owner = (Player) Proxy.newProxyInstance(getClass().getClassLoader(), new Class<?>[] {Player.class},
+            (p, m, a) -> m.getName().equals("equals") ? p == a[0] : null);
+        AbilityPlayerContext context = new AbilityPlayerContext(null, owner, null);
         YamlConfiguration saved = new YamlConfiguration();
-        original.saveSession(saved);
-        YamlConfiguration decoded = new YamlConfiguration();
-        decoded.loadFromString(saved.saveToString());
-        SnowAbility restored = new SnowAbility();
-        restored.loadSession(decoded);
-        restored.onStaffRight(context, owner, null);
-        assertEquals("공격 지수 : 2", messages.get(messages.size() - 1));
-        restored.onDeath(context, death(owner));
-        restored.onStaffRight(context, owner, null);
-        assertEquals("공격 지수 : 3", messages.get(messages.size() - 1));
+        saved.set("snow-attack", 3);
+        saved.set("snow-growth-hits", 2);
+        SnowAbility ability = new SnowAbility(); ability.loadSession(saved);
+        for (int i = 0; i < 8; i++) ability.onDeath(context, new PlayerDeathEvent(owner, new ArrayList<ItemStack>(), 0, ""));
+        YamlConfiguration after = new YamlConfiguration(); ability.saveSession(after);
+        assertEquals(3, after.getInt("snow-attack"));
+        assertEquals(2, after.getInt("snow-growth-hits"));
     }
 
-    @Test public void legacyOrInvalidSavedAttackStaysWithinZeroToFive() {
+    @Test public void recoveryPreservesPartialCombatProgressAndCooldowns() throws Exception {
+        YamlConfiguration saved = new YamlConfiguration();
+        saved.set("snow-attack", 4);
+        saved.set("snow-growth-hits", 3);
+        saved.set("cooldowns.1", 3000L);
+        SnowAbility original = new SnowAbility(); original.loadSession(saved);
+        YamlConfiguration encoded = new YamlConfiguration(); original.saveSession(encoded);
+        YamlConfiguration decoded = new YamlConfiguration(); decoded.loadFromString(encoded.saveToString());
+        SnowAbility restored = new SnowAbility(); restored.loadSession(decoded);
+        YamlConfiguration after = new YamlConfiguration(); restored.saveSession(after);
+        assertEquals(4, after.getInt("snow-attack"));
+        assertEquals(3, after.getInt("snow-growth-hits"));
+        assertTrue(restored.cooldownRemainingMillis(1) > 0);
+    }
+
+    @Test public void legacyAndInvalidProgressCannotStartBelowOneOrExceedTheCap() {
         for (Integer savedValue : new Integer[] {null, -3, 0, 1, 5, 99}) {
             YamlConfiguration saved = new YamlConfiguration();
-            saved.set("snow-attack", savedValue);
-            SnowAbility ability = new SnowAbility();
-            ability.loadSession(saved);
-            ability.onStaffRight(context, owner, null);
-            int expected = savedValue == null ? 0 : Math.max(0, Math.min(5, savedValue));
-            assertEquals("공격 지수 : " + expected, messages.get(messages.size() - 1));
+            saved.set("snow-attack", savedValue); saved.set("snow-growth-hits", 99);
+            SnowAbility ability = new SnowAbility(); ability.loadSession(saved);
+            YamlConfiguration after = new YamlConfiguration(); ability.saveSession(after);
+            int expected = savedValue == null ? 1 : Math.max(1, Math.min(5, savedValue));
+            assertEquals(expected, after.getInt("snow-attack"));
+            assertEquals(expected == 5 ? 0 : 3, after.getInt("snow-growth-hits"));
         }
-    }
-
-    private static PlayerDeathEvent death(Player player) {
-        return new PlayerDeathEvent(player, new ArrayList<ItemStack>(), 0, "");
-    }
-
-    private static Player player(List<String> messages) {
-        return (Player) Proxy.newProxyInstance(SnowAbilityTest.class.getClassLoader(),
-            new Class<?>[] {Player.class}, (proxy, method, args) -> {
-                if (method.getName().equals("equals")) return proxy == args[0];
-                if (method.getName().equals("hashCode")) return System.identityHashCode(proxy);
-                if (method.getName().equals("sendMessage")) messages.add((String) args[0]);
-                return null;
-            });
     }
 }

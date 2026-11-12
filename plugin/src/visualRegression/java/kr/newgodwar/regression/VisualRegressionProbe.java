@@ -215,6 +215,12 @@ public final class VisualRegressionProbe extends JavaPlugin {
     private void condition(Player player,String kind) throws Exception {
         GodAbility ability=core.abilities().session(player).ability();
         AbilityPlayerContext context=new AbilityPlayerContext(core,player,core.abilities().get(player));
+        if(kind.equals("normal") && current.equals("gardener"))
+            player.getInventory().addItem(new ItemStack(Material.RED_ROSE,3));
+        if(kind.equals("advanced") && current.equals("megumin")) {
+            Method cooldown=BaseAbility.class.getDeclaredMethod("setRawCooldown",int.class,long.class);cooldown.setAccessible(true);
+            cooldown.invoke(ability,1,90000L);
+        }
         if(kind.equals("normal") && current.equals("nasdaq")) {
             player.setItemInHand(new ItemStack(Material.IRON_INGOT,8));
             core.getConfig().set("abilities.nasdaq.iron-success-percent",100);
@@ -333,12 +339,15 @@ public final class VisualRegressionProbe extends JavaPlugin {
             require(!caught.isValid(),"Fisher did not replace the caught fish");observed.put("caughtReplaced",true);
         }
         if(current.equals("goldspoon")) {
+            ability.onPrepare(context);
+            int before=leggings(player);
             ability.onRespawn(context,new PlayerRespawnEvent(player,player.getLocation(),false));
-            boolean found=false;for(ItemStack item:player.getInventory().getContents())if(item!=null&&item.getType().name().endsWith("LEGGINGS"))found=true;
-            require(found,"Goldspoon leggings missing");observed.put("leggings",found);
+            require(before>0 && leggings(player)==before,"Inheritance missing or respawn granted extra equipment");
+            observed.put("leggings",before);observed.put("respawnGranted",false);
         }
         if(current.equals("pokego")) {
-            for(int i=0;i<1000;i++)ability.onMove(context,new PlayerMoveEvent(player,player.getLocation(),player.getLocation().clone().add(0.2,0,0)));
+            Location origin=player.getLocation();
+            for(int i=1;i<16;i++)ability.onMove(context,new PlayerMoveEvent(player,origin.clone().add((i-1)*4,0,0),origin.clone().add(i*4,0,0)));
             observed.put("newAbility",core.abilities().get(player).id());require(!core.abilities().get(player).id().equals("pokego"),"Pokego did not change ability");
         }
         if(current.equals("scrooge")) {
@@ -426,6 +435,13 @@ public final class VisualRegressionProbe extends JavaPlugin {
             motionTrace.add(map("tick", tick[0], "entities", entities));
             if (++tick[0] >= 50) { getServer().getScheduler().cancelTask(traceTask); traceTask = -1; }
         }, 1L, 1L);
+    }
+
+    private int leggings(Player player) {
+        int count=0;
+        for(ItemStack item:player.getInventory().getContents())
+            if(item!=null && item.getType().name().endsWith("LEGGINGS")) count+=item.getAmount();
+        return count;
     }
 
     private Map<String,Object> state(Player player) {

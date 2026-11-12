@@ -61,7 +61,7 @@
 | [하데스 · hades](../../plugin/src/main/java/kr/newgodwar/ability/builtin/HadesAbility.java) | 직접 생물 반경 조회 · 시전자 자신·해당 위치 | 구 반경 2/4; 일반만 자신 포함; 아군 제외 |
 | [해리포터 · harry](../../plugin/src/main/java/kr/newgodwar/ability/builtin/HarryAbility.java) | `nearbyPlayers(context, player, 10, false)`<br>`targetPlayerInSight(context, player, 20, false)` | 공통 상태 중첩 규칙 · 실제 폭발/낙뢰 |
 | [헤카테 · hecate](../../plugin/src/main/java/kr/newgodwar/ability/builtin/HecateAbility.java) | `commandTargetPlayer(context, player, false)` | 공통 상태 중첩 규칙 |
-| [허준 · heojun](../../plugin/src/main/java/kr/newgodwar/ability/builtin/HeoJunAbility.java) | `nearbyPlayers(context, player, 10, true)` | 공통 상태 중첩 규칙 |
+| [허준 · heojun](../../plugin/src/main/java/kr/newgodwar/ability/builtin/HeoJunAbility.java) | `targetPlayerInSight(context, player, 12, true)` 또는 웅크린 시전자<br>`nearbyPlayers(context, player, 10, true)` | 일반기는 선택 치료, 고급기는 범위 완전 회복 |
 | [헤파이토스 · hephaestus](../../plugin/src/main/java/kr/newgodwar/ability/builtin/HephaestusAbility.java) | 공격/피격 당사자 · 시전자 자신·해당 위치 | 지속 중 생존/거리 재검사 · 공통 상태 중첩 규칙 |
 | [헤라 · hera](../../plugin/src/main/java/kr/newgodwar/ability/builtin/HeraAbility.java) | `targetPlayerInSight(context, player, 8, true)`<br>`alliesInRange(context, context.player().getLocation(), 8)` | 지속 중 생존/거리 재검사 · 공통 상태 중첩 규칙 |
 | [헤르메스 · hermes](../../plugin/src/main/java/kr/newgodwar/ability/builtin/HermesAbility.java) | 시전자 자신·해당 위치 | 공통 상태 중첩 규칙 |
@@ -95,7 +95,7 @@
 | [릭롤 · rickroll](../../plugin/src/main/java/kr/newgodwar/ability/builtin/RickrollAbility.java) | `nearbyPlayers(context, player, 8, false)`<br>`targetPlayerInSight(context, player, 22, false)` | 공통 상태 중첩 규칙 |
 | [룬 세공사 · runesmith](../../plugin/src/main/java/kr/newgodwar/ability/builtin/RunesmithAbility.java) | `enemies(context, rune.center, 3)` | 지속 중 생존/거리 재검사 · 공통 상태 중첩 규칙 |
 | [스크루지 · scrooge](../../plugin/src/main/java/kr/newgodwar/ability/builtin/ScroogeAbility.java) | 시전자 자신·해당 위치 | 같은 팀 조약돌 비용; 거리 제한 없음 |
-| [세종대왕 · sejong](../../plugin/src/main/java/kr/newgodwar/ability/builtin/SejongAbility.java) | `nearbyPlayers(context, player, 10, true)`<br>`targetPlayerInSight(context, player, 28, false)` | 공통 상태 중첩 규칙 |
+| [세종대왕 · sejong](../../plugin/src/main/java/kr/newgodwar/ability/builtin/SejongAbility.java) | `nearbyPlayers(context, player, 8, true)`<br>`targetPlayerInSight(context, player, 28, false)` | 공통 상태 중첩 규칙 |
 | [셀레네 · selene](../../plugin/src/main/java/kr/newgodwar/ability/builtin/SeleneAbility.java) | `targetPlayerInSight(context, player, 18, false)` | 공통 상태 중첩 규칙 |
 | [신사임당 · shinsaimdang](../../plugin/src/main/java/kr/newgodwar/ability/builtin/ShinSaimdangAbility.java) | `nearbyPlayers(context, player, 8, true)` | 공통 상태 중첩 규칙 |
 | [식신 · siksin](../../plugin/src/main/java/kr/newgodwar/ability/builtin/SiksinAbility.java) | 음식 소유자·섭취자 · 시전자 자신·해당 위치 | 공통 상태 중첩 규칙 · 음식 이름/버프 1:1; 공유는 동월드 생존 아군+소유자 |
@@ -110,7 +110,7 @@
 | [부두술사 · voodoo](../../plugin/src/main/java/kr/newgodwar/ability/builtin/VoodooAbility.java) | 시전자 / 소속 팀 상태 | 해당 이벤트와 소유자에 한정 |
 | [마녀 · witch](../../plugin/src/main/java/kr/newgodwar/ability/builtin/WitchAbility.java) | `nearbyPlayers(context, player, 10, false)` | 공통 상태 중첩 규칙 |
 | [마법사 · wizard](../../plugin/src/main/java/kr/newgodwar/ability/builtin/WizardAbility.java) | `nearbyPlayers(context, player, 10, false)`<br>`nearbyPlayers(context, player, 5, false)` | 실제 폭발/낙뢰 · 지연 낙뢰 직전 팀/세계/생존 재검사 |
-| [이순신 · yisunsin](../../plugin/src/main/java/kr/newgodwar/ability/builtin/YiSunSinAbility.java) | `nearbyPlayers(context, player, 10, false)`<br>`targetPlayerInSight(context, player, 32, false)` | 공통 상태 중첩 규칙 · 실제 폭발/낙뢰 |
+| [이순신 · yisunsin](../../plugin/src/main/java/kr/newgodwar/ability/builtin/YiSunSinAbility.java) | `nearbyPlayers(context, player, 6, false)`<br>`targetPlayerInSight(context, player, 32, false)` | 공통 상태 중첩 규칙 · 실제 폭발/낙뢰 |
 | [유관순 · yugwansun](../../plugin/src/main/java/kr/newgodwar/ability/builtin/YuGwanSunAbility.java) | `nearbyPlayers(context, player, 12, true)`<br>`nearbyPlayers(context, player, 12, false)`<br>`nearbyPlayers(context, player, 14, true)`<br>`enemyPlayers(context, player)` | 공통 상태 중첩 규칙 · 고급: 아군14, 적은 월드 무관 전체 |
 | [제트기관 · zet](../../plugin/src/main/java/kr/newgodwar/ability/builtin/ZetAbility.java) | 시전자 자신·해당 위치 | 공통 상태 중첩 규칙 |
 | [제우스 · zeus](../../plugin/src/main/java/kr/newgodwar/ability/builtin/ZeusAbility.java) | 시전자 자신·해당 위치 | 실제 폭발/낙뢰 |

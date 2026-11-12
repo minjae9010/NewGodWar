@@ -18,9 +18,9 @@ import java.util.List;
     id = "heojun",
     name = "허준",
     description = "동의보감으로 치명적인 상태 이상을 씻어내고 아군을 크게 회복합니다.",
-    normalSkill = "블레이즈 막대기 좌클릭: 자신을 완전히 회복하고 독·위더·실명·약화·감속 등 해로운 효과를 없앱니다.",
-    normalStoneCost = 36,
-    normalCooldownSeconds = 160,
+    normalSkill = "블레이즈 막대기 좌클릭: 12블록 안에서 바라보는 아군의 체력을 4 회복하고 해로운 효과를 없앱니다. 웅크린 채 사용하면 자신을 치료합니다.",
+    normalStoneCost = 8,
+    normalCooldownSeconds = 25,
     advancedSkill = "블레이즈 막대기 우클릭: 자신과 반경 10블록 아군을 완전히 회복하고 해로운 효과를 없앤 뒤 흡수 II·재생 II 12초, 저항 10초를 줍니다.",
     advancedStoneCost = 64,
     advancedCooldownSeconds = 320,
@@ -40,13 +40,13 @@ final class HeoJunAbility extends BaseAbility {
 
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
-        if (!useNormal(context, player)) {
+        Player target = player.isSneaking() ? player : targetPlayerInSight(context, player, 12, true);
+        if (target == null || !useNormal(context, player)) {
             return;
         }
-        heal(context, player);
-        cleanse(player);
-        feedback.notice(context, player, "동의보감 · 완전 회복 / 해로운 효과 해제", false, true);
-        player.sendMessage(ChatColor.GREEN + "동의보감의 처방으로 몸을 회복했습니다.");
+        restoreHealthApplied(context, target, 4.0D);
+        cleanse(target);
+        feedback.notice(context, target, "동의보감 · 회복 / 해로운 효과 해제", false, true);
     }
 
     @Override

@@ -115,11 +115,12 @@ try {
     for(const ability of catalog.abilities.filter(a=>!selected.length||selected.includes(a.id))) {
       const row={id:ability.id,name:ability.name,started:new Date().toISOString(),attempts:[]};
       try {
-        const role=['hera','teleporter','asclepius'].includes(ability.id)?'ally':'enemy';
+        const role=['hera','teleporter','asclepius','heojun'].includes(ability.id)?'ally':'enemy';
         if((await tool('get_player_info')).health===0){await action('respawn');await sleep(350);}
         await fixture(`prepare ${ability.id} ${role}`);await action('hud','false');await action('camera','back');
         for(const [kind,description] of [['normal',ability.normal],['advanced',ability.advanced]]) {
           if(description==='없음'){row.attempts.push({kind,status:'not-applicable'});continue;}
+          if((await tool('get_player_info')).health===0){await action('respawn');await sleep(350);}
           if(kind==='advanced'&&!['thor','hera','odin','anubis','echo','hephaestus','bomber','runesmith','nike','sniper'].includes(ability.id))
             await fixture(`prepare ${ability.id} ${role}`);
           await command('/gw ability cooldown reset self');

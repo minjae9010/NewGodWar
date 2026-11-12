@@ -19,9 +19,9 @@ import java.util.List;
     id = "yisunsin",
     name = "이순신",
     description = "학익진으로 전열을 세우고 거북선 포격으로 적진을 무너뜨립니다.",
-    normalSkill = "블레이즈 막대기 좌클릭: 반경 10블록 적을 밀쳐내고 저항 11초, 공격력 증가 9초를 얻습니다.",
-    normalStoneCost = 48,
-    normalCooldownSeconds = 170,
+    normalSkill = "블레이즈 막대기 좌클릭: 반경 6블록 적을 밀쳐내고 저항 5초, 공격력 증가 4초를 얻습니다. 주변에 적이 없어도 진입을 준비할 수 있습니다.",
+    normalStoneCost = 12,
+    normalCooldownSeconds = 30,
     advancedSkill = "블레이즈 막대기 우클릭: 32블록 안에서 바라보는 적에게 위력 2 포격 폭발과 피해 8을 주고 11초 동안 감속 III와 약화를 줍니다.",
     advancedStoneCost = 64,
     advancedCooldownSeconds = 320,
@@ -46,17 +46,13 @@ final class YiSunSinAbility extends BaseAbility {
 
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
-        List<Player> targets = nearbyPlayers(context, player, 10, false);
-        if (targets.isEmpty()) {
-            sendAbilityMessage(context, player, "failure", "능력을 사용할 수 있는 대상이 없습니다.");
-            return;
-        }
+        List<Player> targets = nearbyPlayers(context, player, 6, false);
         if (!useNormal(context, player)) {
             return;
         }
-        push(context, player, targets, 2.4D, 5L);
-        effect(context, player, "RESISTANCE", "DAMAGE_RESISTANCE", 11, 0);
-        effect(context, player, "STRENGTH", "INCREASE_DAMAGE", 9, 0);
+        if (!targets.isEmpty()) push(context, player, targets, 1.4D, 5L);
+        effect(context, player, "RESISTANCE", "DAMAGE_RESISTANCE", 5, 0);
+        effect(context, player, "STRENGTH", "INCREASE_DAMAGE", 4, 0);
         player.sendMessage(ChatColor.AQUA + "학익진으로 전열을 뒤흔들었습니다.");
     }
 

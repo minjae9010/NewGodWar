@@ -18,9 +18,9 @@ import java.util.List;
     id = "sejong",
     name = "세종대왕",
     description = "집현전의 지혜로 아군을 강화하고 훈민정음의 칙령으로 적의 능력을 봉인합니다.",
-    normalSkill = "블레이즈 막대기 좌클릭: 자신과 반경 10블록 아군에게 재생 II 10초, 저항 10초, 성급함 II 14초를 주고 경험 레벨을 2씩 올립니다.",
-    normalStoneCost = 40,
-    normalCooldownSeconds = 180,
+    normalSkill = "블레이즈 막대기 좌클릭: 자신과 반경 8블록 아군에게 재생 I 6초, 성급함 II 8초를 주고 경험 레벨을 1씩 올립니다.",
+    normalStoneCost = 10,
+    normalCooldownSeconds = 30,
     advancedSkill = "블레이즈 막대기 우클릭: 28블록 안에서 바라보는 적의 능력을 10초 동안 봉인하고 실명 8초, 약화·감속 III 12초를 줍니다.",
     advancedStoneCost = 64,
     advancedCooldownSeconds = 300,
@@ -47,16 +47,15 @@ final class SejongAbility extends BaseAbility {
 
     @Override
     protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
-        List<Player> targets = nearbyPlayers(context, player, 10, true);
+        List<Player> targets = nearbyPlayers(context, player, 8, true);
         targets.add(player);
         if (!useNormal(context, player)) {
             return;
         }
         for (Player target : targets) {
-            effect(context, target, PotionEffectType.REGENERATION, 10, 1);
-            effect(context, target, "RESISTANCE", "DAMAGE_RESISTANCE", 10, 0);
-            effect(context, target, "HASTE", "FAST_DIGGING", 14, 1);
-            target.setLevel(target.getLevel() + 2);
+            effect(context, target, PotionEffectType.REGENERATION, 6, 0);
+            effect(context, target, "HASTE", "FAST_DIGGING", 8, 1);
+            target.setLevel(target.getLevel() + 1);
         }
         player.sendMessage(ChatColor.AQUA + "집현전의 지혜가 아군에게 퍼졌습니다.");
     }

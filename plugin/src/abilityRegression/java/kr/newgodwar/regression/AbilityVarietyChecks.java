@@ -38,6 +38,8 @@ final class AbilityVarietyChecks {
     private boolean safeFloor = true;
     private boolean anchorObstructed;
     private int lightningStrikes;
+    private int explosions;
+    private float explosionPower;
 
     AbilityVarietyChecks(NewGodWarPlugin core) { this.core = core; }
 
@@ -59,6 +61,7 @@ final class AbilityVarietyChecks {
                 case "getPlayers": return players();
                 case "getNearbyEntities": return new ArrayList<Entity>(players());
                 case "strikeLightning": lightningStrikes++; return null;
+                case "createExplosion": explosions++; explosionPower = ((Number) a[1]).floatValue(); return true;
                 case "getBlockAt": return air(a.length == 1 ? (Location) a[0]
                     : new Location(world, ((Number) a[0]).intValue(), ((Number) a[1]).intValue(), ((Number) a[2]).intValue()));
                 default: return defaultValue(m.getReturnType());
@@ -73,10 +76,13 @@ final class AbilityVarietyChecks {
             attackEvent(caster.player, enemy.player, 4));
         new Task(() -> { }, 0, 0);
         new ScopeProbe();
+        new FailureProbe(true);
+        new SingleUseProbe();
         new PlayerMoveEvent(caster.player, caster.location, caster.location);
         new org.bukkit.event.player.PlayerRespawnEvent(caster.player, caster.location, false);
         Class.forName("kr.newgodwar.gui.GuiText", true, core.getClass().getClassLoader());
         Class.forName("kr.newgodwar.ability.DamageAttributionTracker$Entry", true, core.getClass().getClassLoader());
+        Class.forName("kr.newgodwar.ability.AbilityManager$1", true, core.getClass().getClassLoader());
         new AbilityKillContext(core, caster.player, enemy.player, core.abilities().registry().get("nike"), deathEvent(enemy.player));
         Class.forName("kr.newgodwar.ability.builtin.RunesmithAbility$Rune", true, core.getClass().getClassLoader());
         Arrow arrow = proxy(Arrow.class, (p, m, a) -> defaultValue(m.getReturnType()));
@@ -108,6 +114,9 @@ final class AbilityVarietyChecks {
             server.set(null, fixtureServer);
             pluginServer.set(core, fixtureServer);
             checkSharedSemantics();
+            checkSightTargeting();
+            checkDamageAttributionCleanup();
+            checkFailureIsolation();
             checkArtemis(arrow);
             checkThor();
             checkEcho();
@@ -128,6 +137,7 @@ final class AbilityVarietyChecks {
             checkReviewedAbilities();
             checkConfirmedAttackRoles();
             checkSingleUseSkill();
+            checkAbilityPacing();
             core.getLogger().info("PASS ability variety: sixteen kits, rewind safety, parry/riposte, oath, judgment, swarms, laurels, harvest, interrupted music, team/killtime protection, cosmetics and cleanup");
         } finally {
             if (ability != null) ability.cancelScheduledTasks();
@@ -158,7 +168,7 @@ final class AbilityVarietyChecks {
         require(tasks.isEmpty() && ability.activeTimerLines().isEmpty(), "Moving hunt marker never expired");
     }
 
-    private double arrowHit(Arrow arrow, Actor victim, boolean cancelled) {
+    private double arrowHit(Projectile arrow, Actor victim, boolean cancelled) {
         EntityDamageByEntityEvent event = new EntityDamageByEntityEvent(arrow, victim.player, EntityDamageEvent.DamageCause.PROJECTILE, 4);
         event.setCancelled(cancelled);
         core.abilities().handleProjectileHit(caster.player, victim.player, event);
@@ -507,8 +517,9 @@ final class AbilityVarietyChecks {
             actor.online = true; actor.stones = 200; actor.sneaking = false; actor.health = 20;
             actor.effects.clear(); actor.messages.clear(); actor.particles = 0; actor.held = new ItemStack(Material.BLAZE_ROD);
             actor.armor = new ItemStack[4]; actor.lastVelocity = new org.bukkit.util.Vector();
-            actor.contents = new ItemStack[0]; actor.lastRemoved = null;
-            actor.lineOfSight = true; actor.teleportAllowed = true; actor.immune = false; actor.food = 10; actor.granted = 0;
+            actor.contents = new ItemStack[0]; actor.lastRemoved = null; actor.reagent = null; actor.level = 0;
+            actor.lineOfSight = true; actor.blockedTargets.clear(); actor.sightChecks = 0;
+            actor.teleportAllowed = true; actor.immune = false; actor.food = 10; actor.granted = 0;
             actor.gameMode = GameMode.SURVIVAL; actor.rejectEffects = false;
             teams.remove(actor.id);
         }
@@ -597,12 +608,131 @@ final class AbilityVarietyChecks {
         core.getLogger().info("PASS shared ability semantics: spherical boundary/corners, teams, dead/offline/spectator/outsider rejection, potion precedence, cancelled hits/consumption and dead casts");
     }
 
+    private void checkSightTargeting() throws Exception {
+        reset("ares");
+        ScopeProbe probe = new ScopeProbe();
+        enemy.location.setZ(3);
+        far.location = new Location(world, 0, 160, 6);
+        require(probe.sight(context, 10, false) == enemy.player && caster.sightChecks == 1,
+            "Nearest visible target was not selected or a farther target was traced unnecessarily");
+        caster.blockedTargets.add(enemy.player); caster.sightChecks = 0;
+        require(probe.sight(context, 10, false) == far.player && caster.sightChecks == 2,
+            "An occluded near target hid a farther visible target");
+        caster.blockedTargets.clear(); caster.sightChecks = 0;
+        enemy.location.setZ(-3); far.location.setX(5);
+        require(probe.sight(context, 10, false) == null && caster.sightChecks == 0,
+            "Targets behind/beside the aiming corridor triggered block traces");
+        enemy.location = new Location(world, 0, 160, 10); caster.sightChecks = 0;
+        require(probe.sight(context, 10, false) == enemy.player && caster.sightChecks == 1,
+            "Exact range boundary was rejected");
+        enemy.location.setZ(10.01); caster.sightChecks = 0;
+        require(probe.sight(context, 10, false) == null && caster.sightChecks == 0,
+            "Out-of-range target was selected or traced");
+        enemy.location = new Location(world, 0, 160, 3);
+        far.location = enemy.location.clone(); caster.sightChecks = 0;
+        require(probe.sight(context, 10, false) == enemy.player && caster.sightChecks == 1,
+            "Equal-distance target order changed");
+        enemy.gameMode = GameMode.SPECTATOR;
+        require(probe.sight(context, 10, false) == far.player, "Spectator was selected");
+        enemy.gameMode = GameMode.SURVIVAL;
+        enemy.location.setWorld(proxy(World.class, (p, m, a) -> defaultValue(m.getReturnType())));
+        require(probe.sight(context, 10, false) == far.player, "Cross-world target was selected");
+        ally.location = new Location(world, 0, 160, 2);
+        require(probe.sight(context, 10, true) == ally.player, "Ally targeting lost team polarity");
+        reset("ares"); caster.location.setPitch(40);
+        require(probe.sight(context, 10, false) == enemy.player && caster.sightChecks == 1,
+            "Aiming at the body instead of the eyes lost the target");
+        core.getLogger().info("PASS sight targeting: nearest, occluded, behind/beside, range boundary, ties, spectator, world and allies");
+    }
+
+    private void checkDamageAttributionCleanup() throws Exception {
+        UUID stale = UUID.randomUUID(), fresh = UUID.randomUUID();
+        long now = System.currentTimeMillis();
+        List<Map<?, ?>> records = new ArrayList<Map<?, ?>>();
+        for (String name : Arrays.asList("recentDamageSources", "attributedEntities")) {
+            Object tracker = field(core.abilities().getClass(), name).get(core.abilities());
+            Method remember = tracker.getClass().getDeclaredMethod("remember", UUID.class, UUID.class, long.class);
+            remember.setAccessible(true);
+            remember.invoke(tracker, stale, caster.id, now - 16000L);
+            remember.invoke(tracker, fresh, caster.id, now);
+            records.add((Map<?, ?>) field(tracker.getClass(), "entries").get(tracker));
+        }
+        core.abilities().tickCountdownAlerts(Collections.<Player>emptyList());
+        for (Map<?, ?> entries : records) {
+            require(!entries.containsKey(stale) && entries.containsKey(fresh),
+                "Periodic maintenance retained expired damage attribution or removed a recent source");
+        }
+        core.getLogger().info("PASS damage attribution cleanup: unqueried expired records, recent records and empty player list");
+    }
+
+    private void checkFailureIsolation() throws Exception {
+        reset("ares");
+        FailureProbe broken = new FailureProbe(true), healthy = new FailureProbe(false);
+        AbilitySession previousCaster = assignments.put(caster.id, new AbilitySession(context.ability(), broken));
+        AbilitySession previousEnemy = assignments.put(enemy.id, new AbilitySession(context.ability(), healthy));
+        List<String> reports = new ArrayList<String>();
+        java.util.logging.Filter previous = core.getLogger().getFilter();
+        core.getLogger().setFilter(record -> {
+            if (record.getMessage().startsWith("Ability callback failed:") && record.getMessage().contains(caster.id.toString())) {
+                reports.add(record.getMessage()); return false;
+            }
+            return previous == null || previous.isLoggable(record);
+        });
+        try {
+            List<Player> ordered = Arrays.asList(caster.player, enemy.player);
+            for (int i = 0; i < 3; i++) {
+                core.abilities().tick(ordered);
+                core.abilities().tickCountdownAlerts(ordered);
+            }
+            require(healthy.ticks == 3 && healthy.notices == 3, "Broken ability prevented healthy periodic callbacks");
+            core.abilities().handleDeath(deathEvent(enemy.player));
+            core.abilities().handleBlockExplode(null);
+            org.bukkit.event.player.PlayerItemConsumeEvent meal = new org.bukkit.event.player.PlayerItemConsumeEvent(enemy.player, new ItemStack(Material.APPLE));
+            core.abilities().handleItemConsume(enemy.player, meal);
+            require(healthy.deaths == 1 && healthy.explosions == 1 && healthy.meals == 1,
+                "Broken ability prevented shared event callbacks");
+            healthy.cancelMeal = true;
+            core.abilities().handleItemConsume(enemy.player, meal);
+            require(meal.isCancelled(), "Callback isolation lost an ability's event cancellation");
+            require(reports.size() == 1 && reports.get(0).contains("ability=ares") && reports.get(0).contains("callback=onTick"),
+                "Ability errors were not identifiable or were logged on every callback");
+            broken.fail = false;
+            core.abilities().tick(ordered);
+            require(broken.ticks == 1 && healthy.ticks == 4, "Transient failure permanently disabled ability callbacks");
+        } finally {
+            core.getLogger().setFilter(previous);
+            assignments.put(caster.id, previousCaster);
+            if (previousEnemy == null) assignments.remove(enemy.id); else assignments.put(enemy.id, previousEnemy);
+        }
+        core.getLogger().info("PASS ability failure isolation: tick/countdown, shared events, cancellation, recovery and bounded logs");
+    }
+
+    private static final class FailureProbe implements GodAbility {
+        boolean fail, cancelMeal;
+        int ticks, notices, deaths, explosions, meals;
+        FailureProbe(boolean fail) { this.fail = fail; }
+        private void check() { if (fail) throw new IllegalStateException("Expected regression fixture failure"); }
+        @Override public void onTick(AbilityPlayerContext context) { check(); ticks++; }
+        @Override public void onCountdownTick(AbilityPlayerContext context) {
+            if (fail) throw new NoSuchMethodError("Expected addon linkage failure");
+            notices++;
+        }
+        @Override public void onDeath(AbilityPlayerContext context, PlayerDeathEvent event) { check(); deaths++; }
+        @Override public void onBlockExplode(AbilityPlayerContext context, org.bukkit.event.block.BlockExplodeEvent event) { check(); explosions++; }
+        @Override public void onItemConsume(AbilityPlayerContext context, org.bukkit.event.player.PlayerItemConsumeEvent event) {
+            check(); meals++; if (cancelMeal) event.setCancelled(true);
+        }
+    }
+
     private static final class ScopeProbe extends BaseAbility {
         int hits, casts, meals;
         List<Player> radius(AbilityPlayerContext context, int range, boolean allies) {
             return nearbyPlayers(context, context.player(), range, allies);
         }
         List<Player> allies(AbilityPlayerContext context) { return alliedPlayers(context, context.player(), true); }
+        Player sight(AbilityPlayerContext context, int range, boolean allies) {
+            return targetPlayerInSight(context, context.player(), range, allies);
+        }
         void status(Player target, int seconds, int amplifier) { effect(target, PotionEffectType.SPEED, seconds, amplifier); }
         @Override public void onDamageByEntity(AbilityPlayerContext context, EntityDamageByEntityEvent event, Player target, boolean attacker) { hits++; }
         @Override public void onProjectileHit(AbilityPlayerContext context, EntityDamageByEntityEvent event, Player target) { hits++; }
@@ -742,11 +872,12 @@ final class AbilityVarietyChecks {
     }
 
     private void checkSingleUseSkill() throws Exception {
-        reset("megumin"); caster.stones = 31; left();
+        core.abilities().registry().register(SingleUseProbe.class);
+        reset("regression_single_use"); caster.stones = 31; left();
         require(!ability.isSkillConsumed(1) && caster.stones == 31 && tasks.isEmpty(),
             "Failed single-use activation consumed its charge");
 
-        reset("megumin");
+        reset("regression_single_use");
         Method status = GameManager.class.getDeclaredMethod("cooldownStatus", Player.class, AbilityDefinition.class, int.class);
         status.setAccessible(true);
         Method icon = AbilityGui.class.getDeclaredMethod("currentSkillItem", Player.class, AbilityDefinition.class, int.class);
@@ -801,9 +932,162 @@ final class AbilityVarietyChecks {
         require(core.abilities().isSkillConsumed(caster.player, 1)
             && ((String) status.invoke(core.game(), caster.player, context.ability(), 1)).contains("사용 완료"),
             "Inactive participant lost the consumed-skill display");
-        reset("megumin"); left();
+        reset("regression_single_use"); left();
         require(ability.isSkillConsumed(1) && caster.stones == 168, "A fresh ability session did not reset its charge");
+        reset("ares");
+        core.abilities().registry().unregister("regression_single_use");
         core.getLogger().info("PASS single-use skill: failed/successful casts, disabled GUI/sidebar, repeat feedback, delayed effect, respawn, cooldown resets, URF and session recovery");
+    }
+
+    @AbilityInfo(id = "regression_single_use", name = "일회용 검사", description = "애드온 일회용 계약 검사",
+        normalSkill = "좌클릭: 일회용 발동", normalStoneCost = 32, advancedSkill = "없음", enabledByDefault = false)
+    public static final class SingleUseProbe extends BaseAbility {
+        @Override protected void onStaffLeft(AbilityPlayerContext context, Player player, PlayerInteractEvent event) {
+            if (!useNormal(context, player)) return;
+            consumeSkill(context, 1);
+            later(context, 3, "검사", "일회용 검사", () -> player.setHealth(0));
+        }
+    }
+
+    private void checkAbilityPacing() throws Exception {
+        reset("megumin"); explosions = 0; caster.stones = 31; left();
+        require(tasks.isEmpty() && ability.cooldownRemainingMillis(1) == 0, "Failed explosion charged a cooldown");
+        caster.stones = 200; right();
+        require(caster.stones == 200 && ability.cooldownRemainingMillis(2) == 0, "Ready explosion accepted needless recharge");
+        left(); left(); right();
+        require(caster.stones == 168 && !ability.isSkillConsumed(1), "Explosion repeated during casting or became single-use");
+        advance(60);
+        require(explosions == 1 && explosionPower == 5F && caster.health == 0, "Explosion lost its power or self-sacrifice");
+        caster.health = 20;
+        ability.onRespawn(context, new org.bukkit.event.player.PlayerRespawnEvent(caster.player, caster.location, false));
+        long before = ability.cooldownRemainingMillis(1);
+        right();
+        require(caster.stones == 156 && before - ability.cooldownRemainingMillis(1) >= 30000L
+            && ability.cooldownRemainingMillis(1) > 58000L, "Recharge failed after respawn");
+        right(); require(caster.stones == 156, "Recharge ignored its own cooldown");
+        ability.clearCooldowns(); left(); advance(60);
+        require(explosions == 2 && caster.health == 0, "Explosion could not be reused");
+
+        reset("megumin"); left(); ability.onDeath(context, deathEvent(caster.player)); advance(60);
+        require(explosions == 2 && tasks.isEmpty() && caster.health == 20, "Interrupted explosion fired after death");
+        reset("megumin"); core.getConfig().set("game.urf.enabled", true);
+        Object multiplier = core.getConfig().get("game.urf.cooldown-multiplier");
+        try {
+            core.getConfig().set("game.urf.cooldown-multiplier", 0.2D);
+            left(); advance(60); caster.health = 20; right();
+            require(ability.cooldownRemainingMillis(1) > 10000L && ability.cooldownRemainingMillis(1) <= 12000L,
+                "URF recharge must scale the reduction as well as the cooldown");
+        } finally { core.getConfig().set("game.urf.cooldown-multiplier", multiplier); }
+
+        Object blacklist = core.getConfig().get("blacklist.abilities");
+        List<String> excluded = new ArrayList<String>(core.abilities().registry().ids()); excluded.remove("ares");
+        core.getConfig().set("blacklist.abilities", excluded);
+        try {
+            reset("pokego"); ability.onAssign(context);
+            require(caster.effects.containsKey(PotionEffectType.SPEED), "Explorer had no useful starting movement bonus");
+            explore(1); explore(0); explore(4); explore(0);
+            for (int i = 0; i < 10; i++) { explore(4); explore(0); }
+            YamlConfiguration progress = new YamlConfiguration(); ability.saveSession(progress);
+            require(progress.getStringList("explored-regions").size() == 2, "Repeated movement farmed new regions");
+            PlayerMoveEvent cancelled = new PlayerMoveEvent(caster.player, caster.location, caster.location.clone().add(0, 0, 4));
+            cancelled.setCancelled(true); ability.onMove(context, cancelled);
+            ability.onMove(context, new org.bukkit.event.player.PlayerTeleportEvent(caster.player, caster.location, caster.location.clone().add(0, 0, 4)));
+            ability.onMove(context, new PlayerMoveEvent(caster.player, caster.location, caster.location.clone().add(100, 0, 0)));
+            ability.saveSession(progress);
+            require(progress.getStringList("explored-regions").size() == 2, "Cancelled movement or teleport counted as exploration");
+            ability.onDeath(context, deathEvent(caster.player));
+            GodAbility restored = context.ability().create(); restored.loadSession(progress);
+            YamlConfiguration recovered = new YamlConfiguration(); restored.saveSession(recovered);
+            require(recovered.getStringList("explored-regions").equals(progress.getStringList("explored-regions")), "Exploration recovery lost visited regions");
+            for (int x = 4; x <= 60; x += 4) explore(x);
+            require(core.abilities().session(caster.player).definition().id().equals("ares"), "New territory did not complete exploration");
+
+            reset("examinee"); left();
+            int answer = field(ability.getClass(), "pendingAnswer").getInt(ability);
+            ability.onChatMessage(context, Integer.toString(answer + 1)); left();
+            require(caster.stones == 195 && field(ability.getClass(), "pendingAnswer").getInt(ability) == answer,
+                "Wrong answer forced a paid retry or discarded the question");
+            ability.onChatMessage(context, Integer.toString(answer));
+            require(core.abilities().session(caster.player).definition().id().equals("ares"), "Corrected answer did not grant a new ability");
+            reset("examinee"); left(); answer = field(ability.getClass(), "pendingAnswer").getInt(ability);
+            ability.cancelScheduledTasks(); ability.onChatMessage(context, Integer.toString(answer));
+            require(core.abilities().session(caster.player).definition().id().equals("examinee"), "Cancelled exam accepted a stale answer");
+        } finally { core.getConfig().set("blacklist.abilities", blacklist); }
+
+        reset("heojun"); caster.health = 10; ally.health = 10; enemy.health = 10;
+        ally.location = new Location(world, 0, 160, 3); enemy.location.setX(3);
+        ally.effects.put(PotionEffectType.POISON, new PotionEffect(PotionEffectType.POISON, 100, 0));
+        left();
+        require(ally.health == 14 && caster.health == 10 && enemy.health == 10 && caster.stones == 192
+            && !ally.effects.containsKey(PotionEffectType.POISON), "Quick prescription healed or cleansed the wrong target");
+        ability.clearCooldowns(); caster.sneaking = true; left();
+        require(caster.health == 14 && caster.stones == 184, "Sneaking did not select self-treatment");
+        ability.clearCooldowns(); caster.sneaking = false; ally.location.setZ(20); left();
+        require(caster.stones == 184 && ability.cooldownRemainingMillis(1) == 0, "Missing patient consumed a prescription");
+        ally.location.setZ(3); right();
+        require(caster.health == 20 && ally.health == 20 && enemy.health == 10
+            && ability.cooldownRemainingMillis(2) > 310000L, "Grand prescription changed while shortening the normal skill");
+
+        reset("sejong"); left();
+        require(caster.stones == 190 && caster.level == 1 && ally.level == 1 && enemy.level == 0
+            && caster.effects.get(PotionEffectType.REGENERATION).getDuration() == 120
+            && ability.cooldownRemainingMillis(1) <= 30000L, "Short royal support lost team scope or pacing");
+        AbilityDefinition enemyDefinition = core.abilities().registry().get("ares");
+        assignments.put(enemy.id, new AbilitySession(enemyDefinition, enemyDefinition.create()));
+        try {
+            right();
+            require(core.abilities().isAbilitySuppressed(enemy.player) && ability.cooldownRemainingMillis(2) > 290000L,
+                "Royal decree was weakened along with the normal skill");
+        } finally { core.abilities().remove(enemy.player); }
+
+        reset("yisunsin"); enemy.location.setZ(20); left();
+        require(caster.stones == 188 && !caster.effects.isEmpty() && enemy.velocities == 0,
+            "Formation could not prepare an advance without a nearby enemy");
+        enemy.location.setZ(3); right();
+        require(explosionPower == 2F && enemy.damage == 8 && ability.cooldownRemainingMillis(2) > 310000L,
+            "Turtle ship bombardment changed while shortening formation");
+
+        reset("gardener"); caster.reagent = new ItemStack(Material.RED_ROSE, 2); left();
+        require(caster.reagent.getAmount() == 2 && caster.granted == 0 && ability.cooldownRemainingMillis(1) == 0,
+            "Incomplete harvest consumed flowers");
+        caster.reagent.setAmount(3); left();
+        require(caster.reagent == null && caster.granted == 16 && caster.stones == 200,
+            "Harvest did not convert exactly three flowers into building supplies");
+        reset("shinsaimdang"); left();
+        require(caster.granted == 0 && caster.stones == 192 && caster.effects.containsKey(PotionEffectType.ABSORPTION)
+            && ally.effects.containsKey(PotionEffectType.ABSORPTION) && enemy.effects.isEmpty() && outsider.effects.isEmpty(),
+            "Ink painting still generated clutter or shielded non-allies");
+
+        reset("snow");
+        Snowball ball = proxy(Snowball.class, (p, m, a) -> m.getName().equals("getType") ? EntityType.SNOWBALL : defaultValue(m.getReturnType()));
+        enemy.immune = true; arrowHit(ball, enemy, false); enemy.immune = false;
+        require(field(ability.getClass(), "growthHits").getInt(ability) == 0, "Blocked snowball granted growth");
+        arrowHit(ball, enemy, true); arrowHit(ball, ally, false);
+        require(field(ability.getClass(), "growthHits").getInt(ability) == 0, "Cancelled or allied snowball granted growth");
+        arrowHit(ball, enemy, false); arrowHit(ball, enemy, false);
+        require(field(ability.getClass(), "growthHits").getInt(ability) == 1, "Rapid hits bypassed the growth interval");
+        for (int i = 0; i < 3; i++) {
+            field(ability.getClass(), "nextGrowthAt").setLong(ability, 0); arrowHit(ball, enemy, false);
+        }
+        require(field(ability.getClass(), "snowAttack").getInt(ability) == 2, "Four effective hits did not grow the snowball");
+        for (int i = 0; i < 6; i++) ability.onDeath(context, deathEvent(caster.player));
+        require(field(ability.getClass(), "snowAttack").getInt(ability) == 2, "Repeated death still farmed snowball power");
+        reset("goldspoon"); ability.onPrepare(context);
+        require(caster.granted == 1 && ability.cooldownRemainingMillis(1) > 44000L, "Starting inheritance was missing");
+        for (int i = 0; i < 6; i++) {
+            ability.onDeath(context, deathEvent(caster.player));
+            ability.onRespawn(context, new org.bukkit.event.player.PlayerRespawnEvent(caster.player, caster.location, false));
+        }
+        left(); require(caster.granted == 1, "Repeated respawn still farmed inheritance");
+        ability.clearCooldowns(); left();
+        require(caster.granted == 2 && caster.stones == 200, "Living player could not claim the next inheritance");
+        core.getLogger().info("PASS ability pacing: reusable explosion/recharge/URF, exploration, quick support, harvest/shields, combat growth, inheritance and exam retries");
+    }
+
+    private void explore(double x) {
+        Location from = caster.location.clone(), to = caster.location.clone(); to.setX(x);
+        caster.location = to;
+        core.abilities().handleMove(caster.player, new PlayerMoveEvent(caster.player, from, to));
     }
 
     private void left() { click(Action.LEFT_CLICK_AIR); }
@@ -873,15 +1157,18 @@ final class AbilityVarietyChecks {
         final Player player;
         final Map<PotionEffectType, PotionEffect> effects = new HashMap<PotionEffectType, PotionEffect>();
         final List<String> messages = new ArrayList<String>();
+        final Set<Player> blockedTargets = new HashSet<Player>();
         Location location = new Location(world, 0, 160, 0);
         ItemStack held = new ItemStack(Material.BLAZE_ROD);
         ItemStack[] armor = new ItemStack[4];
         ItemStack[] contents = new ItemStack[0];
         ItemStack lastRemoved;
+        ItemStack reagent;
         org.bukkit.util.Vector lastVelocity = new org.bukkit.util.Vector();
         boolean online = true, sneaking, lineOfSight = true, teleportAllowed = true, immune, rejectEffects;
         GameMode gameMode = GameMode.SURVIVAL;
         int stones = 200, velocities, particles, food = 10, granted;
+        int sightChecks, level;
         double damage, health = 20;
 
         Actor(String name) {
@@ -889,8 +1176,12 @@ final class AbilityVarietyChecks {
             PlayerInventory inventory = proxy(PlayerInventory.class, (p, m, a) -> {
                 if (m.getName().equals("getArmorContents")) return armor.clone();
                 if (m.getName().equals("getContents")) return contents.clone();
-                if (m.getName().equals("getStorageContents")) return new ItemStack[] {stones > 0 ? new ItemStack(Material.COBBLESTONE, stones) : null};
-                if (m.getName().equals("setItem")) { stones = a[1] == null ? 0 : ((ItemStack) a[1]).getAmount(); return null; }
+                if (m.getName().equals("getStorageContents")) return new ItemStack[] {stones > 0 ? new ItemStack(Material.COBBLESTONE, stones) : null, reagent};
+                if (m.getName().equals("setItem")) {
+                    if (((Number) a[0]).intValue() == 0) stones = a[1] == null ? 0 : ((ItemStack) a[1]).getAmount();
+                    else reagent = (ItemStack) a[1];
+                    return null;
+                }
                 if (m.getName().equals("setArmorContents")) { armor = ((ItemStack[]) a[0]).clone(); return null; }
                 if (m.getName().equals("addItem")) {
                     for (ItemStack item : (ItemStack[]) a[0]) granted += item.getAmount();
@@ -932,12 +1223,14 @@ final class AbilityVarietyChecks {
                     case "isOnline": return online;
                     case "isSneaking": return sneaking;
                     case "canSee": return true;
-                    case "hasLineOfSight": return lineOfSight;
+                    case "hasLineOfSight": sightChecks++; return lineOfSight && !blockedTargets.contains(a[0]);
                     case "teleport":
                         if (teleportAllowed) location = (a[0] instanceof Entity ? ((Entity) a[0]).getLocation() : (Location) a[0]).clone();
                         return teleportAllowed;
                     case "isDead": return health <= 0;
                     case "getFoodLevel": return food;
+                    case "getLevel": return level;
+                    case "setLevel": level = (Integer) a[0]; return null;
                     case "setFoodLevel": food = (Integer) a[0]; return null;
                     case "getHealth": return health;
                     case "getMaxHealth": return 20D;

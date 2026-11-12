@@ -86,8 +86,9 @@ finally:
     while not output.empty():
         lines.append(output.get())
     (target / "ability-regression.log").write_text("".join(lines), encoding="utf-8")
-if not passed:
-    failure = next((i for i, line in enumerate(lines) if "ABILITY REGRESSION FAILED" in line), None)
+failure = next((i for i, line in enumerate(lines)
+    if "ABILITY REGRESSION FAILED" in line or "Fatal error trying to convert" in line), None)
+if not passed or failure is not None:
     print("".join(lines[failure:failure + 60] if failure is not None else lines[-90:]))
     raise SystemExit("Ability regression failed; logs: " + str(target))
 print("Ability regression passed on Paper " + version + "; logs: " + str(target), flush=True)

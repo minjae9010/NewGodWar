@@ -6,11 +6,9 @@ import kr.newgodwar.ability.feedback.AbilityTheme;
 import kr.newgodwar.ability.feedback.EffectCue;
 
 import org.bukkit.ChatColor;
-import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffectType;
 
 import java.util.List;
@@ -18,10 +16,10 @@ import java.util.List;
 @AbilityInfo(
     id = "shinsaimdang",
     name = "신사임당",
-    description = "섬세한 그림과 돌봄으로 아군을 안정적으로 보조합니다.",
-    normalSkill = "블레이즈 막대기 좌클릭: 양귀비 3개와 먹물 주머니 4개를 만들고 8초 재생을 얻습니다.",
+    description = "난초 그림으로 아군을 보호하고 치유해 전열을 유지합니다.",
+    normalSkill = "블레이즈 막대기 좌클릭: 난초 그림을 펼쳐 자신과 반경 8블록 아군에게 흡수 I(추가 체력 4)을 6초 동안 줍니다.",
     normalStoneCost = 8,
-    normalCooldownSeconds = 55,
+    normalCooldownSeconds = 25,
     advancedSkill = "블레이즈 막대기 우클릭: 자신과 반경 8블록 아군의 체력을 5 회복하고 8초 재생을 줍니다.",
     advancedStoneCost = 20,
     advancedCooldownSeconds = 115,
@@ -31,9 +29,9 @@ import java.util.List;
 final class ShinSaimdangAbility extends BaseAbility {
     private static final AbilityStyle STYLE = AbilityStyle.builder(AbilityTheme.NATURE)
         .advanced(EffectCue.HEAL)
-        .normal(EffectCue.ITEM)
+        .normal(EffectCue.GUARD)
         .benefit(EffectCue.HEAL)
-        .effect(EffectCue.ITEM, AbilityDesigns.INK_ORCHID)
+        .effect(EffectCue.GUARD, AbilityDesigns.INK_ORCHID)
         .effect(EffectCue.HEAL, AbilityDesigns.INK_ORCHID)
         .build();
 
@@ -45,9 +43,10 @@ final class ShinSaimdangAbility extends BaseAbility {
         if (!useNormal(context, player)) {
             return;
         }
-        give(player, new ItemStack(Material.RED_ROSE, 3), new ItemStack(Material.INK_SACK, 4));
-        effect(context, player, PotionEffectType.REGENERATION, 8, 0);
-        player.sendMessage(ChatColor.LIGHT_PURPLE + "초충도의 생기가 피어납니다.");
+        List<Player> targets = nearbyPlayers(context, player, 8, true);
+        targets.add(player);
+        for (Player target : targets) effect(context, target, "ABSORPTION", "ABSORPTION", 6, 0);
+        player.sendMessage(ChatColor.LIGHT_PURPLE + "난초 그림이 아군을 감쌉니다.");
     }
 
     @Override
