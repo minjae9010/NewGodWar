@@ -1,6 +1,8 @@
 game:
   # Built-in game checkpoint interval; also saves on game changes and server shutdown.
   recovery-save-interval-seconds: 10
+  # Diagnostic timings for player/world/flush/session saves. Enable only while profiling.
+  log-save-timings: false
   # default: built-in core war; addon mode id: complete replacement (e.g. example_timed)
   mode: default
   min-players: 2

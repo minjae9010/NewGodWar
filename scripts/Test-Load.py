@@ -9,6 +9,7 @@ they send movement, staff interactions and commands, without rendering the world
 import argparse
 import asyncio
 import hashlib
+import gzip
 import json
 import math
 import os
@@ -24,6 +25,30 @@ from types import SimpleNamespace
 import zlib
 
 ROOT = Path(__file__).resolve().parents[1]
+PERFORMANCE_LIMITS = {
+    "tps": ("min", 19), "tick_ms_p95": ("max", 50), "tick_ms_p99": ("max", 50),
+    "tick_ms_max": ("max", 250), "slow_tick_ratio": ("max", 0.01),
+    "rtt_p95_ms": ("max", 200), "rtt_max_ms": ("max", 250),
+}
+
+
+def performance_failures(phases):
+    failures = []
+    active = [phase for phase in phases if phase.get("phase") != "idle"]
+    if not active:
+        return [{"phase": None, "metric": "samples", "reason": "No active load phase"}]
+    for phase in active:
+        for metric, (direction, limit) in PERFORMANCE_LIMITS.items():
+            try:
+                value = (float(phase["ticks_over_50ms"]) / float(phase["ticks"]) if metric == "slow_tick_ratio"
+                    else float(phase[metric]))
+                valid = math.isfinite(value) and value >= 0 and (value >= limit if direction == "min" else value <= limit)
+            except (KeyError, TypeError, ValueError, ZeroDivisionError):
+                value, valid = None, False
+            if not valid:
+                failures.append({"phase": phase.get("phase"), "metric": metric, "value": value if value is None or math.isfinite(value) else None,
+                    "direction": direction, "limit": limit})
+    return failures
 
 
 def vi(value):
@@ -270,6 +295,10 @@ async def worker_main(path):
                 await asyncio.gather(*(state.clients[index].close() for index in request["indices"]))
                 for index in request["indices"]:
                     del state.clients[index]
+            elif action == "expect-crash":
+                state.active = False
+                for client in state.clients.values():
+                    client.intentional = True
             elif action == "quit":
                 await asyncio.gather(*(client.close() for client in state.clients.values()))
             response["errors"] = state.errors
@@ -300,8 +329,10 @@ class Test:
         self.workers = {}
         self.errors, self.lines, self.rtts, self.results = [], [], [], []
         self.server_errors = []
+        self.save_timings = []
         self.active = self.measuring = False
         self.lifecycle_results = []
+        self.checkpoint_results = []
         self.log_event = asyncio.Event()
 
     async def command(self, command, marker=None, timeout=45):
@@ -331,10 +362,13 @@ class Test:
         while line := await self.process.stdout.readline():
             text = line.decode("utf-8", "replace")
             self.lines.append(text)
+            timing = re.search(r"NGW SAVE TIMING stage=(\w+) duration_ms=([\d.]+) end_ns=(-?\d+)", text)
+            if timing:
+                self.save_timings.append({"stage": timing[1], "duration_ms": float(timing[2]), "end_ns": int(timing[3])})
             if any(marker in text for marker in ("Could not pass event", "generated an exception", "LOAD FAILED",
                     "Error occurred while enabling NewGodWar", "Error occurred while disabling NewGodWar",
                     "Could not save game session", "Game recovery failed", "Ability cleanup failed",
-                    "Could not save game world/player checkpoint")):
+                    "Could not save game world/player checkpoint", "Ability callback failed:")):
                 self.server_errors.append(text.strip())
             if any(word in text for word in ("LOAD ", "Can't keep up", "Done (", "lost connection")):
                 print(text.rstrip(), flush=True)
@@ -385,6 +419,16 @@ class Test:
             worker_cpu.append(result["cpu_percent_one_core"])
         await self.command("loadprobe end", "LOAD RESULT " + phase)
         result = props(self.target / ("load-result-" + phase + ".properties"))
+        result["slow_ticks"] = []
+        for key in sorted(list(result)):
+            if not key.startswith("slow_tick."):
+                continue
+            ended, millis = result.pop(key).split(",")
+            ended, millis = int(ended), float(millis)
+            saves = [sample for sample in self.save_timings
+                if ended - millis * 1e6 <= sample["end_ns"] <= ended]
+            result["slow_ticks"].append({"end_ns": ended, "duration_ms": millis, "save_stages": saves})
+        result["slow_ticks"].sort(key=lambda tick: tick["end_ns"])
         result.update(rtt_samples=len(self.rtts), rtt_p95_ms=percentile(self.rtts, .95), rtt_max_ms=percentile(self.rtts, 1))
         result.update(upstream_p95_ms=percentile(upstream, .95), downstream_p95_ms=percentile(downstream, .95), worker_cpu_percent=worker_cpu)
         self.results.append(result)
@@ -406,9 +450,58 @@ class Test:
         self.lifecycle_results.append({"players": count, "disconnected_at_stop": len(left), "passed": True,
             "seconds_including_waits_and_reconnect": time.perf_counter() - started})
 
+    async def start_server(self):
+        self.process = await asyncio.create_subprocess_exec("java", "-Xms1G", "-Xmx3G", "-XX:+UseG1GC", "-jar", str(self.paper), "nogui",
+            cwd=self.target, stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT,
+            creationflags=0x08000000 if os.name == "nt" else 0)
+        self.reader = asyncio.create_task(self.read_logs())
+
+    async def close_workers(self):
+        await asyncio.gather(*(worker.call("quit") for worker in self.workers.values()), return_exceptions=True)
+        for worker in self.workers.values():
+            try:
+                await asyncio.wait_for(worker.process.wait(), 10)
+            except asyncio.TimeoutError:
+                worker.process.kill()
+                await worker.process.wait()
+        self.workers.clear()
+        self.clients.clear()
+
+    async def player_checkpoint_recovery(self, count):
+        if not any("workers, same-tick completion barrier" in line for line in self.lines):
+            raise AssertionError("Optimized player checkpoint path was not exercised")
+        for generation in (1, 2):
+            await self.command(f"loadprobe checkpoint-seed {generation}", f"LOAD CHECKPOINT SAVED {generation}", timeout=30)
+            await self.workers_call("expect-crash")
+            # Kill while all clients are online: neither logout nor onDisable may save them.
+            self.process.kill()
+            await self.process.wait()
+            await self.reader
+            await self.close_workers()
+            player_data = self.target / "world/players/data"
+            if len(list(player_data.glob("*.dat"))) != count:
+                raise AssertionError("Missing player NBT snapshots")
+            for path in player_data.glob("*.dat*"):
+                if path.suffix == ".tmp":
+                    raise AssertionError("Checkpoint left an unfinished player write: " + str(path))
+                gzip.decompress(path.read_bytes())
+            for directory in ("stats", "advancements"):
+                files = list((self.target / "world/players" / directory).glob("*.json"))
+                if len(files) != count:
+                    raise AssertionError(f"Missing {directory} snapshots: {len(files)} != {count}")
+                for path in files:
+                    json.loads(path.read_text(encoding="utf-8"))
+            start = len(self.lines)
+            await self.start_server()
+            await self.wait_marker("LOAD READY", start)
+            await self.connect_to(count)
+            await self.command(f"loadprobe checkpoint-verify {generation}", f"LOAD CHECKPOINT RECOVERY PASS {generation}")
+            self.checkpoint_results.append({"players": count, "generation": generation, "forced_process_kill": True, "passed": True})
+
     async def run(self):
         cache = ROOT / ".paper-smoke" / self.args.version
         paper = next(cache.glob("paper-*.jar"))
+        self.paper = paper
         version = re.search(r'version\s*=\s*"([^"]+)"', (ROOT / "build.gradle").read_text()).group(1)
         self.target = Path(tempfile.mkdtemp(prefix="load-" + self.args.version + "-", dir=ROOT / ".paper-smoke"))
         print("LOAD DIRECTORY " + str(self.target), flush=True)
@@ -420,7 +513,7 @@ class Test:
         data.mkdir(parents=True)
         shutil.copy2(ROOT / f"build/libs/NewGodWar-{version}.jar", self.target / "plugins/NewGodWar.jar")
         shutil.copy2(ROOT / "plugin/build/load-regression/LoadRegressionProbe.jar", self.target / "plugins/LoadRegressionProbe.jar")
-        (data / "config.yml").write_text("updates:\n  enabled: false\nworld:\n  reset-game-world-on-stop: false\ngame:\n  select-right: false\n  fast-ready-countdown-seconds: 2\n  killtime-seconds: 0\n  remove-entities: false\n  reveal-abilities-on-end: false\n", encoding="utf-8")
+        (data / "config.yml").write_text("updates:\n  enabled: false\nworld:\n  reset-game-world-on-stop: false\ngame:\n  log-save-timings: true\n  select-right: false\n  fast-ready-countdown-seconds: 2\n  killtime-seconds: 0\n  remove-entities: false\n  reveal-abilities-on-end: false\n", encoding="utf-8")
         with socket.socket() as sock:
             sock.bind(("127.0.0.1", 0))
             self.port = sock.getsockname()[1]
@@ -429,10 +522,7 @@ class Test:
             'spawn-protection=0\nlevel-type=minecraft:flat\ngenerator-settings={"layers":[{"block":"minecraft:bedrock","height":1},{"block":"minecraft:dirt","height":2},{"block":"minecraft:grass_block","height":1}],"biome":"minecraft:plains"}\n'
             "generate-structures=false\nallow-flight=true\nnetwork-compression-threshold=256\nwhite-list=false\nenforce-whitelist=false\nenforce-secure-profile=false\n", encoding="utf-8")
         (self.target / "bukkit.yml").write_text("settings:\n  connection-throttle: -1\n", encoding="utf-8")
-        self.process = await asyncio.create_subprocess_exec("java", "-Xms1G", "-Xmx3G", "-XX:+UseG1GC", "-jar", str(paper), "nogui",
-            cwd=self.target, stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT,
-            creationflags=0x08000000 if os.name == "nt" else 0)
-        reader = asyncio.create_task(self.read_logs())
+        await self.start_server()
         passed = False
         try:
             await self.wait_marker("LOAD READY")
@@ -452,6 +542,8 @@ class Test:
                 self.active = False
                 await asyncio.sleep(3 if self.args.pilot else 10)
                 await self.measure(str(count) + ("-urf" if urf else "-normal"), self.args.seconds)
+                if self.args.checkpoint_recovery and (count, urf) == stages[-1]:
+                    await self.player_checkpoint_recovery(count)
                 await self.lifecycle(count)
             if self.errors:
                 raise RuntimeError(self.errors[0])
@@ -461,13 +553,7 @@ class Test:
             passed = True
             print("LOAD TEST COMPLETE", flush=True)
         finally:
-            await asyncio.gather(*(worker.call("quit") for worker in self.workers.values()), return_exceptions=True)
-            for worker in self.workers.values():
-                try:
-                    await asyncio.wait_for(worker.process.wait(), 10)
-                except asyncio.TimeoutError:
-                    worker.process.kill()
-                    await worker.process.wait()
+            await self.close_workers()
             if self.process.returncode is None:
                 self.process.stdin.write(b"stop\n")
                 await self.process.stdin.drain()
@@ -476,18 +562,22 @@ class Test:
                 except asyncio.TimeoutError:
                     self.process.kill()
                     await self.process.wait()
-            await reader
+            await self.reader
             (self.target / "load.log").write_text("".join(self.lines), encoding="utf-8")
-            performance_ok = all(float(result["tps"]) >= 19 and float(result["tick_ms_p95"]) < 50
-                and result["rtt_p95_ms"] is not None and result["rtt_p95_ms"] < 200 for result in self.results[1:])
-            (self.target / "results.json").write_text(json.dumps({"completed": passed, "performance_thresholds_passed": passed and performance_ok,
-                "thresholds": {"min_tps": 19, "max_p95_tick_ms": 50, "max_p95_rtt_ms": 200},
+            failures = performance_failures(self.results)
+            performance_ok = passed and not failures and not self.errors and not self.server_errors
+            (self.target / "results.json").write_text(json.dumps({"completed": passed, "performance_thresholds_passed": performance_ok,
+                "thresholds": {metric: {"direction": direction, "limit": limit} for metric, (direction, limit) in PERFORMANCE_LIMITS.items()},
+                "performance_failures": failures, "save_timings": self.save_timings,
                 "server": self.args.version, "protocol": getattr(self, "protocol_version", None),
                 "clients_per_worker": self.args.clients_per_worker,
                 "plugin_sha256": hashlib.sha256((self.target / "plugins/NewGodWar.jar").read_bytes()).hexdigest(),
-                "phases": self.results, "lifecycle_checks": self.lifecycle_results, "client_errors": self.errors,
+                "phases": self.results, "lifecycle_checks": self.lifecycle_results,
+                "player_checkpoint_checks": self.checkpoint_results, "client_errors": self.errors,
                 "server_errors": self.server_errors}, indent=2), encoding="utf-8")
             print("LOAD RESULTS " + str(self.target / "results.json"), flush=True)
+        if not performance_ok:
+            raise AssertionError("Load acceptance failed: " + json.dumps(failures or self.server_errors or self.errors))
 
 
 if __name__ == "__main__":
@@ -500,7 +590,10 @@ if __name__ == "__main__":
     parser.add_argument("--seconds", type=int, default=60)
     parser.add_argument("--clients-per-worker", type=int, default=4, choices=[2, 4, 8, 16])
     parser.add_argument("--pilot", action="store_true")
+    parser.add_argument("--checkpoint-recovery", action="store_true", help="Also kill/restart with real players online and verify inventories, world transfers, XP and statistics")
     options = parser.parse_args()
     if not options.players or min(options.players) < 2 or max(options.players) > 100 or options.seconds < 5:
         parser.error("Use 2-100 players and at least 5 seconds per phase")
+    if options.checkpoint_recovery and (max(options.players) > 64 or max(options.players) % 2):
+        parser.error("Player checkpoint recovery requires an even final player count up to 64")
     asyncio.run(Test(options).run())

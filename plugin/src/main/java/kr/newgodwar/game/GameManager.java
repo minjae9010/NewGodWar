@@ -100,6 +100,7 @@ public final class GameManager {
     private String activeGameWorldSnapshotName;
     private String activeGameWorldType;
     private final GameSessionStore sessionStore;
+    private final PlayerCheckpointSaver playerCheckpointSaver;
     private boolean recoveryInitialized;
     private boolean recoveryBlocked;
     private boolean shuttingDown;
@@ -114,6 +115,7 @@ public final class GameManager {
         this.nmsAdapter = nmsAdapter;
         this.gameRuleController = new GameRuleController(plugin);
         this.sessionStore = new GameSessionStore(plugin.getDataFolder());
+        this.playerCheckpointSaver = new PlayerCheckpointSaver(plugin.getLogger());
         GodTeam.reload(plugin.getConfig());
         loadTemples();
         loadSpawns();
@@ -125,19 +127,22 @@ public final class GameManager {
         if (shuttingDown) return;
         shuttingDown = true;
         if (checkpointTask != -1) Bukkit.getScheduler().cancelTask(checkpointTask);
-        if (activeMode != null) {
-            // Custom modes own their lifecycle and do not expose a resume contract.
-            stopCustomMode();
-            return;
+        try {
+            if (activeMode != null) {
+                // Custom modes own their lifecycle and do not expose a resume contract.
+                stopCustomMode();
+                return;
+            }
+            if (!recoveryInitialized || recoveryBlocked) return;
+            // Commit only after player/world writes, while resumable ability state still exists.
+            if (saveCurrentWorlds()) saveCheckpoint();
+            Bukkit.getScheduler().cancelTasks(plugin);
+            cancelGameTimerTask();
+            abilityManager.clear();
+            clearPlayerScoreboards();
+        } finally {
+            playerCheckpointSaver.close();
         }
-        if (!recoveryInitialized || recoveryBlocked) return;
-        saveCheckpoint();
-        Bukkit.getScheduler().cancelTasks(plugin);
-        cancelGameTimerTask();
-        abilityManager.clear();
-        clearPlayerScoreboards();
-        // Save the current map and vanilla player data, never restore the pre-game map here.
-        saveCurrentWorlds();
     }
 
     public boolean isShuttingDown() { return shuttingDown; }
@@ -170,8 +175,7 @@ public final class GameManager {
             long interval = Math.max(1, plugin.getConfig().getInt("game.recovery-save-interval-seconds", 10)) * 20L;
             checkpointTask = Bukkit.getScheduler().scheduleSyncRepeatingTask(plugin, () -> {
                 if (activeMode == null && (state == GameState.READY || state == GameState.RUNNING)) {
-                    saveCurrentWorlds();
-                    saveCheckpoint();
+                    if (saveCurrentWorlds()) saveCheckpoint();
                 }
             }, interval, interval);
             if (data != null) plugin.getLogger().info("Recovered game session: " + state);
@@ -196,18 +200,27 @@ public final class GameManager {
         });
     }
 
-    private void saveCurrentWorlds() {
+    private boolean saveCurrentWorlds() {
         try {
-            Bukkit.savePlayers();
+            long started = System.nanoTime();
+            playerCheckpointSaver.savePlayers(this::reportSaveTiming);
+            reportSaveTiming("players", started);
+            started = System.nanoTime();
             for (World world : Bukkit.getWorlds()) plugin.worldBackups().saveWorld(world);
+            reportSaveTiming("worlds", started);
+            started = System.nanoTime();
             plugin.worldBackups().flushPendingWorldWrites();
+            reportSaveTiming("flush", started);
+            return true;
         } catch (IOException | RuntimeException ex) {
             plugin.getLogger().log(java.util.logging.Level.SEVERE, "Could not save game world/player checkpoint", ex);
+            return false;
         }
     }
 
     private boolean saveCheckpoint() {
         if (!recoveryInitialized || recoveryBlocked) return false;
+        long started = System.nanoTime();
         try {
             // Custom modes are not resumable. Only update outstanding built-in cleanup in their checkpoint.
             YamlConfiguration data = activeMode == null ? captureSession() : sessionStore.load();
@@ -218,6 +231,16 @@ public final class GameManager {
         } catch (Exception ex) {
             plugin.getLogger().log(java.util.logging.Level.SEVERE, "Could not save game session; retaining the previous checkpoint", ex);
             return false;
+        } finally {
+            reportSaveTiming("session", started);
+        }
+    }
+
+    private void reportSaveTiming(String stage, long started) {
+        long finished = System.nanoTime();
+        if (plugin.getConfig().getBoolean("game.log-save-timings", false)) {
+            plugin.getLogger().info(String.format(java.util.Locale.ROOT,
+                "NGW SAVE TIMING stage=%s duration_ms=%.3f end_ns=%d", stage, (finished - started) / 1000000.0, finished));
         }
     }
 

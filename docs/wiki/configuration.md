@@ -41,6 +41,7 @@
 | --- | --- | --- |
 | `game.mode` | `default` | 기본 코어전 또는 애드온이 등록한 게임 모드 ID. 다음 게임부터 적용 |
 | `game.recovery-save-interval-seconds` | `10` | 기본 게임·능력 테스트의 진행 상태와 월드/플레이어 데이터 저장 간격(초). 최소 1초, 변경 후 서버 재시작 필요 |
+| `game.log-save-timings` | `false` | 플레이어·월드·디스크 반영·세션 저장 시간을 서버 로그에 기록. 지연 조사 중에만 켜는 진단 설정 |
 | `game.min-players` | `2` | 시작에 필요한 최소 팀 배정 인원 |
 | `game.friendly-fire` | `false` | 같은 팀 공격 허용 여부 |
 | `game.auto-balance-teams` | `true` | 팀 배정이 비어 있을 때 시작 시 자동 배정 |

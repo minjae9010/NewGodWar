@@ -22,17 +22,20 @@ import java.util.*;
 public final class LoadRegressionProbe extends JavaPlugin implements Listener {
     private NewGodWarPlugin core;
     private World world;
+    private boolean checkpointMode;
     private String phase;
     private long started, gcStart, moves, interactions, commands, joins, quits, spent, damageEvents;
     private long peakHeap;
     private int peakEntities, peakTasks;
     private final List<Double> ticks = new ArrayList<Double>();
+    private final List<String> slowTicks = new ArrayList<String>();
     private final Map<UUID, Integer> stones = new HashMap<UUID, Integer>();
     private static final String[] ABILITIES = {"zeus", "frost", "athena", "demeter", "hephaestus", "thor", "poseidon", "blacksmith"};
 
     @Override public void onEnable() {
         if (!getServer().getIp().equals("127.0.0.1")) throw new IllegalStateException("Load fixture requires a localhost-only server");
         core = (NewGodWarPlugin) Bukkit.getPluginManager().getPlugin("NewGodWar");
+        checkpointMode = new File("player-checkpoint-test").exists();
         Bukkit.getPluginManager().registerEvents(this, this);
         Bukkit.getScheduler().runTask(this, () -> {
             try {
@@ -59,7 +62,11 @@ public final class LoadRegressionProbe extends JavaPlugin implements Listener {
         Class<? extends Event> type = (Class<? extends Event>) Class.forName("com.destroystokyo.paper.event.server.ServerTickEndEvent");
         Method duration = type.getMethod("getTickDuration");
         Bukkit.getPluginManager().registerEvent(type, this, EventPriority.MONITOR, (listener, event) -> {
-            if (phase != null) try { ticks.add(((Number) duration.invoke(event)).doubleValue()); }
+            if (phase != null) try {
+                double millis = ((Number) duration.invoke(event)).doubleValue();
+                ticks.add(millis);
+                if (millis > 50 && slowTicks.size() < 256) slowTicks.add(System.nanoTime() + "," + millis);
+            }
             catch (ReflectiveOperationException ex) { throw new EventException(ex); }
         }, this);
     }
@@ -120,7 +127,7 @@ public final class LoadRegressionProbe extends JavaPlugin implements Listener {
                     } catch (Throwable ex) { fail(ex); }
                 }, 100L);
             } else if (action.equals("begin")) {
-                phase = args[1]; ticks.clear(); moves = interactions = commands = joins = quits = spent = damageEvents = 0;
+                phase = args[1]; ticks.clear(); slowTicks.clear(); moves = interactions = commands = joins = quits = spent = damageEvents = 0;
                 peakHeap = 0; peakEntities = peakTasks = 0; stones.clear();
                 for (Player player : players()) stones.put(player.getUniqueId(), InventoryItems.count(player.getInventory(), Material.COBBLESTONE));
                 started = System.nanoTime(); gcStart = gcMillis();
@@ -138,6 +145,23 @@ public final class LoadRegressionProbe extends JavaPlugin implements Listener {
             } else if (action.equals("online")) {
                 require(players().size() == Integer.parseInt(args[1]), "Unexpected online count " + players().size());
                 getLogger().info("LOAD ONLINE " + players().size());
+            } else if (action.equals("checkpoint-seed")) {
+                checkpointMode = true;
+                new File("player-checkpoint-test").createNewFile();
+                int generation = Integer.parseInt(args[1]);
+                PlayerCheckpointChecks checks = new PlayerCheckpointChecks(core, world, players());
+                checks.seed(generation);
+                // Exercise the production ten-second periodic checkpoint, never a test-only save.
+                Bukkit.getScheduler().runTaskLater(this, () -> {
+                    try {
+                        checks.verifySession(generation);
+                        getLogger().info("LOAD CHECKPOINT SAVED " + generation + " players=" + players().size());
+                    } catch (Throwable ex) { fail(ex); }
+                }, 220L);
+            } else if (action.equals("checkpoint-verify")) {
+                int generation = Integer.parseInt(args[1]);
+                new PlayerCheckpointChecks(core, world, players()).verify(generation);
+                getLogger().info("LOAD CHECKPOINT RECOVERY PASS " + generation + " players=" + players().size());
             }
         } catch (Throwable ex) { fail(ex); }
         return true;
@@ -167,7 +191,7 @@ public final class LoadRegressionProbe extends JavaPlugin implements Listener {
             for (org.bukkit.scheduler.BukkitTask task : Bukkit.getScheduler().getPendingTasks()) if (task.getOwner() == core) tasks++;
             peakTasks = Math.max(peakTasks, tasks);
         }
-        if (!core.game().isRunning()) return;
+        if (!core.game().isRunning() || checkpointMode) return;
         for (Player player : players()) {
             if (player.isDead()) continue;
             player.setHealth(player.getMaxHealth()); player.setFoodLevel(20); player.setFireTicks(0);
@@ -212,6 +236,7 @@ public final class LoadRegressionProbe extends JavaPlugin implements Listener {
         result.setProperty("tick_ms_p99", "" + percentile(sorted, .99));
         result.setProperty("tick_ms_max", "" + percentile(sorted, 1));
         result.setProperty("ticks_over_50ms", "" + slow);
+        for (int i = 0; i < slowTicks.size(); i++) result.setProperty("slow_tick." + i, slowTicks.get(i));
         result.setProperty("peak_heap_mb", "" + peakHeap / 1048576.0);
         result.setProperty("gc_ms", "" + (gcMillis() - gcStart));
         result.setProperty("peak_entities", "" + peakEntities);
